@@ -1,1 +1,0 @@
-{"frames":[{"func":"BayesMultiNomial(dataset = df_age_ratio_jasp, factor = \"AgeRange\", \n    observed = \"PsychSample\", expected = \"Census6\")","file":"","line_number":0,"end_line_number":0,"character_number":0,"end_character_number":0}],"message":"Error in BayesMultiNomial(dataset = df_age_ratio_jasp, factor = \"AgeRange\",  : \n  object 'alphas' not found\n"}

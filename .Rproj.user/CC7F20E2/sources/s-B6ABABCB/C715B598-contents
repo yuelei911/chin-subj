@@ -15,7 +15,7 @@ Try executing this chunk by clicking the *Run* button within the chunk or by pla
 
 First, load libraries.
 
-```{r Initialization}
+```{r Initialization, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(ggridges)
 library(openxlsx)
@@ -23,31 +23,82 @@ library(ggh4x)
 library(stringr)
 library(patchwork)
 rm(list = ls())
+
+# define a function to calculate the Bayesian multinomial test as in JASP 
+# these code were from: https://github.com/jasp-stats/jaspFrequencies/blob/d48babf63b14526abaf2c208c8ae769801b6d4db/R/multinomialtestbayesian.R#L384
+
+BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior = TRUE, prior = NA){
+  # datase - the input dataframe
+  # factor - column name of the factor,
+  # observed - column name of the column contains counts information for the observed,
+  # expected - column name of the column contains counts information for the expected,
+  # default_prior - whether use the default, defused prior
+  # prior - priors defined by users
+  
+  library(tidyverse)
+  
+  fact_level <- dataset %>% dplyr::select(factor) %>% dplyr::pull() #  %>% as.factor(.)
+  observed_data <- dataset %>% dplyr::select(observed) %>% dplyr::pull()
+  names(observed_data) <- fact_level
+  expected_data <- dataset %>% dplyr::select(expected) %>% dplyr::pull()
+  n_levels <- length(observed_data)
+  
+  if (default_prior & is.na(prior)) {
+    prior <- rep(1, n_levels)
+  } else{
+    prior <- prior
+  }
+  
+  alphas <- prior
+  counts <- observed_data
+  thetas <- expected_data
+  
+  if(sum(thetas) != 1) {
+    thetas <- thetas/sum(thetas)
+    }
+  
+  expected <- setNames(sum(counts)*thetas, names(counts))
+  
+  lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
+  lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
+
+  if (any(rowSums(cbind(thetas, counts)) == 0)) {
+    LogBF10 <- (lbeta.xa-lbeta.a)
+  } else {
+    LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas)))
+  }
+
+  BF <- data.frame(LogBF10 = LogBF10,
+                   BF10    = exp(LogBF10),
+                   BF01    = 1/exp(LogBF10))
+
+  return(list(BF       = BF,
+              expected = expected))
+  
+}
 ```
 
 Second, load the data and carry out initial preprocessing. 
-```{r Loading data}
+```{r Loading data, message=FALSE, warning=FALSE}
 
 load("df_chinese_subj_rr_stage1.RData")
 
-# Load regions code
-# df_regionCode <- read.xlsx("Chin_Subj_F4(5)_region.xlsx")
-# save(df_census6, df_CFPS2018, df_PSA001, df_regionCode, file = "df_chinese_subj_rr_stage1.RData")
-
 # check data 
-str(df_PSA001) # have an overview of the data
-str(df_CFPS2018)
-str(df_census6)
-str(df_regionCode)
+# str(df_PSA001) # have an overview of the data
+# str(df_CFPS2018)
+# str(df_census6)
+# str(df_regionCode)
 ```
 
-## Testing the 2nd hypothesis
+## Test the 1st hypothesis
+*This can only be done after collecting data.*
 
+## Testing the 2nd hypothesis
 Here we will test whether the sex ratio and age distribution from psychological studies are similar to that of the census data. As a comparison, we also compared that data from sociology, CFPS 2018, to the census data too. 
 
 ### Sex distribution
 
-```{r H2 sex}
+```{r H2a sex, message=FALSE, warning=FALSE}
 df_PSA001_sex <- df_PSA001 %>%
   dplyr::count(Sex) %>%
   dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
@@ -66,7 +117,6 @@ df_census6_sex <- df_census6 %>%
                       values_to = "Proportion") %>%
   dplyr::mutate(Proportion = round(as.numeric(Proportion), 0))
 
-
 df_CFPS2018_sex <- df_CFPS2018 %>%
   dplyr::rename(Sex = QA002) %>%
   dplyr::count(Sex) %>%
@@ -78,11 +128,14 @@ df_CFPS2018_sex <- df_CFPS2018 %>%
 
 df_sex_ratio <- rbind(df_census6_sex, df_CFPS2018_sex, df_PSA001_sex)
 
-### write the csv for JASP
+### get the data for Bayesian mutlinomial test as in JASP
 df_sex_ratio_jasp <- df_sex_ratio %>%
   tidyr::pivot_wider(names_from = Site,
                      values_from = Proportion)
-write.csv(df_sex_ratio_jasp, "df_fig3a.csv", row.names = F)
+# write.csv(df_sex_ratio_jasp, "df_fig3a.csv", row.names = F)
+### calculate the BF10
+
+BF_h2a_sex <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "PSA001", expected = "Census6")
 
 fig3a <- ggplot(df_sex_ratio, aes(Site, Proportion,fill=Sex)) +
   geom_col() +
@@ -99,11 +152,13 @@ fig3a <- ggplot(df_sex_ratio, aes(Site, Proportion,fill=Sex)) +
 # fig3a  
 ```
 
+We found strong evidence for the $H_1$ that the sex ratio from PSA001 is different from that of Census data, with $Log(BF_{10})$ = `r BF_h2a_sex$BF$LogBF10`.
+
 ### Age distribution
 
 Here we will compare the age distribution of samples from psychological studies (PSA 001 as the example) and the Census data.
 
-```{r H2 ageBins}
+```{r H2b ageBins, message=FALSE, warning=FALSE}
 #  <- PSA_Jones_CN
 df_PSA001_Age <- df_PSA001 %>%
   dplyr::filter(!is.na(Age)) %>%
@@ -238,7 +293,7 @@ fig4a <- ggplot(df_PSA001_valid_merge_sex_ratio_sored, aes(x=Proportion, y=Count
 # fig4a
 ```
 
-```{r preproc for age}
+```{r preproc for age, message=FALSE, warning=FALSE}
 
 df_PSA001_Age_valid <- df_PSA001 %>% 
   dplyr::filter(!is.na(Age)) %>%   ### Removing the NA value in age
@@ -341,249 +396,3 @@ PSA001_age_Jasp_filled_wide %>%
   write.csv(., "Fig4b_ageBin_wide.csv", row.names = F)
 ```
 
-```{r define multinomial}
-# In this test, we hope to test whether the observed distributioni fit with the expected.
-# We will use .multBayesBfEquality in JASP, which has three input: 
-# .multBayesBfEquality(alphas = a, counts = dataTable, thetas = hyps[[h]])
-# alphas, counts, thetas
-# alpha is the prior?
-# count is the observed (dataTable)
-# theta is the hypothesis?
-# The most imiportant function in this is the `lgamma()`, which is "natural logarithm of the absolute gamma 
-#  ....value of a numeric vector computed using the gamma function."
-# Here the BF is the difference between lgamma of prior and after addition the data.
-#
-# In the case of goodness-of-fit, the expected is ?
-#  a              <- setNames(prior$values, prior$levels)
-# --> which means assign prior$levels as the names of prior$values
-# prior          <- options$priorCounts[[1]]
-# --> priorCounts should be the prior part of GUI 
-
-#  hyps  <- .multinomialHypotheses(dataset, options, nlev) # exact equality constraints
-# --> .multinomialHypotheses function has two options, no expected value, equal proportion, else:
-# expectedDf <- generateExpectedProps(dataset, options, nlevels), hyps <- as.list (expectedDF)
-#    fact   <- dataset[[.v(options$factor)]]
-#    eProps <- dataset[.v(options$exProbVar)]
-#    colnames(eProps) <- options$exProbVar
-#    rownames(eProps) <- fact
-#
-#    return(na.omit(eProps))
-#    
-#    return(as.data.frame(eProps))
-
-a_tmp <- setNames(c(1,1), c("female", "male"))
-counts_tmp <- c(69, 31)
-dataTable_tmp <- counts_tmp
-names(dataTable_tmp) <- c("female", "male")
-
-fact_tmp <- c("female", "male")
-eProps_tmp <- df_sex_ratio_jasp %>% dplyr::arrange(Sex) %>% dplyr::select(Census6)
-colnames(eProps_tmp) <- "Census_6"
-rownames(eProps_tmp) <- fact_tmp
-expectedDf_tmp <- as.data.frame(eProps_tmp)
-hyps <- as.list(expectedDf_tmp)
-
-alphas_tmp <- a_tmp
-counts_tmp <- dataTable_tmp
-thetas_tmp <- hyps[[1]]
-
-if(sum(thetas_tmp) != 1) {
-    thetas_tmp <- thetas_tmp/sum(thetas_tmp)
-}
-
-expected_tmp <- setNames(sum(counts_tmp)*thetas_tmp, names(counts_tmp))
-
-lbeta.xa_tmp <- sum(lgamma(alphas_tmp + counts_tmp)) - lgamma(sum(alphas_tmp + counts_tmp))
-lbeta.a_tmp  <- sum(lgamma(alphas_tmp)) - lgamma(sum(alphas_tmp))
-
-any(rowSums(cbind(thetas_tmp, counts_tmp)) == 0) # FALSE
-
-LogBF10_tmp <- (lbeta.xa_tmp - lbeta.a_tmp) + (0 - sum(counts_tmp * log(thetas_tmp)))
-exp(LogBF10_tmp)
-
-BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior = TRUE, prior = NA){
-  library(tidyverse)
-  fact_level <- dataset %>% dplyr::select(factor) %>% dplyr::pull() #  %>% as.factor(.)
-  
-  observed_data <- dataset %>% dplyr::select(observed) %>% dplyr::pull()
-  names(observed_data) <- fact_level
-  expected_data <- dataset %>% dplyr::select(expected) %>% dplyr::pull()
-  n_levels <- length(observed_data)
-  
-  if (default_prior & is.na(prior)) {
-    prior <- rep(1, n_levels)
-  } else{
-    prior <- prior
-  }
-  
-  alphas <- prior
-  counts <- observed_data
-  thetas <- expected_data
-  
-  if(sum(thetas) != 1) {
-    thetas <- thetas/sum(thetas)
-    }
-  
-  expected <- setNames(sum(counts)*thetas, names(counts))
-  
-  lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
-  lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
-
-  if (any(rowSums(cbind(thetas, counts)) == 0)) {
-    LogBF10 <- (lbeta.xa-lbeta.a)
-  } else {
-    LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas)))
-  }
-
-  BF <- data.frame(LogBF10 = LogBF10,
-                   BF10    = exp(LogBF10),
-                   BF01    = 1/exp(LogBF10))
-
-  return(list(BF       = BF,
-              expected = expected))
-  
-}
-
-BF10_sex <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "PSA001", expected = "Census6")
-
-df_age_ratio_jasp <- read.csv('figure3b_data_1.csv')
-
-BF10_age <- BayesMultiNomial(dataset = df_age_ratio_jasp, factor = "AgeRange", observed = "PsychSample", expected = "Census6")
-
-
-alphas <- data.frame(count=c(1,1))
-counts <- df_sex_ratio_jasp %>% dplyr::arrange(Sex) %>% dplyr::select(PSA001)
-thetas <- df_sex_ratio_jasp$Census6[2]/sum(df_sex_ratio_jasp$Census6)
-
-
-expected <- setNames(sum(counts)*thetas, names(counts))
-
-# compute Bayes factor
-lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
-lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
-
- # in this case, counts*log(thetas) should be zero, omit to avoid numerical issue with log(0)
-  if (any(rowSums(cbind(thetas, counts)) == 0)) {
-    LogBF10 <- (lbeta.xa-lbeta.a)
-  } else {
-    LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas)))
-  }
-
-  BF <- data.frame(LogBF10 = .clean(LogBF10),
-                   BF10    = .clean(exp(LogBF10)),
-                   BF01    = .clean(1/exp(LogBF10)))
-  
-  # Prepare for running the Bayesian Multinomial test
-  factorVariable <- multinomialResults$specs$factorVariable
-  countVariable  <- multinomialResults$specs$countVariable
-  fact           <- dataset[[.v(factorVariable)]]
-  fact           <- as.factor(fact)
-  nlev           <- nlevels(fact)
-  prior          <- options$priorCounts[[1]]
-  a              <- setNames(prior$values, prior$levels)
-  factNms        <- levels(fact)
-  
-# Determine observed counts and factor levels
-  N <- sum(dataTable)
-
-  # Extract hypotheses
-  hyps  <- .multinomialHypotheses(dataset, options, nlev) # exact equality constraints
-  nms   <- multinomialResults[["specs"]][["hypNames"]]
-  nhyps <- length(hyps)
-  
-  multinomialResults$mainTable[[nms[h]]] <- .multBayesBfEquality(alphas = a, counts = dataTable, thetas = hyps[[h]])
-  }
-
-.multBayesBfEquality <- function(alphas, counts, thetas) {
-
-  # if needed: rescale
-  if(sum(thetas) != 1) {
-    thetas <- thetas/sum(thetas)
-  }
-
-  # expected counts under the null hypothesis (Binomial median)
-  expected <- setNames(sum(counts)*thetas, names(counts))
-
-  # compute Bayes factor
-  lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
-  lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
-
-  # in this case, counts*log(thetas) should be zero, omit to avoid numerical issue with log(0)
-  if (any(rowSums(cbind(thetas, counts)) == 0)) {
-    LogBF10 <- (lbeta.xa-lbeta.a)
-  } else {
-    LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas)))
-  }
-
-  BF <- data.frame(LogBF10 = .clean(LogBF10),
-                   BF10    = .clean(exp(LogBF10)),
-                   BF01    = .clean(1/exp(LogBF10)))
-
-  return(list(BF       = BF,
-              expected = expected))
-}
-
-# Extra results functions
-.multinomialHypotheses <- function(dataset, options, nlevels) {
-  # Transform input into a list of hypotheses
-  # This function transforms the input into a list of hypotheses
-  #
-  # Args:
-  #   dataset: input dataset
-  #   options: user options
-  #   nlevels:  number of levels of the factor variable
-  #
-  # Return:
-  #   hypotheses
-
-  hyps <- list()
-  if (options$exProbVar == "" && options$hypothesis == "multinomialTest") {
-    # Expected probabilities are simple now
-    hyps[["Multinomial"]] <- rep(1/nlevels, nlevels)
-  } else {
-    # First, generate a table with expected probabilities based on input
-    expectedDf <- .generateExpectedProps(dataset, options, nlevels)
-    # assign each hypothesis to the hyps object
-    hyps <- as.list(expectedDf)
-  }
-  return(hyps)
-}
-
-.generateExpectedProps <- function(dataset, options, nlevels) {
-  # Parse expected probabilities/counts
-  # This function returns a data frame with in each named column the expected
-  # probabilities. The column names are the hypothesis names.
-  #
-  # Args:
-  #   dataset: input dataset
-  #   options: user options
-  #   nlevels: number of levels of the factor variable
-  #
-  # Return:
-  #   expected Probabilities
-
-  if (options$exProbVar != "") {
-    # use only exProbVar
-    fact   <- dataset[[.v(options$factor)]]
-    eProps <- dataset[.v(options$exProbVar)]
-    colnames(eProps) <- options$exProbVar
-    rownames(eProps) <- fact
-
-    return(na.omit(eProps))
-
-  } else if (length(options$tableWidget) > 0) {
-    eProps <- sapply(options$tableWidget, function(x) {
-      vals <- unlist(x$values)
-      if (sum(vals) == 0)
-        vals <- rep(1, length(vals))
-      return(vals)
-    })
-
-    colnames(eProps) <- sapply(seq_along(options$tableWidget),
-                               function(x) paste0("H\u2080 (", letters[x], ")"))
-    rownames(eProps) <- options$tableWidget[[1]]$levels
-
-    return(as.data.frame(eProps))
-  }
-}
-```
