@@ -301,14 +301,12 @@ df_PSA001_Age_CN_Jasp_new <- df_PSA001_Age_CN_Jasp %>%
 BF_h2b_age <- BayesMultiNomial(dataset = df_PSA001_Age_CN_Jasp_new, 
                                factor = "ageBins", observed = "PSA001_CN", expected = "Census6")
 
-# df_PSA001_Age_Jasp_filled_CN %>%
-#   write.csv(., "Fig3b_age_new.csv", row.names = F)
 ```
 
 We found strong evidence for the $H_1$ that the age distribution from PSA001 is different from that of Census data, with $Log(BF_{10})$ = `r BF_h2b_age$BF$LogBF10`.
 
 ## Test H3
-Third, select data for plotting.
+We first select data for plotting.
 ```{r preproc data}
 ### Get countries with n >=30
 PSA001_valid_countries <-  df_PSA001 %>%
@@ -352,6 +350,23 @@ df_PSA001_valid_merge_sex_ratio_sored_wide <- df_PSA001_valid_merge_sex_ratio_so
 
 df_PSA001_valid_merge_sex_ratio_sored_wide %>%
   write.csv(., "Fig4a_sex_wide.csv", row.names = F)
+```
+
+```{r Test H3a,message=FALSE, warning=FALSE}
+# compare each country with CN
+BF_h3a_sex <- data.frame(matrix(nrow = 0, ncol = 5))
+colnames(BF_h3a_sex) <- c("Observed", "Expected", "Log(BF10)", "BF10", "BF01")
+
+# countries_names <- as.character(df_PSA001_valid_merge_sex_ratio_sored$Countries)
+for (ii in seq(length(countries_order_sex))){
+  country <- countries_order_sex[ii]
+  if (country != "CN"){
+    df_tmp <- df_PSA001_valid_merge_sex_ratio_sored_wide %>% dplyr::select('Sex', one_of(country), "CN")
+    BF_tmp <-  BayesMultiNomial(dataset = df_tmp, 
+                               factor = "Sex", observed = country, expected = "CN")
+    BF_h3a_sex[ii,] <- c(country, "CN",BF_tmp$BF$LogBF10, BF_tmp$BF$BF10 , BF_tmp$BF$BF01)
+  } 
+}
 ```
 
 Plot figure 4a, 
@@ -423,7 +438,7 @@ fig4
 Get the percentage of each age bin and save for JASP
 ```{r saving figure 4b data for JASP}
 
-PSA001_age_Jasp <- df_PSA001_Age_valid_countryCode_sorted %>%
+df_PSA001_age_Jasp <- df_PSA001_Age_valid_countryCode_sorted %>%
   dplyr::select(user_id, Countries, Sex, Age) %>%
   dplyr::mutate(ageBins=cut(Age, 
                             breaks=c(0, 10.5, 20.5, 30.5, 40.5, 50.5, 60.5, Inf), 
@@ -437,16 +452,16 @@ PSA001_age_Jasp <- df_PSA001_Age_valid_countryCode_sorted %>%
                 indx = freq - percent)
 
 ## below we fill the percentage to 100%
-filler_idx <- PSA001_age_Jasp %>%
+filler_idx <- df_PSA001_age_Jasp %>%
   dplyr::group_by(Countries) %>%
   dplyr::summarise(sum = sum(percent)) %>%
   dplyr::ungroup() # this is necessary, otherwise the for loop doesn't work
 
-PSA001_age_Jasp_filled <- data.frame(matrix(ncol = ncol(PSA001_age_Jasp), nrow = 0))
-colnames(PSA001_age_Jasp_filled) <- colnames(PSA001_age_Jasp)
+df_PSA001_age_Jasp_filled <- data.frame(matrix(ncol = ncol(df_PSA001_age_Jasp), nrow = 0))
+colnames(df_PSA001_age_Jasp_filled) <- colnames(df_PSA001_age_Jasp)
 
 for (ii in 1:nrow(filler_idx)){
-  tmp <- PSA001_age_Jasp %>% 
+  tmp <- df_PSA001_age_Jasp %>% 
     dplyr::filter(Countries == filler_idx$Countries[ii]) %>%
     dplyr::arrange(desc(indx))
   
@@ -455,25 +470,43 @@ for (ii in 1:nrow(filler_idx)){
      tmp$percent[jj] <- tmp$percent[jj] + 1
     }
   }
-  PSA001_age_Jasp_filled <- rbind(PSA001_age_Jasp_filled, tmp)
+  df_PSA001_age_Jasp_filled <- rbind(df_PSA001_age_Jasp_filled, tmp)
 }
 
-PSA001_age_Jasp_filled <- PSA001_age_Jasp_filled %>%
+df_PSA001_age_Jasp_filled <- df_PSA001_age_Jasp_filled %>%
   dplyr::arrange(Countries, ageBins) %>%
   dplyr::select(-indx)
 
-filler_idx2 <- PSA001_age_Jasp_filled %>%
+filler_idx2 <- df_PSA001_age_Jasp_filled %>%
   dplyr::group_by(Countries) %>%
   dplyr::summarise(sum = sum(percent)) %>%
   dplyr::ungroup()  
 
-write.csv(PSA001_age_Jasp_filled, "fig4b_PSA001_age.csv", row.names = F)
+write.csv(df_PSA001_age_Jasp_filled, "fig4b_PSA001_age.csv", row.names = F)
 
-PSA001_age_Jasp_filled_wide <- PSA001_age_Jasp_filled %>%
+df_PSA001_age_Jasp_filled_wide <- df_PSA001_age_Jasp_filled %>%
   dplyr::select(-c(n, freq)) %>%
   tidyr::pivot_wider(names_from = "Countries", values_from = "percent")
   
-PSA001_age_Jasp_filled_wide %>%
+df_PSA001_age_Jasp_filled_wide %>%
   write.csv(., "Fig4b_ageBin_wide.csv", row.names = F)
 ```
 
+```{r Test H3b,message=FALSE, warning=FALSE}
+BF_h3b_age <- data.frame(matrix(nrow = 0, ncol = 5))
+
+colnames(BF_h3b_age) <- c("Observed", "Expected", "Log(BF10)", "BF10", "BF01")
+
+# countries_names <- as.character(df_PSA001_valid_merge_sex_ratio_sored$Countries)
+for (ii in seq(length(countries_order_sex))){
+  country <- countries_order_sex[ii]
+  if (country != "CN"){
+    df_tmp <- df_PSA001_age_Jasp_filled_wide %>% dplyr::select('ageBins', one_of(country), "CN")
+    BF_tmp <-  BayesMultiNomial(dataset = df_tmp, 
+                               factor = "ageBins", observed = country, expected = "CN")
+    BF_h3b_age[ii,] <- c(country, "CN",BF_tmp$BF$LogBF10, BF_tmp$BF$BF10, BF_tmp$BF$BF01)
+  } 
+  
+}
+
+```
