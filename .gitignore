@@ -1,3 +1,4 @@
 *.csv
 *.sas*
 ._*
+.Rproj.user
