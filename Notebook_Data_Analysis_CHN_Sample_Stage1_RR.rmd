@@ -7,11 +7,9 @@ output:
     df_print: paged
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook for data analyses in the protocol of a meta research which aims at surveying the sample characteristics of Chinese sample in Psychological research. 
+This is an [R Markdown](http://rmarkdown.rstudio.com) file for data analyses in the protocol of a meta research which aims at surveying sample characteristics of Chinese sample in Chinese Psychological research. 
 
-In this notebook, we will use data from PSA 001 project [Jones et al., 2021, *Nature Human Behavior*](https://doi.org/10.1038/s41562-020-01007-2) as an example to exemplify the analysis we are going to use in our first projects
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+In this script, we will use data from PSA 001 project [Jones et al., 2021, *Nature Human Behavior*](https://doi.org/10.1038/s41562-020-01007-2) to exemplify the analyses that we are going to use in our this project.
 
 First, load libraries.
 
@@ -37,10 +35,10 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   
   library(tidyverse)
   
-  fact_level <- dataset %>% dplyr::select(factor) %>% dplyr::pull() #  %>% as.factor(.)
-  observed_data <- dataset %>% dplyr::select(observed) %>% dplyr::pull()
+  fact_level <- dataset %>% dplyr::select(all_of(factor)) %>% dplyr::pull() #  %>% as.factor(.)
+  observed_data <- dataset %>% dplyr::select(all_of(observed)) %>% dplyr::pull()
   names(observed_data) <- fact_level
-  expected_data <- dataset %>% dplyr::select(expected) %>% dplyr::pull()
+  expected_data <- dataset %>% dplyr::select(all_of(expected)) %>% dplyr::pull()
   n_levels <- length(observed_data)
   
   if (default_prior & is.na(prior)) {
@@ -94,7 +92,11 @@ load("df_chinese_subj_rr_stage1.RData")
 *This can only be done after collecting data.*
 
 ## Testing the 2nd hypothesis
-Here we will test whether the sex ratio and age distribution from psychological studies are similar to that of the census data. As a comparison, we also compared that data from sociology, CFPS 2018, to the census data too. We use Bayesian multinomial test for this purpose.
+
+Here we will test whether the sex ratio and age distribution from Chinese psychological studies are similar to that of the census data. As a comparison, we also compared that data from sociology, CFPS 2018, to the census data too. We use Bayesian multinomial test (Bayesian goodness-of-fit test) to examine whether the observed (Chinese psychological samples) fit the expected (Census data). 
+
+$H_0$: the observed fits the expected distribution;
+$H_1$: the observed does not fit the expected.
 
 ### Sex distribution
 
@@ -133,10 +135,9 @@ df_sex_ratio <- rbind(df_census6_sex, df_CFPS2018_sex, df_PSA001_sex_CN)
 df_sex_ratio_jasp <- df_sex_ratio %>%
   tidyr::pivot_wider(names_from = Site,
                      values_from = Proportion)
-# write.csv(df_sex_ratio_jasp, "df_fig3a.csv", row.names = F)
-### calculate the BF10
 
-BF_h2a_sex <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "PSA001", expected = "Census6")
+BF_h2a_sex_psych <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "PSA001", expected = "Census6")
+BF_h2a_sex_cfps <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "CFPS2018", expected = "Census6")
 
 fig3a <- ggplot(df_sex_ratio, aes(Site, Proportion,fill=Sex)) +
   geom_col() +
@@ -153,13 +154,13 @@ fig3a <- ggplot(df_sex_ratio, aes(Site, Proportion,fill=Sex)) +
 # fig3a  
 ```
 
-We found strong evidence for the $H_1$ that the sex ratio from PSA001 is different from that of Census data, with $Log(BF_{10})$ = `r BF_h2a_sex$BF$LogBF10`.
+We found strong evidence for the $H_1$ that the sex ratio from PSA001 is different from that of Census data, with $Log(BF_{10})$ = `r BF_h2a_sex_psych$BF$LogBF10`. On the contrast, for the CFPS data, we found moderate evidence for the $H_0$ that sex ratio from CFPS2018 is not different from that of Census data, $Log(BF_{10})$ = `r BF_h2a_sex_cfps$BF$LogBF10`
 
 ### Age distribution
 
 Here we will compare the age distribution of samples from psychological studies (PSA 001 as the example) and the Census data.
 
-```{r H2b ageBins, message=FALSE, warning=FALSE}
+```{r H2b ageBins plot, message=FALSE, warning=FALSE}
 #  <- PSA_Jones_CN
 df_PSA001_Age_CN <- df_PSA001 %>%
   dplyr::filter(!is.na(Age)) %>%
@@ -298,12 +299,12 @@ df_census6_age_jasp <- df_census6_age_jasp %>%
 df_PSA001_Age_CN_Jasp_new <- df_PSA001_Age_CN_Jasp %>%
   dplyr::left_join(., df_census6_age_jasp)
 
-BF_h2b_age <- BayesMultiNomial(dataset = df_PSA001_Age_CN_Jasp_new, 
+BF_h2b_age_psych <- BayesMultiNomial(dataset = df_PSA001_Age_CN_Jasp_new, 
                                factor = "ageBins", observed = "PSA001_CN", expected = "Census6")
 
 ```
 
-We found strong evidence for the $H_1$ that the age distribution from PSA001 is different from that of Census data, with $Log(BF_{10})$ = `r BF_h2b_age$BF$LogBF10`.
+We found strong evidence for the $H_1$ that the age distribution from PSA001 is different from that of Census data, with $Log(BF_{10})$ = `r BF_h2b_age_psych$BF$LogBF10`.
 
 ## Test H3
 We first select data for plotting.
@@ -339,17 +340,17 @@ countries_order_sex <- df_PSA001_valid_merge_sex_ratio %>%
 df_PSA001_valid_merge_sex_ratio_sored <- df_PSA001_valid_merge_sex_ratio %>%
   dplyr::mutate(Countries = factor(Countries, levels = countries_order_sex))
 
-df_PSA001_valid_merge_sex_ratio_sored %>%
-  dplyr::mutate(Proportion = Proportion * 100) %>%
-  write.csv(., "PSA001_sex_ratio_all.csv", row.names = F)
+# df_PSA001_valid_merge_sex_ratio_sored %>%
+#   dplyr::mutate(Proportion = Proportion * 100) %>%
+#   write.csv(., "PSA001_sex_ratio_all.csv", row.names = F)
 
 df_PSA001_valid_merge_sex_ratio_sored_wide <- df_PSA001_valid_merge_sex_ratio_sored %>%
   dplyr::select(-c(weird,n)) %>%
   dplyr::mutate(Proportion = Proportion * 100)  %>%
   tidyr::pivot_wider(names_from = "Countries", values_from = "Proportion")
 
-df_PSA001_valid_merge_sex_ratio_sored_wide %>%
-  write.csv(., "Fig4a_sex_wide.csv", row.names = F)
+# df_PSA001_valid_merge_sex_ratio_sored_wide %>%
+#   write.csv(., "Fig4a_sex_wide.csv", row.names = F)
 ```
 
 ```{r Test H3a,message=FALSE, warning=FALSE}
@@ -367,6 +368,51 @@ for (ii in seq(length(countries_order_sex))){
     BF_h3a_sex[ii,] <- c(country, "CN",BF_tmp$BF$LogBF10, BF_tmp$BF$BF10 , BF_tmp$BF$BF01)
   } 
 }
+
+BF_h3a_sex_p <- BF_h3a_sex %>%
+  tidyr::drop_na() %>%
+  dplyr::mutate(Contries = factor(Observed, levels = Observed),
+                `Log(BF10)` = as.numeric(`Log(BF10)`)) 
+  
+
+p_BF_h3a_sex_p <- ggplot(BF_h3a_sex_p, aes( x = `Log(BF10)`, y = Contries )) +
+  geom_point() +
+  xlim(-3, 21) +
+  scale_y_discrete(limits=rev) +
+  geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
+             colour = c("red", "tomato", "black", "deepskyblue","blue"), 
+             linetype=c("longdash", "longdash", "solid", "longdash","longdash")) + 
+  geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7, 
+            angle=90, text=element_text(size=10)) +
+  geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7, 
+            angle=90, text=element_text(size=10)) +
+  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="tomato", alpha = 0.7, 
+            angle=90, text=element_text(size=10)) +
+  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7, 
+            angle=90, text=element_text(size=10)) +
+  ggtitle("Sex ratio") + 
+  theme_bw() +
+        theme(panel.grid.major = element_blank(),
+         panel.grid.minor = element_blank(),
+         panel.background = element_blank(),
+         panel.border = element_blank(),
+         text = element_text(family='Times'),
+         # legend.title=element_blank(),
+         legend.title = element_text(size =16),
+         legend.text = element_text(size =14),
+         axis.text.x = element_text (size = 14, color = 'black',  hjust = 1),
+         axis.text.y = element_text (size = 16, color = 'black'),
+         plot.title = element_text(lineheight=.8, face="bold", size = 18, margin=margin(0,0,20,0)),
+         axis.text = element_text (size = 16, color = 'black'),
+         axis.title = element_text (size = 16),
+         axis.title.x = element_text (size = 16),
+         # axis.title.y = element_blank(),
+         axis.title.y = element_text( size = 16),
+         axis.line.x = element_line(color='black', size = 1),    # increase the size of font
+         axis.line.y = element_line(color='black', size = 1),    # increase the size of font
+         strip.text = element_text (size = 16, color = 'black'), # size of text in strips, face = "bold"
+         panel.spacing = unit(3, "lines")
+        )
 ```
 
 Plot figure 4a, 
@@ -384,7 +430,7 @@ fig4a <- ggplot(df_PSA001_valid_merge_sex_ratio_sored, aes(x=Proportion, y=Count
         strip.text = element_text(size = 15,family = "serif"),
         strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black")) +
-  scale_x_continuous(breaks = seq(0, 1, by = 0.1))+
+  scale_x_continuous(breaks = seq(0, 1, by = 0.1)) +
   facet_wrap(~ weird, scales = "free")
 # fig4a
 ```
@@ -430,13 +476,13 @@ fig4b <- ggplot(df_PSA001_Age_valid_countryCode_sorted, aes(x=Age, y=Countries, 
 # p_PSA001_Age
 
 # save the plot
-fig4 <- (fig4a + fig4b) +  plot_annotation(tag_levels = 'A')
-ggsave("fig4.pdf", fig4, device = "pdf", width=16, height = 9)
-fig4
+# fig4 <- (fig4a + fig4b) +  plot_annotation(tag_levels = 'A')
+# ggsave("fig4.pdf", fig4, device = "pdf", width=16, height = 9)
+# fig4
 ```
 
 Get the percentage of each age bin and save for JASP
-```{r saving figure 4b data for JASP}
+```{r prepare data for test}
 
 df_PSA001_age_Jasp <- df_PSA001_Age_valid_countryCode_sorted %>%
   dplyr::select(user_id, Countries, Sex, Age) %>%
@@ -482,14 +528,14 @@ filler_idx2 <- df_PSA001_age_Jasp_filled %>%
   dplyr::summarise(sum = sum(percent)) %>%
   dplyr::ungroup()  
 
-write.csv(df_PSA001_age_Jasp_filled, "fig4b_PSA001_age.csv", row.names = F)
+# write.csv(df_PSA001_age_Jasp_filled, "fig4b_PSA001_age.csv", row.names = F)
 
 df_PSA001_age_Jasp_filled_wide <- df_PSA001_age_Jasp_filled %>%
   dplyr::select(-c(n, freq)) %>%
   tidyr::pivot_wider(names_from = "Countries", values_from = "percent")
   
-df_PSA001_age_Jasp_filled_wide %>%
-  write.csv(., "Fig4b_ageBin_wide.csv", row.names = F)
+# df_PSA001_age_Jasp_filled_wide %>%
+#   write.csv(., "Fig4b_ageBin_wide.csv", row.names = F)
 ```
 
 ```{r Test H3b,message=FALSE, warning=FALSE}
@@ -509,4 +555,52 @@ for (ii in seq(length(countries_order_sex))){
   
 }
 
+BF_h3b_age_p <- BF_h3b_age %>%
+  tidyr::drop_na() %>%
+  dplyr::mutate(Contries = factor(Observed, levels = Observed),
+                `Log(BF10)` = as.numeric(`Log(BF10)`)) 
+  
+
+p_BF_h3b_age_p <- ggplot(BF_h3b_age_p, aes( x = `Log(BF10)`, y = Contries )) +
+  geom_point() +
+  xlim(-160, 0) +
+  scale_y_discrete(limits=rev) +
+  geom_vline(xintercept = c(log(1/10)), 
+             colour = c("red"), 
+             linetype=c("longdash")) + 
+  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7, 
+            angle=90, text=element_text(size=10)) +
+  ggtitle("Age distribution") +
+  theme_bw() +
+        theme(panel.grid.major = element_blank(),
+         panel.grid.minor = element_blank(),
+         panel.background = element_blank(),
+         panel.border = element_blank(),
+         text = element_text(family='Times'),
+         # legend.title=element_blank(),
+         legend.title = element_text(size =16),
+         legend.text = element_text(size =14),
+         axis.text.x = element_text (size = 14, color = 'black',  hjust = 1),
+         axis.text.y = element_text (size = 16, color = 'black'),
+         plot.title = element_text(lineheight=.8, face="bold", size = 18, margin=margin(0,0,20,0)),
+         axis.text = element_text (size = 16, color = 'black'),
+         axis.title = element_text (size = 16),
+         axis.title.x = element_text (size = 16),
+         # axis.title.y = element_blank(),
+         axis.title.y = element_text( size = 16),
+         axis.line.x = element_line(color='black', size = 1),    # increase the size of font
+         axis.line.y = element_line(color='black', size = 1),    # increase the size of font
+         strip.text = element_text (size = 16, color = 'black'), # size of text in strips, face = "bold"
+         panel.spacing = unit(3, "lines")
+        )
+
+library(patchwork)
+p_BF <- (p_BF_h3a_sex_p + p_BF_h3b_age_p) /
+   (fig4a + fig4b) +
+  plot_annotation( # title = 'Pairwise comparison between samples from China and other countries',
+                  tag_levels = 'A')  & 
+  theme(plot.tag = element_text(size = 18, face = "bold"))
+
+ggsave("Fig4_withBF.pdf", p_BF, device = "pdf", width=15, height = 20)
+p_BF
 ```
