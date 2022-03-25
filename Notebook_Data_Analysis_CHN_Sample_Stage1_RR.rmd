@@ -297,10 +297,20 @@ df_census6_age_jasp <- df_census6_age_jasp %>%
   dplyr::select(ageBins, Census6)
 
 df_PSA001_Age_CN_Jasp_new <- df_PSA001_Age_CN_Jasp %>%
-  dplyr::left_join(., df_census6_age_jasp)
+  dplyr::left_join(., df_census6_age_jasp) %>%
+  dplyr::mutate(ageBins = factor(ageBins, levels = c( "0~9",
+                                                      "10~19",
+                                                      "20~29" ,
+                                                      "30~39" ,
+                                                      "40~49",
+                                                      "50~59",
+                                                      ">=60"))) %>%
+  dplyr::arrange(ageBins)
 
 BF_h2b_age_psych <- BayesMultiNomial(dataset = df_PSA001_Age_CN_Jasp_new, 
-                               factor = "ageBins", observed = "PSA001_CN", expected = "Census6")
+                                     factor = "ageBins", 
+                                     observed = "PSA001_CN",
+                                     expected = "Census6")
 
 ```
 
