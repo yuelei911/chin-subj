@@ -22,9 +22,31 @@ library(stringr)
 library(patchwork)
 rm(list = ls())
 
-# define a function to calculate the Bayesian multinomial test as in JASP 
-# these code were from: https://github.com/jasp-stats/jaspFrequencies/blob/d48babf63b14526abaf2c208c8ae769801b6d4db/R/multinomialtestbayesian.R#L384
+```
 
+### Define Bayesian multinomial test
+
+This function is defined as in [JASP](https://github.com/jasp-stats/jaspFrequencies/blob/d48babf63b14526abaf2c208c8ae769801b6d4db/R/multinomialtestbayesian.R#L384).
+
+
+#### Probability mass function (PMF)
+The PMF of multinomial distribution is:
+
+$$f(x_1, ..., x_k; n, p_1, ..., p_n) = Pr(X_1 = x_1 and ... and X_k = x_k) = \frac{n!}{x_1! ... x_n!} p_1^{x_1} \times ... \times p_k^{x_k}$$, when $\sum_{i=1}^{k}{x_i=n}$, for non-negative integers $x_1, ..., x_k$.
+
+This PMF can be expressed using the gamma function as:
+
+$$f(x_1, ..., x_k; n, p_1, ..., p_n) = \frac{\Gamma(\sum_{i}{x_i +1})}{\prod_{i}\Gamma(x_i + 1)} \prod_{i=1}^{k} p_{i}^{x_i}$$
+
+In $R$, we can directly use the `gamma` and `lgamma` to calculate the PMF.
+Where `gamma` function is defined as:
+$\Gamma (x) = \int_{0}^{\infty} t^{(x-1)} \exp(-t)dt$
+
+and the `lgamma` is defined as the log of `gamaa`.
+
+$(x)!$ for non-negative integer x is defined to be $\Gamma (x+1)$
+
+```{r define func, message=FALSE, warning=FALSE}
 BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior = TRUE, prior = NA){
   # datase - the input dataframe
   # factor - column name of the factor,
@@ -63,7 +85,7 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   if (any(rowSums(cbind(thetas, counts)) == 0)) {
     LogBF10 <- (lbeta.xa-lbeta.a)
   } else {
-    LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas)))
+    LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas)))  # why this?
   }
 
   BF <- data.frame(LogBF10 = LogBF10,
