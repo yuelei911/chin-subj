@@ -24,7 +24,7 @@ Article2021_checked <- merge(sampling2021,check2021,by="Article ID")
 
 ###save the file
 #2008
-write.xlsx(Article2008_checked,"Article2008_checked.xlsx")
+write.xlsx(Article2008_checked,"Chin_Subj_Article2008_Sampling_Check_YL_20220417.xlsx")
 
 #2021
-write.xlsx(Article2021_checked,"Article2021_checked.xlsx")
+write.xlsx(Article2021_checked,"Chin_Subj_Article2021_Sampling_Check_YL_20220417.xlsx")
