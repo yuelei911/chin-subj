@@ -85,7 +85,7 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   if (any(rowSums(cbind(thetas, counts)) == 0)) {
     LogBF10 <- (lbeta.xa-lbeta.a)
   } else {
-    LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas)))  # why this?
+    LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
   }
 
   BF <- data.frame(LogBF10 = LogBF10,
@@ -132,7 +132,7 @@ df_PSA001_sex_CN <- df_PSA001 %>%
   dplyr::select(Site, Sex, Proportion)
 
 df_census6_sex <- df_census6 %>%
-  dplyr::select(c(6,7)) %>%        # select columns
+  dplyr::select(c(6,7)) %>%        
   dplyr::slice(c(5)) %>%
   dplyr::rename(male=1, 
                 female=2) %>%
@@ -201,12 +201,12 @@ df_PSA001_Age_CN <- df_PSA001 %>%
   dplyr::mutate(Proportion = round(n / sum(n), 4) * 100) %>%
   tidyr::complete(ageBins_pyr, Sex, fill=list(Proportion=0)) %>%
   dplyr::mutate(Site = "PSA001",
-                Sex = ifelse(Sex == "f", "male_PSA", "female_PSA"))
+                Sex = ifelse(Sex == "f", "female_PSA", "male_PSA"))
 
 
 df_census6_age94 <- df_census6 %>%
-  dplyr::select(c(1,6,7)) %>%        # select columns
-  dplyr::slice(c(6,12,18,24,30,36,42,   # select rows
+  dplyr::select(c(1,6,7)) %>%        
+  dplyr::slice(c(6,12,18,24,30,36,42,   
                  48,54,60,66,72,78,84,
                  90,96,102,108,114)) %>%
   dplyr::rename(ageBins=1,
@@ -260,8 +260,8 @@ Also get the data for Bayesian multinomial test
 ```{r test H2b using BMT, message=FALSE, warning=FALSE}
 
 df_PSA001_Age_CN_Jasp <- df_PSA001 %>%
-  dplyr::filter(!is.na(Age)) %>%   ### Removing the NA value in age
-  dplyr::filter(Countries == "CN") %>% ### filter countries with > 30 participants
+  dplyr::filter(!is.na(Age)) %>%   
+  dplyr::filter(Countries == "CN") %>% 
   dplyr::filter(!is.na(Age)) %>%
   dplyr::select(user_id, Countries, Sex, Age) %>%
   dplyr::mutate(ageBins=cut(Age, 
@@ -440,9 +440,9 @@ p_BF_h3a_sex_p <- ggplot(BF_h3a_sex_p, aes( x = `Log(BF10)`, y = Contries )) +
          axis.title.x = element_text (size = 16),
          # axis.title.y = element_blank(),
          axis.title.y = element_text( size = 16),
-         axis.line.x = element_line(color='black', size = 1),    # increase the size of font
-         axis.line.y = element_line(color='black', size = 1),    # increase the size of font
-         strip.text = element_text (size = 16, color = 'black'), # size of text in strips, face = "bold"
+         axis.line.x = element_line(color='black', size = 1),    
+         axis.line.y = element_line(color='black', size = 1),    
+         strip.text = element_text (size = 16, color = 'black'), 
          panel.spacing = unit(3, "lines")
         )
 ```
@@ -470,8 +470,8 @@ fig4a <- ggplot(df_PSA001_valid_merge_sex_ratio_sored, aes(x=Proportion, y=Count
 ```{r preproc for age, message=FALSE, warning=FALSE}
 
 df_PSA001_Age_valid <- df_PSA001 %>% 
-  dplyr::filter(!is.na(Age)) %>%   ### Removing the NA value in age
-  dplyr::filter(Countries %in% PSA001_valid_countries) ### filter countries with > 30 participants
+  dplyr::filter(!is.na(Age)) %>%   
+  dplyr::filter(Countries %in% PSA001_valid_countries) 
 
 # merge with country code and force the age over 60 in a narrow range for visualization
 df_PSA001_Age_valid_countryCode <- merge(df_PSA001_Age_valid, df_regionCode, by.x = "Countries", by.y = "country_iso2") %>%
@@ -533,7 +533,7 @@ df_PSA001_age_Jasp <- df_PSA001_Age_valid_countryCode_sorted %>%
 filler_idx <- df_PSA001_age_Jasp %>%
   dplyr::group_by(Countries) %>%
   dplyr::summarise(sum = sum(percent)) %>%
-  dplyr::ungroup() # this is necessary, otherwise the for loop doesn't work
+  dplyr::ungroup() 
 
 df_PSA001_age_Jasp_filled <- data.frame(matrix(ncol = ncol(df_PSA001_age_Jasp), nrow = 0))
 colnames(df_PSA001_age_Jasp_filled) <- colnames(df_PSA001_age_Jasp)
@@ -620,9 +620,9 @@ p_BF_h3b_age_p <- ggplot(BF_h3b_age_p, aes( x = `Log(BF10)`, y = Contries )) +
          axis.title.x = element_text (size = 16),
          # axis.title.y = element_blank(),
          axis.title.y = element_text( size = 16),
-         axis.line.x = element_line(color='black', size = 1),    # increase the size of font
-         axis.line.y = element_line(color='black', size = 1),    # increase the size of font
-         strip.text = element_text (size = 16, color = 'black'), # size of text in strips, face = "bold"
+         axis.line.x = element_line(color='black', size = 1),   
+         axis.line.y = element_line(color='black', size = 1),    
+         strip.text = element_text (size = 16, color = 'black'), 
          panel.spacing = unit(3, "lines")
         )
 
