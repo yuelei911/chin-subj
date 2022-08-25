@@ -110,7 +110,7 @@ load("df_chinese_subj_rr_stage1.RData")
 # str(df_regionCode)
 ```
 
-## Test the 1st hypothesis
+## Testing the 1st hypothesis
 *This can only be done after collecting data.*
 
 ## Testing the 2nd hypothesis
@@ -338,7 +338,7 @@ BF_h2b_age_psych <- BayesMultiNomial(dataset = df_PSA001_Age_CN_Jasp_new,
 
 We found strong evidence for the $H_1$ that the age distribution from PSA001 is different from that of Census data, with $Log(BF_{10})$ = `r BF_h2b_age_psych$BF$LogBF10`.
 
-## Test H3
+## Testing the 3rd hypothesis
 We first select data for plotting.
 ```{r preproc data}
 ### Get countries with n >=30
