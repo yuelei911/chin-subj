@@ -1,4 +1,7 @@
 *.csv
 *.sas*
 ._*
-.Rproj.user
+*.Rproj.user
+*/.Rproj.user
+.RData
+.Rhistory
