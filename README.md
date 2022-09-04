@@ -8,6 +8,6 @@ This protocol will be submitted to [PCI RR](https://rr.peercommunityin.org/)
 
 
 ## Key files
-`df_chinese_subj_rr_stage1.RData`: data used in our Stage 1 register report
-`Notebook_Data_Analysis_CHN_Sample_Stage1_RR.rmd`: R markdown for data analyses and visualization
-`Notebook_Data_Analysis_CHN_Sample_Stage1_RR.html`: HTML rendered from the above Rmardown file, where you could view the results and script without Rstudio.
+* `df_chinese_subj_rr_stage1.RData`: data used in our Stage 1 register report
+* `Notebook_Data_Analysis_CHN_Sample_Stage1_RR.rmd`: R markdown for data analyses and visualization
+* `Notebook_Data_Analysis_CHN_Sample_Stage1_RR.html`: HTML rendered from the above Rmardown file, where you could view the results and script without Rstudio.
