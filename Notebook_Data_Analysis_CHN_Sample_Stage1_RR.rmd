@@ -15,14 +15,13 @@ In this script, we will use data from PSA 001 project [Jones et al., 2021, *Natu
 First, load libraries.
 
 ```{r Initialization, message=FALSE, warning=FALSE}
+rm(list = ls())
 library(tidyverse)
 library(ggridges)
 library(openxlsx)
 library(ggh4x)
 library(stringr)
 library(patchwork)
-rm(list = ls())
-
 ```
 
 ### Define Bayesian multinomial test
@@ -30,7 +29,7 @@ rm(list = ls())
 This function is defined as in [JASP](https://github.com/jasp-stats/jaspFrequencies/blob/d48babf63b14526abaf2c208c8ae769801b6d4db/R/multinomialtestbayesian.R#L384).
 
 
-#### Probability mass function (PMF)
+#### Probability mass function (PMF) of Multinomial distribution
 The PMF of multinomial distribution is:
 
 $$f(x_1, ..., x_k; n, p_1, ..., p_n) = Pr(X_1 = x_1 and ... and X_k = x_k) = \frac{n!}{x_1! ... x_n!} p_1^{x_1} \times ... \times p_k^{x_k}$$, when $\sum_{i=1}^{k}{x_i=n}$, for non-negative integers $x_1, ..., x_k$.
@@ -43,9 +42,52 @@ In $R$, we can directly use the `gamma` and `lgamma` to calculate the PMF.
 Where `gamma` function is defined as:
 $\Gamma (x) = \int_{0}^{\infty} t^{(x-1)} \exp(-t)dt$
 
-and the `lgamma` is defined as the log of `gamaa`.
+and the `lgamma` is defined as the log of `gamma`.
 
 $(x)!$ for non-negative integer x is defined to be $\Gamma (x+1)$
+
+#### "Goodness-of-fit" test for multinomial distribution
+
+Here we used Bayesfactor version of the "goodness-of-fit", the algorithm can be explained as below.
+
+The calculation of Bayes factor here used the Savage-Dickey method, i.e., using the likelihood ratio between posterior and prior of the current dataset.
+
+The log likelihood of the data under prior (a vector of ones):
+
+$$ \sum(log(\Gamma(alphas))) - log(\Gamma(\sum(alphas)))$$
+
+Reference: https://datascience.oneoffcoder.com/dirichlet-multinomial-distribution.html
+
+The likelihood of the data under prior, which is a *Beta* function (why *Beta*?):
+
+$$B(\alpha) = \frac{\prod_{i=1}^{k}\Gamma (\alpha_i)}{\Gamma (\sum_{i=1}^{k} \alpha_i)}$$
+Note that *Beta* distribution is closely related to *Dirichlet* distribution:
+
+$$f(p_1, ..., p_k; \alpha_1, ..., \alpha_k) = \frac{1}{B(\alpha)} \prod_{i=1}^{k} p_i^{\alpha_i - 1}$$
+
+if, $\alpha_2 = \alpha_2 = ... =\alpha_k = 1$, $$f(p_1, ..., p_k; \alpha_1, ..., \alpha_k) = \frac{1}{B(\alpha)}$$
+
+also using other function
+```{r}
+log(dmultinom(x=c(1, 1, 1, 1), prob=c(1/4, 1/4, 1/4, 1/4)))
+
+alphas_tmp <- c(1,1,1,1)
+lbeta.a_tmp  <- sum(lgamma(alphas_tmp)) - lgamma(sum(alphas_tmp))
+exp(lbeta.a_tmp)
+```
+
+The log likelihood of data under posterior:
+
+$$\sum(log(\Gamma(alphas + counts))) - log(\Gamma(\sum(alphas + counts))) $$
+The likelihood of the data under posterior:
+
+$$\frac{\prod(\Gamma(alphas + counts))}{\Gamma(\sum(alphas + counts))}$$
+
+
+$$Log(BF_{10}) = \sum(log(\Gamma(alphas + counts))) - log(\Gamma(\sum(alphas + counts))) - (\sum(log(\Gamma(alphas))) - log(\Gamma(\sum(alphas))))$$
+where alphas are the prior (default is [1,1,1, ...]), counts is the observed data
+
+$$BF_{10}= \frac {\prod(\Gamma(alphas + counts))/(\Gamma(\sum(alphas + counts)))} {\sum(\Gamma(alphas)) / \Gamma(sum(alphas)))}$$
 
 ```{r define func, message=FALSE, warning=FALSE}
 BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior = TRUE, prior = NA){
