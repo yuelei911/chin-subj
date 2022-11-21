@@ -2,10 +2,7 @@
 title: Notebook for  Data Analyses of Chinese Samples in Psychological Subjects [Stage
   1 RR]
 author: "Lei Yue (NNU, CCNU); Hu Chuan-Peng (NNU; hcp4715@hotmail.com)"
-output:
-  html_document:
-    df_print: paged
-  pdf_document: default
+output: html_notebook
 ---
 
 This is an [R Markdown](http://rmarkdown.rstudio.com) file for data analyses in the protocol of a meta research which aims at surveying sample characteristics of Chinese sample in Chinese Psychological research. 
@@ -20,42 +17,44 @@ if (!require("pacman")) install.packages("pacman") # install pacman, a package f
 
 # packages needed
 pkg_needed <- c("tidyverse", "ggridges", "openxlsx", "ggh4x", "stringr", "patchwork", "BayesFactor")
-# library(tidyverse)
-# library(ggridges)
-# library(openxlsx)
-# library(ggh4x)
-# library(stringr)
-# library(patchwork)
 pacman::p_load(pkg_needed)  # load packages using p_load
+library(tidyverse)
+library(ggridges)
+library(openxlsx)
+library(ggh4x)
+library(stringr)
+library(patchwork)
 ```
 
 # Bayesian multinomial test
 
 ## Background
 
-We decide to use Bayesian multinomial test because it is an appropriate test for our purpose: compare whether the observed distribution (sex, or age bins, etc) is sample from a population distribution (e.g., census data). In frequentist framework, this can be done by $\chi^2$ test (goodness-of-fit).
+We decide to use Bayesian multinomial test because it suits our purpose well: compare whether the observed distribution (sex, or age bins, etc) is sample from a population distribution (e.g., census data). In Frequentists' framework, this can be done by $\chi^2$ test (goodness-of-fit).
 
-This can be done using JASP and a short introduction can be found here: Goss-Sampson, M. (2020, May 17). New Bayesian guide. https://doi.org/10.17605/OSF.IO/CKNXM. The function implemented in JASP can be found [here](https://github.com/jasp-stats/jaspFrequencies/blob/d48babf63b14526abaf2c208c8ae769801b6d4db/R/multinomialtestbayesian.R#L384). A more detailed explanation for multinomial test can be found in (Sarafoglou et al., 2020, part 1)
-Sarafoglou, A., Haaf, J. M., Ly, A., Gronau, Q. F., Wagenmakers, E.-J., & Marsman, M. (2020, August 19). Evaluating Multinomial Order Restrictions with Bridge Sampling. PsyArXiv. https://doi.org/10.31234/osf.io/bux7p
+This can be done using JASP and a short introduction can be found here: Goss-Sampson, M. (2020, May 17). New Bayesian guide. https://doi.org/10.17605/OSF.IO/CKNXM. 
+
+The function implemented in JASP can be found [here](https://github.com/jasp-stats/jaspFrequencies/blob/d48babf63b14526abaf2c208c8ae769801b6d4db/R/multinomialtestbayesian.R#L384). 
+
+A more detailed explanation for multinomial test can be found in ([Sarafoglou et al., 2020](https://doi.org/10.31234/osf.io/bux7p), part 1). Here we also explain it below. 
 
 ## How does the JASP's multinomial work?
 
 Essentially, the algorithm in JASP used Savage-Dickey likelihood ratio (Wagenmakers 2010) to calculate the BF. That is the likelihood of the data under the prior distribution and the likelihood of the data under the posterior distribution. 
 
-Because multinomial distribution has nice conjugate prior, the calculation of multinomial does not involve MCMC. Thus, it is important to be clear about the following questions:
-* What is the prior (in terms of conjugate prior, distribution of the parameters of multinomial)
-* How to calculate the likelihood of the under the prior
-* How posterior is updated
+Because multinomial distribution has nice conjugate prior, the Dirichlet distribution, the calculation of posterior of multinomial distribution does not requires MCMC. Thus, it is important to be clear about the following issues:
+* What is the prior (in terms of conjugate prior, distribution of the parameters of multinomial).
+* How to calculate the likelihood of the under the prior.
+* How posterior is updated.
 * How to calculate the likelihood under the posterior (which should be easy if the second question is known)
 
 Before answering these questions, let's first have a look at the mulitnomial itself.
 
-### Multinomial distribution
+### Multinomial distribution & Dirichlet distribution
 
 The multinomial distribution is a generalization of the binomial distribution, see [here more](https://en.wikipedia.org/wiki/Multinomial_distribution). 
 
-#### Probability mass function (PMF)
-The PMF of multinomial distribution is:
+The probability mass function (PMF) multinomial distribution is:
 
 $$f(x_1, ..., x_k; n, p_1, ..., p_n) = Pr(X_1 = x_1 \, and \, ...  \, and \, X_k = x_k) = \frac{n!}{x_1! ... x_n!} p_1^{x_1} \times ... \times p_k^{x_k}$$
 where $\sum_{i=1}^{k}{x_i=n}$, for non-negative integers $x_1, ..., x_k$
@@ -64,118 +63,51 @@ This PMF can be expressed using the gamma function as:
 
 $$f(x_1, ..., x_k; n, p_1, ..., p_n) = \frac{\Gamma(\sum_{i}{x_i +1})}{\prod_{i}\Gamma(x_i + 1)} \prod_{i=1}^{k} p_{i}^{x_i}$$
 
-The prior of multinomial distribution is a Dirichlet distribution with concentration parameters ($\alpha_1$, $\alpha_2$, ..., $\alpha_k$, where $\alpha > 0$:
+The probability distribution of parameters of multinomial distribution $\theta = (\theta_1, \theta_2, ..., \theta_K)$ is a Dirichlet distribution with concentration parameters ($\alpha_1$, $\alpha_2$, ..., $\alpha_k$, where $\alpha > 0$:
 
-$$p(\theta) = p(\theta_1, theta_2, ..., theta_k) = \frac {\Gamma(\sum_{k=1}^k \alpha_k)} {\sum_{k=1}^k\Gamma (\alpha_k)} \prod_{k=1}^k \theta_k^{\alpha_{k}-1}$$
+$$p(\theta) = p(\theta_1, \theta_2, ..., \theta_k) = \frac {\Gamma(\sum_{k=1}^k \alpha_k)} {\sum_{k=1}^k\Gamma (\alpha_k)} \prod_{k=1}^k \theta_k^{\alpha_{k}-1} = \frac {1} {B(\alpha)} \prod_{k=1}^k \theta_k^{\alpha_{k}-1} $$
 
 Posterior is also a Dirichlet distribution:
 
-$$p(\theta | x) = \frac {\Gamma(N + \sum_{k=1}^k \alpha_k)} {\sum_{k=1}^k\Gamma (x_k + \alpha_k)} \prod_{k=1}^k \theta_k^{x_k + \alpha_{k}-1}$$
+$$p(\theta | x) = \frac {\Gamma(N + \sum_{k=1}^k \alpha_k)} {\sum_{k=1}^k\Gamma (x_k + \alpha_k)} \prod_{k=1}^k \theta_k^{x_k + \alpha_{k}-1} = \frac {1} {B(\alpha + x)} \prod_{k=1}^k \theta_k^{x+k + \alpha_{k}-1} $$
 
-When $H_0$ is that all parameters are equal, i.e., $H_0: \theta = c$, we test the null hypotheses, $H_e$, against the encompassing hypotheses which states that all category proportions are free to vary without any ordinal restriction. 
+If $H_0$ is a point null hypothesis, which is often specified as all parameters are equal. The alternative hypothesis, $H_a$, or $H_e$ in [Sarafoglou et al., 2020](https://doi.org/10.31234/osf.io/bux7p),  is a distribution, which states that all category proportions are free to vary without any ordinal restriction. 
 
+### BF for multinomial test
 
-Using Savage-Dickey Ratio, the BF can be written as:
+Because $H_0$ is a point null hypothesis, the $BF_{0a}$ can be calculated using Savage-Dickey Ratio:
 
 $$BF_{0e} = \frac {p(x | H_0)}{p(x | H_e)}  = \frac {p(x | \theta = c, H_e)}{\frac {p(x | \theta = c, H_e) p(\theta = c | H_e)} {p(\theta = c | x, H_e)}} = \frac {p(\theta = c \, | \, x, He)} {p(\theta = c \, | \, He)} $$
 
 "The underlying principle of the Savage-Dickey density ratio is to compute the Bayes factor by dividing the height of the posterior density under He at the point of interest (i.e., c) by the height of the prior density under He at the same point."
 
-Here prior, ($\alpha_1$, $\alpha_2$, ..., $\alpha_k$) does not need to be equal with $c$. instead, $c$ is a point in the space that defined by Dirichlet distribution. equal $\alpha$ just mean that $c$ is equally possible with other set of $\theta$.
+Here prior, ($\alpha_1, ...$) is the parameters of Dirichlet distribution $Dir(\alpha_1, \alpha_2, ..., \alpha_k)$, which is not equal to $c$. Instead, $c$ is a point in the space that defined by Dirichlet distribution. The parameter $(\alpha_1 = 1, \alpha_1 = 2, ..., \alpha_K = 1)$ of Dirichlet distribution means that $c$ is equally possible with other set of $\theta$.
+
+Using the prior and posterior distribution of Dirichlet, we can directly calculated the $BF_{0e}$
+
+$$BF_{0e} = \frac {p(\theta = c \, | \, x, H_e)} {p(\theta = c \, | \, H_e)} =  \frac {1} {B(x+\alpha)} \prod_{k=1}^k \theta_k^{x_k + \alpha_{k}-1} / \frac {1} {B(\alpha)} \prod_{k=1}^k \theta_k^{\alpha_{k}-1} $$
+$$BF_{0e} = \frac {p(\theta = c \, | \, x, H_e)} {p(\theta = c \, | \, H_e)} = \frac {Beta(\alpha)} {Beta(x + \alpha)} * \frac {\prod_{k=1}^k \theta_k^{x_k + \alpha_{k}-1}} {\prod_{k=1}^k \theta_k^{\alpha_{k}-1}}$$
+
+$$BF_{e0} = 1/BF_{0e} = \frac {Beta(x + \alpha)} {Beta( \alpha)} * \frac {\prod_{k=1}^k \theta_k^{\alpha_{k}-1}} {\prod_{k=1}^k \theta_k^{x_k + \alpha_{k}-1}} $$
+The above is the formula for the analytically solution of BF in R.
+
+$$ log(BF_{e0}) = log(Beta(x + \alpha))- log(Beta( \alpha)) + (\sum_{k=1}^k \theta_k *(\alpha_{k}-1) - \sum_{k=1}^k \theta_k * (x_k + \alpha_{k}-1)) $$
 
 ### Algorithm in R
-
-The most essential code in calculating the multnomial distribution in JASP lies in the following code:
 
 ```
 lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
 lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
 
-LogBF10 <- (lbeta.xa-lbeta.a)
+LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
 ```
 
-Here, `alphas` is the prior, usually a vector of 1, `counts` are the observed frequencies.
-
-*Dirichlet* distribution:
-
-$$f(p_1, ..., p_k; \alpha_1, ..., \alpha_k) = \frac{1}{B(\alpha)} \prod_{i=1}^{k} p_i^{\alpha_i - 1}$$
-
-if, $\alpha_1 = \alpha_2 = ... = \alpha_k = 1$, $$f(p_1, ..., p_k; \alpha_1, ..., \alpha_k) = \frac{1}{B(\alpha)}$$
-
-*Beta* function: 
-
-$$B(\alpha) = \frac {\prod_{i = 1}^{k} \Gamma(\alpha_i)}{\Gamma(\sum_{i=1}^k \alpha_i)}$$
-Thus, we are using Beta function as the likelihood of multinomial?
-
-This is puzzling: if $\alpha_i$ is not equal to 1, the, $p_i^{\alpha_i -1}$ is not equal to 0, which mean the $\prod_{i=1}^{k} p_i^{\alpha_i - 1}$ should not be eliminated; the R code showed the it used $B(\alpha)$ instead of $\frac{1}{B(\alpha)}$.
-
-So, why we can use $B()$ for calculating the likelihood of multinomial?
+Here, `alphas` defined the prior Dirichlet distribution, usually a vector of 1, `counts` are the observed frequencies.
 
 
-Alright, let's put the puzzling $B()$ aside,and test whether the current multinomial test is a special case of contingency table.
+To use the algorithm in R, we defined a function here:
 
-(1) let me confirm that the function define here give exactly the same results as in JASP. This is confirmed with sex ratio data and the age bins data. See two JASP files in the folder.
-
-(2) Let me check whether multinomial test is a special case of contingency table. More specifically, it is the third sampling plan, `independent multinomial sampling sheme`. The two data tested above are under the assumption that the column margins are fixed, the BF is calculated by Equation 11 in Jamil et al (2017):
-
-$$BF_{01}^{I} = \frac {D(y_{*.} + \xi_{*.})} {D(\xi_{*.})} \frac {D(y_{.*} + a_{.*})} {D(a_{.*})}  \frac {D(a_{**})} {D(y_{**} + a_{**})} $$
-
-For a n by 2 contingency table, the Bayes factor can be reduced a test for the equality of two proportions, $\theta_1$, $\theta_2$, ... $\theta_n$
-
-
-using sex ratio data, I found the BF results is quit different: BF =  3.283074 for contingency table, but BF = 41.82 for multinomial test.
-
-
-Which represent distribution $B(a,b)$, i.e., beta distribution with parameters $a$ and $b$.
-
-In $R$, we can directly use the `gamma` and `lgamma` to calculate the PMF.
-Where `gamma` function is defined as:
-$\Gamma (x) = \int_{0}^{\infty} t^{(x-1)} \exp(-t)dt$
-
-and the `lgamma` is defined as the log of `gamma`.
-
-$x! $ for non-negative integer x is defined to be $\Gamma (x+1)$
-
-#### "Goodness-of-fit" test for multinomial distribution
-
-Here we used Bayesfactor version of the "goodness-of-fit", the algorithm can be explained as below.
-
-The calculation of Bayes factor here used the Savage-Dickey method, i.e., using the likelihood ratio between posterior and prior of the current dataset.
-
-The log likelihood of the data under prior (a vector of ones):
-
-$$ \sum(log(\Gamma(alphas))) - log(\Gamma(\sum(alphas)))$$
-
-Reference: https://datascience.oneoffcoder.com/dirichlet-multinomial-distribution.html
-
-The likelihood of the data under prior, which is a *Beta* function (why *Beta*?):
-
-$$B(\alpha) = \frac{\prod_{i=1}^{k}\Gamma (\alpha_i)}{\Gamma (\sum_{i=1}^{k} \alpha_i)}$$
-Note that *Beta* distribution is closely related to 
-
-also using other function
-```{r}
-log(dmultinom(x=c(1, 1, 1, 1), prob=c(1/4, 1/4, 1/4, 1/4)))
-
-alphas_tmp <- c(1,1,1,1,1)
-lbeta.a_tmp  <- sum(lgamma(alphas_tmp)) - lgamma(sum(alphas_tmp))
-exp(lbeta.a_tmp)
-```
-
-The log likelihood of data under posterior:
-
-$$\sum(log(\Gamma(alphas + counts))) - log(\Gamma(\sum(alphas + counts))) $$
-The likelihood of the data under posterior:
-
-$$\frac{\prod(\Gamma(alphas + counts))}{\Gamma(\sum(alphas + counts))}$$
-
-
-$$Log(BF_{10}) = \sum(log(\Gamma(alphas + counts))) - log(\Gamma(\sum(alphas + counts))) - (\sum(log(\Gamma(alphas))) - log(\Gamma(\sum(alphas))))$$
-where alphas are the prior (default is [1,1,1, ...]), counts is the observed data
-
-$$BF_{10}= \frac {\prod(\Gamma(alphas + counts))/(\Gamma(\sum(alphas + counts)))} {\sum(\Gamma(alphas)) / \Gamma(sum(alphas)))}$$
-
-```{r define func, message=FALSE, warning=FALSE}
+```{r define BF for Multinomial test, message=FALSE, warning=FALSE}
 BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior = TRUE, prior = NA){
   # datase - the input dataframe
   # factor - column name of the factor,
@@ -227,22 +159,24 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 }
 ```
 
-Second, load the data and carry out initial preprocessing. 
+# Load data and preprocess the data
 
 ```{r Loading data, message=FALSE, warning=FALSE}
 
 load("df_chinese_subj_rr_stage1.RData")
 ```
 
+# Teset three hypotheses
+
 ## Test the 1st hypothesis
 *This can only be done after collecting data.*
 
 ## Testing the 2nd hypothesis
 
-Here we will test whether the sex ratio and age distribution from Chinese psychological studies are similar to that of the census data. As a comparison, we also compared that data from sociology, CFPS 2018, to the census data too. We use Bayesian multinomial test (Bayesian goodness-of-fit test) to examine whether the observed (Chinese psychological samples) fit the expected (Census data). 
+Here we will test whether the sex ratio and age distribution from Chinese psychological studies are similar to that of the census data. As a comparison, we also compared that data from sociology, CFPS 2018, to the census data too. We use Bayesian multinomial test (Bayesian goodness-of-fit test) to examine whether the observed (Chinese psychological samples) fit the expected (7th Census data). 
 
-$H_0$: the observed fits the expected distribution;
-$H_1$: the observed does not fit the expected.
+$H_0$: $\theta = c$, where $c$ is defined by census data or CFPS 2018;
+$H_1$: $\theta$ is free to vary.
 
 ### Sex distribution
 
