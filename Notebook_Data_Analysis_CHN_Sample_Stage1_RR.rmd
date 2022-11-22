@@ -30,31 +30,31 @@ library(patchwork)
 
 ## Background
 
-We decide to use Bayesian multinomial test because it suits our purpose well: compare whether the observed distribution (sex, or age bins, etc) is sample from a population distribution (e.g., census data). In Frequentists' framework, this can be done by $\chi^2$ test (goodness-of-fit).
+We decided to use Bayesian multinomial test because it suits our purpose well: it can be used to test whether observed proportions (sex, or age bins, etc) is sample from the population with certain proprotion values (e.g., census data). In Frequentists' framework, this can be done by $\chi^2$ test (goodness-of-fit).
 
-This can be done using JASP and a short introduction can be found here: Goss-Sampson, M. (2020, May 17). New Bayesian guide. https://doi.org/10.17605/OSF.IO/CKNXM. 
+Bayesian multinomial test can be done in JASP and a short introduction can be found here: Goss-Sampson, M. (2020, May 17). New Bayesian guide. https://doi.org/10.17605/OSF.IO/CKNXM. 
 
 The function implemented in JASP can be found [here](https://github.com/jasp-stats/jaspFrequencies/blob/d48babf63b14526abaf2c208c8ae769801b6d4db/R/multinomialtestbayesian.R#L384). 
 
-A more detailed explanation for multinomial test can be found in ([Sarafoglou et al., 2020](https://doi.org/10.31234/osf.io/bux7p), part 1). Here we also explain it below. 
+A more detailed explanation for Bayesian multinomial test can be found in ([Sarafoglou et al., 2020](https://doi.org/10.31234/osf.io/bux7p), part 1). Here we also explain it below. 
 
 ## How does the JASP's multinomial work?
 
-Essentially, the algorithm in JASP used Savage-Dickey likelihood ratio (Wagenmakers 2010) to calculate the BF. That is the likelihood of the data under the prior distribution and the likelihood of the data under the posterior distribution. 
+Essentially, the algorithm in JASP used Savage-Dickey likelihood ratio (Wagenmakers 2010, Cognitive Psychology) to calculate the BF. That is the likelihood of a point given the prior distribution and the likelihood of that same point given the posterior distribution. 
 
 Because multinomial distribution has nice conjugate prior, the Dirichlet distribution, the calculation of posterior of multinomial distribution does not requires MCMC. Thus, it is important to be clear about the following issues:
-* What is the prior (in terms of conjugate prior, distribution of the parameters of multinomial).
+* What is the prior (the distribution of all possible parameters of multinomial).
 * How to calculate the likelihood of the under the prior.
 * How posterior is updated.
 * How to calculate the likelihood under the posterior (which should be easy if the second question is known)
 
-Before answering these questions, let's first have a look at the mulitnomial itself.
+Answering these questions need dive into the mulitnomial distribution itself.
 
 ### Multinomial distribution & Dirichlet distribution
 
 The multinomial distribution is a generalization of the binomial distribution, see [here more](https://en.wikipedia.org/wiki/Multinomial_distribution). 
 
-The probability mass function (PMF) multinomial distribution is:
+The probability mass function (PMF) of multinomial distribution is:
 
 $$f(x_1, ..., x_k; n, p_1, ..., p_n) = Pr(X_1 = x_1 \, and \, ...  \, and \, X_k = x_k) = \frac{n!}{x_1! ... x_n!} p_1^{x_1} \times ... \times p_k^{x_k}$$
 where $\sum_{i=1}^{k}{x_i=n}$, for non-negative integers $x_1, ..., x_k$
@@ -63,25 +63,28 @@ This PMF can be expressed using the gamma function as:
 
 $$f(x_1, ..., x_k; n, p_1, ..., p_n) = \frac{\Gamma(\sum_{i}{x_i +1})}{\prod_{i}\Gamma(x_i + 1)} \prod_{i=1}^{k} p_{i}^{x_i}$$
 
-The probability distribution of parameters of multinomial distribution $\theta = (\theta_1, \theta_2, ..., \theta_K)$ is a Dirichlet distribution with concentration parameters ($\alpha_1$, $\alpha_2$, ..., $\alpha_k$, where $\alpha > 0$:
+The distribution of parameters of multinomial distribution $\theta = (\theta_1, \theta_2, ..., \theta_K)$ is a Dirichlet distribution with concentration parameters ($\alpha_1$, $\alpha_2$, ..., $\alpha_k$, where $\alpha > 0$:
 
 $$p(\theta) = p(\theta_1, \theta_2, ..., \theta_k) = \frac {\Gamma(\sum_{k=1}^k \alpha_k)} {\sum_{k=1}^k\Gamma (\alpha_k)} \prod_{k=1}^k \theta_k^{\alpha_{k}-1} = \frac {1} {B(\alpha)} \prod_{k=1}^k \theta_k^{\alpha_{k}-1} $$
 
-Posterior is also a Dirichlet distribution:
+The posterior is also a Dirichlet distribution:
 
 $$p(\theta | x) = \frac {\Gamma(N + \sum_{k=1}^k \alpha_k)} {\sum_{k=1}^k\Gamma (x_k + \alpha_k)} \prod_{k=1}^k \theta_k^{x_k + \alpha_{k}-1} = \frac {1} {B(\alpha + x)} \prod_{k=1}^k \theta_k^{x+k + \alpha_{k}-1} $$
 
-If $H_0$ is a point null hypothesis, which is often specified as all parameters are equal. The alternative hypothesis, $H_a$, or $H_e$ in [Sarafoglou et al., 2020](https://doi.org/10.31234/osf.io/bux7p),  is a distribution, which states that all category proportions are free to vary without any ordinal restriction. 
+If $H_0$ is a point null hypothesis, which is often specified as all parameters are equal. The alternative hypothesis, $H_a$, or $H_e$ in [Sarafoglou et al., 2020](https://doi.org/10.31234/osf.io/bux7p), is a distribution, which states that all category proportions are free to vary without any ordinal restriction. 
 
 ### BF for multinomial test
 
-Because $H_0$ is a point null hypothesis, the $BF_{0a}$ can be calculated using Savage-Dickey Ratio:
+Because $H_0$ is a point null hypothesis, the $BF_{0e}$ can be calculated using Savage-Dickey Ratio:
 
 $$BF_{0e} = \frac {p(x | H_0)}{p(x | H_e)}  = \frac {p(x | \theta = c, H_e)}{\frac {p(x | \theta = c, H_e) p(\theta = c | H_e)} {p(\theta = c | x, H_e)}} = \frac {p(\theta = c \, | \, x, He)} {p(\theta = c \, | \, He)} $$
 
 "The underlying principle of the Savage-Dickey density ratio is to compute the Bayes factor by dividing the height of the posterior density under He at the point of interest (i.e., c) by the height of the prior density under He at the same point."
 
-Here prior, ($\alpha_1, ...$) is the parameters of Dirichlet distribution $Dir(\alpha_1, \alpha_2, ..., \alpha_k)$, which is not equal to $c$. Instead, $c$ is a point in the space that defined by Dirichlet distribution. The parameter $(\alpha_1 = 1, \alpha_1 = 2, ..., \alpha_K = 1)$ of Dirichlet distribution means that $c$ is equally possible with other set of $\theta$.
+Here prior, ($\alpha_1, ...$) is the parameters of Dirichlet distribution $Dir(\alpha_1, \alpha_2, ..., \alpha_k)$, which is not equal to $c$. $c$ is a point in the space that defined by Dirichlet distribution. The parameter $(\alpha_1 = 1, \alpha_1 = 2, ..., \alpha_K = 1)$ of Dirichlet distribution means that $c$ is equally possible with other set of $\theta$.
+
+To understand the Dirichlet distribution and it's parameters, please see [here](https://en.wikipedia.org/wiki/Dirichlet_distribution).
+
 
 Using the prior and posterior distribution of Dirichlet, we can directly calculated the $BF_{0e}$
 
@@ -91,15 +94,18 @@ $$BF_{0e} = \frac {p(\theta = c \, | \, x, H_e)} {p(\theta = c \, | \, H_e)} = \
 $$BF_{e0} = 1/BF_{0e} = \frac {Beta(x + \alpha)} {Beta( \alpha)} * \frac {\prod_{k=1}^k \theta_k^{\alpha_{k}-1}} {\prod_{k=1}^k \theta_k^{x_k + \alpha_{k}-1}} $$
 The above is the formula for the analytically solution of BF in R.
 
-$$ log(BF_{e0}) = log(Beta(x + \alpha))- log(Beta( \alpha)) + (\sum_{k=1}^k \theta_k *(\alpha_{k}-1) - \sum_{k=1}^k \theta_k * (x_k + \alpha_{k}-1)) $$
+$$ log(BF_{e0}) = log(Beta(x + \alpha))- log(Beta( \alpha)) + (\sum_{k=1}^k log(\theta_k *(\alpha_{k}-1)) - \sum_{k=1}^k log(\theta_k * (x_k + \alpha_{k}-1))) $$
+
+$$ log(BF_{e0}) = log(Beta(x + \alpha))- log(Beta( \alpha)) + (\sum_{k=1}^k log(\theta_k *(\alpha_{k}-1)) - (\sum_{k=1}^k log(\theta_k * x_k) +  \sum_{k=1}^k log(\theta_k * (\alpha_{k}-1)))) = log(Beta(x + \alpha))- log(Beta( \alpha)) - \sum_{k=1}^k log(\theta_k * x_k) $$
 
 ### Algorithm in R
+
 
 ```
 lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
 lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
 
-LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas)))  
 ```
 
 Here, `alphas` defined the prior Dirichlet distribution, usually a vector of 1, `counts` are the observed frequencies.
@@ -124,10 +130,19 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   expected_data <- dataset %>% dplyr::select(all_of(expected)) %>% dplyr::pull()
   n_levels <- length(observed_data)
   
-  if (default_prior & is.na(prior)) {
+  
+  if (default_prior & all(is.na(prior))) {
     prior <- rep(1, n_levels)
   } else{
-    prior <- prior
+    if (is.character(prior)){
+      prior <- dataset %>% dplyr::select(all_of(prior)) %>% dplyr::pull()
+    } else if (is.array(prior)){
+      prior <-  prior
+    } else{
+      print("prior much a column of the input data or a vector")
+    }
+      
+    
   }
   
   alphas <- prior
@@ -146,7 +161,7 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   if (any(rowSums(cbind(thetas, counts)) == 0)) {
     LogBF10 <- (lbeta.xa-lbeta.a)
   } else {
-    LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas)))  # what does it mean here????
+    LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
   }
 
   BF <- data.frame(LogBF10 = LogBF10,
@@ -218,19 +233,22 @@ df_sex_ratio_jasp <- df_sex_ratio %>%
 ## save to csv
 write.csv(df_sex_ratio_jasp, "df_sex_ratio_jasp.csv", row.names=FALSE)
 
+
 BF_h2a_sex_psych <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "PSA001", expected = "Census7")
 BF_h2a_sex_cfps <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "CFPS2018", expected = "Census7")
 
+## additional BF for sensitivity:
+# BF_h2a_sex_psych_null <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "Census7", expected = "Census7")
+
+BF_h2a_sex_psych_2 <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "PSA001", expected = "Census7", prior = "Census7")
+# BF_h2a_sex_psych_2_null <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "Census7", expected = "Census7", prior = "Census7")
+
+# BF_h2a_sex_psych_2 <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "PSA001", expected = "Census7", default_prior = FALSE, prior = array(c(50, 50)))
+
 ## calculate the BF using contingency table:
-BF_h2a_sex_psych_2 <- BayesFactor::contingencyTableBF(as.matrix(df_sex_ratio_jasp[, c(2,4)]), sampleType = "indepMulti", fixedMargin = "cols")
+# BF_h2a_sex_psych_3 <- BayesFactor::contingencyTableBF(as.matrix(df_sex_ratio_jasp[, c(2,4)]), sampleType = "indepMulti", fixedMargin = "cols")
 
-BF_h2a_sex_psych_2@bayesFactor$bf # which shows the logBF10
-
-tmp <- df_sex_ratio_jasp[, c(2,4)] %>%
-  dplyr::mutate(PSA001 = Census7 + PSA001 ) %>%
-  as.matrix()
-
-BF_h2a_sex_psych_3 <- BayesFactor::contingencyTableBF(tmp, sampleType = "indepMulti", fixedMargin = "cols")
+BF_h2a_sex_psych_3@bayesFactor$bf # which shows the logBF10
 
 fig3a <- ggplot(df_sex_ratio, aes(Site, Proportion,fill=Sex)) +
   geom_col() +
@@ -400,8 +418,8 @@ df_PSA001_Age_CN_Jasp_new <- df_PSA001_Age_CN_Jasp %>%
                                                       ">=60"))) %>%
   dplyr::arrange(ageBins)
 
-BayesFactor::contingencyTableBF(as.matrix(df_PSA001_Age_CN_Jasp_new[,c(2,3)]), 
-                                sampleType = "indepMulti", fixedMargin = "cols")
+# BayesFactor::contingencyTableBF(as.matrix(df_PSA001_Age_CN_Jasp_new[,c(2,3)]), 
+#                                 sampleType = "indepMulti", fixedMargin = "cols")
 
 # save the CSV to compare the BayesMultiNomial with the result in JASP
 write.csv(df_PSA001_Age_CN_Jasp_new, 'df_PSA001_Age_CN_Jasp_new.csv', row.names = F)
@@ -411,6 +429,11 @@ BF_h2b_age_psych <- BayesMultiNomial(dataset = df_PSA001_Age_CN_Jasp_new,
                                      observed = "PSA001_CN",
                                      expected = "Census7")
 
+BF_h2b_age_psych_2 <- BayesMultiNomial(dataset = df_PSA001_Age_CN_Jasp_new, 
+                                     factor = "ageBins", 
+                                     observed = "PSA001_CN",
+                                     expected = "Census7",
+                                     prior = "Census7")
 ```
 
 We found strong evidence for the $H_1$ that the age distribution from PSA001 is different from that of Census data, with $Log(BF_{10})$ = `r BF_h2b_age_psych$BF$LogBF10`.
@@ -670,7 +693,7 @@ BF_h3b_age_p <- BF_h3b_age %>%
                 `Log(BF10)` = as.numeric(`Log(BF10)`)) 
   
 
-p_BF_h3b_age_p <- ggplot(BF_h3b_age_p, aes( x = `Log(BF10)`, y = Contries )) +
+p_BF_h3b_age_p <- ggplot(BF_h3b_age_p, aes(x = `Log(BF10)`, y = Contries )) +
   geom_point() +
   xlim(-160, 0) +
   scale_y_discrete(limits=rev) +
