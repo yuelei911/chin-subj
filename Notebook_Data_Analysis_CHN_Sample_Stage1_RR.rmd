@@ -16,8 +16,9 @@ rm(list = ls())
 if (!require("pacman")) install.packages("pacman") # install pacman, a package for managing packages in R
 
 # packages needed
-pkg_needed <- c("tidyverse", "ggridges", "openxlsx", "ggh4x", "stringr", "patchwork", "BayesFactor")
-pacman::p_load(pkg_needed)  # load packages using p_load
+# pkg_needed <- c("tidyverse", "ggridges", "openxlsx", "ggh4x", "stringr", "patchwork", "BayesFactor")
+# pacman::p_load(pkg_needed)  # load packages using p_load
+pacman::p_load("tidyverse", "ggridges", "openxlsx", "ggh4x", "stringr", "patchwork", "BayesFactor")
 library(tidyverse)
 library(ggridges)
 library(openxlsx)
@@ -30,7 +31,7 @@ library(patchwork)
 
 ## Background
 
-We decided to use Bayesian multinomial test because it suits our purpose well: it can be used to test whether observed proportions (sex, or age bins, etc) is sample from the population with certain proprotion values (e.g., census data). In Frequentists' framework, this can be done by $\chi^2$ test (goodness-of-fit).
+We decided to use Bayesian multinomial test because it suits our purpose well: it can be used to test whether observed proportions (sex, or age bins, etc) is sample from the population with certain proportion values (e.g., census data). In Frequentists' framework, this can be done by $\chi^2$ test (goodness-of-fit).
 
 Bayesian multinomial test can be done in JASP and a short introduction can be found here: Goss-Sampson, M. (2020, May 17). New Bayesian guide. https://doi.org/10.17605/OSF.IO/CKNXM. 
 
@@ -138,6 +139,8 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
       prior <- dataset %>% dplyr::select(all_of(prior)) %>% dplyr::pull()
     } else if (is.array(prior)){
       prior <-  prior
+    } else if (is.numeric(prior)){
+      prior <-  prior
     } else{
       print("prior much a column of the input data or a vector")
     }
@@ -241,6 +244,7 @@ BF_h2a_sex_cfps <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex",
 # BF_h2a_sex_psych_null <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "Census7", expected = "Census7")
 
 BF_h2a_sex_psych_2 <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "PSA001", expected = "Census7", prior = "Census7")
+BF_h2a_sex_cfps_2 <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "CFPS2018", expected = "Census7", prior = "Census7")
 # BF_h2a_sex_psych_2_null <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "Census7", expected = "Census7", prior = "Census7")
 
 # BF_h2a_sex_psych_2 <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "PSA001", expected = "Census7", default_prior = FALSE, prior = array(c(50, 50)))
@@ -248,7 +252,7 @@ BF_h2a_sex_psych_2 <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Se
 ## calculate the BF using contingency table:
 # BF_h2a_sex_psych_3 <- BayesFactor::contingencyTableBF(as.matrix(df_sex_ratio_jasp[, c(2,4)]), sampleType = "indepMulti", fixedMargin = "cols")
 
-BF_h2a_sex_psych_3@bayesFactor$bf # which shows the logBF10
+# BF_h2a_sex_psych_3@bayesFactor$bf # which shows the logBF10
 
 fig3a <- ggplot(df_sex_ratio, aes(Site, Proportion,fill=Sex)) +
   geom_col() +
@@ -485,10 +489,12 @@ df_PSA001_valid_merge_sex_ratio_sored_wide <- df_PSA001_valid_merge_sex_ratio_so
 #   write.csv(., "Fig4a_sex_wide.csv", row.names = F)
 ```
 
-```{r Test H3a,message=FALSE, warning=FALSE}
-# compare each country with CN
-BF_h3a_sex <- data.frame(matrix(nrow = 0, ncol = 5))
-colnames(BF_h3a_sex) <- c("Observed", "Expected", "Log(BF10)", "BF10", "BF01")
+```{r Test H3a, message=FALSE, warning=FALSE}
+# compare each country with CN, non-informative prior
+
+BF_h3a_sex <- data.frame(matrix(nrow = 0, ncol = 8))
+colnames(BF_h3a_sex) <- c("Observed", "Expected", "Log(BF10)_NonInform", "BF10_NonInform", "BF01_NonInform", 
+                          "Log(BF10)_Inform", "BF10_Inform", "BF01_Inform")
 
 # countries_names <- as.character(df_PSA001_valid_merge_sex_ratio_sored$Countries)
 for (ii in seq(length(countries_order_sex))){
@@ -497,18 +503,31 @@ for (ii in seq(length(countries_order_sex))){
     df_tmp <- df_PSA001_valid_merge_sex_ratio_sored_wide %>% dplyr::select('Sex', one_of(country), "CN")
     BF_tmp <-  BayesMultiNomial(dataset = df_tmp, 
                                factor = "Sex", observed = country, expected = "CN")
-    BF_h3a_sex[ii,] <- c(country, "CN",BF_tmp$BF$LogBF10, BF_tmp$BF$BF10 , BF_tmp$BF$BF01)
+    BF_tmp2 <-  BayesMultiNomial(dataset = df_tmp, 
+                               factor = "Sex", observed = country, expected = "CN",prior = "CN")
+    
+    BF_h3a_sex[ii,] <- c(country, "CN", BF_tmp$BF$LogBF10, BF_tmp$BF$BF10 , BF_tmp$BF$BF01,
+                         BF_tmp2$BF$LogBF10, BF_tmp2$BF$BF10 , BF_tmp2$BF$BF01)
   } 
 }
 
+
+
 BF_h3a_sex_p <- BF_h3a_sex %>%
   tidyr::drop_na() %>%
-  dplyr::mutate(Contries = factor(Observed, levels = Observed),
+  dplyr::select(1,2,3,6) %>%
+  tidyr::pivot_longer(cols = `Log(BF10)_NonInform`:`Log(BF10)_Inform`, 
+                      names_to = "Prior",
+                      values_to = "Log(BF10)") %>%
+  dplyr::mutate(Prior = stringr::str_remove(Prior, ".*_" )) %>%
+  dplyr::mutate(Contries = factor(Observed, levels = countries_order_sex),
+                Prior = factor(Prior, levels = c("NonInform", "Inform")),
                 `Log(BF10)` = as.numeric(`Log(BF10)`)) 
   
 
-p_BF_h3a_sex_p <- ggplot(BF_h3a_sex_p, aes( x = `Log(BF10)`, y = Contries )) +
+fig4a <- ggplot(BF_h3a_sex_p, aes( x = `Log(BF10)`, y = Contries, color = Prior )) +
   geom_point() +
+  scale_color_grey() +
   xlim(-3, 21) +
   scale_y_discrete(limits=rev) +
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
@@ -547,9 +566,9 @@ p_BF_h3a_sex_p <- ggplot(BF_h3a_sex_p, aes( x = `Log(BF10)`, y = Contries )) +
         )
 ```
 
-Plot figure 4a, 
-```{r figure 4a }
-fig4a <- ggplot(df_PSA001_valid_merge_sex_ratio_sored, aes(x=Proportion, y=Countries,fill=Sex)) +
+Plot figure 4c, 
+```{r figure 4c }
+fig4c <- ggplot(df_PSA001_valid_merge_sex_ratio_sored, aes(x=Proportion, y=Countries,fill=Sex)) +
   geom_col(alpha = .75)+
   labs(y="Countries") + # , fill="Sex"
   scale_fill_discrete(label=c("female","male")) +
@@ -564,7 +583,7 @@ fig4a <- ggplot(df_PSA001_valid_merge_sex_ratio_sored, aes(x=Proportion, y=Count
         panel.border = element_rect(fill = NA,color = "black")) +
   scale_x_continuous(breaks = seq(0, 1, by = 0.1)) +
   facet_wrap(~ weird, scales = "free")
-# fig4a
+# fig4c
 ```
 
 ```{r preproc for age, message=FALSE, warning=FALSE}
@@ -589,7 +608,7 @@ df_PSA001_Age_valid_countryCode_sorted <- df_PSA001_Age_valid_countryCode %>%
   dplyr::filter(!(Sex=="no" | Sex=="na"))
 
 ### Plotting
-fig4b <- ggplot(df_PSA001_Age_valid_countryCode_sorted, aes(x=Age, y=Countries, fill=Sex)) +
+fig4d <- ggplot(df_PSA001_Age_valid_countryCode_sorted, aes(x=Age, y=Countries, fill=Sex)) +
   geom_density_ridges(scale = 1, alpha = .75, size=0.5) +
   theme_classic() +
   guides(y="axis_nested") +
@@ -671,37 +690,80 @@ df_PSA001_age_Jasp_filled_wide <- df_PSA001_age_Jasp_filled %>%
 ```
 
 ```{r Test H3b,message=FALSE, warning=FALSE}
-BF_h3b_age <- data.frame(matrix(nrow = 0, ncol = 5))
 
-colnames(BF_h3b_age) <- c("Observed", "Expected", "Log(BF10)", "BF10", "BF01")
+# make sure row sum is not 0, change the zeros in CN data
+df_PSA001_age_Jasp_filled_wide_2 <- df_PSA001_age_Jasp_filled_wide  %>% 
+  dplyr::mutate(CN = ifelse(CN==0, 1,                    # change 0 t0 1
+                            ifelse(CN==55, 53, CN)))     # get to values from the highest row
+
+# non-informative prior
+BF_h3b_age <- data.frame(matrix(nrow = 0, ncol = 8))
+colnames(BF_h3b_age) <- c("Observed", "Expected", "Log(BF10)_NonInform", "BF10_NonInform", "BF01_NonInform", 
+                          "Log(BF10)_Inform", "BF10_Inform", "BF01_Inform")
+
 
 # countries_names <- as.character(df_PSA001_valid_merge_sex_ratio_sored$Countries)
 for (ii in seq(length(countries_order_sex))){
   country <- countries_order_sex[ii]
   if (country != "CN"){
-    df_tmp <- df_PSA001_age_Jasp_filled_wide %>% dplyr::select('ageBins', one_of(country), "CN")
+    df_tmp <- df_PSA001_age_Jasp_filled_wide_2 %>% dplyr::select('ageBins', one_of(country), "CN")
+    
+    # de-select the row that both are zero
+    invalid_rows <- c()
+    for (row_tmp in seq(nrow(df_tmp))){
+      print(paste("current row:", row_tmp))
+      if (df_tmp[row_tmp, country] + df_tmp[row_tmp, "CN"] ==0) {
+        print(paste("invalid row:", row_tmp))
+        invalid_rows <-c(invalid_rows, row_tmp)
+      }
+    }
+    df_tmp <- df_tmp %>%
+      dplyr::filter(!row_number() %in% invalid_rows)
+    
     BF_tmp <-  BayesMultiNomial(dataset = df_tmp, 
                                factor = "ageBins", observed = country, expected = "CN")
-    BF_h3b_age[ii,] <- c(country, "CN",BF_tmp$BF$LogBF10, BF_tmp$BF$BF10, BF_tmp$BF$BF01)
+    BF_tmp2 <-  BayesMultiNomial(dataset = df_tmp, 
+                               factor = "ageBins", observed = country, expected = "CN", prior = "CN")
+    BF_h3b_age[ii,] <- c(country, "CN", BF_tmp$BF$LogBF10, BF_tmp$BF$BF10, BF_tmp$BF$BF01,
+                         BF_tmp2$BF$LogBF10, BF_tmp2$BF$BF10, BF_tmp2$BF$BF01)
   } 
   
 }
 
+countries_order_age <- BF_h3b_age %>% 
+  tidyr::drop_na() %>%
+  dplyr::mutate(`Log(BF10)_NonInform` = as.numeric(`Log(BF10)_NonInform`)) %>%
+  dplyr::arrange(`Log(BF10)_NonInform`) %>%
+  dplyr::pull(Observed)
+
 BF_h3b_age_p <- BF_h3b_age %>%
   tidyr::drop_na() %>%
-  dplyr::mutate(Contries = factor(Observed, levels = Observed),
+  dplyr::select(1,2,3,6) %>%
+  tidyr::pivot_longer(cols = `Log(BF10)_NonInform`:`Log(BF10)_Inform`, 
+                      names_to = "Prior",
+                      values_to = "Log(BF10)") %>%
+  dplyr::mutate(Prior = stringr::str_remove(Prior, ".*_" )) %>%
+  dplyr::mutate(Contries = factor(Observed, levels = countries_order_age),
+                Prior = factor(Prior, levels = c("NonInform", "Inform")),
                 `Log(BF10)` = as.numeric(`Log(BF10)`)) 
   
 
-p_BF_h3b_age_p <- ggplot(BF_h3b_age_p, aes(x = `Log(BF10)`, y = Contries )) +
+fig4b <- ggplot(BF_h3b_age_p, aes( x = `Log(BF10)`, y = Contries, color = Prior )) +
   geom_point() +
-  xlim(-160, 0) +
+  scale_color_grey() +
+  xlim(-20, 60) +
   scale_y_discrete(limits=rev) +
-  geom_vline(xintercept = c(log(1/10)), 
-             colour = c("red"), 
-             linetype=c("longdash")) + 
-  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7, 
+  geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
+             colour = c("red", "tomato", "black", "deepskyblue","blue"), 
+             linetype=c("longdash", "longdash", "solid", "longdash","longdash")) + 
+    geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
+  geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7, 
+            angle=90, text=element_text(size=10)) +
+  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="tomato", alpha = 0.7, 
+            angle=90, text=element_text(size=10)) +
+  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7, 
+            angle=90, text=element_text(size=10))  +
   ggtitle("Age distribution") +
   theme_bw() +
         theme(panel.grid.major = element_blank(),
@@ -720,15 +782,15 @@ p_BF_h3b_age_p <- ggplot(BF_h3b_age_p, aes(x = `Log(BF10)`, y = Contries )) +
          axis.title.x = element_text (size = 16),
          # axis.title.y = element_blank(),
          axis.title.y = element_text( size = 16),
-         axis.line.x = element_line(color='black', size = 1),   
+         axis.line.x = element_line(color='black', size = 1),    
          axis.line.y = element_line(color='black', size = 1),    
          strip.text = element_text (size = 16, color = 'black'), 
          panel.spacing = unit(3, "lines")
         )
 
 library(patchwork)
-p_BF <- (p_BF_h3a_sex_p + p_BF_h3b_age_p) /
-   (fig4a + fig4b) +
+p_BF <- (fig4a + fig4b) /
+   (fig4c + fig4d) +
   plot_annotation( # title = 'Pairwise comparison between samples from China and other countries',
                   tag_levels = 'A')  & 
   theme(plot.tag = element_text(size = 18, face = "bold"))
