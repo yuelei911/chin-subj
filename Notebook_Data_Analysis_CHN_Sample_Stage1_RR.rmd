@@ -19,12 +19,12 @@ if (!require("pacman")) install.packages("pacman") # install pacman, a package f
 # pkg_needed <- c("tidyverse", "ggridges", "openxlsx", "ggh4x", "stringr", "patchwork", "BayesFactor")
 # pacman::p_load(pkg_needed)  # load packages using p_load
 pacman::p_load("tidyverse", "ggridges", "openxlsx", "ggh4x", "stringr", "patchwork", "BayesFactor")
-library(tidyverse)
-library(ggridges)
-library(openxlsx)
-library(ggh4x)
-library(stringr)
-library(patchwork)
+# library(tidyverse)
+# library(ggridges)
+# library(openxlsx)
+# library(ggh4x)
+# library(stringr)
+# library(patchwork)
 ```
 
 # Bayesian multinomial test
@@ -489,40 +489,56 @@ df_PSA001_valid_merge_sex_ratio_sored_wide <- df_PSA001_valid_merge_sex_ratio_so
 #   write.csv(., "Fig4a_sex_wide.csv", row.names = F)
 ```
 
+```{r define a function for calculating BF for multiple countries}
+# create a new variable to store the BF values
+Func_BFpairs <- function(df, countries_order, prop_name){
+  
+  # create a temp variable for storing 
+  BF_mult_tmp <- data.frame(matrix(nrow = 0, ncol = 8))
+  colnames(BF_mult_tmp) <- c("Observed", "Expected", "Log(BF10)_NonInform", "BF10_NonInform", "BF01_NonInform", 
+                                "Log(BF10)_Inform", "BF10_Inform", "BF01_Inform")
+
+  for (ii in seq(length(countries_order))){
+    country <- countries_order[ii]
+    if (country != "CN"){
+      df_tmp <- df %>% dplyr::select(prop_name, one_of(country), "CN")
+      
+      BF_tmp <- BayesMultiNomial(dataset = df_tmp, 
+                                 factor = prop_name, observed = country, expected = "CN")
+      BF_tmp2 <- BayesMultiNomial(dataset = df_tmp, 
+                                 factor = prop_name, observed = country, expected = "CN", prior = "CN")
+      
+      BF_mult_tmp[ii,] <- c(country, "CN", BF_tmp$BF$LogBF10, BF_tmp$BF$BF10, BF_tmp$BF$BF01,
+                           BF_tmp2$BF$LogBF10, BF_tmp2$BF$BF10, BF_tmp2$BF$BF01)
+    } 
+  }
+  
+  countries_order_age <- BF_mult_tmp %>% 
+  tidyr::drop_na() %>%
+  dplyr::mutate(`Log(BF10)_NonInform` = as.numeric(`Log(BF10)_NonInform`)) %>%
+  dplyr::arrange(`Log(BF10)_NonInform`) %>%
+  dplyr::pull(Observed)
+
+  BF_mult_p_tmp <- BF_mult_tmp %>%
+    tidyr::drop_na() %>%
+    dplyr::select(1,2,3,6) %>%
+    tidyr::pivot_longer(cols = `Log(BF10)_NonInform`:`Log(BF10)_Inform`, 
+                        names_to = "Prior",
+                        values_to = "Log(BF10)") %>%
+    dplyr::mutate(Prior = stringr::str_remove(Prior, ".*_" )) %>%
+    dplyr::mutate(Contries = factor(Observed, levels = countries_order_age),
+                  Prior = factor(Prior, levels = c("NonInform", "Inform")),
+                  `Log(BF10)` = as.numeric(`Log(BF10)`)) 
+
+  return(BF_mult_p_tmp)
+}
+```
+
 ```{r Test H3a, message=FALSE, warning=FALSE}
 # compare each country with CN, non-informative prior
-
-BF_h3a_sex <- data.frame(matrix(nrow = 0, ncol = 8))
-colnames(BF_h3a_sex) <- c("Observed", "Expected", "Log(BF10)_NonInform", "BF10_NonInform", "BF01_NonInform", 
-                          "Log(BF10)_Inform", "BF10_Inform", "BF01_Inform")
-
-# countries_names <- as.character(df_PSA001_valid_merge_sex_ratio_sored$Countries)
-for (ii in seq(length(countries_order_sex))){
-  country <- countries_order_sex[ii]
-  if (country != "CN"){
-    df_tmp <- df_PSA001_valid_merge_sex_ratio_sored_wide %>% dplyr::select('Sex', one_of(country), "CN")
-    BF_tmp <-  BayesMultiNomial(dataset = df_tmp, 
-                               factor = "Sex", observed = country, expected = "CN")
-    BF_tmp2 <-  BayesMultiNomial(dataset = df_tmp, 
-                               factor = "Sex", observed = country, expected = "CN",prior = "CN")
-    
-    BF_h3a_sex[ii,] <- c(country, "CN", BF_tmp$BF$LogBF10, BF_tmp$BF$BF10 , BF_tmp$BF$BF01,
-                         BF_tmp2$BF$LogBF10, BF_tmp2$BF$BF10 , BF_tmp2$BF$BF01)
-  } 
-}
-
-
-
-BF_h3a_sex_p <- BF_h3a_sex %>%
-  tidyr::drop_na() %>%
-  dplyr::select(1,2,3,6) %>%
-  tidyr::pivot_longer(cols = `Log(BF10)_NonInform`:`Log(BF10)_Inform`, 
-                      names_to = "Prior",
-                      values_to = "Log(BF10)") %>%
-  dplyr::mutate(Prior = stringr::str_remove(Prior, ".*_" )) %>%
-  dplyr::mutate(Contries = factor(Observed, levels = countries_order_sex),
-                Prior = factor(Prior, levels = c("NonInform", "Inform")),
-                `Log(BF10)` = as.numeric(`Log(BF10)`)) 
+BF_h3a_sex_p <- Func_BFpairs(df = df_PSA001_valid_merge_sex_ratio_sored_wide,
+                             countries_order = countries_order_sex,
+                             prop_name = "Sex")
   
 
 fig4a <- ggplot(BF_h3a_sex_p, aes( x = `Log(BF10)`, y = Contries, color = Prior )) +
@@ -632,181 +648,112 @@ fig4d <- ggplot(df_PSA001_Age_valid_countryCode_sorted, aes(x=Age, y=Countries, 
 # fig4
 ```
 
-Get the percentage of each age bin and save for Bayesian multinomial test. We found that if the expected proportion contains zero if may cause problem in the calculation, thus, we re-orgainzed the data based on the proportion data of Chinese sample.
+Get the percentage of each age bin and save for Bayesian multinomial test. We found that if the expected proportion contains zero if may cause problem in the calculation, thus, we re-organized the data based on the proportion data of Chinese sample.
 
+```{r define a func for proportion of age bins}
+
+Func_Age_Prop <- function(df, break_names, label_names){
+  #### function for calculating the proportion of age bins based on the break_names and label_names
+  # df: the input data, with user_id, Countries, Sex, and Age
+  # break_names, a vector of number
+  # label_names, a vector of string
+  #
+  # return a wide-format data frame for further BF calculation
+  ####
+  library(tidyverse)
+  
+  df_tmp <- df %>%
+    dplyr::select(user_id, Countries, Sex, Age) %>%
+    dplyr::mutate(ageBins=cut(Age, 
+                              breaks=break_names,  
+                              labels=label_names)) %>%
+    dplyr::count(Countries, ageBins) %>%
+    dplyr::group_by(Countries) %>%
+    dplyr::mutate(freq = (n / sum(n))*100) %>%
+    dplyr::ungroup() %>%
+    tidyr::complete(Countries, ageBins, fill = list(n = 0, freq = 0)) %>%
+    dplyr::mutate(percent = floor(freq),
+                  indx = freq - percent)
+  
+  ## below we fill the percentage to 100%
+  filler_idx <- df_tmp %>%
+    dplyr::group_by(Countries) %>%
+    dplyr::summarise(sum = sum(percent)) %>%
+    dplyr::ungroup() 
+
+  df_tmp_filled <- data.frame(matrix(ncol = ncol(df_tmp), nrow = 0))
+  colnames(df_tmp_filled) <- colnames(df_tmp)
+
+  for (ii in 1:nrow(filler_idx)){
+    tmp <- df_tmp %>% 
+      dplyr::filter(Countries == filler_idx$Countries[ii]) %>%
+      dplyr::arrange(desc(indx))
+    
+    if (filler_idx$sum[ii] < 100) {
+      for (jj in seq(100 - filler_idx$sum[ii])){
+       tmp$percent[jj] <- tmp$percent[jj] + 1
+      }
+    }
+    df_tmp_filled <- rbind(df_tmp_filled, tmp)
+  }
+  df_tmp_filled <- df_tmp_filled %>%
+    dplyr::arrange(Countries, ageBins)
+  
+  df_tmp_filled_wide <- df_tmp_filled %>%
+    dplyr::select(-c(n, freq, indx)) %>%
+    tidyr::pivot_wider(names_from = "Countries", values_from = "percent") 
+  
+  return(df_tmp_filled_wide)
+}
+
+```
 
 ```{r prepare data for test}
-# df_PSA001_age_Jasp <- df_PSA001_Age_valid_countryCode_sorted %>%
-#   dplyr::select(user_id, Countries, Sex, Age) %>%
-#   dplyr::mutate(ageBins=cut(Age, 
-#                             breaks=c(0, 10.5, 20.5, 30.5, 40.5, 50.5, 60.5, Inf), 
-#                             labels=c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"))) %>%
-#   dplyr::count(Countries, ageBins) %>%
-#   dplyr::group_by(Countries) %>%
-#   dplyr::mutate(freq = (n / sum(n))*100) %>%
-#   dplyr::ungroup() %>%
-#   tidyr::complete(Countries, ageBins, fill = list(n = 0, freq = 0)) %>%
-#   dplyr::mutate(percent = floor(freq),
-#                 indx = freq - percent)
 
-df_PSA001_age_Jasp <- df_PSA001_Age_valid_countryCode_sorted %>%
-  dplyr::select(user_id, Countries, Sex, Age) %>%
-  dplyr::mutate(ageBins=cut(Age, 
-                            breaks=c(0, 20.5, 30.5, 40.5, 50.5, Inf),  # here the bins are reduced to five.
-                            labels=c("11~20","21~30", "31~40", "41~50", ">=51"))) %>%
-  dplyr::count(Countries, ageBins) %>%
-  dplyr::group_by(Countries) %>%
-  dplyr::mutate(freq = (n / sum(n))*100) %>%
-  dplyr::ungroup() %>%
-  tidyr::complete(Countries, ageBins, fill = list(n = 0, freq = 0)) %>%
-  dplyr::mutate(percent = floor(freq),
-                indx = freq - percent)
+# age bin same as census data
+df_PSA001_age_Jasp0 <- Func_Age_Prop(df = df_PSA001_Age_valid_countryCode_sorted,
+                                     break_names = c(0, 10.5, 20.5, 30.5, 40.5, 50.5, 60.5, Inf),
+                                     label_names = c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"))
 
-## below we fill the percentage to 100%
-filler_idx <- df_PSA001_age_Jasp %>%
-  dplyr::group_by(Countries) %>%
-  dplyr::summarise(sum = sum(percent)) %>%
-  dplyr::ungroup() 
+df_PSA001_age_Jasp0 <- df_PSA001_age_Jasp0 %>%
+  # fill zero
+  dplyr::mutate(CN = ifelse(CN==0, 1, 
+                            ifelse(CN==38, 37, 
+                                   ifelse(CN == 55, 54, CN))))
 
-df_PSA001_age_Jasp_filled <- data.frame(matrix(ncol = ncol(df_PSA001_age_Jasp), nrow = 0))
-colnames(df_PSA001_age_Jasp_filled) <- colnames(df_PSA001_age_Jasp)
+# age bin similar to census data (truncated)
+df_PSA001_age_Jasp1 <- Func_Age_Prop(df = df_PSA001_Age_valid_countryCode_sorted,
+                                     break_names = c(0, 20.5, 30.5, 40.5, 50.5, Inf),
+                                     label_names = c("11~20","21~30", "31~40", "41~50", ">=51"))
 
-for (ii in 1:nrow(filler_idx)){
-  tmp <- df_PSA001_age_Jasp %>% 
-    dplyr::filter(Countries == filler_idx$Countries[ii]) %>%
-    dplyr::arrange(desc(indx))
-  
-  if (filler_idx$sum[ii] < 100) {
-    for (jj in seq(100 - filler_idx$sum[ii])){
-     tmp$percent[jj] <- tmp$percent[jj] + 1
-    }
-  }
-  df_PSA001_age_Jasp_filled <- rbind(df_PSA001_age_Jasp_filled, tmp)
-}
+# age bin based on psychological aging stage
+df_PSA001_age_Jasp2 <- Func_Age_Prop(df = df_PSA001_Age_valid_countryCode_sorted,
+                                     break_names = c(0, 17.5, 25.5, 39.5, 59.5, Inf),
+                                     label_names = c("0~17","18~25", "26~40", "41~59", ">=60"))
 
-df_PSA001_age_Jasp2 <- df_PSA001_Age_valid_countryCode_sorted %>%
-  dplyr::select(user_id, Countries, Sex, Age) %>%
-  dplyr::mutate(ageBins=cut(Age, 
-                            breaks=c(0, 17.5, 25.5, 39.5, 59.5, Inf),  # here the bins are reduced to five.
-                            labels=c("0~17","18~25", "26~40", "41~59", ">=60"))) %>%
-  dplyr::count(Countries, ageBins) %>%
-  dplyr::group_by(Countries) %>%
-  dplyr::mutate(freq = (n / sum(n))*100) %>%
-  dplyr::ungroup() %>%
-  tidyr::complete(Countries, ageBins, fill = list(n = 0, freq = 0)) %>%
-  dplyr::mutate(percent = floor(freq),
-                indx = freq - percent)
-
-df_PSA001_age_Jasp_filled2 <- data.frame(matrix(ncol = ncol(df_PSA001_age_Jasp2), nrow = 0))
-colnames(df_PSA001_age_Jasp_filled2) <- colnames(df_PSA001_age_Jasp2)
-
-## below we fill the percentage to 100%
-filler_idx3 <- df_PSA001_age_Jasp2 %>%
-  dplyr::group_by(Countries) %>%
-  dplyr::summarise(sum = sum(percent)) %>%
-  dplyr::ungroup() 
-
-for (ii in 1:nrow(filler_idx3)){
-  tmp <- df_PSA001_age_Jasp2 %>% 
-    dplyr::filter(Countries == filler_idx3$Countries[ii]) %>%
-    dplyr::arrange(desc(indx))
-  
-  if (filler_idx$sum[ii] < 100) {
-    for (jj in seq(100 - filler_idx3$sum[ii])){
-     tmp$percent[jj] <- tmp$percent[jj] + 1
-    }
-  }
-  df_PSA001_age_Jasp_filled2 <- rbind(df_PSA001_age_Jasp_filled2, tmp)
-}
-
-df_PSA001_age_Jasp_filled <- df_PSA001_age_Jasp_filled %>%
-  dplyr::arrange(Countries, ageBins) %>%
-  dplyr::select(-indx)
-
-df_PSA001_age_Jasp_filled2 <- df_PSA001_age_Jasp_filled2 %>%
-  dplyr::arrange(Countries, ageBins) %>%
-  dplyr::select(-indx)
-
-filler_idx2 <- df_PSA001_age_Jasp_filled %>%
-  dplyr::group_by(Countries) %>%
-  dplyr::summarise(sum = sum(percent)) %>%
-  dplyr::ungroup()  
-
-filler_idx4 <- df_PSA001_age_Jasp_filled2 %>%
-  dplyr::group_by(Countries) %>%
-  dplyr::summarise(sum = sum(percent)) %>%
-  dplyr::ungroup()  
-
-# write.csv(df_PSA001_age_Jasp_filled, "fig4b_PSA001_age.csv", row.names = F)
-
-df_PSA001_age_Jasp_filled_wide <- df_PSA001_age_Jasp_filled %>%
-  dplyr::select(-c(n, freq)) %>%
-  tidyr::pivot_wider(names_from = "Countries", values_from = "percent") %>%
-  dplyr::filter(!is.na(ageBins))
-
-df_PSA001_age_Jasp_filled_wide2 <- df_PSA001_age_Jasp_filled2 %>%
-  dplyr::select(-c(n, freq)) %>%
-  tidyr::pivot_wider(names_from = "Countries", values_from = "percent") %>%
-  dplyr::filter(!is.na(ageBins)) %>%
+df_PSA001_age_Jasp2 <- df_PSA001_age_Jasp2 %>%
   # fill zero
   dplyr::mutate(CN = ifelse(CN==0, 1, 
                             ifelse(CN==80, 78, CN)))
 
-# df_PSA001_age_Jasp_filled_wide %>%
-#   write.csv(., "Fig4b_ageBin_wide.csv", row.names = F)
 ```
 
+
 ```{r Test H3b,message=FALSE, warning=FALSE}
+# BF for age bins 0, NA for informed prior because of zeros in the dataframe
+BF_h3b_age_p_0 <- Func_BFpairs(df = df_PSA001_age_Jasp0, 
+                             countries_order = countries_order_sex,
+                             prop_name = "ageBins")
 
-# create a new variable to store the BF values
-BF_h3b_age_2 <- data.frame(matrix(nrow = 0, ncol = 8))
-colnames(BF_h3b_age_2) <- c("Observed", "Expected", "Log(BF10)_NonInform", "BF10_NonInform", "BF01_NonInform", 
-                          "Log(BF10)_Inform", "BF10_Inform", "BF01_Inform")
+# BF for age bins 1,
+BF_h3b_age_p_1 <- Func_BFpairs(df = df_PSA001_age_Jasp1, 
+                             countries_order = countries_order_sex,
+                             prop_name = "ageBins")
 
-for (ii in seq(length(countries_order_sex))){
-  country <- countries_order_sex[ii]
-  if (country != "CN"){
-    df_tmp <- df_PSA001_age_Jasp_filled_wide2 %>% dplyr::select('ageBins', one_of(country), "CN")
-    
-    # # de-select the row that both are zero
-    # invalid_rows <- c()
-    # for (row_tmp in seq(nrow(df_tmp))){
-    #   print(paste("current row:", row_tmp))
-    #   if (df_tmp[row_tmp, country] + df_tmp[row_tmp, "CN"] ==0) {
-    #     print(paste("invalid row:", row_tmp))
-    #     invalid_rows <-c(invalid_rows, row_tmp)
-    #   }
-    # }
-    # df_tmp <- df_tmp %>%
-    #   dplyr::filter(!row_number() %in% invalid_rows)
-    
-    BF_tmp <-  BayesMultiNomial(dataset = df_tmp, 
-                               factor = "ageBins", observed = country, expected = "CN")
-    BF_tmp2 <-  BayesMultiNomial(dataset = df_tmp, 
-                               factor = "ageBins", observed = country, expected = "CN", prior = "CN")
-    BF_h3b_age_2[ii,] <- c(country, "CN", BF_tmp$BF$LogBF10, BF_tmp$BF$BF10, BF_tmp$BF$BF01,
-                         BF_tmp2$BF$LogBF10, BF_tmp2$BF$BF10, BF_tmp2$BF$BF01)
-  } 
-  
-}
-
-countries_order_age_2 <- BF_h3b_age_2 %>% 
-  tidyr::drop_na() %>%
-  dplyr::mutate(`Log(BF10)_NonInform` = as.numeric(`Log(BF10)_NonInform`)) %>%
-  dplyr::arrange(`Log(BF10)_NonInform`) %>%
-  dplyr::pull(Observed)
-
-BF_h3b_age_p_2 <- BF_h3b_age_2 %>%
-  tidyr::drop_na() %>%
-  dplyr::select(1,2,3,6) %>%
-  tidyr::pivot_longer(cols = `Log(BF10)_NonInform`:`Log(BF10)_Inform`, 
-                      names_to = "Prior",
-                      values_to = "Log(BF10)") %>%
-  dplyr::mutate(Prior = stringr::str_remove(Prior, ".*_" )) %>%
-  dplyr::mutate(Contries = factor(Observed, levels = countries_order_age),
-                Prior = factor(Prior, levels = c("NonInform", "Inform")),
-                `Log(BF10)` = as.numeric(`Log(BF10)`)) 
-  
+# BF for age bins 2
+BF_h3b_age_p_2 <- Func_BFpairs(df = df_PSA001_age_Jasp2, 
+                             countries_order = countries_order_sex,
+                             prop_name = "ageBins")
 
 fig4b <- ggplot(BF_h3b_age_p_2, aes( x = `Log(BF10)`, y = Contries, color = Prior )) +
   geom_point() +
