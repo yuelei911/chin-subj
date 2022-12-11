@@ -2,7 +2,10 @@
 title: Notebook for  Data Analyses of Chinese Samples in Psychological Subjects [Stage
   1 RR]
 author: "Lei Yue (NNU, CCNU); Hu Chuan-Peng (NNU; hcp4715@hotmail.com)"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
 ---
 
 This is an [R Markdown](http://rmarkdown.rstudio.com) file for data analyses in the protocol of a meta research which aims at surveying sample characteristics of Chinese sample in Chinese Psychological research. 
@@ -15,16 +18,12 @@ First, load libraries.
 rm(list = ls())
 if (!require("pacman")) install.packages("pacman") # install pacman, a package for managing packages in R
 
-# packages needed
-# pkg_needed <- c("tidyverse", "ggridges", "openxlsx", "ggh4x", "stringr", "patchwork", "BayesFactor")
-# pacman::p_load(pkg_needed)  # load packages using p_load
-pacman::p_load("tidyverse", "ggridges", "openxlsx", "ggh4x", "stringr", "patchwork", "BayesFactor")
+pacman::p_load("tidyverse", "ggh4x","stringr", "patchwork", "BayesFactor")
 # library(tidyverse)
-# library(ggridges)
-# library(openxlsx)
 # library(ggh4x)
 # library(stringr)
 # library(patchwork)
+# library(BayesFactor)
 ```
 
 # Bayesian multinomial test
@@ -123,8 +122,6 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   # default_prior - whether use the default, defused prior
   # prior - priors defined by users
   
-  library(tidyverse)
-  
   fact_level <- dataset %>% dplyr::select(all_of(factor)) %>% dplyr::pull() #  %>% as.factor(.)
   observed_data <- dataset %>% dplyr::select(all_of(observed)) %>% dplyr::pull()
   names(observed_data) <- fact_level
@@ -178,7 +175,6 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 # Load data and preprocess the data
 
 ```{r Loading data, message=FALSE, warning=FALSE}
-
 load("df_chinese_subj_rr_stage1.RData")
 ```
 
@@ -234,23 +230,11 @@ df_sex_ratio_jasp <- df_sex_ratio %>%
 ## save to csv
 write.csv(df_sex_ratio_jasp, "df_sex_ratio_jasp.csv", row.names=FALSE)
 
-
 BF_h2a_sex_psych <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "PSA001", expected = "Census7")
 BF_h2a_sex_cfps <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "CFPS2018", expected = "Census7")
 
-## additional BF for sensitivity:
-# BF_h2a_sex_psych_null <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "Census7", expected = "Census7")
-
 BF_h2a_sex_psych_2 <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "PSA001", expected = "Census7", prior = "Census7")
 BF_h2a_sex_cfps_2 <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "CFPS2018", expected = "Census7", prior = "Census7")
-# BF_h2a_sex_psych_2_null <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "Census7", expected = "Census7", prior = "Census7")
-
-# BF_h2a_sex_psych_2 <- BayesMultiNomial(dataset = df_sex_ratio_jasp, factor = "Sex", observed = "PSA001", expected = "Census7", default_prior = FALSE, prior = array(c(50, 50)))
-
-## calculate the BF using contingency table:
-# BF_h2a_sex_psych_3 <- BayesFactor::contingencyTableBF(as.matrix(df_sex_ratio_jasp[, c(2,4)]), sampleType = "indepMulti", fixedMargin = "cols")
-
-# BF_h2a_sex_psych_3@bayesFactor$bf # which shows the logBF10
 
 fig3a <- ggplot(df_sex_ratio, aes(Site, Proportion,fill=Sex)) +
   geom_col() +
@@ -263,8 +247,6 @@ fig3a <- ggplot(df_sex_ratio, aes(Site, Proportion,fill=Sex)) +
         axis.title = element_text(size = 16, family = "serif"),
         legend.text = element_text(size = 16, family = "serif"),
         axis.text = element_text(size =16, family = "serif"))
-
-# fig3a  
 ```
 
 We found strong evidence for the $H_1$ that the sex ratio from PSA001 is different from that of Census data, with $Log(BF_{10})$ = `r BF_h2a_sex_psych$BF$LogBF10`. On the contrast, for the CFPS data, we found moderate evidence for the $H_0$ that sex ratio from CFPS2018 is not different from that of Census data, $Log(BF_{10})$ = `r BF_h2a_sex_cfps$BF$LogBF10`
@@ -276,14 +258,13 @@ Here we will compare the age distribution of samples from psychological studies 
 #### Age bins [set 1]: demogrphic age bins
 
 ```{r H2b ageBins plot, message=FALSE, warning=FALSE}
-#  <- PSA_Jones_CN
 df_PSA001_Age_CN <- df_PSA001 %>%
   dplyr::filter(!is.na(Age)) %>%
   dplyr::filter(Countries == "CN") %>%
-  dplyr::mutate(ageBins_pyr = cut(Age, 
-                                   breaks=c(-Inf, 5, 10, 15, 20, 25, 30, 35, 40, 45,
-                                            50, 55,60,65,70, 75,80,85,90,95, Inf), 
-                            labels=c("0~4","5~9","10~14", "15~19", "20~24", "25~29", "30~34", "35~39", "40~44",
+  dplyr::mutate(ageBins_pyr = cut(Age,
+                                  breaks=c(-Inf, 4.5, 9.5, 14.5, 19.5, 24.5, 29.5, 34.5, 39.5, 44.5,
+                                            49.5, 54.5,59.5,64.5,69.5,74.5,79.5,84.5,89.5,94.5, Inf),
+                                  labels=c("0~4","5~9","10~14", "15~19", "20~24", "25~29", "30~34", "35~39", "40~44",
                                      "45~49","50~54","55~59","60~64","65~69","70~74", "75~79",
                                      "80~84","85~89", "90~94",">=95")),
                 ageBins_pyr = factor(ageBins_pyr, levels = c("0~4","5~9","10~14", "15~19", "20~24", "25~29", 
@@ -296,18 +277,37 @@ df_PSA001_Age_CN <- df_PSA001 %>%
   dplyr::mutate(Site = "PSA001",
                 Sex = ifelse(Sex == "f", "female_PSA", "male_PSA"))
 
-
 df_census7_age94 <- df_census7 %>%
-  dplyr::select(c(1,6,7)) %>%        
-  dplyr::slice(c(8,15,22,29,36,43,
-                 49,56,63,70,77,84,
-                 91,98,105,112,119,
-                 126,133)) %>%
+  dplyr::select(c(1,3,4)) %>%        
+  dplyr::slice(c(9:13,16:20,23:27,30:34,37:41,
+                 44:48,50:54,57:61,64:68,71:75,
+                 78:82,85:89,92:96,99:103,106:110,
+                113:117, 120:124,127:131,134:138)) %>%
   dplyr::rename(ageBins=1,
                 male=2,
-                female=3) %>%
-  dplyr::mutate(ageBins = c("0~4","5~9","10~14", "15~19", "20~24",                                    "25~29", "30~34", "35~39", "40~44",     "45~49","50~54","55~59","60~64","65~69","70~74", "75~79",
-                                     "80~84","85~89", "90~94"))
+                female=3) %>% 
+  dplyr::mutate(ageBins=as.numeric(ageBins),
+         male=as.numeric(male),
+         female=as.numeric(female)) %>% 
+  dplyr::mutate(male=round(male/1409778724*100,2),
+                          female=round(female/1409778724*100,2)) %>% 
+  dplyr::mutate(ageBins=cut(ageBins,
+                            breaks=c(-Inf,4.5,9.5,14.5,19.5,24.5,
+                                     29.5,34.5,39.5,44.5,49.5,
+                                     54.5,59.5,64.5,69.5,74.5,
+                                      79.5,84.5,89.5,94.5),
+                            labels=c("0~4","5~9","10~14","15~19","20~24",
+                                     "25~29","30~34","35~39","40~44","45~49",
+                                     "50~54","55~59","60~64","65~69","70~74",
+                                     "75~79","80~84","85~89", "90~94")),
+                            ageBins=factor(ageBins,levels = 
+                                     c("0~4","5~9","10~14", "15~19", "20~24", "25~29",
+                                       "30~34", "35~39", "40~44", "45~49","50~54",
+                                       "55~59","60~64","65~69","70~74", "75~79",
+                                       "80~84","85~89", "90~94"))) %>%
+ dplyr::group_by(ageBins) %>% 
+ dplyr::summarise(male=sum(male),
+                 female=sum(female))
 
 ###Combining the data of 95 years old and above and controlling the number of the decimal places
 df_census7_age95 <- data.frame(ageBins = c(">=95"),
@@ -315,14 +315,10 @@ df_census7_age95 <- data.frame(ageBins = c(">=95"),
                             female = round((548357 + 83737)/1409778724*100, 2))
 
 df_census7_age <- rbind(df_census7_age94, df_census7_age95) %>%
-  dplyr::mutate(ageBins = factor(ageBins, levels = c("0~4","5~9","10~14", "15~19", "20~24", "25~29", "30~34", 
-                                                     "35~39", "40~44","45~49","50~54","55~59","60~64","65~69",
-                                                     "70~74", "75~79", "80~84","85~89", "90~94",">=95"))) %>%
   tidyr::pivot_longer(-ageBins, names_to = "Sex", values_to = "Proportion") %>%
   dplyr::mutate(Proportion=as.numeric(Proportion))
   
 
-### Plotting
 fig3b <- ggplot(data= df_census7_age, aes(x=ageBins, y=ifelse(Sex=="male", -Proportion, Proportion), fill=Sex)) +
   geom_col(alpha=0.5, width = 1) +
   geom_line(data = df_PSA001_Age_CN, aes(x=ageBins_pyr,
@@ -351,7 +347,6 @@ fig3
 
 Also get the data for Bayesian multinomial test
 ```{r test H2b using BMT, message=FALSE, warning=FALSE}
-
 df_PSA001_Age_CN_Jasp <- df_PSA001 %>%
   dplyr::filter(!is.na(Age)) %>%   
   dplyr::filter(Countries == "CN") %>% 
@@ -422,9 +417,6 @@ df_PSA001_Age_CN_Jasp_new <- df_PSA001_Age_CN_Jasp %>%
                                                       ">=60"))) %>%
   dplyr::arrange(ageBins)
 
-# BayesFactor::contingencyTableBF(as.matrix(df_PSA001_Age_CN_Jasp_new[,c(2,3)]), 
-#                                 sampleType = "indepMulti", fixedMargin = "cols")
-
 # save the CSV to compare the BayesMultiNomial with the result in JASP
 write.csv(df_PSA001_Age_CN_Jasp_new, 'df_PSA001_Age_CN_Jasp_new.csv', row.names = F)
 
@@ -439,14 +431,13 @@ BF_h2b_age_psych_2 <- BayesMultiNomial(dataset = df_PSA001_Age_CN_Jasp_new,
                                      expected = "Census7",
                                      prior = "Census7")
 ```
-
 We found strong evidence for the $H_1$ that the age distribution from PSA001 is different from that of Census data, with $Log(BF_{10})$ = `r BF_h2b_age_psych$BF$LogBF10`.
 
 #### Age bins [set 2]: Psychological age bins
 
 ## Test H3: Chinese samples versus samples from other countries
 We first select data for plotting.
-```{r preproc data}
+```{r preproc data, message=FALSE, warning=FALSE}
 ### Get countries with n >=30
 PSA001_valid_countries <-  df_PSA001 %>%
   dplyr::group_by(Countries) %>%
@@ -478,20 +469,13 @@ countries_order_sex <- df_PSA001_valid_merge_sex_ratio %>%
 df_PSA001_valid_merge_sex_ratio_sorted <- df_PSA001_valid_merge_sex_ratio %>%
   dplyr::mutate(Countries = factor(Countries, levels = countries_order_sex))
 
-# df_PSA001_valid_merge_sex_ratio_sorted %>%
-#   dplyr::mutate(Proportion = Proportion * 100) %>%
-#   write.csv(., "PSA001_sex_ratio_all.csv", row.names = F)
-
-df_PSA001_valid_merge_sex_ratio_sored_wide <- df_PSA001_valid_merge_sex_ratio_sored %>%
+df_PSA001_valid_merge_sex_ratio_sorted_wide <- df_PSA001_valid_merge_sex_ratio_sorted %>%
   dplyr::select(-c(weird,n)) %>%
   dplyr::mutate(Proportion = Proportion * 100)  %>%
   tidyr::pivot_wider(names_from = "Countries", values_from = "Proportion")
-
-# df_PSA001_valid_merge_sex_ratio_sored_wide %>%
-#   write.csv(., "Fig4a_sex_wide.csv", row.names = F)
 ```
 
-```{r define a function for calculating BF for multiple countries}
+```{r define a function for calculating BF for multiple countries, message=FALSE, warning=FALSE}
 # create a new variable to store the BF values
 Func_BFpairs <- function(df, countries_order, prop_name){
   
@@ -538,7 +522,7 @@ Func_BFpairs <- function(df, countries_order, prop_name){
 
 ```{r Test H3a, message=FALSE, warning=FALSE}
 # compare each country with CN, non-informative prior
-BF_h3a_sex_p <- Func_BFpairs(df = df_PSA001_valid_merge_sex_ratio_sored_wide,
+BF_h3a_sex_p <- Func_BFpairs(df = df_PSA001_valid_merge_sex_ratio_sorted_wide,
                              countries_order = countries_order_sex,
                              prop_name = "Sex")
 
@@ -561,38 +545,36 @@ fig4a <- ggplot(BF_h3a_sex_p, aes( x = `Log(BF10)`, y = Contries, color = Prior 
   ggtitle("Sex ratio") + 
   theme_bw() +
         theme(panel.grid.major = element_blank(),
-         panel.grid.minor = element_blank(),
-         panel.background = element_blank(),
-         panel.border = element_blank(),
-         text = element_text(family='Times'),
-         # legend.title=element_blank(),
-         legend.title = element_text(size =16),
-         legend.text = element_text(size =14),
-         axis.text.x = element_text (size = 14, color = 'black',  hjust = 1),
-         axis.text.y = element_text (size = 16, color = 'black'),
-         plot.title = element_text(lineheight=.8, face="bold", size = 18, margin=margin(0,0,20,0)),
-         axis.text = element_text (size = 16, color = 'black'),
-         axis.title = element_text (size = 16),
-         axis.title.x = element_text (size = 16),
-         # axis.title.y = element_blank(),
-         axis.title.y = element_text( size = 16),
-         axis.line.x = element_line(color='black', size = 1),    
-         axis.line.y = element_line(color='black', size = 1),    
-         strip.text = element_text (size = 16, color = 'black'), 
-         panel.spacing = unit(3, "lines")
+              panel.grid.minor = element_blank(),
+              panel.background = element_blank(),
+              panel.border = element_blank(),
+              text = element_text(family='Times'),
+              legend.title = element_text(size =16),
+              legend.text = element_text(size =14),
+              axis.text.x = element_text (size = 14, color = 'black',  hjust = 1),
+              axis.text.y = element_text (size = 16, color = 'black'),
+              plot.title = element_text(lineheight=.8, face="bold", size = 18, margin=margin(0,0,20,0)),
+              axis.text = element_text (size = 16, color = 'black'),
+              axis.title = element_text (size = 16),
+              axis.title.x = element_text (size = 16),
+              axis.title.y = element_text( size = 16),
+              axis.line.x = element_line(color='black', size = 1),
+              axis.line.y = element_line(color='black', size = 1),
+              strip.text = element_text (size = 16, color = 'black'), 
+              panel.spacing = unit(3, "lines")
         )
+#fig4a
 ```
 
 Plot figure 4c, 
-```{r figure 4c }
+```{r figure 4c, message=FALSE, warning=FALSE}
 fig4c <- ggplot(df_PSA001_valid_merge_sex_ratio_sorted, aes(x=Proportion, y=Countries,fill=Sex)) +
   geom_col(alpha = .75)+
-  labs(y="Countries") + # , fill="Sex"
+  labs(y="Countries") + 
   scale_fill_discrete(label=c("female","male")) +
   theme_classic()+
   guides(y="axis_nested") +
-  theme(#legend.position = "none",
-        legend.title = element_text(size = 15,family = "serif"),
+  theme(legend.title = element_text(size = 15,family = "serif"),
         axis.title= element_text(size = 15,family = "serif"),
         axis.text = element_text(size = 10,family = "serif"),
         strip.text = element_text(size = 15,family = "serif"),
@@ -600,13 +582,11 @@ fig4c <- ggplot(df_PSA001_valid_merge_sex_ratio_sorted, aes(x=Proportion, y=Coun
         panel.border = element_rect(fill = NA,color = "black")) +
   scale_x_continuous(breaks = seq(0, 1, by = 0.1)) +
   facet_wrap(~ weird, scales = "free")
-# fig4c
-
+#fig4c
 ```
 Get the percentage of each age bin and save for Bayesian multinomial test. We found that if the expected proportion contains zero if may cause problem in the calculation, thus, we re-organized the data based on the proportion data of Chinese sample.
 
-```{r define a func for proportion of age bins}
-
+```{r define a func for proportion of age bins, message=FALSE, warning=FALSE}
 Func_Age_Prop <- function(df, break_names, label_names, wider_form=TRUE){
   #### function for calculating the proportion of age bins based on the break_names and label_names
   # df: the input data, with user_id, Countries, Sex, and Age
@@ -615,7 +595,6 @@ Func_Age_Prop <- function(df, break_names, label_names, wider_form=TRUE){
   #
   # return a wide-format data frame for further BF calculation
   ####
-  library(tidyverse)
   
   df_tmp <- df %>%
     dplyr::select(user_id, Countries, Sex, Age) %>%
@@ -666,7 +645,25 @@ Func_Age_Prop <- function(df, break_names, label_names, wider_form=TRUE){
 
 ```
 
-```{r prepare data for test}
+```{r prepare data for test, message=FALSE, warning=FALSE}
+df_PSA001_Age_valid <- df_PSA001 %>% 
+  dplyr::filter(!is.na(Age)) %>%   
+  dplyr::filter(Countries %in% PSA001_valid_countries) 
+
+# merge with country code and force the age over 60 in a narrow range for visualization
+df_PSA001_Age_valid_countryCode <- merge(df_PSA001_Age_valid, df_regionCode, by.x = "Countries", by.y = "country_iso2") %>%
+  dplyr::mutate(Age = ifelse(Age > 60, sample(c(61, 62, 63, 64, 65), 1), Age))
+
+PSA001_valid_countries_sorted <- df_PSA001_Age_valid_countryCode %>%
+  dplyr::group_by(Countries) %>%
+  dplyr::summarise(medianAge = median(Age)) %>%
+  dplyr::ungroup() %>%
+  dplyr::arrange(medianAge) %>%
+  dplyr::pull(Countries)
+
+df_PSA001_Age_valid_countryCode_sorted <- df_PSA001_Age_valid_countryCode %>%
+  dplyr::mutate(Countries = factor(Countries, levels = PSA001_valid_countries_sorted)) %>%
+  dplyr::filter(!(Sex=="no" | Sex=="na"))
 
 # age bin same as census data
 df_PSA001_age_Jasp1 <- Func_Age_Prop(df = df_PSA001_Age_valid_countryCode_sorted,
@@ -708,53 +705,13 @@ df_PSA001_age_Jasp2_long <- df_PSA001_age_Jasp2_long %>%
 ```
 
 ```{r preproc for age, message=FALSE, warning=FALSE}
-
-df_PSA001_Age_valid <- df_PSA001 %>% 
-  dplyr::filter(!is.na(Age)) %>%   
-  dplyr::filter(Countries %in% PSA001_valid_countries) 
-
-# merge with country code and force the age over 60 in a narrow range for visualization
-df_PSA001_Age_valid_countryCode <- merge(df_PSA001_Age_valid, df_regionCode, by.x = "Countries", by.y = "country_iso2") %>%
-  dplyr::mutate(Age = ifelse(Age > 60, sample(c(61, 62, 63, 64, 65), 1), Age))
-
-PSA001_valid_countries_sorted <- df_PSA001_Age_valid_countryCode %>%
-  dplyr::group_by(Countries) %>%
-  dplyr::summarise(medianAge = median(Age)) %>%
-  dplyr::ungroup() %>%
-  dplyr::arrange(medianAge) %>%
-  dplyr::pull(Countries)
-
-df_PSA001_Age_valid_countryCode_sorted <- df_PSA001_Age_valid_countryCode %>%
-  dplyr::mutate(Countries = factor(Countries, levels = PSA001_valid_countries_sorted)) %>%
-  dplyr::filter(!(Sex=="no" | Sex=="na"))
-
-### Plotting
-# fig4d <- ggplot(df_PSA001_Age_valid_countryCode_sorted, aes(x=Age, y=Countries, fill=Sex)) +
-#   geom_density_ridges(scale = 1, alpha = .75, size=0.5) +
-#   theme_classic() +
-#   guides(y="axis_nested") +
-#   labs(y="Countries") +
-#   scale_fill_discrete(label=c("female","male")) +
-#   facet_wrap(~weird, scales = "free") +
-#   coord_cartesian(clip = "off") +
-#   scale_y_discrete(expand = c(0,0)) +
-#   scale_x_continuous(expand = c(0,0)) +
-#   theme(legend.position = "none",
-#         axis.title= element_text(size = 15,family = "serif"),
-#         axis.text = element_text(size = 10,family = "serif"),
-#         panel.border = element_rect(fill = NA,color = "black"),
-#         strip.background = element_rect(fill = NA,color=NA),
-#         strip.text = element_text(size = 15,family = "serif"))
-# p_PSA001_Age
-
 fig4d <- ggplot(df_PSA001_age_Jasp2_long, aes(x=Proportion, y=Countries, fill=ageBins)) +
   geom_col(alpha = .75)+
-  labs(y="Countries") + # , fill="Sex"
+  labs(y="Countries") + 
   scale_fill_discrete(label=c("0~17", "18~25", "26~40", "41~59",">=60" )) +
   theme_classic()+
   guides(y="axis_nested") +
-  theme(# legend.position = "none",
-        legend.title = element_text(size = 15,family = "serif"),
+  theme(legend.title = element_text(size = 15,family = "serif"),
         axis.title= element_text(size = 15,family = "serif"),
         axis.text = element_text(size = 10,family = "serif"),
         strip.text = element_text(size = 15,family = "serif"),
@@ -762,10 +719,7 @@ fig4d <- ggplot(df_PSA001_age_Jasp2_long, aes(x=Proportion, y=Countries, fill=ag
         panel.border = element_rect(fill = NA,color = "black")) +
   scale_x_continuous(breaks = seq(0, 1, by = 0.1)) +
   facet_wrap(~ weird, scales = "free")
-# save the plot
-# fig4 <- (fig4a + fig4b) +  plot_annotation(tag_levels = 'A')
-# ggsave("fig4.pdf", fig4, device = "pdf", width=16, height = 9)
-# fig4
+#fig4d
 ```
 
 ```{r Test H3b,message=FALSE, warning=FALSE}
@@ -787,7 +741,7 @@ fig4b <- ggplot(BF_h3b_age_p_2, aes( x = `Log(BF10)`, y = Contries, color = Prio
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
              colour = c("red", "tomato", "black", "deepskyblue","blue"), 
              linetype=c("longdash", "longdash", "solid", "longdash","longdash")) + 
-    geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7, 
+  geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
@@ -798,32 +752,28 @@ fig4b <- ggplot(BF_h3b_age_p_2, aes( x = `Log(BF10)`, y = Contries, color = Prio
   ggtitle("Age distribution") +
   theme_bw() +
         theme(panel.grid.major = element_blank(),
-         panel.grid.minor = element_blank(),
-         panel.background = element_blank(),
-         panel.border = element_blank(),
-         text = element_text(family='Times'),
-         # legend.title=element_blank(),
-         legend.title = element_text(size =16),
-         legend.text = element_text(size =14),
-         axis.text.x = element_text (size = 14, color = 'black',  hjust = 1),
-         axis.text.y = element_text (size = 16, color = 'black'),
-         plot.title = element_text(lineheight=.8, face="bold", size = 18, margin=margin(0,0,20,0)),
-         axis.text = element_text (size = 16, color = 'black'),
-         axis.title = element_text (size = 16),
-         axis.title.x = element_text (size = 16),
-         # axis.title.y = element_blank(),
-         axis.title.y = element_text( size = 16),
-         axis.line.x = element_line(color='black', size = 1),    
-         axis.line.y = element_line(color='black', size = 1),    
-         strip.text = element_text (size = 16, color = 'black'), 
-         panel.spacing = unit(3, "lines")
+              panel.grid.minor = element_blank(),
+              panel.background = element_blank(),
+              panel.border = element_blank(),
+              text = element_text(family='Times'),
+              legend.title = element_text(size =16),
+              legend.text = element_text(size =14),
+              axis.text.x = element_text (size = 14, color = 'black',  hjust = 1),
+              axis.text.y = element_text (size = 16, color = 'black'),
+              plot.title = element_text(lineheight=.8, face="bold", size = 18, margin=margin(0,0,20,0)),
+              axis.text = element_text (size = 16, color = 'black'),
+              axis.title = element_text (size = 16),
+              axis.title.x = element_text (size = 16),
+              axis.title.y = element_text( size = 16),
+              axis.line.x = element_line(color='black', size = 1),    
+              axis.line.y = element_line(color='black', size = 1),    
+              strip.text = element_text (size = 16, color = 'black'), 
+              panel.spacing = unit(3, "lines")
         )
-
-library(patchwork)
+#fig4b
 p_BF <- (fig4a + fig4b) /
    (fig4c + fig4d) +
-  plot_annotation( # title = 'Pairwise comparison between samples from China and other countries',
-                  tag_levels = 'A')  & 
+  plot_annotation(tag_levels = 'A')  & 
   theme(plot.tag = element_text(size = 18, face = "bold"))
 
 ggsave("Fig4_withBF.pdf", p_BF, device = "pdf", width=18, height = 18)
