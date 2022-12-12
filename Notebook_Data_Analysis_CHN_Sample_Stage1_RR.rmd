@@ -19,11 +19,6 @@ rm(list = ls())
 if (!require("pacman")) install.packages("pacman") # install pacman, a package for managing packages in R
 
 pacman::p_load("tidyverse", "ggh4x","stringr", "patchwork", "BayesFactor")
-# library(tidyverse)
-# library(ggh4x)
-# library(stringr)
-# library(patchwork)
-# library(BayesFactor)
 ```
 
 # Bayesian multinomial test
@@ -256,6 +251,13 @@ We found strong evidence for the $H_1$ that the sex ratio from PSA001 is differe
 Here we will compare the age distribution of samples from psychological studies (PSA 001 as the example) and the Census data.
 
 #### Age bins [set 1]: demogrphic age bins
+
+```{r define a func for age bins of census data}
+
+Func_ageBin_census <- function(){
+  
+}
+```
 
 ```{r H2b ageBins plot, message=FALSE, warning=FALSE}
 df_PSA001_Age_CN <- df_PSA001 %>%
