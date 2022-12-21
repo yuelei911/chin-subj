@@ -16,7 +16,7 @@ First, load libraries.
 
 ```{r Initialization, message=FALSE, warning=FALSE}
 rm(list = ls())
-if (!require("pacman")) install.packages("pacman") # install pacman, a package for managing packages in R
+if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load("tidyverse", "ggh4x","stringr", "patchwork", "BayesFactor")
 ```
@@ -117,7 +117,7 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   # default_prior - whether use the default, defused prior
   # prior - priors defined by users
   
-  fact_level <- dataset %>% dplyr::select(all_of(factor)) %>% dplyr::pull() #  %>% as.factor(.)
+  fact_level <- dataset %>% dplyr::select(all_of(factor)) %>% dplyr::pull()
   observed_data <- dataset %>% dplyr::select(all_of(observed)) %>% dplyr::pull()
   names(observed_data) <- fact_level
   expected_data <- dataset %>% dplyr::select(all_of(expected)) %>% dplyr::pull()
@@ -173,7 +173,35 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 load("df_chinese_subj_rr_stage1.RData")
 ```
 
-# Teset three hypotheses
+```{r disposal data, message=FALSE, warning=FALSE}
+
+df_census6_age <- df_census6 %>% 
+  dplyr::select(1,3,4) %>% 
+  dplyr::rename(ageBins=1,
+                male=2,
+                female=3) %>% 
+  dplyr::mutate_at(c("ageBins","male","female"),as.numeric) %>% 
+  na.omit() %>% 
+  dplyr::add_row(ageBins=100,
+                 male=8852,
+                 female=27082) %>%  ###100 represent 100 years old and above
+  tidyr::pivot_longer(-ageBins,names_to = "sex",values_to = "num")
+ 
+df_census7_age <- df_census7 %>% 
+  dplyr::select(1,3,4) %>% 
+  dplyr::rename(ageBins=1,
+                male=2,
+                female=3) %>% 
+  dplyr::mutate_at(c("ageBins","male","female"),as.numeric) %>% 
+  na.omit() %>% 
+  dplyr::add_row(ageBins=100,
+                 male=35129,
+                 female=83737) %>% ###100 represent 100 years old and above
+  tidyr::pivot_longer(-ageBins,names_to = "sex",values_to = "num")
+  
+```
+
+# Test three hypotheses
 
 ## Test the 1st hypothesis
 *This can only be done after collecting data.*
@@ -242,6 +270,7 @@ fig3a <- ggplot(df_sex_ratio, aes(Site, Proportion,fill=Sex)) +
         axis.title = element_text(size = 16, family = "serif"),
         legend.text = element_text(size = 16, family = "serif"),
         axis.text = element_text(size =16, family = "serif"))
+#fig3a
 ```
 
 We found strong evidence for the $H_1$ that the sex ratio from PSA001 is different from that of Census data, with $Log(BF_{10})$ = `r BF_h2a_sex_psych$BF$LogBF10`. On the contrast, for the CFPS data, we found moderate evidence for the $H_0$ that sex ratio from CFPS2018 is not different from that of Census data, $Log(BF_{10})$ = `r BF_h2a_sex_cfps$BF$LogBF10`
@@ -250,81 +279,168 @@ We found strong evidence for the $H_1$ that the sex ratio from PSA001 is differe
 
 Here we will compare the age distribution of samples from psychological studies (PSA 001 as the example) and the Census data.
 
-#### Age bins [set 1]: demogrphic age bins
-
-```{r define a func for age bins of census data}
-
-Func_ageBin_census <- function(){
+```{r define a func for propotion of census age bins, message=FALSE, warning=FALSE}
+Func_census_Age_Prop <- function(df_census, break_names, label_names,level_names,wider_form=TRUE){
+  #### function for calculating the proportion of age bins based on the break_names and label_names
+  # df: the input data, with ageBins,male, female,and site
+  # break_names, a vector of number
+  # label_names, a vector of string
+  # level_names, a factor
+  #
+  # return a wide-format data frame for further BF calculation
+  ####
   
+df_tmp_census <- df_census %>%
+  dplyr::mutate(ageBins=cut(ageBins,
+                            breaks=break_names,
+                            labels=label_names)) %>%
+  group_by(ageBins,sex) %>% 
+  summarise(num=sum(num)) %>% 
+  ungroup() %>% 
+  dplyr::mutate(freq=(num/sum(num))*100) %>% 
+  dplyr::mutate(percent = floor(freq),
+                indx = freq - percent,
+                site="census7")
+
+df_tmp_census$ageBins= factor(df_tmp_census$ageBins,levels=level_names)
+
+## below we fill the percentage to 100%
+filler_idx_census <- df_tmp_census %>%
+  dplyr::group_by(site) %>% 
+  dplyr::summarise(sum = sum(percent)) %>%
+  dplyr::ungroup() 
+
+df_tmp_filled_census <- data.frame(matrix(ncol = ncol(df_tmp_census), nrow = 0))
+colnames(df_tmp_filled_census) <- colnames(df_tmp_census)
+
+
+for (ii in 1:nrow(filler_idx_census)){
+  tmp_census <- df_tmp_census %>% 
+    dplyr::filter(site == filler_idx_census$site[ii]) %>%
+    dplyr::arrange(desc(indx))
+  
+  if (filler_idx_census$sum[ii] < 100) {
+    for (jj in seq(100 - filler_idx_census$sum[ii])){
+      tmp_census$percent[jj] <- tmp_census$percent[jj] + 1
+    }
+  }
+  df_tmp_filled_census <- rbind(df_tmp_filled_census, tmp_census)
+}
+df_tmp_filled_census <- df_tmp_filled_census %>%
+  dplyr::arrange(ageBins, sex)
+
+if (wider_form){
+  df_tmp_filled_census <- df_tmp_filled_census %>%
+    dplyr::select(-c(num, freq, indx)) %>%
+    tidyr::pivot_wider(names_from = "ageBins", values_from = "percent") 
+}
+
+return(df_tmp_filled_census)
 }
 ```
 
-```{r H2b ageBins plot, message=FALSE, warning=FALSE}
-df_PSA001_Age_CN <- df_PSA001 %>%
-  dplyr::filter(!is.na(Age)) %>%
-  dplyr::filter(Countries == "CN") %>%
-  dplyr::mutate(ageBins_pyr = cut(Age,
-                                  breaks=c(-Inf, 4.5, 9.5, 14.5, 19.5, 24.5, 29.5, 34.5, 39.5, 44.5,
-                                            49.5, 54.5,59.5,64.5,69.5,74.5,79.5,84.5,89.5,94.5, Inf),
-                                  labels=c("0~4","5~9","10~14", "15~19", "20~24", "25~29", "30~34", "35~39", "40~44",
-                                     "45~49","50~54","55~59","60~64","65~69","70~74", "75~79",
-                                     "80~84","85~89", "90~94",">=95")),
-                ageBins_pyr = factor(ageBins_pyr, levels = c("0~4","5~9","10~14", "15~19", "20~24", "25~29", 
-                                                             "30~34", "35~39", "40~44", "45~49","50~54",
-                                                             "55~59","60~64","65~69","70~74", "75~79",
-                                                             "80~84","85~89", "90~94",">=95"))) %>%
-  dplyr::count(ageBins_pyr, Sex) %>%
-  dplyr::mutate(Proportion = round(n / sum(n), 4) * 100) %>%
-  tidyr::complete(ageBins_pyr, Sex, fill=list(Proportion=0)) %>%
-  dplyr::mutate(Site = "PSA001",
-                Sex = ifelse(Sex == "f", "female_PSA", "male_PSA"))
+```{r define a func for proportion of PSA001 age bins, message=FALSE, warning=FALSE}
+Func_PSA001_Age_Prop <- function(df_PSA, break_names, label_names, level_names,wider_form=TRUE){
+  #### function for calculating the proportion of age bins based on the break_names and label_names
+  # df: the input data, with user_id, Countries, Sex, and Age
+  # break_names, a vector of number
+  # label_names, a vector of string
+  # level_names, a factor
+  #
+  # return a wide-format data frame for further BF calculation
+  ####
+  
+  df_tmp_PSA <- df_PSA %>%
+    dplyr::select(user_id, Countries, Sex, Age) %>%
+    dplyr::filter(Countries=="CN") %>% 
+    dplyr::filter(!is.na(Age)) %>% 
+    dplyr::mutate(ageBins_pyr=cut(Age, 
+                              breaks=break_names,  
+                              labels=label_names)) %>%
+    dplyr::count(ageBins_pyr, Sex) %>%
+    dplyr::mutate(freq = (n / sum(n))*100) %>%
+    tidyr::complete(ageBins_pyr, Sex,fill = list(n = 0, freq = 0)) %>%
+    dplyr::mutate(percent = floor(freq),
+                  indx = freq - percent) %>% 
+    dplyr::mutate(site="PSA001",
+                  Sex=ifelse(Sex=="f","female_PSA","male_PSA"))
+    
+  
+  df_tmp_PSA$ageBins_pyr= factor(df_tmp_PSA$ageBins_pyr,levels=level_names)
+  
+  ## below we fill the percentage to 100%
+  filler_idx_PSA <- df_tmp_PSA %>%
+    dplyr::group_by(site) %>%
+    dplyr::summarise(sum = sum(percent)) %>%
+    dplyr::ungroup() 
 
-df_census7_age94 <- df_census7 %>%
-  dplyr::select(c(1,3,4)) %>%        
-  dplyr::slice(c(9:13,16:20,23:27,30:34,37:41,
-                 44:48,50:54,57:61,64:68,71:75,
-                 78:82,85:89,92:96,99:103,106:110,
-                113:117, 120:124,127:131,134:138)) %>%
-  dplyr::rename(ageBins=1,
-                male=2,
-                female=3) %>% 
-  dplyr::mutate(ageBins=as.numeric(ageBins),
-         male=as.numeric(male),
-         female=as.numeric(female)) %>% 
-  dplyr::mutate(male=round(male/1409778724*100,2),
-                          female=round(female/1409778724*100,2)) %>% 
-  dplyr::mutate(ageBins=cut(ageBins,
-                            breaks=c(-Inf,4.5,9.5,14.5,19.5,24.5,
-                                     29.5,34.5,39.5,44.5,49.5,
-                                     54.5,59.5,64.5,69.5,74.5,
-                                      79.5,84.5,89.5,94.5),
-                            labels=c("0~4","5~9","10~14","15~19","20~24",
+  df_tmp_filled_PSA <- data.frame(matrix(ncol = ncol(df_tmp_PSA), nrow = 0))
+  colnames(df_tmp_filled_PSA) <- colnames(df_tmp_PSA)
+
+  for (ii in 1:nrow(filler_idx_PSA)){
+    tmp_PSA <- df_tmp_PSA %>% 
+      dplyr::filter(site == filler_idx_PSA$site[ii]) %>%
+      dplyr::arrange(desc(indx))
+    
+    if (filler_idx_PSA$sum[ii] < 100) {
+      for (jj in seq(100 - filler_idx_PSA$sum[ii])){
+       tmp_PSA$percent[jj] <- tmp_PSA$percent[jj] + 1
+      }
+    }
+    df_tmp_filled_PSA <- rbind(df_tmp_filled_PSA, tmp_PSA)
+  }
+  df_tmp_filled_PSA <- df_tmp_filled_PSA %>%
+    dplyr::arrange(ageBins_pyr,Sex)
+  
+  if (wider_form){
+    df_tmp_filled_PSA <- df_tmp_filled_PSA %>%
+      dplyr::select(-c(n, freq, indx)) %>%
+      tidyr::pivot_wider(names_from = "ageBins_pyr", values_from = "percent") 
+  }
+  
+  
+  return(df_tmp_filled_PSA)
+}
+```
+#### Age bins [set 1]: demogrphic age bins
+
+```{r H2b ageBins plot, message=FALSE, warning=FALSE}
+df_PSA001_Age_CN <- Func_PSA001_Age_Prop(df_PSA001,
+                                         break_names =c(-Inf,4.5,9.5,14.5,19.5,24.5,
+                                                        29.5,34.5,39.5,44.5,49.5,
+                                                        54.5,59.5,64.5,69.5,74.5,
+                                                        79.5,84.5,89.5,94.5,Inf),
+                                         label_names = c("0~4","5~9","10~14","15~19","20~24",
                                      "25~29","30~34","35~39","40~44","45~49",
                                      "50~54","55~59","60~64","65~69","70~74",
-                                     "75~79","80~84","85~89", "90~94")),
-                            ageBins=factor(ageBins,levels = 
-                                     c("0~4","5~9","10~14", "15~19", "20~24", "25~29",
-                                       "30~34", "35~39", "40~44", "45~49","50~54",
-                                       "55~59","60~64","65~69","70~74", "75~79",
-                                       "80~84","85~89", "90~94"))) %>%
- dplyr::group_by(ageBins) %>% 
- dplyr::summarise(male=sum(male),
-                 female=sum(female))
+                                     "75~79","80~84","85~89", "90~94",">=95"),
+                                     level_names = c("0~4","5~9","10~14","15~19","20~24",
+                                     "25~29","30~34","35~39","40~44","45~49",
+                                     "50~54","55~59","60~64","65~69","70~74",
+                                     "75~79","80~84","85~89", "90~94",">=95"),
+                     wider_form = FALSE)
+                                          
 
-###Combining the data of 95 years old and above and controlling the number of the decimal places
-df_census7_age95 <- data.frame(ageBins = c(">=95"),
-                            male = round((271455 + 35129)/1409778724*100, 2),
-                            female = round((548357 + 83737)/1409778724*100, 2))
+df_census7_age_new <- Func_census_Age_Prop(df_census7_age,
+                     break_names = c(-Inf,4.5,9.5,14.5,19.5,24.5,
+                                     29.5,34.5,39.5,44.5,49.5,
+                                     54.5,59.5,64.5,69.5,74.5,
+                                      79.5,84.5,89.5,94.5,Inf),
+                     label_names = c("0~4","5~9","10~14","15~19","20~24",
+                                     "25~29","30~34","35~39","40~44","45~49",
+                                     "50~54","55~59","60~64","65~69","70~74",
+                                     "75~79","80~84","85~89", "90~94",">=95"),
+                     level_names = c("0~4","5~9","10~14","15~19","20~24",
+                                     "25~29","30~34","35~39","40~44","45~49",
+                                     "50~54","55~59","60~64","65~69","70~74",
+                                     "75~79","80~84","85~89", "90~94",">=95"),
+                     wider_form = FALSE)
 
-df_census7_age <- rbind(df_census7_age94, df_census7_age95) %>%
-  tidyr::pivot_longer(-ageBins, names_to = "Sex", values_to = "Proportion") %>%
-  dplyr::mutate(Proportion=as.numeric(Proportion))
-  
-
-fig3b <- ggplot(data= df_census7_age, aes(x=ageBins, y=ifelse(Sex=="male", -Proportion, Proportion), fill=Sex)) +
+###plotting
+fig3b <- ggplot(data= df_census7_age_new, aes(x=ageBins, y=ifelse(sex=="male", -percent, percent), fill=sex)) +
   geom_col(alpha=0.5, width = 1) +
   geom_line(data = df_PSA001_Age_CN, aes(x=ageBins_pyr,
-                                      y = ifelse(Sex == "male_PSA", -Proportion/2.5, Proportion/2.5),
+                                      y = ifelse(Sex == "male_PSA", -percent/2.5, percent/2.5),
                                       group=Sex,color="PSA001"), size=1, inherit.aes = FALSE) +
   scale_y_continuous(limits = c(-15,15),sec.axis = sec_axis(~.*2.5, name = "Proportion (PSA001)")) +
   coord_flip() +
@@ -349,91 +465,93 @@ fig3
 
 Also get the data for Bayesian multinomial test
 ```{r test H2b using BMT, message=FALSE, warning=FALSE}
-df_PSA001_Age_CN_Jasp <- df_PSA001 %>%
-  dplyr::filter(!is.na(Age)) %>%   
-  dplyr::filter(Countries == "CN") %>% 
-  dplyr::filter(!is.na(Age)) %>%
-  dplyr::select(user_id, Countries, Sex, Age) %>%
-  dplyr::mutate(ageBins=cut(Age, 
-                            breaks=c(0, 9.5, 19.5, 29.5, 30.5, 40.5, 59.5, Inf), 
-                            labels=c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"))) %>%
-  dplyr::count(Countries, ageBins) %>%
-  dplyr::group_by(Countries) %>%
-  dplyr::mutate(freq = (n / sum(n))*100) %>%
-  dplyr::ungroup() %>%
-  tidyr::complete(Countries, ageBins, fill = list(n = 0, freq = 0)) %>%
-  dplyr::mutate(percent = floor(freq),
-                indx = freq - percent) %>%
-  dplyr::arrange(desc(indx))
+### PAS001' age is divided into ten years
+df_PSA001_Age_CN_jasp_interval10 <- Func_PSA001_Age_Prop(df_PSA001,
+                                                          break_names = c(0, 9.5, 19.5, 29.5, 30.5, 40.5, 59.5, Inf),
+                                                          label_names = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"),
+                                                          level_names = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"),
+                                                          wider_form = FALSE) %>% 
+  dplyr::group_by(ageBins_pyr) %>% 
+  dplyr::summarise(percent=sum(percent)) %>%
+  dplyr::ungroup() %>% 
+  dplyr::rename(PSA001_CN=percent,
+                ageBins=ageBins_pyr)
 
-if (sum(df_PSA001_Age_CN_Jasp$percent) < 100) {
-    for (jj in seq(100 - sum(df_PSA001_Age_CN_Jasp$percent))){
-     df_PSA001_Age_CN_Jasp$percent[jj] <- df_PSA001_Age_CN_Jasp$percent[jj] + 1
-    }
-}
 
-df_PSA001_Age_CN_Jasp <- df_PSA001_Age_CN_Jasp %>%
-  dplyr::select(ageBins, percent) %>%
-  dplyr::rename(PSA001_CN = percent)
+### PSA001' age is divided into stages of development
+df_PSA001_Age_CN_Jasp_interval_stages <- Func_PSA001_Age_Prop(df_PSA001,
+                                                              break_names = c(0, 17.5, 25.5, 40.5, 59.5, Inf),
+                                                              label_names = c("0~17","18~25","26~40", "41~59", ">=60"),
+                                                              level_names = c("0~17","18~25","26~40", "41~59", ">=60"),
+                                                              wider_form = FALSE) %>%
+  dplyr::group_by(ageBins_pyr) %>% 
+  dplyr::summarise(percent=sum(percent)) %>%
+  dplyr::ungroup() %>% 
+  dplyr::rename(PSA001_CN=percent,
+                ageBins=ageBins_pyr)
+  
 
-df_census7_age_jasp <- df_census7_age %>%
-  tidyr::pivot_wider(names_from = "Sex", values_from = "Proportion") %>%
-  dplyr::mutate(newAge = case_when(ageBins=="0~4" ~ "0~9",   ageBins == "5~9"   ~ "0~9",
-                                   ageBins=="10~14"~"10~19", ageBins=="15~19"~"10~19", 
-                                   ageBins=="20~24" ~ "20~29", ageBins=="25~29" ~ "20~29", 
-                                   ageBins=="30~34" ~ "30~39", ageBins=="35~39" ~ "30~39",
-                                   ageBins=="40~44" ~ "40~49", ageBins=="45~49" ~ "40~49", 
-                                   ageBins=="50~54" ~ "50~59", ageBins=="55~59" ~ "50~59",
-                                   ageBins=="60~64" ~ ">=60" , ageBins=="65~69" ~ ">=60",
-                                   ageBins=="70~74" ~ ">=60",  ageBins=="75~79" ~ ">=60", 
-                                   ageBins=="80~84" ~ ">=60",  ageBins=="85~89" ~ ">=60", 
-                                   ageBins=="90~94" ~ ">=60",  ageBins==">=95" ~ ">=60")) %>%
-  dplyr::group_by(newAge) %>%
-  dplyr::summarise(newFemale = sum(female),
-                   newMale = sum(male)) %>%
-  dplyr::ungroup() %>%
-  dplyr::mutate(Prop = newFemale + newMale) %>%
-  dplyr::mutate(percent = floor(Prop),
-                indx = Prop - percent) %>%
-  dplyr::arrange(desc(indx))
+###Census7' age is divided into ten years
+df_census7_age_jasp_interval10 <- Func_census_Age_Prop(df_census7_age,
+                                                       break_names = c(-Inf, 9.5, 19.5, 29.5, 30.5, 40.5, 59.5, Inf),
+                                                       label_names = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"),
+                                                       level_names = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"),
+                                                       wider_form = FALSE) %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(percent=sum(percent)) %>%
+  dplyr::ungroup() %>% 
+  dplyr::rename(Census7=percent)
 
-if (sum(df_census7_age_jasp$percent) < 100) {
-    for (jj in seq(100 - sum(df_census7_age_jasp$percent))){
-     df_census7_age_jasp$percent[jj] <- df_census7_age_jasp$percent[jj] + 1
-    }
-  }
 
-df_census7_age_jasp <- df_census7_age_jasp %>%
-  dplyr::rename(Census7 = percent,
-                ageBins = newAge) %>%
-  dplyr::select(ageBins, Census7)
+###Census' age is divided into the stages of development
+df_census7_age_jasp_interval_stages <- Func_census_Age_Prop(df_census7_age,
+                                                       break_names = c(-Inf, 17.5, 25.5, 40.5, 59.5, Inf),
+                                                       label_names = c("0~17","18~25","26~40", "41~59", ">=60"),
+                                                       level_names = c("0~17","18~25","26~40", "41~59", ">=60"),
+                                                       wider_form = FALSE) %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(percent=sum(percent)) %>%
+  dplyr::ungroup() %>% 
+  dplyr::rename(Census7=percent)
 
-df_PSA001_Age_CN_Jasp_new <- df_PSA001_Age_CN_Jasp %>%
-  dplyr::left_join(., df_census7_age_jasp) %>%
-  dplyr::mutate(ageBins = factor(ageBins, levels = c( "0~9",
-                                                      "10~19",
-                                                      "20~29" ,
-                                                      "30~39" ,
-                                                      "40~49",
-                                                      "50~59",
-                                                      ">=60"))) %>%
-  dplyr::arrange(ageBins)
+
+df_age_jasp_interval10 <- df_PSA001_Age_CN_jasp_interval10 %>% 
+  dplyr::left_join(.,df_census7_age_jasp_interval10)
+
+df_age_jasp_interval_stages <- df_PSA001_Age_CN_Jasp_interval_stages %>% 
+  dplyr::left_join(.,df_census7_age_jasp_interval_stages)
+
 
 # save the CSV to compare the BayesMultiNomial with the result in JASP
-write.csv(df_PSA001_Age_CN_Jasp_new, 'df_PSA001_Age_CN_Jasp_new.csv', row.names = F)
+write.csv(df_age_jasp_interval_stages, "df_age_jasp_interval_stages.csv", row.names = FALSE)
 
-BF_h2b_age_psych <- BayesMultiNomial(dataset = df_PSA001_Age_CN_Jasp_new, 
+write.csv(df_age_jasp_interval10, "df_age_jasp_interval10.csv", row.names = FALSE)
+
+BF_h2b_age_psych_interval10 <- BayesMultiNomial(dataset = df_age_jasp_interval10, 
                                      factor = "ageBins", 
                                      observed = "PSA001_CN",
                                      expected = "Census7")
 
-BF_h2b_age_psych_2 <- BayesMultiNomial(dataset = df_PSA001_Age_CN_Jasp_new, 
+BF_h2b_age_psych_interval10_2 <- BayesMultiNomial(dataset = df_age_jasp_interval10, 
                                      factor = "ageBins", 
                                      observed = "PSA001_CN",
                                      expected = "Census7",
                                      prior = "Census7")
+
+BF_h2b_age_psych_interval_stages <- BayesMultiNomial(dataset = df_age_jasp_interval_stages,
+                                                     factor = "ageBins",
+                                                     observed = "PSA001_CN",
+                                                     expected = "Census7")
+
+BF_h2b_age_psych_interval_stages_2 <- BayesMultiNomial(dataset = df_age_jasp_interval_stages,
+                                                     factor = "ageBins",
+                                                     observed = "PSA001_CN",
+                                                     expected = "Census7",
+                                                     prior = "Census7")
 ```
-We found strong evidence for the $H_1$ that the age distribution from PSA001 is different from that of Census data, with $Log(BF_{10})$ = `r BF_h2b_age_psych$BF$LogBF10`.
+When we divide the age into 10 years,we found strong evidence for the $H_2$ that the age distribution from PSA001 is different from that of Census data, with $Log(BF_{10})$ = `r BF_h2b_age_psych_interval10$BF$LogBF10`.
+
+When we divide age into stages of psychological development, we found strong evidence for the $H_2$ that the age distribution from PSA001 is different from that of Census data, with $Log(BF_{10})$ = `r BF_h2b_age_psych_interval_stages$BF$LogBF10`.
 
 #### Age bins [set 2]: Psychological age bins
 
@@ -644,7 +762,6 @@ Func_Age_Prop <- function(df, break_names, label_names, wider_form=TRUE){
   
   return(df_tmp_filled)
 }
-
 ```
 
 ```{r prepare data for test, message=FALSE, warning=FALSE}
@@ -674,9 +791,9 @@ df_PSA001_age_Jasp1 <- Func_Age_Prop(df = df_PSA001_Age_valid_countryCode_sorted
 
 df_PSA001_age_Jasp1 <- df_PSA001_age_Jasp1 %>%
   # fill zero
-  dplyr::mutate(CN = ifelse(CN==0, 1, 
+  dplyr::mutate(CN = ifelse(CN==0, 1,
                             ifelse(CN==38, 37, 
-                                   ifelse(CN == 55, 54, CN))))
+                                   ifelse(CN  == 55, 54, CN))))
 
 # age bin based on psychological aging stage
 df_PSA001_age_Jasp2 <- Func_Age_Prop(df = df_PSA001_Age_valid_countryCode_sorted,
@@ -695,7 +812,7 @@ df_PSA001_age_Jasp2_long <- Func_Age_Prop(df = df_PSA001_Age_valid_countryCode_s
   dplyr::left_join(., df_regionCode, by = c("Countries" = "country_iso2")) %>%
   dplyr::mutate(Proportion = percent/100)
 
-# Countries order for ploting age bins proprotions
+# Countries order for plotting age bins proportions
 df_PSA001_age_Jasp2_long_countries <- df_PSA001_age_Jasp2_long %>%
   dplyr::filter(ageBins == "18~25") %>%
   dplyr::arrange(Proportion) %>%
@@ -780,4 +897,85 @@ p_BF <- (fig4a + fig4b) /
 
 ggsave("Fig4_withBF.pdf", p_BF, device = "pdf", width=18, height = 18)
 p_BF
+```
+```{r Plot using age groups similar to the age bins of census. See supplementary materials for this section, message=FALSE, warning=FALSE}
+
+df_PSA001_age_Jasp1_long <- Func_Age_Prop(df = df_PSA001_Age_valid_countryCode_sorted,
+                                     break_names = c(0, 10.5, 20.5, 30.5, 40.5, 50.5, 60.5, Inf),
+                                     label_names = c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"),
+                                     wider_form = FALSE) %>%
+  dplyr::left_join(., df_regionCode, by = c("Countries" = "country_iso2")) %>%
+  dplyr::mutate(Proportion = percent/100)
+
+# Countries order for ploting age bins proprotions
+df_PSA001_age_Jasp1_long_countries <- df_PSA001_age_Jasp1_long %>%
+  dplyr::filter(ageBins == "0~10") %>%
+  dplyr::arrange(Proportion) %>%
+  dplyr::pull(Countries)
+
+df_PSA001_age_Jasp1_long <- df_PSA001_age_Jasp1_long %>%
+  dplyr::mutate(Countries = factor(Countries, levels = df_PSA001_age_Jasp1_long_countries))
+
+
+fig4d_supp <- ggplot(df_PSA001_age_Jasp1_long, aes(x=Proportion, y=Countries, fill=ageBins)) +
+  geom_col(alpha = .75)+
+  labs(y="Countries") + 
+  scale_fill_discrete(label=c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61")) +
+  theme_classic()+
+  guides(y="axis_nested") +
+  theme(legend.title = element_text(size = 15,family = "serif"),
+        axis.title= element_text(size = 15,family = "serif"),
+        axis.text = element_text(size = 10,family = "serif"),
+        strip.text = element_text(size = 15,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black")) +
+  scale_x_continuous(breaks = seq(0, 1, by = 0.1)) +
+  facet_wrap(~ weird, scales = "free")
+#fig4d_supp
+
+
+fig4b_supp <- ggplot(BF_h3b_age_p_1, aes( x = `Log(BF10)`, y = Contries, color = Prior )) +
+  geom_point() +
+  scale_color_grey() +
+  xlim(-10, 60) +
+  scale_y_discrete(limits=rev) +
+  geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
+             colour = c("red", "tomato", "black", "deepskyblue","blue"), 
+             linetype=c("longdash", "longdash", "solid", "longdash","longdash")) + 
+  geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7, 
+            angle=90, text=element_text(size=10)) +
+  geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7, 
+            angle=90, text=element_text(size=10)) +
+  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="tomato", alpha = 0.7, 
+            angle=90, text=element_text(size=10)) +
+  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7, 
+            angle=90, text=element_text(size=10))  +
+  ggtitle("Age distribution") +
+  theme_bw() +
+        theme(panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              panel.background = element_blank(),
+              panel.border = element_blank(),
+              text = element_text(family='Times'),
+              legend.title = element_text(size =16),
+              legend.text = element_text(size =14),
+              axis.text.x = element_text (size = 14, color = 'black',  hjust = 1),
+              axis.text.y = element_text (size = 16, color = 'black'),
+              plot.title = element_text(lineheight=.8, face="bold", size = 18, margin=margin(0,0,20,0)),
+              axis.text = element_text (size = 16, color = 'black'),
+              axis.title = element_text (size = 16),
+              axis.title.x = element_text (size = 16),
+              axis.title.y = element_text( size = 16),
+              axis.line.x = element_line(color='black', size = 1),    
+              axis.line.y = element_line(color='black', size = 1),    
+              strip.text = element_text (size = 16, color = 'black'), 
+              panel.spacing = unit(3, "lines"))
+#fig4b_supp
+p_BF_supp <- (fig4a + fig4b_supp) /
+   (fig4c + fig4d_supp) +
+  plot_annotation(tag_levels = 'A')  & 
+  theme(plot.tag = element_text(size = 18, face = "bold"))
+
+ggsave("Fig4_withBF_supp.pdf", p_BF_supp, device = "pdf", width=18, height = 18)
+p_BF_supp
 ```
