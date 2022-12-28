@@ -917,7 +917,7 @@ df_PSA001_age_Jasp1_long <- df_PSA001_age_Jasp1_long %>%
   dplyr::mutate(Countries = factor(Countries, levels = df_PSA001_age_Jasp1_long_countries))
 
 
-fig4d_supp <- ggplot(df_PSA001_age_Jasp1_long, aes(x=Proportion, y=Countries, fill=ageBins)) +
+S1b <- ggplot(df_PSA001_age_Jasp1_long, aes(x=Proportion, y=Countries, fill=ageBins)) +
   geom_col(alpha = .75)+
   labs(y="Countries") + 
   scale_fill_discrete(label=c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61")) +
@@ -931,10 +931,10 @@ fig4d_supp <- ggplot(df_PSA001_age_Jasp1_long, aes(x=Proportion, y=Countries, fi
         panel.border = element_rect(fill = NA,color = "black")) +
   scale_x_continuous(breaks = seq(0, 1, by = 0.1)) +
   facet_wrap(~ weird, scales = "free")
-#fig4d_supp
+#S1b
 
 
-fig4b_supp <- ggplot(BF_h3b_age_p_1, aes( x = `Log(BF10)`, y = Contries, color = Prior )) +
+S1a <- ggplot(BF_h3b_age_p_1, aes( x = `Log(BF10)`, y = Contries, color = Prior )) +
   geom_point() +
   scale_color_grey() +
   xlim(-10, 60) +
@@ -970,12 +970,12 @@ fig4b_supp <- ggplot(BF_h3b_age_p_1, aes( x = `Log(BF10)`, y = Contries, color =
               axis.line.y = element_line(color='black', size = 1),    
               strip.text = element_text (size = 16, color = 'black'), 
               panel.spacing = unit(3, "lines"))
-#fig4b_supp
-p_BF_supp <- (fig4a + fig4b_supp) /
-   (fig4c + fig4d_supp) +
-  plot_annotation(tag_levels = 'A')  & 
+#S1a
+p_BF_supp <- S1a + S1b +
+  plot_layout(tag_level = 'new') +
+  plot_annotation(tag_levels =list(c("S1a","S1b")))  & 
   theme(plot.tag = element_text(size = 18, face = "bold"))
 
-ggsave("Fig4_withBF_supp.pdf", p_BF_supp, device = "pdf", width=18, height = 18)
+ggsave("Fig4_withBF_supp.pdf", p_BF_supp, device = "pdf", width=18, height = 9)
 p_BF_supp
 ```
