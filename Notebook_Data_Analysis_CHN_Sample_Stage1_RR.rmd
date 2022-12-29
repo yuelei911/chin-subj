@@ -937,7 +937,7 @@ S1b <- ggplot(df_PSA001_age_Jasp1_long, aes(x=Proportion, y=Countries, fill=ageB
 S1a <- ggplot(BF_h3b_age_p_1, aes( x = `Log(BF10)`, y = Contries, color = Prior )) +
   geom_point() +
   scale_color_grey() +
-  xlim(-10, 60) +
+  xlim(-15, 60) +
   scale_y_discrete(limits=rev) +
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
              colour = c("red", "tomato", "black", "deepskyblue","blue"), 
