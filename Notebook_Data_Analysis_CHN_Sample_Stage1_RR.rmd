@@ -167,6 +167,136 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 }
 ```
 
+### Test the default prior
+To test whether the current non-informative prior is reasonable, we conducted a simulation to test the sensitivity.
+
+We tested the false positive rate of the current setting and power of the current setting under different deviation from the expected. 
+
+For sex ratio, we used the probability of male as the parameter, as the expected proportion of female and male are both 50, we used the $Y \sim Binomial(p = 0.5)$ as the null model, any deviation from $0.5$ will be viewed as different from the null effect. 
+
+**False Positive Rate**: The proportion of BF01 that greater than 3.
+
+**Power**: The proportion of BF10 that greater than 3.
+
+```{r test default prior }
+### Sex ratio
+
+#### False positive rate
+
+##### Generate data by binomial distribution with p = 0.5 and test with BF
+options(scipen=999) 
+test_df1 <- data.frame(sex = c("female", "male"),
+                       expected = c(50, 50))
+
+test_BF <- data.frame(matrix(nrow = 50, ncol = 4))
+colnames(test_BF) <- c("Iter", "1st_prop", "log_BF10", "BF10")
+
+
+##### Using for loop to test the p = 0.5 ~ 0.75, using 0.05 as interval and repeat the above 
+for (ii in seq(1, 49)){
+  test_df1$obs <- c(test_df1$expected[1] - ii, test_df1$expected[2] + ii)
+  tmp_BF <- BayesMultiNomial(test_df1, factor = 'sex', observed = 'obs', expected = 'expected')
+  
+  test_BF$Iter[ii] <- ii
+  test_BF$`1st_prop`[ii] <- test_df1$expected[1] - ii
+  test_BF$`log_BF10`[ii] <- tmp_BF$BF$LogBF10
+  test_BF$`BF10`[ii] <- tmp_BF$BF$BF10
+  
+}
+
+### age bins
+
+#### testing false positive 
+
+##### Step 1: generating data using the expected
+
+seed = 12345
+sim_N = 1000
+prob_sim = 0.5
+nil_effect = 0.5
+
+Sim_Power <- function(seed = 12345, sim_N = 1000, prob_sim = 0.5, nil_effect = 0.5){
+  set.seed(seed)
+  
+  sim_1 <- data.frame(obs = rbinom(1000, size = 100, prob = prob_sim))
+  sim_1$sex <- "male"
+  sim_1$iter <- seq(sim_N)
+  sim_2 <- data.frame(obs = 100 - sim_1$obs)
+  sim_2$sex <- "female"
+  sim_2$iter <- seq(sim_N)
+  
+  sim <- sim_1 %>% 
+    dplyr::bind_rows(., sim_2) %>% 
+    dplyr::arrange(iter)
+  
+  test_BF <- data.frame(matrix(nrow = sim_N, ncol = 3))
+  colnames(test_BF) <- c("Iter", "1st_prop", "BF10")
+  
+  for (ii in seq(sim_N)){
+    test_df <- sim %>%
+      dplyr::filter(iter == ii) %>%
+      dplyr::mutate(expected = 50)
+    
+    # test_df1$obs <- c(test_df1$expected[1] - ii, test_df1$expected[2] + ii)
+    tmp_BF <- BayesMultiNomial(test_df, factor = 'sex', observed = 'obs', expected = 'expected')
+    test_BF$Iter[ii] <- ii
+    test_BF$`1st_prop`[ii] <- test_df1$expected[1] - ii
+    # test_BF$`log_BF10`[ii] <- tmp_BF$BF$LogBF10
+    test_BF$`BF10`[ii] <- tmp_BF$BF$BF10
+    
+  }
+  
+  BF_power <- data.frame(matrix(nrow = 1, ncol = 5))
+  colnames(BF_power) <- c("Prob", "Category", "BF_1", "BF_3", "BF_6")
+  
+  if (prob_sim == nil_effect) {
+    BF_power$Prob <- prob_sim
+    BF_power$Category <- "Evidence_for_Null"
+    BF_power$BF_1 <- sum(test_BF$BF10 < 1)/1000 
+    BF_power$BF_3 <- sum(test_BF$BF10 <= 1/3)/1000 
+    BF_power$BF_6 <- sum(test_BF$BF10 <= 1/ 6)/1000 
+  } else {
+    BF_power$Prob <- prob_sim
+    BF_power$Category <- "Evidence_for_Effect"
+    BF_power$BF_1 <- sum(test_BF$BF10 > 1)/1000 
+    BF_power$BF_3 <- sum(test_BF$BF10 >= 3)/1000 
+    BF_power$BF_6 <- sum(test_BF$BF10 >= 6)/1000 
+  }
+  return(BF_power)
+}
+
+probs <- seq(0.5, 0.7, 0.01)
+probs <- c(probs, 0.6)
+
+rm(res_bf_power)
+for (jj in (seq(length(probs)))){
+  tmp_power <- Sim_Power(seed = 1000,prob_sim = probs[jj])
+  if (exists("res_bf_power")){
+    res_bf_power <- rbind(res_bf_power, tmp_power)
+  } else {
+    res_bf_power <- tmp_power
+  }
+}
+
+res_bf_power2 <- res_bf_power
+##### Step 2: Testing with BF
+
+#### testing false negative
+
+##### Step 1: generating data using data that has distance with expected.
+
+##### Step 2: Testing with BF
+
+
+
+
+```
+
+Our simulation found that, for sex ratio, the current setting (prior), we can have detect deviation from p = 0.5 with more 80% of the times if the difference is greater than 0.17.
+
+For the age ratio:
+
+
 # Load data and preprocess the data
 
 ```{r Loading data, message=FALSE, warning=FALSE}
