@@ -18,7 +18,9 @@ First, load libraries.
 rm(list = ls())
 if (!require("pacman")) install.packages("pacman")
 
-pacman::p_load("tidyverse", "ggh4x","stringr", "patchwork", "BayesFactor")
+pacman::p_load("tidyverse", "ggh4x","stringr", "patchwork", "BayesFactor", "gtools")
+
+options(scipen=999) 
 ```
 
 # Bayesian multinomial test
@@ -178,44 +180,9 @@ For sex ratio, we used the probability of male as the parameter, as the expected
 
 **Power**: The proportion of BF10 that greater than 3.
 
-```{r test default prior }
-### Sex ratio
-
-#### False positive rate
-
-##### Generate data by binomial distribution with p = 0.5 and test with BF
-options(scipen=999) 
-test_df1 <- data.frame(sex = c("female", "male"),
-                       expected = c(50, 50))
-
-test_BF <- data.frame(matrix(nrow = 50, ncol = 4))
-colnames(test_BF) <- c("Iter", "1st_prop", "log_BF10", "BF10")
-
-
-##### Using for loop to test the p = 0.5 ~ 0.75, using 0.05 as interval and repeat the above 
-for (ii in seq(1, 49)){
-  test_df1$obs <- c(test_df1$expected[1] - ii, test_df1$expected[2] + ii)
-  tmp_BF <- BayesMultiNomial(test_df1, factor = 'sex', observed = 'obs', expected = 'expected')
-  
-  test_BF$Iter[ii] <- ii
-  test_BF$`1st_prop`[ii] <- test_df1$expected[1] - ii
-  test_BF$`log_BF10`[ii] <- tmp_BF$BF$LogBF10
-  test_BF$`BF10`[ii] <- tmp_BF$BF$BF10
-  
-}
-
-### age bins
-
-#### testing false positive 
-
-##### Step 1: generating data using the expected
-
-seed = 12345
-sim_N = 1000
-prob_sim = 0.5
-nil_effect = 0.5
-
-Sim_Power <- function(seed = 12345, sim_N = 1000, prob_sim = 0.5, nil_effect = 0.5){
+```{r test default prior for sex ratio }
+# define a function to run the simulation for sex ratio
+Sim_Power_binormial <- function(seed = 12345, sim_N = 1000, prob_sim = 0.5, nil_effect = 0.5){
   set.seed(seed)
   
   sim_1 <- data.frame(obs = rbinom(1000, size = 100, prob = prob_sim))
@@ -240,7 +207,7 @@ Sim_Power <- function(seed = 12345, sim_N = 1000, prob_sim = 0.5, nil_effect = 0
     # test_df1$obs <- c(test_df1$expected[1] - ii, test_df1$expected[2] + ii)
     tmp_BF <- BayesMultiNomial(test_df, factor = 'sex', observed = 'obs', expected = 'expected')
     test_BF$Iter[ii] <- ii
-    test_BF$`1st_prop`[ii] <- test_df1$expected[1] - ii
+    test_BF$`1st_prop`[ii] <- test_df$expected[1] - ii
     # test_BF$`log_BF10`[ii] <- tmp_BF$BF$LogBF10
     test_BF$`BF10`[ii] <- tmp_BF$BF$BF10
     
@@ -266,11 +233,10 @@ Sim_Power <- function(seed = 12345, sim_N = 1000, prob_sim = 0.5, nil_effect = 0
 }
 
 probs <- seq(0.5, 0.7, 0.01)
-probs <- c(probs, 0.6)
 
 rm(res_bf_power)
 for (jj in (seq(length(probs)))){
-  tmp_power <- Sim_Power(seed = 1000,prob_sim = probs[jj])
+  tmp_power <- Sim_Power_binormial(seed = 1000, prob_sim = probs[jj])
   if (exists("res_bf_power")){
     res_bf_power <- rbind(res_bf_power, tmp_power)
   } else {
@@ -278,21 +244,197 @@ for (jj in (seq(length(probs)))){
   }
 }
 
-res_bf_power2 <- res_bf_power
-##### Step 2: Testing with BF
-
-#### testing false negative
-
-##### Step 1: generating data using data that has distance with expected.
-
-##### Step 2: Testing with BF
-
-
-
-
+res_bf_power %>% 
+  ggplot2::ggplot(., aes(x = Prob, y = BF_3)) +
+  ggplot2::geom_point() + 
+  ggplot2::geom_hline(yintercept = 0.8) +
+  ggplot2::theme_classic()
 ```
 
 Our simulation found that, for sex ratio, the current setting (prior), we can have detect deviation from p = 0.5 with more 80% of the times if the difference is greater than 0.17.
+
+
+For age bins.
+
+First, the effect size is more complicated: https://github.com/jasp-stats/jasp-issues/issues/1652
+
+For K number of population frequencies p_{1}, p_{2}, .., p_{K-1}, p_{K} this would be a K-1 dimensional vector g such that
+
+$$g_{i} = \log( p_{I} / p_{K})$$
+
+Thus, $g$ is the vector
+
+$$ g = (\log(p_{1} / p_{K}), \log(p_{2} / p_{K}), …, \log(p_{K-1} / p_{K}))$$
+
+Similarly, for observed frequencies $\hat{p}{1}$, $\hat{p}{2}$, …, $\hat{p}{K-1}$, $\hat{p}{K}$ I would create an analogous K-1 dimension vector $\hat{g}$ such that
+
+$$\hat{g}_{i} = \log( \hat{p}_{i} / \hat{p}_{K})$$
+
+Thus, $\hat{g}$ is the vector
+
+$$\log(\hat{p}_{1}/ \hat{p}_{K}), log(\hat{p}_{2}/ \hat{p}_{K}), …, log(\hat{p}_{K-1}/ \hat{p}_{K})$$
+
+The observed effect size would then be the distance between $g$ and $\hat{g}$, which is defined as
+
+$$\sqrt{\sum_{i=1}^{K-1} (\hat{g}_{i} - g_{i})^{2}}$$
+
+An alternative would be to use vectors m of the form
+
+$$m_{i} = \sqrt{p_{i}}$$
+
+
+```{r test default prior for age ratio }
+
+# test for false positive
+prob_mult <- c(0.21, 0.08, 0.23, 0.29, 0.19)
+
+sim_tmp <- rmultinom(n=10, size=100, prob=prob_mult)
+
+expected <- prob_mult*100
+
+sim_data <- data.frame(ageBins = paste("Bin", seq(5), sep = ""),
+                       expected = expected,
+                       obs = sim_tmp[,1])
+
+
+tmp_BF_mult <- BayesMultiNomial(dataset = sim_data, 
+                                factor = "ageBins", 
+                                observed = "obs",
+                                expected = "expected")
+
+# define a function to run the simulation for sex ratio
+
+seed = 12345
+sim_N = 1000
+prob_sim = c(0.21, 0.08, 0.23, 0.29, 0.19)
+nil_effect = c(0.21, 0.08, 0.23, 0.29, 0.19)
+
+c(0.21, 0.08, 0.23, 0.29, 0.19)
+
+# bin 1 increase 0.01
+## c(0.22, 0.07, 0.23, 0.29, 0.19)
+## c(0.22, 0.08, 0.22, 0.29, 0.19)
+## c(0.22, 0.08, 0.23, 0.28, 0.19)
+## c(0.22, 0.08, 0.23, 0.29, 0.18)
+
+tmp_prob <- data.frame(rdirichlet(1000, c(2,2,2,2,2)))
+colnames(tmp_prob) <- paste0("bin", seq(5))
+
+sim_data <-  data.frame(matrix(nrow = 1000, ncol = 3))
+  colnames(test_BF) <- c("Iter", "distance", "BF10")
+
+rm("sim_data")
+for (ii in seq(1000)){
+  tmp_data <-data.frame(rmultinom(n=1, size=100, prob = tmp_prob[ii, ]))  %>%
+    dplyr::mutate(names=rownames(.)) %>%
+    dplyr::rename(V1 = 1) %>%
+    tidyr::pivot_wider(names_from = "names",
+                       values_from = "V1")
+  
+  if(exists("sim_data")){
+    sim_data <- rbind(sim_data, tmp_data)
+  } else {
+    sim_data <- tmp_data
+  }
+}
+
+test_BF <- data.frame(matrix(nrow = sim_N, ncol = 3))
+colnames(test_BF) <- c("Iter", "distance", "BF10")
+for (jj in seq(1000)){
+    test_df <- sim_data[jj, ] %>%
+      pivot_longer(cols = bin1:bin5,
+                   names_to = "ageBins",
+                   values_to = 'obs')
+    
+    test_df$expected = nil_effect*100
+    # test_df <- data.frame(ageBins = paste("bin", seq(5), sep = ""),
+    #                       expected = nil_effect*100,
+    #                       obs = sim_data[,ii])
+    
+    # test_df1$obs <- c(test_df1$expected[1] - ii, test_df1$expected[2] + ii)
+    tmp_BF <- BayesMultiNomial(test_df, 
+                               factor = 'ageBins', 
+                               observed = 'obs', 
+                               expected = 'expected')
+    test_BF$Iter[jj] <- jj
+    # test_BF$`1st_prop`[ii] <- test_df$expected[1] - ii
+    # test_BF$`log_BF10`[ii] <- tmp_BF$BF$LogBF10
+    test_BF$`BF10`[jj] <- tmp_BF$BF$BF10
+    
+}
+
+sum(test_BF$BF10 >=3)/1000
+
+Sim_Power_mult <- function(seed = 12345, 
+                           sim_N = 1000, 
+                           prob_sim = c(0.21, 0.08, 0.23, 0.29, 0.19), 
+                           nil_effect = c(0.21, 0.08, 0.23, 0.29, 0.19)){
+  
+  set.seed(seed)
+  
+  sim_data <- rmultinom(n=sim_N, size=100, prob=prob_sim)
+  
+  test_BF <- data.frame(matrix(nrow = sim_N, ncol = 3))
+  colnames(test_BF) <- c("Iter", "distance", "BF10")
+  
+  for (ii in seq(sim_N)){
+    
+    test_df <- data.frame(ageBins = paste("Bin", seq(5), sep = ""),
+                          expected = nil_effect*100,
+                          obs = sim_data[,ii])
+    
+    # test_df1$obs <- c(test_df1$expected[1] - ii, test_df1$expected[2] + ii)
+    tmp_BF <- BayesMultiNomial(test_df, 
+                               factor = 'ageBins', 
+                               observed = 'obs', 
+                               expected = 'expected')
+    test_BF$Iter[ii] <- ii
+    # test_BF$`1st_prop`[ii] <- test_df$expected[1] - ii
+    # test_BF$`log_BF10`[ii] <- tmp_BF$BF$LogBF10
+    test_BF$`BF10`[ii] <- tmp_BF$BF$BF10
+    
+  }
+  
+  BF_power <- data.frame(matrix(nrow = 1, ncol = 5))
+  colnames(BF_power) <- c("Prob", "Category", "BF_1", "BF_3", "BF_6")
+  
+  if (sum(prob_sim == nil_effect)==length(prob_sim)) {
+    BF_power$Prob <- paste0(prob_sim, collapse = ';')
+    BF_power$Category <- "Evidence_for_Null"
+    BF_power$BF_1 <- sum(test_BF$BF10 < 1)/1000 
+    BF_power$BF_3 <- sum(test_BF$BF10 <= 1/3)/1000 
+    BF_power$BF_6 <- sum(test_BF$BF10 <= 1/ 6)/1000 
+  } else {
+    BF_power$Prob <- paste0(prob_sim, collapse = ';')
+    BF_power$Category <- "Evidence_for_Effect"
+    BF_power$BF_1 <- sum(test_BF$BF10 > 1)/1000 
+    BF_power$BF_3 <- sum(test_BF$BF10 >= 3)/1000 
+    BF_power$BF_6 <- sum(test_BF$BF10 >= 6)/1000 
+  }
+  return(BF_power)
+}
+
+probs <- seq(0.5, 0.7, 0.01)
+
+rm(res_bf_power)
+for (jj in (seq(length(probs)))){
+  tmp_power <- Sim_Power_binormial(seed = 1000, prob_sim = probs[jj])
+  if (exists("res_bf_power")){
+    res_bf_power <- rbind(res_bf_power, tmp_power)
+  } else {
+    res_bf_power <- tmp_power
+  }
+}
+
+tmp_bf_pow_mult <- Sim_Power_mult()
+
+res_bf_power %>% 
+  ggplot2::ggplot(., aes(x = Prob, y = BF_3)) +
+  ggplot2::geom_point() + 
+  ggplot2::geom_hline(yintercept = 0.8) +
+  ggplot2::theme_classic()
+```
+
 
 For the age ratio:
 
@@ -420,52 +562,53 @@ Func_census_Age_Prop <- function(df_census, break_names, label_names,level_names
   # return a wide-format data frame for further BF calculation
   ####
   
-df_tmp_census <- df_census %>%
-  dplyr::mutate(ageBins=cut(ageBins,
-                            breaks=break_names,
-                            labels=label_names)) %>%
-  group_by(ageBins,sex) %>% 
-  summarise(num=sum(num)) %>% 
-  ungroup() %>% 
-  dplyr::mutate(freq=(num/sum(num))*100) %>% 
-  dplyr::mutate(percent = floor(freq),
-                indx = freq - percent,
-                site="census7")
-
-df_tmp_census$ageBins= factor(df_tmp_census$ageBins,levels=level_names)
-
-## below we fill the percentage to 100%
-filler_idx_census <- df_tmp_census %>%
-  dplyr::group_by(site) %>% 
-  dplyr::summarise(sum = sum(percent)) %>%
-  dplyr::ungroup() 
-
-df_tmp_filled_census <- data.frame(matrix(ncol = ncol(df_tmp_census), nrow = 0))
-colnames(df_tmp_filled_census) <- colnames(df_tmp_census)
-
-
-for (ii in 1:nrow(filler_idx_census)){
-  tmp_census <- df_tmp_census %>% 
-    dplyr::filter(site == filler_idx_census$site[ii]) %>%
-    dplyr::arrange(desc(indx))
+  df_tmp_census <- df_census %>%
+    dplyr::mutate(ageBins=cut(ageBins,
+                              breaks=break_names,
+                              labels=label_names)) %>%
+    group_by(ageBins,sex) %>% 
+    summarise(num=sum(num)) %>% 
+    ungroup() %>% 
+    dplyr::mutate(freq=(num/sum(num))*100) %>% 
+    dplyr::mutate(percent = floor(freq),
+                  indx = freq - percent,
+                  site="census7")
   
-  if (filler_idx_census$sum[ii] < 100) {
-    for (jj in seq(100 - filler_idx_census$sum[ii])){
-      tmp_census$percent[jj] <- tmp_census$percent[jj] + 1
+  df_tmp_census$ageBins= factor(df_tmp_census$ageBins,levels=level_names)
+
+  ## below we fill the percentage to 100%
+  filler_idx_census <- df_tmp_census %>%
+    dplyr::group_by(site) %>% 
+    dplyr::summarise(sum = sum(percent)) %>%
+    dplyr::ungroup() 
+
+  df_tmp_filled_census <- data.frame(matrix(ncol = ncol(df_tmp_census), nrow = 0))
+  colnames(df_tmp_filled_census) <- colnames(df_tmp_census)
+
+
+  for (ii in 1:nrow(filler_idx_census)){
+    tmp_census <- df_tmp_census %>% 
+      dplyr::filter(site == filler_idx_census$site[ii]) %>%
+      dplyr::arrange(desc(indx))
+    
+    if (filler_idx_census$sum[ii] < 100) {
+      for (jj in seq(100 - filler_idx_census$sum[ii])){
+        tmp_census$percent[jj] <- tmp_census$percent[jj] + 1
+      }
     }
+    df_tmp_filled_census <- rbind(df_tmp_filled_census, tmp_census)
   }
-  df_tmp_filled_census <- rbind(df_tmp_filled_census, tmp_census)
-}
-df_tmp_filled_census <- df_tmp_filled_census %>%
-  dplyr::arrange(ageBins, sex)
-
-if (wider_form){
+  
   df_tmp_filled_census <- df_tmp_filled_census %>%
-    dplyr::select(-c(num, freq, indx)) %>%
-    tidyr::pivot_wider(names_from = "ageBins", values_from = "percent") 
-}
+    dplyr::arrange(ageBins, sex)
 
-return(df_tmp_filled_census)
+  if (wider_form){
+    df_tmp_filled_census <- df_tmp_filled_census %>%
+      dplyr::select(-c(num, freq, indx)) %>%
+      tidyr::pivot_wider(names_from = "ageBins", values_from = "percent") 
+  }
+
+  return(df_tmp_filled_census)
 }
 ```
 
