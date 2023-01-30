@@ -261,7 +261,6 @@ Our simulation found that, for sex ratio, the current setting (prior), we can ha
 For age bins.
 
 
-
 First, the effect size is more complicated: https://github.com/jasp-stats/jasp-issues/issues/1652, tried but did not use this index, need to discuss with Alex further.
 
 For K number of population frequencies p_{1}, p_{2}, .., p_{K-1}, p_{K} this would be a K-1 dimensional vector g such that
