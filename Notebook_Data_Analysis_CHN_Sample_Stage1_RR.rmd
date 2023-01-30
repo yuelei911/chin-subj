@@ -260,7 +260,9 @@ Our simulation found that, for sex ratio, the current setting (prior), we can ha
 
 For age bins.
 
-First, the effect size is more complicated: https://github.com/jasp-stats/jasp-issues/issues/1652
+
+
+First, the effect size is more complicated: https://github.com/jasp-stats/jasp-issues/issues/1652, tried but did not use this index, need to discuss with Alex further.
 
 For K number of population frequencies p_{1}, p_{2}, .., p_{K-1}, p_{K} this would be a K-1 dimensional vector g such that
 
@@ -288,26 +290,6 @@ $$m_{i} = \sqrt{p_{i}}$$
 
 
 ```{r test default prior for age ratio }
-# 
-# # test for false positive
-# prob_mult <- c(0.2, 0.2, 0.2, 0.2, 0.2)
-# 
-# sim_tmp <- rmultinom(n=10, size=100, prob=prob_mult)
-# 
-# expected <- prob_mult*100
-# 
-# sim_data <- data.frame(ageBins = paste("Bin", seq(5), sep = ""),
-#                        expected = expected,
-#                        obs = sim_tmp[,1])
-# 
-# 
-# tmp_BF_mult <- BayesMultiNomial(dataset = sim_data, 
-#                                 factor = "ageBins", 
-#                                 observed = "obs",
-#                                 expected = "expected")
-
-# define a function to run the simulation for sex ratio
-
 seed = 1000
 sim_N = 1000
 alpha_stim <- c(1,1,1,1,1)
@@ -342,55 +324,6 @@ bruceR::Describe(sim_probs)
 # 
 # #hist(sim_probs$dist)
 # summary(sim_probs)
-
-#sim_data <-  data.frame(matrix(nrow = 1000, ncol = 3))
-#colnames(sim_data) <- c("Iter", "distance", "BF10")
-
-
-
-# rm("sim_data")
-# for (ii in seq(sim_N)){
-#   tmp_data <-data.frame(rmultinom(n=1, size=100, prob = sim_probs[ii, 1:5]))  %>%
-#     dplyr::mutate(names=rownames(.)) %>%
-#     dplyr::rename(V1 = 1) %>%
-#     tidyr::pivot_wider(names_from = "names",
-#                        values_from = "V1")
-# 
-#   if(exists("sim_data")){
-#     sim_data <- rbind(sim_data, tmp_data)
-#   } else {
-#     sim_data <- tmp_data
-#   }
-# }
-
-# test_BF <- data.frame(matrix(nrow = sim_N, ncol = 3))
-# colnames(test_BF) <- c("Iter", "distance", "BF10")
-# 
-# for (jj in seq(1000)){
-#     test_df <- sim_data[jj, ] %>%
-#       pivot_longer(cols = bin1:bin5,
-#                    names_to = "ageBins",
-#                    values_to = 'obs')
-#     
-#     test_df$expected = nil_effect*100
-#     # test_df <- data.frame(ageBins = paste("bin", seq(5), sep = ""),
-#     #                       expected = nil_effect*100,
-#     #                       obs = sim_data[,ii])
-#     
-#     # test_df1$obs <- c(test_df1$expected[1] - ii, test_df1$expected[2] + ii)
-#     tmp_BF <- BayesMultiNomial(test_df, 
-#                                factor = 'ageBins', 
-#                                observed = 'obs', 
-#                                expected = 'expected')
-#     test_BF$Iter[jj] <- jj
-#     # test_BF$`1st_prop`[ii] <- test_df$expected[1] - ii
-#     # test_BF$`log_BF10`[ii] <- tmp_BF$BF$LogBF10
-#     test_BF$`BF10`[jj] <- tmp_BF$BF$BF10
-#     
-# }
-# 
-# sum(test_BF$BF10 >=3)/1000
-
 
 Sim_Power_mult_calc <- function(seed = 12345, 
                            sim_N = 1000, 
@@ -488,28 +421,6 @@ Res_Power <- Res_Sim %>%
   dplyr::group_by(alpha_sim) %>%
   dplyr::filter(BF_3 >=0.8) %>%
   dplyr::summarise(n = n()/1000)
-
-# seed <- 1000
-# sim_N_probs <- 1000
-# alpha_sim <-1
-# sim_probs <- data.frame(gtools::rdirichlet(n = sim_N_probs, alpha = rep(alpha_sim, 5)))
-# colnames(sim_probs) <- paste0("bin", seq(5))
-# # bruceR::Describe(sim_probs)
-# 
-# rm('res_bf_power')
-# for (jj in (seq(nrow(sim_probs)))){ # 
-#   tmp_power <- Sim_Power_mult(seed = 1000, sim_prob = sim_probs[jj, 1:5])
-#   if (exists("res_bf_power")){
-#     res_bf_power <- rbind(res_bf_power, tmp_power)
-#   } else {
-#     res_bf_power <- tmp_power
-#   }
-# }
-
-# tmp <- tail(res_bf_power, 1000) %>%
-#   dplyr::arrange(BF_3)
-
-sum(tmp$BF_3 >= 0.8)/nrow(tmp)
 
 Res_Sim %>% 
   dplyr::group_by(alpha_sim) %>%
