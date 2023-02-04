@@ -15,7 +15,7 @@ In this script, we will use data from PSA 001 project [Jones et al., 2021, *Natu
 First, load libraries.
 
 ```{r Initialization, message=FALSE, warning=FALSE}
-# rm(list = ls())
+rm(list = ls())
 if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load("tidyverse", "ggh4x","stringr", "patchwork", "BayesFactor", "gtools", "bruceR")
@@ -236,19 +236,21 @@ Sim_Power_binormial <- function(seed = 12345, sim_N = 1000, prob_sim = 0.5, nil_
 Sim_False_Pos_Binom <- Sim_Power_binormial()
 
 ### simulation for Power
-probs <- seq(0.5, 0.7, 0.01)
+probs <- seq(0.5, 0.7, 0.01) # create a seqenece from 0.5 to 0.7, with 0.01 step size.
 
-rm(res_bf_power)
+# iterate each of theses probabilities and save the percentage of BF10 >=3, BF10 >=60
+rm(res_bf_power_binom) # remove variable with name "res_bf_power_binom" to avoid error
 for (jj in (seq(length(probs)))){
   tmp_power <- Sim_Power_binormial(seed = 1000, prob_sim = probs[jj])
-  if (exists("res_bf_power")){
-    res_bf_power <- rbind(res_bf_power, tmp_power)
+  if (exists("res_bf_power_binom")){
+    res_bf_power_binom <- rbind(res_bf_power_binom, tmp_power)
   } else {
-    res_bf_power <- tmp_power
+    res_bf_power_binom <- tmp_power
   }
 }
 
-res_bf_power %>% 
+# plot the results
+res_bf_power_binom %>% 
   ggplot2::ggplot(., aes(x = Prob, y = BF_3)) +
   ggplot2::geom_point() + 
   ggplot2::geom_hline(yintercept = 0.8) +
@@ -260,69 +262,14 @@ Our simulation found that, for sex ratio, the current setting (prior), we can ha
 
 For age bins.
 
-
-First, the effect size is more complicated: https://github.com/jasp-stats/jasp-issues/issues/1652, tried but did not use this index, need to discuss with Alex further.
-
-For K number of population frequencies p_{1}, p_{2}, .., p_{K-1}, p_{K} this would be a K-1 dimensional vector g such that
-
-$$g_{i} = \log( p_{I} / p_{K})$$
-
-Thus, $g$ is the vector
-
-$$ g = (\log(p_{1} / p_{K}), \log(p_{2} / p_{K}), …, \log(p_{K-1} / p_{K}))$$
-
-Similarly, for observed frequencies $\hat{p}{1}$, $\hat{p}{2}$, …, $\hat{p}{K-1}$, $\hat{p}{K}$ I would create an analogous K-1 dimension vector $\hat{g}$ such that
-
-$$\hat{g}_{i} = \log( \hat{p}_{i} / \hat{p}_{K})$$
-
-Thus, $\hat{g}$ is the vector
-
-$$\log(\hat{p}_{1}/ \hat{p}_{K}), log(\hat{p}_{2}/ \hat{p}_{K}), …, log(\hat{p}_{K-1}/ \hat{p}_{K})$$
-
-The observed effect size would then be the distance between $g$ and $\hat{g}$, which is defined as
-
-$$\sqrt{\sum_{i=1}^{K-1} (\hat{g}_{i} - g_{i})^{2}}$$
-
-An alternative would be to use vectors m of the form
-
-$$m_{i} = \sqrt{p_{i}}$$
-
+Warnings: run the code chunk below line-by-line, it include a time-comsuming for-loop.
 
 ```{r test default prior for age ratio }
-seed = 1000
-sim_N = 1000
-alpha_stim <- c(1,1,1,1,1)
-sim_probs <- data.frame(gtools::rdirichlet(n = sim_N, alpha = rep(10, 5)))
-colnames(sim_probs) <- paste0("bin", seq(5))
-bruceR::Describe(sim_probs)
-
-### using the distance index from Alex, does not work
-# calc_dist <- function(expected, observed){
-#   g_dist <- sqrt(sum((log(observed[1]/observed[5]) - log(expected[1]/expected[5]))^2 +
-#                  (log(observed[1]/observed[5]) - log(expected[1]/expected[5]))^2 +
-#                  (log(observed[1]/observed[5]) - log(expected[1]/expected[5]))^2 +
-#                  (log(observed[1]/observed[5]) - log(expected[1]/expected[5]))^2
-#     ))
-#   return(g_dist)
-# }
-# 
-# rm('g_dists')
-# for (kk in seq(sim_N)){
-#   prob = sim_probs[kk, ]
-#   dist <- calc_dist(expected = nil_effect, observed = prob)
-#   
-#   if (exists('g_dists')){
-#     g_dists <- c(g_dists, dist)
-#   } else {
-#     g_dists <- dist
-#   }
-# }
-# 
-# sim_probs$dist <- g_dists
-# sim_probs <- sim_probs %>% dplyr::arrange(dist)
-# 
-# #hist(sim_probs$dist)
-# summary(sim_probs)
+# sim_N = 1000
+# alpha_stim <- c(1,1,1,1,1)
+# sim_probs <- data.frame(gtools::rdirichlet(n = sim_N, alpha = rep(10, 5)))
+# colnames(sim_probs) <- paste0("bin", seq(5))
+# bruceR::Describe(sim_probs)
 
 Sim_Power_mult_calc <- function(seed = 12345, 
                            sim_N = 1000, 
@@ -384,22 +331,26 @@ Sim_Power_mult <- function(seed = 12345,
   
   sim_probs <- data.frame(gtools::rdirichlet(n = sim_N_probs, alpha = rep(alpha_sim, 5)))
   colnames(sim_probs) <- paste0("bin", seq(5))
-  rm('res_bf_power')
+  
+  rm('res_bf_power_mult')
   for (jj in (seq(nrow(sim_probs)))){ # 
     tmp_power <- Sim_Power_mult_calc(sim_prob = sim_probs[jj, 1:5],
                                 nil_effect = c(0.2, 0.2, 0.2, 0.2, 0.2))
     tmp_power$alpha_sim <- alpha_sim
-    if (exists("res_bf_power")){
-      res_bf_power <- rbind(res_bf_power, tmp_power)
+    if (exists("res_bf_power_mult")){
+      res_bf_power_mult <- rbind(res_bf_power_mult, tmp_power)
     } else {
-      res_bf_power <- tmp_power
+      res_bf_power_mult <- tmp_power
     }
   }
-  return(res_bf_power)
+  return(res_bf_power_mult)
 }
 
+# Test the fucntion "Sim_Power_mult" with 5 times.
 test <- Sim_Power_mult(sim_N_probs = 5, alpha_sim = 10)
 
+# If the above test is successful, then run the following code, using the default setting of "Sim_Power_mult", i.e., 10000 probabilities for each
+# alpha vector of Dirichlet, and 5000 multinomial vector for each probability, which means 10000 * 5000 iterations, it will take a few hours.
 rm('Res_Sim')
 for (alph_sim in c(1:5, 10)){
   # print(alph_sim)
@@ -433,7 +384,6 @@ Res_Sim %>%
 
 
 For the age ratio:
-
 
 # Load data and preprocess the data
 

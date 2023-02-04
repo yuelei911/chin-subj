@@ -1,0 +1,63 @@
+---
+title: "Power analyses for Bayesian Multinomial"
+output: html_notebook
+---
+
+First, the effect size is more complicated: https://github.com/jasp-stats/jasp-issues/issues/1652, tried but did not use this index, need to discuss with Alex further.
+
+For K number of population frequencies p_{1}, p_{2}, .., p_{K-1}, p_{K} this would be a K-1 dimensional vector g such that
+
+$$g_{i} = \log( p_{I} / p_{K})$$
+
+Thus, $g$ is the vector
+
+$$ g = (\log(p_{1} / p_{K}), \log(p_{2} / p_{K}), …, \log(p_{K-1} / p_{K}))$$
+
+Similarly, for observed frequencies $\hat{p}{1}$, $\hat{p}{2}$, …, $\hat{p}{K-1}$, $\hat{p}{K}$ I would create an analogous K-1 dimension vector $\hat{g}$ such that
+
+$$\hat{g}_{i} = \log( \hat{p}_{i} / \hat{p}_{K})$$
+
+Thus, $\hat{g}$ is the vector
+
+$$\log(\hat{p}_{1}/ \hat{p}_{K}), log(\hat{p}_{2}/ \hat{p}_{K}), …, log(\hat{p}_{K-1}/ \hat{p}_{K})$$
+
+The observed effect size would then be the distance between $g$ and $\hat{g}$, which is defined as
+
+$$\sqrt{\sum_{i=1}^{K-1} (\hat{g}_{i} - g_{i})^{2}}$$
+
+An alternative would be to use vectors m of the form
+
+$$m_{i} = \sqrt{p_{i}}$$
+
+
+```{r}
+### using the distance index from Alex, does not work
+# calc_dist <- function(expected, observed){
+#   g_dist <- sqrt(sum((log(observed[1]/observed[5]) - log(expected[1]/expected[5]))^2 +
+#                  (log(observed[1]/observed[5]) - log(expected[1]/expected[5]))^2 +
+#                  (log(observed[1]/observed[5]) - log(expected[1]/expected[5]))^2 +
+#                  (log(observed[1]/observed[5]) - log(expected[1]/expected[5]))^2
+#     ))
+#   return(g_dist)
+# }
+# 
+# rm('g_dists')
+# for (kk in seq(sim_N)){
+#   prob = sim_probs[kk, ]
+#   dist <- calc_dist(expected = nil_effect, observed = prob)
+#   
+#   if (exists('g_dists')){
+#     g_dists <- c(g_dists, dist)
+#   } else {
+#     g_dists <- dist
+#   }
+# }
+# 
+# sim_probs$dist <- g_dists
+# sim_probs <- sim_probs %>% dplyr::arrange(dist)
+# 
+# #hist(sim_probs$dist)
+# summary(sim_probs)
+```
+
+
