@@ -297,12 +297,13 @@ res_bf_binom <- res_bf_binom %>%
   dplyr::arrange(Category, Sample_Size)
 
 # plot the results
-res_bf_binom %>%
+p_sim1 <- res_bf_binom %>%
   ggplot2::ggplot(., aes(x = Sample_Size, y = BF_6, color=Category)) +
   ggplot2::geom_point() + 
   ggplot2::geom_hline(yintercept = 0.8) +
   ggplot2::theme_classic()
 
+ggsave("p_sim1.png", p_sim1, width = 8, height = 5)
 ```
 
 ```{r test default prior with varying prior, message=TRUE, warning=FALSE}
@@ -326,12 +327,18 @@ res_bf_binom_prior <- res_bf_binom_prior %>%
   dplyr::arrange(Category, Prior)
 
 # plot the results
-res_bf_binom_prior %>% 
+p_sim2 <- res_bf_binom_prior %>% 
   dplyr::arrange(Category, Prior) %>%
   ggplot2::ggplot(., aes(x = Prior, y = BF_6, color=Category)) +
   ggplot2::geom_point() + 
   ggplot2::geom_hline(yintercept = 0.8) +
   ggplot2::theme_classic()
+
+# save the plot
+p_sim <- p_sim1 + p_sim2 +
+  plot_layout(guides = 'collect') + plot_annotation(tag_levels = 'A')
+
+ggsave("p_sim.png", p_sim, width = 10, height = 4)
 ```
 
 Our simulation found that, for sex ratio, the current setting (prior), we can have detect deviation from p = 0.5 with more 80% of the times if the difference is greater than 0.17.
