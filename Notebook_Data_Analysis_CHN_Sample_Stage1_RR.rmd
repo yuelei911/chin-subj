@@ -15,7 +15,7 @@ In this script, we will use data from PSA 001 project [Jones et al., 2021, *Natu
 First, load libraries.
 
 ```{r Initialization, message=FALSE, warning=FALSE, include=FALSE}
-rm(list = ls())
+# rm(list = ls())
 if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load("tidyverse", "ggh4x","stringr", "patchwork", "BayesFactor", "gtools", "bruceR")
@@ -350,19 +350,20 @@ Warnings: run the code chunk below line-by-line, it include a time-consuming for
 ```{r test default prior for age ratio, message=FALSE, warning=FALSE}
 Sim_Power_mult_calc <- function(seed = 12345, 
                            sim_N = 5000,             # set to 5000 for real simulation
+                           sample_N = 1200,
                            sim_prob = c(0.2, 0.2, 0.2, 0.2, 0.2), 
                            nil_effect = c(0.2, 0.2, 0.2, 0.2, 0.2)){
   library(tidyverse)
   
   set.seed(seed)
 
-  tmp_data <- data.frame(rmultinom(n=sim_N, size=100, prob = sim_prob))
+  tmp_data <- data.frame(rmultinom(n=sim_N, size=sample_N, prob = sim_prob))
 
   test_BF <- data.frame(matrix(nrow = sim_N, ncol = 2))
   colnames(test_BF) <- c("Iter", "BF10")
   for (ii in seq(sim_N)){
       sim_data1 <- tmp_data[, ii]
-      sim_data2 <- nil_effect * 100
+      sim_data2 <- nil_effect * sample_N
       test_df <- data.frame(expected = sim_data2,
                             obs = sim_data1)%>%
         dplyr::mutate(ageBins = paste0('bin', seq(5)))
@@ -377,19 +378,19 @@ Sim_Power_mult_calc <- function(seed = 12345,
   }
   
   BF_power <- data.frame(matrix(nrow = 1, ncol = 5))
-  colnames(BF_power) <- c("Prob", "Category", "BF_1", "BF_3", "BF_6")
+  colnames(BF_power) <- c("Prob", "Category", "Sample_Size", "BF_3", "BF_6")
   
   BF_power$Prob <- paste0(round(sim_prob, 3), collapse = ';')
   
   if (sum(sim_prob == nil_effect)==length(sim_prob)) {
     
     BF_power$Category <- "Evidence_for_Null"
-    BF_power$BF_1 <- sum(test_BF$BF10 < 1)/sim_N 
+    BF_power$Sample_Size <- sample_N
     BF_power$BF_3 <- sum(test_BF$BF10 <= 1/3)/sim_N 
     BF_power$BF_6 <- sum(test_BF$BF10 <= 1/ 6)/sim_N 
   } else {
     BF_power$Category <- "Evidence_for_Effect"
-    BF_power$BF_1 <- sum(test_BF$BF10 > 1)/sim_N 
+    BF_power$Sample_Size <- sample_N
     BF_power$BF_3 <- sum(test_BF$BF10 >= 3)/sim_N 
     BF_power$BF_6 <- sum(test_BF$BF10 >= 6)/sim_N 
   }
@@ -397,21 +398,29 @@ Sim_Power_mult_calc <- function(seed = 12345,
 }
 
 ### false positive rate for this case
-Sim_False_Pos_mult <- Sim_Power_mult_calc()
+Sim_False_Pos_mult <- Sim_Power_mult_calc(sim_N = 5000)
 
-Sim_Power_mult <- function(seed = 12345, sim_N = 5000,  # number of simulations for each multinomial prob vector, default: 5000
-                           sim_N_probs = 10000,         # number of multinomial prob vectors, default is 10000 
-                           alpha_sim = 1){
+Sim_Power_mult <- function(seed = 12345, 
+                           sim_N = 1000,        # number of simulations for each multinomial prob vector, default: 1000
+                           sim_N_probs = 5000,  # number of multinomial prob vectors, default is 5000 
+                           sample_N = 1200,
+                           sim_alpha = 1){
   set.seed(seed)
   
-  sim_probs <- data.frame(gtools::rdirichlet(n = sim_N_probs, alpha = rep(alpha_sim, 5)))
+  sim_probs <- data.frame(gtools::rdirichlet(n = sim_N_probs, alpha = rep(sim_alpha, 5)))
   colnames(sim_probs) <- paste0("bin", seq(5))
+  
+  # using apply?
+  # tmp <- apply(sim_probs, 1, function(x) Sim_Power_mult_calc(sim_prob = x))
   
   rm('res_bf_power_mult')
   for (jj in (seq(nrow(sim_probs)))){ 
     tmp_power <- Sim_Power_mult_calc(sim_prob = sim_probs[jj, 1:5],
-                                nil_effect = c(0.2, 0.2, 0.2, 0.2, 0.2), sim_N = sim_N)
-    tmp_power$alpha_sim <- alpha_sim
+                                     sim_N = sim_N,
+                                     sample_N = sample_N,
+                                     nil_effect = c(0.2, 0.2, 0.2, 0.2, 0.2))
+    
+    tmp_power$sim_alpha <- sim_alpha
     if (exists("res_bf_power_mult")){
       res_bf_power_mult <- rbind(res_bf_power_mult, tmp_power)
     } else {
@@ -421,45 +430,146 @@ Sim_Power_mult <- function(seed = 12345, sim_N = 5000,  # number of simulations 
   return(res_bf_power_mult)
 }
 
-# Test the function "Sim_Power_mult" with 5 times, and alpha for Dirichlet distribution as a vector of 10s
-test <- Sim_Power_mult(sim_N = 5, sim_N_probs = 10, alpha_sim = 2)
+# Test the function "Sim_Power_mult" with 50 times, and alpha for Dirichlet distribution as a vector of 10s
+startTime <- Sys.time()
+test <- Sim_Power_mult(sim_N = 50, sim_N_probs = 50, sim_alpha = 1)
+endTime <- Sys.time()
+print(endTime - startTime) # 19 sec
 
 # If the above test is successful, then run the following code, using the default setting of "Sim_Power_mult", i.e., 10000 probabilities for each.
 
 # alpha vector of Dirichlet, and 5000 multinomial vector for each probability, which means 10000 * 5000 iterations, it will take a few hours.
 
+startTime <- Sys.time()
 rm('Res_Sim_Multi')
-for (alpha_sim in c(1:4)){
-  # to quickly test the function, set sim_N = 5, sim_N_probs = 10
-  Sim_res_tmp <-  Sim_Power_mult(alpha_sim = alpha_sim, sim_N = 5000, sim_N_probs = 10000)
+Res_Sim_Multi <- Sim_Power_mult()
+endTime <- Sys.time()
+print(endTime - startTime) # approximately 9 hourse
 
-  if (exists("Res_Sim_Multi")){
-      Res_Sim_Multi <- rbind(Res_Sim_Multi, Sim_res_tmp)
-    } else {
-      Res_Sim_Multi <- Sim_res_tmp
-    }
-  
-}
+# for (sim_alpha in c(1,2,3)){
+#   # to quickly test the function, set sim_N = 5, sim_N_probs = 10
+#   Sim_res_tmp <-  Sim_Power_mult(sim_N = 5000, 
+#                                  sim_N_probs = 10000,
+#                                  sim_alpha = sim_alpha)
+# 
+#   if (exists("Res_Sim_Multi")){
+#       Res_Sim_Multi <- rbind(Res_Sim_Multi, Sim_res_tmp)
+#     } else {
+#       Res_Sim_Multi <- Sim_res_tmp
+#     }
+#   
+# }
 
 Res_Sim_Multi <- Res_Sim_Multi %>%
-  dplyr::arrange(alpha_sim, BF_3)
+  dplyr::arrange(sim_alpha, BF_6)
 
 Res_Power <- Res_Sim_Multi %>%
-  dplyr::group_by(alpha_sim) %>%
+  dplyr::group_by(sim_alpha) %>%
   dplyr::filter(BF_3 >=0.8) %>%
-  dplyr::summarise(n = n()/(nrow(Res_Sim_Multi)/length(unique(Res_Sim_Multi$alpha_sim))))
+  dplyr::summarise(n = n()/(nrow(Res_Sim_Multi)/length(unique(Res_Sim_Multi$sim_alpha))))
 
 Res_Sim_Multi %>% 
-  dplyr::group_by(alpha_sim) %>%
+  dplyr::group_by(sim_alpha) %>%
   dplyr::mutate(Iter = seq(n())) %>%
   dplyr::ungroup() %>%
-  ggplot2::ggplot(., aes(x = Iter, y = BF_3, group = alpha_sim)) +
-  ggplot2::geom_point(aes(color = as.factor(alpha_sim))) + 
+  ggplot2::ggplot(., aes(x = Iter, y = BF_3, group = sim_alpha)) +
+  ggplot2::geom_point(aes(color = as.factor(sim_alpha))) + 
   ggplot2::geom_hline(yintercept = 0.8) +
   ggplot2::theme_classic()
 ```
 
 Our simulation found that, for age ratio, the current setting (prior and threshold of BF value as 3), the results revealed that for 93.8% of the probabilities generated by an “uniform” Dirichlet distribution, the current setting can provide evidence that the probability is different from null with in 80% of the case. 
+
+
+We also simulated a case in which t-test (mean age difference) can not detect the difference of distribution but Bayesian multinomial test can. This simulation is to address reviewers' concern.
+```{r comparing multinomial and t}
+
+# generate data:
+sim_prob1 <- c(0.05, 0.45, 0.35, 0.1, 0.05)
+sim_prob2 <- c(0.45, 0.05, 0.1, 0.35, 0.05)
+
+# N = 1200
+#
+n_iter <- 1000
+sim_N1 <- data.frame(rmultinom(n=n_iter, size=1200, prob = sim_prob1))
+sim_N2 <- data.frame(rmultinom(n=n_iter, size=1200, prob = sim_prob2))
+
+# generate age data for t-test
+set.seed(12345)
+sim_df1 <- data.frame(matrix(nrow = 1200, ncol = n_iter))
+sim_df2 <- data.frame(matrix(nrow = 1200, ncol = n_iter))
+for (kk in (seq(ncol(sim_N1)))){ 
+  tmp1 <-  round(runif(sim_N1[1, kk], min = 0, max = 17),0)
+  tmp2 <-  round(runif(sim_N1[2, kk], min = 18, max = 25),0)
+  tmp3 <-  round(runif(sim_N1[3, kk], min = 26, max = 40),0)
+  tmp4 <-  round(runif(sim_N1[4, kk], min = 41, max = 59),0)
+  tmp5 <-  round(runif(sim_N1[5, kk], min = 60, max = 100),0)
+  
+  tmp <- c(tmp1, tmp2, tmp3, tmp4, tmp5)
+  sim_df1[, kk] <- tmp
+}
+
+for (kk in (seq(ncol(sim_N2)))){ 
+  tmp1 <-  round(runif(sim_N2[1, kk], min = 0, max = 17),0)
+  tmp2 <-  round(runif(sim_N2[2, kk], min = 18, max = 25),0)
+  tmp3 <-  round(runif(sim_N2[3, kk], min = 26, max = 40),0)
+  tmp4 <-  round(runif(sim_N2[4, kk], min = 41, max = 59),0)
+  tmp5 <-  round(runif(sim_N2[5, kk], min = 60, max = 100),0)
+  
+  tmp <- c(tmp1, tmp2, tmp3, tmp4, tmp5)
+  sim_df2[, kk] <- tmp
+}
+
+# t-test
+
+rm('sim_TTest')
+sim_TTest <- data.frame(matrix(nrow = n_iter, ncol = 3))
+colnames(sim_TTest) <- c("t_value", "p_value", "sig")
+
+for (kk in (seq(ncol(sim_N2)))){
+  
+  tmp_ttest <- t.test(sim_df1[,kk], sim_df2[,kk])
+  sim_TTest$t_value[kk] <- tmp_ttest$statistic
+  sim_TTest$p_value[kk] <- tmp_ttest$p.value
+  if (tmp_ttest$p.value < 0.05) {
+    sim_TTest$sig[kk] <- 1
+  }else {
+    sim_TTest$sig[kk] <- 0
+  }
+}
+
+# power of ttest
+mean(sim_TTest$sig)
+
+## mutlinomial
+
+rm('sim_MNtest')
+sim_MNtest <- data.frame(matrix(nrow = n_iter, ncol = 2))
+colnames(sim_MNtest) <- c("BF", "sig")
+
+for (kk in (seq(ncol(sim_N1)))){
+   tmp_df1 <- sim_N1[, kk]
+   tmp_df2 <- sim_N2[, kk]
+   
+   test_df <- data.frame(expected = tmp_df1,
+                         obs = tmp_df2)%>%
+     dplyr::mutate(ageBins = paste0('bin', seq(5)))
+      
+   tmp_BF <- BayesMultiNomial(test_df, 
+                                 factor = 'ageBins', 
+                                 observed = 'obs', 
+                                 expected = 'expected')
+   sim_MNtest$BF[kk] <- tmp_BF$BF$BF10
+    
+  if (tmp_BF$BF$BF10 > 6) {
+    sim_MNtest$sig[kk] <- 1
+  }else {
+    sim_MNtest$sig[kk] <- 0
+  }
+}
+
+mean(sim_MNtest$sig)
+```
 
 # Load data and preprocess the data
 
