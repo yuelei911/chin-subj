@@ -478,6 +478,171 @@ Res_Sim_Multi %>%
   ggplot2::theme_classic()
 ```
 
+# foreach
+```{r foreach package}
+library(iterators)
+library(foreach)
+library(parallel)
+library(doParallel)
+```
+
+```{r foreach function}
+Sim_Power_mult_mt <- function(seed = 12345, 
+                              sim_N = 5000,
+                              # number of simulations for each multinomial prob vector, default: 1000
+                              sim_N_probs = 5000,
+                              # number of multinomial prob vectors, default is 5000 
+                              sample_N = 1200,
+                              sim_alpha = 1){
+  
+  # Query the total number of threads
+  cl <- makeCluster(detectCores())
+  registerDoParallel(cl)
+  
+  sim_probs <- data.frame(gtools::rdirichlet(n = sim_N_probs, alpha = rep(sim_alpha, 5)))
+  colnames(sim_probs) <- paste0("bin", seq(5))
+  
+  # foreach
+  res_bf_power_mult <- foreach(jj = seq(nrow(sim_probs)), .combine = rbind) %dopar% {
+    
+    set.seed(12345 + jj) # seed must be inside foreach
+    
+    #######################Function must be defined inside foreach#######################
+    BayesMultiNomial <- function(dataset, factor, observed, expected, 
+                                 default_prior = TRUE, prior = NA){
+        # datase - the input dataframe
+        # factor - column name of the factor,
+        # observed - column name of the column contains counts information for the observed,
+        # expected - column name of the column contains counts information for the expected,
+        # default_prior - whether use the default, defused prior
+        # prior - priors defined by users
+        
+        fact_level <- dataset %>% dplyr::select(all_of(factor)) %>% dplyr::pull()
+        observed_data <- dataset %>% dplyr::select(all_of(observed)) %>% dplyr::pull()
+        names(observed_data) <- fact_level
+        expected_data <- dataset %>% dplyr::select(all_of(expected)) %>% dplyr::pull()
+        n_levels <- length(observed_data)
+        
+        
+        if (default_prior & all(is.na(prior))) {
+          prior <- rep(1, n_levels)
+        } else{
+          if (is.character(prior)){
+            prior <- dataset %>% dplyr::select(all_of(prior)) %>% dplyr::pull()
+          } else if (is.array(prior)){
+            prior <-  prior
+          } else if (is.numeric(prior)){
+            prior <-  prior
+          } else{
+            print("prior much a column of the input data or a vector")
+          }
+        }
+        
+        alphas <- prior
+        counts <- observed_data
+        thetas <- expected_data
+        
+        if(sum(thetas) != 1) {
+          thetas <- thetas/sum(thetas)
+          }
+        
+        expected <- setNames(sum(counts)*thetas, names(counts))
+        
+        lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
+        lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
+      
+        if (any(rowSums(cbind(thetas, counts)) == 0)) {
+          LogBF10 <- (lbeta.xa-lbeta.a)
+        } else {
+          LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+        }
+      
+        BF <- data.frame(LogBF10 = LogBF10,
+                         BF10    = exp(LogBF10),
+                         BF01    = 1/exp(LogBF10))
+      
+        return(list(BF       = BF,
+                    expected = expected))
+        
+      }
+    
+    Sim_Power_mult_calc <- function(seed = 12345, 
+                                    sim_N = 5000,             # set to 5000 for real simulation
+                                    sample_N = 1200,
+                                    sim_prob = c(0.2, 0.2, 0.2, 0.2, 0.2), 
+                                    nil_effect = c(0.2, 0.2, 0.2, 0.2, 0.2)){
+      library(tidyverse)
+      
+      set.seed(seed)
+    
+      tmp_data <- data.frame(rmultinom(n=sim_N, size=sample_N, prob = sim_prob))
+    
+      test_BF <- data.frame(matrix(nrow = sim_N, ncol = 2))
+      colnames(test_BF) <- c("Iter", "BF10")
+      for (ii in seq(sim_N)){
+          sim_data1 <- tmp_data[, ii]
+          sim_data2 <- nil_effect * sample_N
+          test_df <- data.frame(expected = sim_data2,
+                                obs = sim_data1)%>%
+            dplyr::mutate(ageBins = paste0('bin', seq(5)))
+          
+          tmp_BF <- BayesMultiNomial(test_df, 
+                                     factor = 'ageBins', 
+                                     observed = 'obs', 
+                                     expected = 'expected')
+          test_BF$Iter[ii] <- ii
+          test_BF$`BF10`[ii] <- tmp_BF$BF$BF10
+          
+      }
+      
+      BF_power <- data.frame(matrix(nrow = 1, ncol = 5))
+      colnames(BF_power) <- c("Prob", "Category", "Sample_Size", "BF_3", "BF_6")
+      
+      BF_power$Prob <- paste0(round(sim_prob, 3), collapse = ';')
+      
+      if (sum(sim_prob == nil_effect)==length(sim_prob)) {
+        
+        BF_power$Category <- "Evidence_for_Null"
+        BF_power$Sample_Size <- sample_N
+        BF_power$BF_3 <- sum(test_BF$BF10 <= 1/3)/sim_N 
+        BF_power$BF_6 <- sum(test_BF$BF10 <= 1/ 6)/sim_N 
+      } else {
+        BF_power$Category <- "Evidence_for_Effect"
+        BF_power$Sample_Size <- sample_N
+        BF_power$BF_3 <- sum(test_BF$BF10 >= 3)/sim_N 
+        BF_power$BF_6 <- sum(test_BF$BF10 >= 6)/sim_N 
+      }
+      return(BF_power)
+    }
+    ######################################################################################
+    
+    tmp_power <- Sim_Power_mult_calc(sim_prob = sim_probs[jj, 1:5],
+                                     sim_N = sim_N,
+                                     sample_N = sample_N,
+                                     nil_effect = c(0.2, 0.2, 0.2, 0.2, 0.2))
+    tmp_power$sim_alpha <- sim_alpha
+    return(tmp_power)
+  }
+  
+  # close the used thread
+  stopCluster(cl)
+  
+  return(res_bf_power_mult)
+}
+```
+
+```{r foreach main, warning=FALSE}
+# Test the function "Sim_Power_mult" with 50 times, and alpha for Dirichlet distribution as a vector of 10s
+startTime <- Sys.time()
+test_mt <- Sim_Power_mult_mt(sim_N = 5000, sim_N_probs = 50, sim_alpha = 1)
+endTime <- Sys.time()
+print(endTime - startTime) 
+
+# sim_N = 50 time = 11.21 sec
+# sim_N = 500 time = 47.37 sec
+# sim_N = 5000 time = 6.52 min
+```
+
 Our simulation found that, for age ratio, the current setting (prior and threshold of BF value as 3), the results revealed that for 93.8% of the probabilities generated by an “uniform” Dirichlet distribution, the current setting can provide evidence that the probability is different from null with in 80% of the case. 
 
 
