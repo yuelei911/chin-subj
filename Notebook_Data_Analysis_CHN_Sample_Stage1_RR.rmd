@@ -686,7 +686,6 @@ for (kk in (seq(ncol(sim_N2)))){
 }
 
 # t-test
-
 rm('sim_TTest')
 sim_TTest <- data.frame(matrix(nrow = n_iter, ncol = 3))
 colnames(sim_TTest) <- c("t_value", "p_value", "sig")
