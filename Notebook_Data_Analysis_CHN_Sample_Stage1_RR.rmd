@@ -651,7 +651,6 @@ Func_PSA001_Age_Prop <- function(df_PSA, break_names, label_names, level_names,w
   df_tmp_PSA <- df_PSA %>%
     dplyr::select(user_id, Countries, Sex, Age) %>%
     dplyr::filter(Countries=="CN") %>% 
-    dplyr::filter(!is.na(Age)) %>% 
     dplyr::mutate(ageBins_pyr=cut(Age, 
                               breaks=break_names,  
                               labels=label_names)) %>%
@@ -858,14 +857,12 @@ PSA001_valid_countries <-  df_PSA001 %>%
 
 ### remove data without sex info
 df_PSA001_valid_sex <-  df_PSA001 %>% 
-  dplyr::filter(Countries %in% PSA001_valid_countries) %>%
-  dplyr::mutate(Sex = ifelse(Sex == "no" | Sex == "na", NA, Sex))
+  dplyr::filter(Countries %in% PSA001_valid_countries)
 
 
 df_PSA001_valid_merge <- merge(df_PSA001_valid_sex, df_regionCode, by.x = "Countries", by.y = "country_iso2")
 
 df_PSA001_valid_merge_sex_ratio <- df_PSA001_valid_merge %>%
-  dplyr::filter(!is.na(Sex)) %>%
   dplyr::count(weird, Countries, Sex) %>%
   dplyr::group_by(weird, Countries) %>%
   dplyr::mutate(Proportion = round(n / sum(n), 2)) %>%
@@ -1052,7 +1049,6 @@ Process the age data of PSA001 for plotting figure 4d.
 
 ```{r prepare data for test, message=FALSE, warning=FALSE}
 df_PSA001_Age_valid <- df_PSA001 %>% 
-  dplyr::filter(!is.na(Age)) %>%   
   dplyr::filter(Countries %in% PSA001_valid_countries) 
 
 # merge with country code and force the age over 60 in a narrow range for visualization
@@ -1067,8 +1063,7 @@ PSA001_valid_countries_sorted <- df_PSA001_Age_valid_countryCode %>%
   dplyr::pull(Countries)
 
 df_PSA001_Age_valid_countryCode_sorted <- df_PSA001_Age_valid_countryCode %>%
-  dplyr::mutate(Countries = factor(Countries, levels = PSA001_valid_countries_sorted)) %>%
-  dplyr::filter(!(Sex=="no" | Sex=="na"))
+  dplyr::mutate(Countries = factor(Countries, levels = PSA001_valid_countries_sorted))
 
 # age bin same as census data
 df_PSA001_age_Jasp1 <- Func_Age_Prop(df = df_PSA001_Age_valid_countryCode_sorted,
