@@ -169,6 +169,8 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 
 ### Justification for the Bayesian multinomial test
 
+(Lines 191 to 462 of the code, that's our simulations, this part of the code takes a long time to run. Therefore, it is not shown in our html file(Notebook_Data_Analysis_CHN_Sample_Stage1_RR.html), see Rmarkdown for details(Notebook_Data_Analysis_CHN_Sample_Stage1_RR.RMD)
+
 To test whether the current non-informative prior is reasonable, we conducted a simulation to test the sensitivity.
 
 We tested the false positive rate of the current setting and false negative (power = 1 - FN ) of the current setting under different deviation from the expected. 
@@ -186,7 +188,7 @@ As the $H_1$ is any deviation from the null, we need to get a reasonable smalles
 
 In this paper, Rad et al. surveyed papers published in *Psychological Science* on how the demographic information reported in these papers. In the supplementary, they provided 35 studies, which can be identified and their participants' sex ratio can be found. We used these data as our basis of smallest effect size of interest.
 
-```{r smallest effect size of interest}
+```{r smallest effect size of interest, eval=FALSE, include=FALSE}
 df_rad2018 <- read.csv("Rad_2018_suppl.csv") %>%
   dplyr::mutate(male_num = as.numeric(male_num),
                 female_num = as.numeric(female_num)) %>%
@@ -204,7 +206,7 @@ effect_size <- bootES::bootES(df_rad2018$dev_abs, plot=TRUE)
 
 We found that the mean deviation from 0.5, estimated by `bootES`, is 0.085, 95% CI[0.061 0.115]. Following the practices of previous study [reference is needed], we decided to used the lower boundary of this CI, 0.06 as the smallest effect size of interest. 
 
-```{r define function for testing sex ratio, message=TRUE, warning=FALSE}
+```{r define function for testing sex ratio, eval=FALSE, message=TRUE, warning=FALSE, include=FALSE}
 # define a function to run the simulation for sex ratio
 Sim_Power_binormial <- function(seed = 12345, sim_N = 1000, ss = 100, effect = 0, nil_effect = 0.5, prior = 1){
   
@@ -274,7 +276,7 @@ Sim_False_Pos_Binom <- Sim_Power_binormial()
 
 ```
 
-```{r test default prior with varying N, message=TRUE, warning=FALSE}
+```{r test default prior with varying N, eval=FALSE, message=TRUE, warning=FALSE, include=FALSE}
 ### simulation for Power
 SESOI <- 0.06
 Sample_sizes <- seq(100, 1500, 100) # create a sequence from 100 to 2000, with 500 step size.
@@ -306,7 +308,7 @@ p_sim1 <- res_bf_binom %>%
 ggsave("p_sim1.png", p_sim1, width = 8, height = 5)
 ```
 
-```{r test default prior with varying prior, message=TRUE, warning=FALSE}
+```{r test default prior with varying prior, eval=FALSE, message=TRUE, warning=FALSE, include=FALSE}
 ### simulation for Power
 SESOI <- 0.06
 priors <- seq(0.1, 1, 0.1) # create a sequence from 100 to 2000, with 500 step size.
@@ -347,7 +349,7 @@ Our simulation found that, for sex ratio, the current setting (prior), we can ha
 
 Warnings: run the code chunk below line-by-line, it include a time-consuming for-loop.
 
-```{r test default prior for age ratio, message=FALSE, warning=FALSE}
+```{r test default prior for age ratio, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 Sim_Power_mult_calc <- function(seed = 12345, 
                            sim_N = 5000,             # set to 5000 for real simulation
                            sim_prob = c(0.2, 0.2, 0.2, 0.2, 0.2), 
@@ -513,7 +515,7 @@ $H_1$: $\theta$ is free to vary.
 
 ```{r H2a sex, message=FALSE, warning=FALSE}
 df_PSA001_sex_CN <- df_PSA001 %>%
-  dplyr::filter(Countries == "CN") %>%
+  dplyr::filter(Countries == "CHN") %>%
   dplyr::count(Sex) %>%
   dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
                 Site = "PSA001",
@@ -650,7 +652,7 @@ Func_PSA001_Age_Prop <- function(df_PSA, break_names, label_names, level_names,w
   
   df_tmp_PSA <- df_PSA %>%
     dplyr::select(user_id, Countries, Sex, Age) %>%
-    dplyr::filter(Countries=="CN") %>% 
+    dplyr::filter(Countries=="CHN") %>% 
     dplyr::mutate(ageBins_pyr=cut(Age, 
                               breaks=break_names,  
                               labels=label_names)) %>%
@@ -737,9 +739,9 @@ df_census7_age_new <- Func_census_Age_Prop(df_census7_age,
 fig3b <- ggplot(data= df_census7_age_new, aes(x=ageBins, y=ifelse(sex=="male", -percent, percent), fill=sex)) +
   geom_col(alpha=0.5, width = 1) +
   geom_line(data = df_PSA001_Age_CN, aes(x=ageBins_pyr,
-                                      y = ifelse(Sex == "male_PSA", -percent/2.5, percent/2.5),
+                                      y = ifelse(Sex == "male_PSA", -percent/3.5, percent/3.5),
                                       group=Sex,color="PSA001"), size=1, inherit.aes = FALSE) +
-  scale_y_continuous(limits = c(-15,15),sec.axis = sec_axis(~.*2.5, name = "Proportion (PSA001)")) +
+  scale_y_continuous(limits = c(-15,15),sec.axis = sec_axis(~.*3.5, name = "Proportion (PSA001)")) +
   coord_flip() +
   labs(y="Proportion (census data)", x = "Age bins", color=NULL)+
   annotate("text",label= "italic(Male)",x=19,y=-2,parse=TRUE,size=8, family = "serif") +
@@ -860,7 +862,7 @@ df_PSA001_valid_sex <-  df_PSA001 %>%
   dplyr::filter(Countries %in% PSA001_valid_countries)
 
 
-df_PSA001_valid_merge <- merge(df_PSA001_valid_sex, df_regionCode, by.x = "Countries", by.y = "country_iso2")
+df_PSA001_valid_merge <- merge(df_PSA001_valid_sex, df_regionCode, by.x = "Countries", by.y = "Jones_country")
 
 df_PSA001_valid_merge_sex_ratio <- df_PSA001_valid_merge %>%
   dplyr::count(weird, Countries, Sex) %>%
@@ -894,13 +896,13 @@ Func_BFpairs <- function(df, countries_order, prop_name){
   
   for (ii in seq(length(countries_order))){
     country <- countries_order[ii]
-    if (country != "CN"){
-      df_tmp <- df %>% dplyr::select(prop_name, one_of(country), "CN")
+    if (country != "CHN"){
+      df_tmp <- df %>% dplyr::select(prop_name, one_of(country), "CHN")
       
       BF_tmp <- BayesMultiNomial(dataset = df_tmp, 
-                                 factor = prop_name, observed = country, expected = "CN")
+                                 factor = prop_name, observed = country, expected = "CHN")
       
-      BF_mult_tmp[ii,] <- c(country, "CN", BF_tmp$BF$LogBF10, BF_tmp$BF$BF10, BF_tmp$BF$BF01)
+      BF_mult_tmp[ii,] <- c(country, "CHN", BF_tmp$BF$LogBF10, BF_tmp$BF$BF10, BF_tmp$BF$BF01)
     } 
   }
   
@@ -1052,7 +1054,7 @@ df_PSA001_Age_valid <- df_PSA001 %>%
   dplyr::filter(Countries %in% PSA001_valid_countries) 
 
 # merge with country code and force the age over 60 in a narrow range for visualization
-df_PSA001_Age_valid_countryCode <- merge(df_PSA001_Age_valid, df_regionCode, by.x = "Countries", by.y = "country_iso2") %>%
+df_PSA001_Age_valid_countryCode <- merge(df_PSA001_Age_valid, df_regionCode, by.x = "Countries", by.y = "Jones_country") %>%
   dplyr::mutate(Age = ifelse(Age > 60, sample(c(61, 62, 63, 64, 65), 1), Age))
 
 PSA001_valid_countries_sorted <- df_PSA001_Age_valid_countryCode %>%
@@ -1072,9 +1074,9 @@ df_PSA001_age_Jasp1 <- Func_Age_Prop(df = df_PSA001_Age_valid_countryCode_sorted
 
 df_PSA001_age_Jasp1 <- df_PSA001_age_Jasp1 %>%
   # fill zero
-  dplyr::mutate(CN = ifelse(CN==0, 1,
-                            ifelse(CN==38, 37, 
-                                   ifelse(CN  == 55, 54, CN))))
+  dplyr::mutate(CHN = ifelse(CHN==0, 1,
+                            ifelse(CHN==38, 37, 
+                                   ifelse(CHN  == 55, 54, CHN))))
 
 # age bin based on psychological aging stage
 df_PSA001_age_Jasp2 <- Func_Age_Prop(df = df_PSA001_Age_valid_countryCode_sorted,
@@ -1083,14 +1085,14 @@ df_PSA001_age_Jasp2 <- Func_Age_Prop(df = df_PSA001_Age_valid_countryCode_sorted
 
 df_PSA001_age_Jasp2 <- df_PSA001_age_Jasp2 %>%
   # fill zero
-  dplyr::mutate(CN = ifelse(CN==0, 1, 
-                            ifelse(CN==80, 78, CN)))
+  dplyr::mutate(CHN = ifelse(CHN==0, 1, 
+                            ifelse(CHN==80, 78, CHN)))
 
 df_PSA001_age_Jasp2_long <- Func_Age_Prop(df = df_PSA001_Age_valid_countryCode_sorted,
                                      break_names = c(0, 17.5, 25.5, 39.5, 59.5, Inf),
                                      label_names = c("0~17","18~25", "26~40", "41~59", ">=60"),
                                      wider_form = FALSE) %>%
-  dplyr::left_join(., df_regionCode, by = c("Countries" = "country_iso2")) %>%
+  dplyr::left_join(., df_regionCode, by = c("Countries" = "Jones_country")) %>%
   dplyr::mutate(Proportion = percent/100)
 
 # Countries order for plotting age bins proportions
@@ -1140,7 +1142,7 @@ BF_h3b_age_p_2 <- Func_BFpairs(df = df_PSA001_age_Jasp2,
 fig4b <- ggplot(BF_h3b_age_p_2, aes( x = `Log(BF10)_NonInform`, y = Contries)) +
   geom_point() +
   scale_color_grey() +
-  xlim(-10, 60) +
+  xlim(-10,45) +
   scale_y_discrete(limits=rev) +
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
              colour = c("red", "tomato", "black", "deepskyblue","blue"), 
@@ -1188,7 +1190,7 @@ df_PSA001_age_Jasp1_long <- Func_Age_Prop(df = df_PSA001_Age_valid_countryCode_s
                                      break_names = c(0, 10.5, 20.5, 30.5, 40.5, 50.5, 60.5, Inf),
                                      label_names = c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"),
                                      wider_form = FALSE) %>%
-  dplyr::left_join(., df_regionCode, by = c("Countries" = "country_iso2")) %>%
+  dplyr::left_join(., df_regionCode, by = c("Countries" = "Jones_country")) %>%
   dplyr::mutate(Proportion = percent/100)
 
 # Countries order for ploting age bins proprotions
