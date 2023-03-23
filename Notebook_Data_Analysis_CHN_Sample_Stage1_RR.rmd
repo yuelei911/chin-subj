@@ -169,7 +169,7 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 
 ### Justification for the Bayesian multinomial test
 
-(Lines 191 to 462 of the code, that's our simulations, this part of the code takes a long time to run. Therefore, it is not shown in our html file(Notebook_Data_Analysis_CHN_Sample_Stage1_RR.html), see Rmarkdown for details(Notebook_Data_Analysis_CHN_Sample_Stage1_RR.RMD)
+(Lines 191 to 462 of the code, that's our simulations, this part of the code takes a long time to run. Therefore, it is not shown their running results in our html file(Notebook_Data_Analysis_CHN_Sample_Stage1_RR.html), see Rmarkdown for details(Notebook_Data_Analysis_CHN_Sample_Stage1_RR.RMD)
 
 To test whether the current non-informative prior is reasonable, we conducted a simulation to test the sensitivity.
 
@@ -188,7 +188,7 @@ As the $H_1$ is any deviation from the null, we need to get a reasonable smalles
 
 In this paper, Rad et al. surveyed papers published in *Psychological Science* on how the demographic information reported in these papers. In the supplementary, they provided 35 studies, which can be identified and their participants' sex ratio can be found. We used these data as our basis of smallest effect size of interest.
 
-```{r smallest effect size of interest, eval=FALSE, include=FALSE}
+```{r smallest effect size of interest,eval=FALSE}
 df_rad2018 <- read.csv("Rad_2018_suppl.csv") %>%
   dplyr::mutate(male_num = as.numeric(male_num),
                 female_num = as.numeric(female_num)) %>%
@@ -206,7 +206,7 @@ effect_size <- bootES::bootES(df_rad2018$dev_abs, plot=TRUE)
 
 We found that the mean deviation from 0.5, estimated by `bootES`, is 0.085, 95% CI[0.061 0.115]. Following the practices of previous study [reference is needed], we decided to used the lower boundary of this CI, 0.06 as the smallest effect size of interest. 
 
-```{r define function for testing sex ratio, eval=FALSE, message=TRUE, warning=FALSE, include=FALSE}
+```{r define function for testing sex ratio, message=TRUE, warning=FALSE,eval=FALSE}
 # define a function to run the simulation for sex ratio
 Sim_Power_binormial <- function(seed = 12345, sim_N = 1000, ss = 100, effect = 0, nil_effect = 0.5, prior = 1){
   
@@ -276,7 +276,7 @@ Sim_False_Pos_Binom <- Sim_Power_binormial()
 
 ```
 
-```{r test default prior with varying N, eval=FALSE, message=TRUE, warning=FALSE, include=FALSE}
+```{r test default prior with varying N, message=TRUE, warning=FALSE,eval=FALSE}
 ### simulation for Power
 SESOI <- 0.06
 Sample_sizes <- seq(100, 1500, 100) # create a sequence from 100 to 2000, with 500 step size.
@@ -308,7 +308,7 @@ p_sim1 <- res_bf_binom %>%
 ggsave("p_sim1.png", p_sim1, width = 8, height = 5)
 ```
 
-```{r test default prior with varying prior, eval=FALSE, message=TRUE, warning=FALSE, include=FALSE}
+```{r test default prior with varying prior, message=TRUE, warning=FALSE,eval=FALSE}
 ### simulation for Power
 SESOI <- 0.06
 priors <- seq(0.1, 1, 0.1) # create a sequence from 100 to 2000, with 500 step size.
@@ -349,7 +349,7 @@ Our simulation found that, for sex ratio, the current setting (prior), we can ha
 
 Warnings: run the code chunk below line-by-line, it include a time-consuming for-loop.
 
-```{r test default prior for age ratio, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r test default prior for age ratio, message=FALSE, warning=FALSE,eval=FALSE}
 Sim_Power_mult_calc <- function(seed = 12345, 
                            sim_N = 5000,             # set to 5000 for real simulation
                            sample_N = 1200,
@@ -483,7 +483,7 @@ Res_Sim_Multi %>%
 ## Try parallel processing for the simulation: `foreach`
 Thank Mengzheng for writing it in parallel.
 
-```{r foreach package}
+```{r foreach package, ,eval=FALSE}
 pacman::p_load("iterators", "foreach","parallel", "doParallel")
 
 Sim_Power_mult_mt <- function(seed = 12345, 
@@ -631,7 +631,7 @@ Sim_Power_mult_mt <- function(seed = 12345,
 }
 ```
 
-```{r test foreach, warning=FALSE}
+```{r test foreach, eval=FALSE, warning=FALSE}
 startTime <- Sys.time()
 test <- Sim_Power_mult(sim_N = 100, sim_N_probs = 100, sim_alpha = 1)
 endTime <- Sys.time()
@@ -649,7 +649,7 @@ Our simulation found that, for age ratio, the current setting (prior and thresho
 
 
 We also simulated a case in which t-test (mean age difference) can not detect the difference of distribution but Bayesian multinomial test can. This simulation is to address reviewers' concern.
-```{r comparing multinomial and t}
+```{r comparing multinomial and t,eval=FALSE}
 
 # generate data:
 sim_prob1 <- c(0.05, 0.45, 0.35, 0.1, 0.05)
