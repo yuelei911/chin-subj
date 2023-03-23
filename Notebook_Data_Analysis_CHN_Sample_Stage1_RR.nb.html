@@ -1821,10 +1821,10 @@ frequencies.</p>
 <div id="justification-for-the-bayesian-multinomial-test" class="section level3">
 <h3>Justification for the Bayesian multinomial test</h3>
 <p>(Lines 191 to 462 of the code, that’s our simulations, this part of
-the code takes a long time to run. Therefore, it is not shown in our
-html file(Notebook_Data_Analysis_CHN_Sample_Stage1_RR.html), see
-Rmarkdown for
-details(Notebook_Data_Analysis_CHN_Sample_Stage1_RR.RMD)</p>
+the code takes a long time to run. Therefore, it is not shown their
+running results in our html
+file(Notebook_Data_Analysis_CHN_Sample_Stage1_RR.html), see Rmarkdown
+for details(Notebook_Data_Analysis_CHN_Sample_Stage1_RR.RMD)</p>
 <p>To test whether the current non-informative prior is reasonable, we
 conducted a simulation to test the sensitivity.</p>
 <p>We tested the false positive rate of the current setting and false
@@ -1847,11 +1847,149 @@ reported in these papers. In the supplementary, they provided 35
 studies, which can be identified and their participants’ sex ratio can
 be found. We used these data as our basis of smallest effect size of
 interest.</p>
+<pre class="r"><code>df_rad2018 &lt;- read.csv(&quot;Rad_2018_suppl.csv&quot;) %&gt;%
+  dplyr::mutate(male_num = as.numeric(male_num),
+                female_num = as.numeric(female_num)) %&gt;%
+  dplyr::filter(!is.na(male_num)) %&gt;%
+  dplyr::select(1:2, 13:14) %&gt;%
+  dplyr::mutate(prop = male_num/(male_num + female_num),
+                deviation = prop - 0.5,
+                dev_abs = abs(deviation)) %&gt;%
+  dplyr::arrange(dev_abs)
+
+effect_size &lt;- bootES::bootES(df_rad2018$dev_abs, plot=TRUE)</code></pre>
 <p>We found that the mean deviation from 0.5, estimated by
 <code>bootES</code>, is 0.085, 95% CI[0.061 0.115]. Following the
 practices of previous study [reference is needed], we decided to used
 the lower boundary of this CI, 0.06 as the smallest effect size of
 interest.</p>
+<pre class="r"><code># define a function to run the simulation for sex ratio
+Sim_Power_binormial &lt;- function(seed = 12345, sim_N = 1000, ss = 100, effect = 0, nil_effect = 0.5, prior = 1){
+  
+  # seed: the seed for randomization
+  # sim_N: number of simulation
+  # ss: sample size in the simulation
+  # effect: deviation from null
+  # nil_effect: null effect
+  
+  set.seed(seed)
+  
+  sim_1 &lt;- data.frame(obs = rbinom(sim_N, size = ss, prob = nil_effect + effect ))
+  sim_1$sex &lt;- &quot;male&quot;
+  sim_1$iter &lt;- seq(sim_N)
+  sim_2 &lt;- data.frame(obs = ss - sim_1$obs)
+  sim_2$sex &lt;- &quot;female&quot;
+  sim_2$iter &lt;- seq(sim_N)
+  
+  sim &lt;- sim_1 %&gt;% 
+    dplyr::bind_rows(., sim_2) %&gt;% 
+    dplyr::arrange(iter)
+  
+  test_BF &lt;- data.frame(matrix(nrow = sim_N, ncol = 3))
+  colnames(test_BF) &lt;- c(&quot;Iter&quot;, &quot;1st_prop&quot;, &quot;BF10&quot;)
+  
+  for (ii in seq(sim_N)){
+    test_df &lt;- sim %&gt;%
+      dplyr::filter(iter == ii) %&gt;%
+      dplyr::mutate(expected = nil_effect * ss)
+    
+    # test_df1$obs &lt;- c(test_df1$expected[1] - ii, test_df1$expected[2] + ii)
+    tmp_BF &lt;- BayesMultiNomial(test_df, factor = &#39;sex&#39;, observed = &#39;obs&#39;, 
+                               expected = &#39;expected&#39;, 
+                               prior = rep(prior, 2))
+    test_BF$Iter[ii] &lt;- ii
+    test_BF$`1st_prop`[ii] &lt;- test_df$expected[1] - ii
+    # test_BF$`log_BF10`[ii] &lt;- tmp_BF$BF$LogBF10
+    test_BF$`BF10`[ii] &lt;- tmp_BF$BF$BF10
+    
+  }
+  
+  BF_power &lt;- data.frame(matrix(nrow = 1, ncol = 6))
+  colnames(BF_power) &lt;- c(&quot;Category&quot;, &quot;Prob&quot;, &quot;Prior&quot;,&quot;Sample_Size&quot;, &quot;BF_3&quot;, &quot;BF_6&quot;)
+  
+  if (effect == 0) {
+    BF_power$Prob &lt;- nil_effect + effect
+    BF_power$Sample_Size &lt;- ss
+    BF_power$Prior &lt;- prior
+    BF_power$Category &lt;- &quot;BF01&quot;
+    # BF_power$BF_1 &lt;- sum(test_BF$BF10 &lt; 1)/1000 
+    BF_power$BF_3 &lt;- sum(test_BF$BF10 &lt;= 1/3)/1000 
+    BF_power$BF_6 &lt;- sum(test_BF$BF10 &lt;= 1/6)/1000 
+  } else {
+    BF_power$Prob &lt;- nil_effect + effect
+    BF_power$Category &lt;- &quot;BF10&quot;
+    BF_power$Sample_Size &lt;- ss
+    BF_power$Prior &lt;- prior
+    # BF_power$BF_1 &lt;- sum(test_BF$BF10 &gt; 1)/1000 
+    BF_power$BF_3 &lt;- sum(test_BF$BF10 &gt;= 3)/1000 
+    BF_power$BF_6 &lt;- sum(test_BF$BF10 &gt;= 6)/1000 
+  }
+  return(BF_power)
+}
+
+### false positive rate
+Sim_False_Pos_Binom &lt;- Sim_Power_binormial()</code></pre>
+<pre class="r"><code>### simulation for Power
+SESOI &lt;- 0.06
+Sample_sizes &lt;- seq(100, 1500, 100) # create a sequence from 100 to 2000, with 500 step size.
+
+Sample_sizes &lt;- c(Sample_sizes, 1000)
+
+# iterate each of theses probabilities and save the percentage of BF10 &gt;=3, BF10 &gt;=60
+rm(res_bf_binom)  # remove variable with name &quot;res_bf_power_binom&quot; to avoid error
+for (jj in (seq(length(Sample_sizes)))){
+  tmp_power  &lt;- Sim_Power_binormial(seed = 1000, ss = Sample_sizes[jj], effect = 0.06)
+  tmp_falpos &lt;- Sim_Power_binormial(seed = 1000, ss = Sample_sizes[jj], effect = 0)
+  if (exists(&quot;res_bf_binom&quot;)){
+    res_bf_binom &lt;- rbind(res_bf_binom, tmp_power,tmp_falpos)
+  } else {
+    res_bf_binom &lt;- rbind(tmp_power,tmp_falpos)
+  }
+}
+
+res_bf_binom &lt;- res_bf_binom %&gt;% 
+  dplyr::arrange(Category, Sample_Size)
+
+# plot the results
+p_sim1 &lt;- res_bf_binom %&gt;%
+  ggplot2::ggplot(., aes(x = Sample_Size, y = BF_6, color=Category)) +
+  ggplot2::geom_point() + 
+  ggplot2::geom_hline(yintercept = 0.8) +
+  ggplot2::theme_classic()
+
+ggsave(&quot;p_sim1.png&quot;, p_sim1, width = 8, height = 5)</code></pre>
+<pre class="r"><code>### simulation for Power
+SESOI &lt;- 0.06
+priors &lt;- seq(0.1, 1, 0.1) # create a sequence from 100 to 2000, with 500 step size.
+priors &lt;- c(priors, c(1, 1.5, 2, 2.5, 3))
+# iterate each of theses probabilities and save the percentage of BF10 &gt;=3, BF10 &gt;=60
+rm(res_bf_binom_prior)  # remove variable with name &quot;res_bf_power_binom&quot; to avoid error
+for (jj in (seq(length(priors)))){
+  tmp_power  &lt;- Sim_Power_binormial(seed = 1000, ss = 100, effect = 0.06, prior = priors[jj])
+  tmp_falpos &lt;- Sim_Power_binormial(seed = 1000, ss = 100, effect = 0, prior = priors[jj])
+  if (exists(&quot;res_bf_binom_prior&quot;)){
+    res_bf_binom_prior &lt;- rbind(res_bf_binom_prior, tmp_power,tmp_falpos)
+  } else {
+    res_bf_binom_prior &lt;- rbind(tmp_power,tmp_falpos)
+  }
+}
+
+res_bf_binom_prior &lt;- res_bf_binom_prior %&gt;% 
+  dplyr::arrange(Category, Prior)
+
+# plot the results
+p_sim2 &lt;- res_bf_binom_prior %&gt;% 
+  dplyr::arrange(Category, Prior) %&gt;%
+  ggplot2::ggplot(., aes(x = Prior, y = BF_6, color=Category)) +
+  ggplot2::geom_point() + 
+  ggplot2::geom_hline(yintercept = 0.8) +
+  ggplot2::theme_classic()
+
+# save the plot
+p_sim &lt;- p_sim1 + p_sim2 +
+  plot_layout(guides = &#39;collect&#39;) + plot_annotation(tag_levels = &#39;A&#39;)
+
+ggsave(&quot;p_sim.png&quot;, p_sim, width = 10, height = 4)</code></pre>
 <p>Our simulation found that, for sex ratio, the current setting
 (prior), we can have detect deviation from p = 0.5 with more 80% of the
 times if the difference is greater than 0.17.</p>
@@ -1860,13 +1998,388 @@ times if the difference is greater than 0.17.</p>
 <h4>Test the default prior for age bins</h4>
 <p>Warnings: run the code chunk below line-by-line, it include a
 time-consuming for-loop.</p>
+<pre class="r"><code>Sim_Power_mult_calc &lt;- function(seed = 12345, 
+                           sim_N = 5000,             # set to 5000 for real simulation
+                           sample_N = 1200,
+                           sim_prob = c(0.2, 0.2, 0.2, 0.2, 0.2), 
+                           nil_effect = c(0.2, 0.2, 0.2, 0.2, 0.2)){
+  library(tidyverse)
+  
+  set.seed(seed)
+
+  tmp_data &lt;- data.frame(rmultinom(n=sim_N, size=sample_N, prob = sim_prob))
+
+  test_BF &lt;- data.frame(matrix(nrow = sim_N, ncol = 2))
+  colnames(test_BF) &lt;- c(&quot;Iter&quot;, &quot;BF10&quot;)
+  for (ii in seq(sim_N)){
+      sim_data1 &lt;- tmp_data[, ii]
+      sim_data2 &lt;- nil_effect * sample_N
+      test_df &lt;- data.frame(expected = sim_data2,
+                            obs = sim_data1)%&gt;%
+        dplyr::mutate(ageBins = paste0(&#39;bin&#39;, seq(5)))
+      
+      tmp_BF &lt;- BayesMultiNomial(test_df, 
+                                 factor = &#39;ageBins&#39;, 
+                                 observed = &#39;obs&#39;, 
+                                 expected = &#39;expected&#39;)
+      test_BF$Iter[ii] &lt;- ii
+      test_BF$`BF10`[ii] &lt;- tmp_BF$BF$BF10
+      
+  }
+  
+  BF_power &lt;- data.frame(matrix(nrow = 1, ncol = 5))
+  colnames(BF_power) &lt;- c(&quot;Prob&quot;, &quot;Category&quot;, &quot;Sample_Size&quot;, &quot;BF_3&quot;, &quot;BF_6&quot;)
+  
+  BF_power$Prob &lt;- paste0(round(sim_prob, 3), collapse = &#39;;&#39;)
+  
+  if (sum(sim_prob == nil_effect)==length(sim_prob)) {
+    
+    BF_power$Category &lt;- &quot;Evidence_for_Null&quot;
+    BF_power$Sample_Size &lt;- sample_N
+    BF_power$BF_3 &lt;- sum(test_BF$BF10 &lt;= 1/3)/sim_N 
+    BF_power$BF_6 &lt;- sum(test_BF$BF10 &lt;= 1/ 6)/sim_N 
+  } else {
+    BF_power$Category &lt;- &quot;Evidence_for_Effect&quot;
+    BF_power$Sample_Size &lt;- sample_N
+    BF_power$BF_3 &lt;- sum(test_BF$BF10 &gt;= 3)/sim_N 
+    BF_power$BF_6 &lt;- sum(test_BF$BF10 &gt;= 6)/sim_N 
+  }
+  return(BF_power)
+}
+
+### false positive rate for this case
+Sim_False_Pos_mult &lt;- Sim_Power_mult_calc(sim_N = 5000)
+
+Sim_Power_mult &lt;- function(seed = 12345, 
+                           sim_N = 1000,        # number of simulations for each multinomial prob vector, default: 1000
+                           sim_N_probs = 5000,  # number of multinomial prob vectors, default is 5000 
+                           sample_N = 1200,
+                           sim_alpha = 1){
+  set.seed(seed)
+  
+  sim_probs &lt;- data.frame(gtools::rdirichlet(n = sim_N_probs, alpha = rep(sim_alpha, 5)))
+  colnames(sim_probs) &lt;- paste0(&quot;bin&quot;, seq(5))
+  
+  # using apply?
+  # tmp &lt;- apply(sim_probs, 1, function(x) Sim_Power_mult_calc(sim_prob = x))
+  
+  rm(&#39;res_bf_power_mult&#39;)
+  for (jj in (seq(nrow(sim_probs)))){ 
+    tmp_power &lt;- Sim_Power_mult_calc(sim_prob = sim_probs[jj, 1:5],
+                                     sim_N = sim_N,
+                                     sample_N = sample_N,
+                                     nil_effect = c(0.2, 0.2, 0.2, 0.2, 0.2))
+    
+    tmp_power$sim_alpha &lt;- sim_alpha
+    if (exists(&quot;res_bf_power_mult&quot;)){
+      res_bf_power_mult &lt;- rbind(res_bf_power_mult, tmp_power)
+    } else {
+      res_bf_power_mult &lt;- tmp_power
+    }
+  }
+  return(res_bf_power_mult)
+}
+
+# Test the function &quot;Sim_Power_mult&quot; with 50 times, and alpha for Dirichlet distribution as a vector of 10s
+startTime &lt;- Sys.time()
+test &lt;- Sim_Power_mult(sim_N = 50, sim_N_probs = 50, sim_alpha = 1)
+endTime &lt;- Sys.time()
+print(endTime - startTime) # 19 sec
+
+# If the above test is successful, then run the following code, using the default setting of &quot;Sim_Power_mult&quot;, i.e., 10000 probabilities for each.
+
+# alpha vector of Dirichlet, and 5000 multinomial vector for each probability, which means 10000 * 5000 iterations, it will take a few hours.
+
+startTime &lt;- Sys.time()
+rm(&#39;Res_Sim_Multi&#39;)
+Res_Sim_Multi &lt;- Sim_Power_mult()
+endTime &lt;- Sys.time()
+print(endTime - startTime) # approximately 9 hourse
+
+# for (sim_alpha in c(1,2,3)){
+#   # to quickly test the function, set sim_N = 5, sim_N_probs = 10
+#   Sim_res_tmp &lt;-  Sim_Power_mult(sim_N = 5000, 
+#                                  sim_N_probs = 10000,
+#                                  sim_alpha = sim_alpha)
+# 
+#   if (exists(&quot;Res_Sim_Multi&quot;)){
+#       Res_Sim_Multi &lt;- rbind(Res_Sim_Multi, Sim_res_tmp)
+#     } else {
+#       Res_Sim_Multi &lt;- Sim_res_tmp
+#     }
+#   
+# }
+
+Res_Sim_Multi &lt;- Res_Sim_Multi %&gt;%
+  dplyr::arrange(sim_alpha, BF_6)
+
+Res_Power &lt;- Res_Sim_Multi %&gt;%
+  dplyr::group_by(sim_alpha) %&gt;%
+  dplyr::filter(BF_3 &gt;=0.8) %&gt;%
+  dplyr::summarise(n = n()/(nrow(Res_Sim_Multi)/length(unique(Res_Sim_Multi$sim_alpha))))
+
+Res_Sim_Multi %&gt;% 
+  dplyr::group_by(sim_alpha) %&gt;%
+  dplyr::mutate(Iter = seq(n())) %&gt;%
+  dplyr::ungroup() %&gt;%
+  ggplot2::ggplot(., aes(x = Iter, y = BF_3, group = sim_alpha)) +
+  ggplot2::geom_point(aes(color = as.factor(sim_alpha))) + 
+  ggplot2::geom_hline(yintercept = 0.8) +
+  ggplot2::theme_classic()</code></pre>
+</div>
+</div>
+</div>
+<div id="try-parallel-processing-for-the-simulation-foreach" class="section level2">
+<h2>Try parallel processing for the simulation:
+<code>foreach</code></h2>
+<p>Thank Mengzheng for writing it in parallel.</p>
+<pre class="r"><code>pacman::p_load(&quot;iterators&quot;, &quot;foreach&quot;,&quot;parallel&quot;, &quot;doParallel&quot;)
+
+Sim_Power_mult_mt &lt;- function(seed = 12345, 
+                              sim_N = 5000,
+                              # number of simulations for each multinomial prob vector, default: 1000
+                              sim_N_probs = 5000,
+                              # number of multinomial prob vectors, default is 5000 
+                              sample_N = 1200,
+                              sim_alpha = 1){
+  
+  # Query the total number of threads
+  cl &lt;- makeCluster(detectCores())
+  registerDoParallel(cl)
+  
+  # generate probability vectors for multinomial distributions
+  sim_probs &lt;- data.frame(gtools::rdirichlet(n = sim_N_probs, alpha = rep(sim_alpha, 5)))
+  colnames(sim_probs) &lt;- paste0(&quot;bin&quot;, seq(5))
+  
+  # foreach
+  res_bf_power_mult &lt;- foreach(jj = seq(nrow(sim_probs)), .combine = rbind) %dopar% {
+    
+    set.seed(12345 + jj) # seed must be inside foreach
+    
+    #######################Function must be defined inside foreach#######################
+    BayesMultiNomial &lt;- function(dataset, factor, observed, expected, 
+                                 default_prior = TRUE, prior = NA){
+        # datase - the input dataframe
+        # factor - column name of the factor,
+        # observed - column name of the column contains counts information for the observed,
+        # expected - column name of the column contains counts information for the expected,
+        # default_prior - whether use the default, defused prior
+        # prior - priors defined by users
+        
+        fact_level &lt;- dataset %&gt;% dplyr::select(all_of(factor)) %&gt;% dplyr::pull()
+        observed_data &lt;- dataset %&gt;% dplyr::select(all_of(observed)) %&gt;% dplyr::pull()
+        names(observed_data) &lt;- fact_level
+        expected_data &lt;- dataset %&gt;% dplyr::select(all_of(expected)) %&gt;% dplyr::pull()
+        n_levels &lt;- length(observed_data)
+        
+        
+        if (default_prior &amp; all(is.na(prior))) {
+          prior &lt;- rep(1, n_levels)
+        } else{
+          if (is.character(prior)){
+            prior &lt;- dataset %&gt;% dplyr::select(all_of(prior)) %&gt;% dplyr::pull()
+          } else if (is.array(prior)){
+            prior &lt;-  prior
+          } else if (is.numeric(prior)){
+            prior &lt;-  prior
+          } else{
+            print(&quot;prior much a column of the input data or a vector&quot;)
+          }
+        }
+        
+        alphas &lt;- prior
+        counts &lt;- observed_data
+        thetas &lt;- expected_data
+        
+        if(sum(thetas) != 1) {
+          thetas &lt;- thetas/sum(thetas)
+          }
+        
+        expected &lt;- setNames(sum(counts)*thetas, names(counts))
+        
+        lbeta.xa &lt;- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
+        lbeta.a  &lt;- sum(lgamma(alphas)) - lgamma(sum(alphas))
+      
+        if (any(rowSums(cbind(thetas, counts)) == 0)) {
+          LogBF10 &lt;- (lbeta.xa-lbeta.a)
+        } else {
+          LogBF10 &lt;- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+        }
+      
+        BF &lt;- data.frame(LogBF10 = LogBF10,
+                         BF10    = exp(LogBF10),
+                         BF01    = 1/exp(LogBF10))
+      
+        return(list(BF       = BF,
+                    expected = expected))
+        
+      }
+    
+    Sim_Power_mult_calc &lt;- function(seed = 12345, 
+                                    sim_N = 5000,             # set to 5000 for real simulation
+                                    sample_N = 1200,
+                                    sim_prob = c(0.2, 0.2, 0.2, 0.2, 0.2), 
+                                    nil_effect = c(0.2, 0.2, 0.2, 0.2, 0.2)){
+      library(tidyverse)
+      
+      set.seed(seed)
+    
+      tmp_data &lt;- data.frame(rmultinom(n=sim_N, size=sample_N, prob = sim_prob))
+    
+      test_BF &lt;- data.frame(matrix(nrow = sim_N, ncol = 2))
+      colnames(test_BF) &lt;- c(&quot;Iter&quot;, &quot;BF10&quot;)
+      for (ii in seq(sim_N)){
+          sim_data1 &lt;- tmp_data[, ii]
+          sim_data2 &lt;- nil_effect * sample_N
+          test_df &lt;- data.frame(expected = sim_data2,
+                                obs = sim_data1)%&gt;%
+            dplyr::mutate(ageBins = paste0(&#39;bin&#39;, seq(5)))
+          
+          tmp_BF &lt;- BayesMultiNomial(test_df, 
+                                     factor = &#39;ageBins&#39;, 
+                                     observed = &#39;obs&#39;, 
+                                     expected = &#39;expected&#39;)
+          test_BF$Iter[ii] &lt;- ii
+          test_BF$`BF10`[ii] &lt;- tmp_BF$BF$BF10
+          
+      }
+      
+      BF_power &lt;- data.frame(matrix(nrow = 1, ncol = 5))
+      colnames(BF_power) &lt;- c(&quot;Prob&quot;, &quot;Category&quot;, &quot;Sample_Size&quot;, &quot;BF_3&quot;, &quot;BF_6&quot;)
+      
+      BF_power$Prob &lt;- paste0(round(sim_prob, 3), collapse = &#39;;&#39;)
+      
+      if (sum(sim_prob == nil_effect)==length(sim_prob)) {
+        
+        BF_power$Category &lt;- &quot;Evidence_for_Null&quot;
+        BF_power$Sample_Size &lt;- sample_N
+        BF_power$BF_3 &lt;- sum(test_BF$BF10 &lt;= 1/3)/sim_N 
+        BF_power$BF_6 &lt;- sum(test_BF$BF10 &lt;= 1/ 6)/sim_N 
+      } else {
+        BF_power$Category &lt;- &quot;Evidence_for_Effect&quot;
+        BF_power$Sample_Size &lt;- sample_N
+        BF_power$BF_3 &lt;- sum(test_BF$BF10 &gt;= 3)/sim_N 
+        BF_power$BF_6 &lt;- sum(test_BF$BF10 &gt;= 6)/sim_N 
+      }
+      return(BF_power)
+    }
+    ######################################################################################
+    
+    tmp_power &lt;- Sim_Power_mult_calc(sim_prob = sim_probs[jj, 1:5],
+                                     sim_N = sim_N,
+                                     sample_N = sample_N,
+                                     nil_effect = c(0.2, 0.2, 0.2, 0.2, 0.2))
+    tmp_power$sim_alpha &lt;- sim_alpha
+    return(tmp_power)
+  }
+  
+  # close the used thread
+  stopCluster(cl)
+  
+  return(res_bf_power_mult)
+}</code></pre>
+<pre class="r"><code>startTime &lt;- Sys.time()
+test &lt;- Sim_Power_mult(sim_N = 100, sim_N_probs = 100, sim_alpha = 1)
+endTime &lt;- Sys.time()
+print(endTime - startTime) # 1.15 min
+
+# Test the function &quot;Sim_Power_mult&quot; with 50 times, and alpha for Dirichlet distribution as a vector of 10s
+startTime &lt;- Sys.time()
+test_mt &lt;- Sim_Power_mult_mt(sim_N = 100, sim_N_probs = 100, sim_alpha = 1)
+endTime &lt;- Sys.time()
+print(endTime - startTime) # 25.7 sec, approximately 1/8 of the original</code></pre>
 <p>Our simulation found that, for age ratio, the current setting (prior
 and threshold of BF value as 3), the results revealed that for 93.8% of
 the probabilities generated by an “uniform” Dirichlet distribution, the
 current setting can provide evidence that the probability is different
 from null with in 80% of the case.</p>
-</div>
-</div>
+<p>We also simulated a case in which t-test (mean age difference) can
+not detect the difference of distribution but Bayesian multinomial test
+can. This simulation is to address reviewers’ concern.</p>
+<pre class="r"><code># generate data:
+sim_prob1 &lt;- c(0.05, 0.45, 0.35, 0.1, 0.05)
+sim_prob2 &lt;- c(0.45, 0.05, 0.1, 0.35, 0.05)
+
+# N = 1200
+#
+n_iter &lt;- 1000
+sim_N1 &lt;- data.frame(rmultinom(n=n_iter, size=1200, prob = sim_prob1))
+sim_N2 &lt;- data.frame(rmultinom(n=n_iter, size=1200, prob = sim_prob2))
+
+# generate age data for t-test
+set.seed(12345)
+sim_df1 &lt;- data.frame(matrix(nrow = 1200, ncol = n_iter))
+sim_df2 &lt;- data.frame(matrix(nrow = 1200, ncol = n_iter))
+for (kk in (seq(ncol(sim_N1)))){ 
+  tmp1 &lt;-  round(runif(sim_N1[1, kk], min = 0, max = 17),0)
+  tmp2 &lt;-  round(runif(sim_N1[2, kk], min = 18, max = 25),0)
+  tmp3 &lt;-  round(runif(sim_N1[3, kk], min = 26, max = 40),0)
+  tmp4 &lt;-  round(runif(sim_N1[4, kk], min = 41, max = 59),0)
+  tmp5 &lt;-  round(runif(sim_N1[5, kk], min = 60, max = 100),0)
+  
+  tmp &lt;- c(tmp1, tmp2, tmp3, tmp4, tmp5)
+  sim_df1[, kk] &lt;- tmp
+}
+
+for (kk in (seq(ncol(sim_N2)))){ 
+  tmp1 &lt;-  round(runif(sim_N2[1, kk], min = 0, max = 17),0)
+  tmp2 &lt;-  round(runif(sim_N2[2, kk], min = 18, max = 25),0)
+  tmp3 &lt;-  round(runif(sim_N2[3, kk], min = 26, max = 40),0)
+  tmp4 &lt;-  round(runif(sim_N2[4, kk], min = 41, max = 59),0)
+  tmp5 &lt;-  round(runif(sim_N2[5, kk], min = 60, max = 100),0)
+  
+  tmp &lt;- c(tmp1, tmp2, tmp3, tmp4, tmp5)
+  sim_df2[, kk] &lt;- tmp
+}
+
+# t-test
+rm(&#39;sim_TTest&#39;)
+sim_TTest &lt;- data.frame(matrix(nrow = n_iter, ncol = 3))
+colnames(sim_TTest) &lt;- c(&quot;t_value&quot;, &quot;p_value&quot;, &quot;sig&quot;)
+
+for (kk in (seq(ncol(sim_N2)))){
+  
+  tmp_ttest &lt;- t.test(sim_df1[,kk], sim_df2[,kk])
+  sim_TTest$t_value[kk] &lt;- tmp_ttest$statistic
+  sim_TTest$p_value[kk] &lt;- tmp_ttest$p.value
+  if (tmp_ttest$p.value &lt; 0.05) {
+    sim_TTest$sig[kk] &lt;- 1
+  }else {
+    sim_TTest$sig[kk] &lt;- 0
+  }
+}
+
+# power of ttest
+mean(sim_TTest$sig)
+
+## mutlinomial
+
+rm(&#39;sim_MNtest&#39;)
+sim_MNtest &lt;- data.frame(matrix(nrow = n_iter, ncol = 2))
+colnames(sim_MNtest) &lt;- c(&quot;BF&quot;, &quot;sig&quot;)
+
+for (kk in (seq(ncol(sim_N1)))){
+   tmp_df1 &lt;- sim_N1[, kk]
+   tmp_df2 &lt;- sim_N2[, kk]
+   
+   test_df &lt;- data.frame(expected = tmp_df1,
+                         obs = tmp_df2)%&gt;%
+     dplyr::mutate(ageBins = paste0(&#39;bin&#39;, seq(5)))
+      
+   tmp_BF &lt;- BayesMultiNomial(test_df, 
+                                 factor = &#39;ageBins&#39;, 
+                                 observed = &#39;obs&#39;, 
+                                 expected = &#39;expected&#39;)
+   sim_MNtest$BF[kk] &lt;- tmp_BF$BF$BF10
+    
+  if (tmp_BF$BF$BF10 &gt; 6) {
+    sim_MNtest$sig[kk] &lt;- 1
+  }else {
+    sim_MNtest$sig[kk] &lt;- 0
+  }
+}
+
+mean(sim_MNtest$sig)</code></pre>
 </div>
 </div>
 <div id="load-data-and-preprocess-the-data" class="section level1">
