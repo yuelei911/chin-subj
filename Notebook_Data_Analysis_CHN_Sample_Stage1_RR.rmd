@@ -169,7 +169,7 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 
 ### Justification for the Bayesian multinomial test
 
-(Lines 191 to 462 of the code, that's our simulations, this part of the code takes a long time to run. Therefore, it is not shown their running results in our html file(Notebook_Data_Analysis_CHN_Sample_Stage1_RR.html), see Rmarkdown for details(Notebook_Data_Analysis_CHN_Sample_Stage1_RR.RMD)
+(Lines 191 to 738 of the code, that's our simulations, this part of the code takes a long time to run. Therefore, it is not shown their running results in our html file(Notebook_Data_Analysis_CHN_Sample_Stage1_RR.html), see Rmarkdown for details(Notebook_Data_Analysis_CHN_Sample_Stage1_RR.RMD)
 
 To test whether the current non-informative prior is reasonable, we conducted a simulation to test the sensitivity.
 
@@ -483,7 +483,7 @@ Res_Sim_Multi %>%
 ## Try parallel processing for the simulation: `foreach`
 Thank Mengzheng for writing it in parallel.
 
-```{r foreach package, ,eval=FALSE}
+```{r foreach package,eval=FALSE}
 pacman::p_load("iterators", "foreach","parallel", "doParallel")
 
 Sim_Power_mult_mt <- function(seed = 12345, 
