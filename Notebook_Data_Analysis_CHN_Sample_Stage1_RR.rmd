@@ -1013,6 +1013,13 @@ sim_MNtest_alt_cr <- sim_MNtest_alt %>%
 sim_MNtest_alt_pw <- sim_MNtest_alt %>%
   dplyr::filter(ageDiff != 0)
 
+sim_MNtest_alt_pw80 <- sim_MNtest_alt %>%
+  dplyr::filter(ageDiff != 0 & Evidence4H1 >= 0.8) %>%
+  dplyr::arrange(MeanAge1, ageDiff) %>%
+  dplyr::group_by(MeanAge1) %>%
+  dplyr::filter(row_number() ==1) %>%
+  dplyr::ungroup() %>%
+  dplyr::arrange(ageDiff)
 
 sim_MNtest_alt_pw %>% 
   ggplot2::ggplot(aes(x = ageDiff, y = Evidence4H1, color = as.factor(MeanAge1))) + 
