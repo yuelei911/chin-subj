@@ -650,7 +650,7 @@ Our simulation found that, for age ratio, the current setting (prior and thresho
 This time, we tried to conduct a simulation using the logic as we generate age count data from the mean and SD data extracted from papers.
 
 The simulation will use N as 1200 so that it will reveal the senstivity of the sample size that resulted from sex ratio data.
-```{r sensitivity analysis by mean age, eval=FALSE}
+```{r sensitivity analysis by mean age}
 ## First, we get a reasonable  mean age range by using PSA 001's data
 
 # We used the bootstrap method to get the mean and 95% CI of the age
@@ -755,6 +755,270 @@ sim_MNtest %>%
   ggplot2::geom_hline(yintercept = c(log(6), log(1/6))) +
   ggplot2::theme_classic()
   
+```
+
+```{r sensitivity analysis by mean age alternative, eval=FALSE}
+
+pacman::p_load("truncnorm")
+
+Sim_Sens_mult_alt <- function(Mean1, diff_age, SD1, SD2, sampe_N=1200, sim_N=1000){
+  
+  # get the mean of difference
+  Mean2 <- Mean1 + diff_age
+  
+  tmp_MNtest_alt <- data.frame(matrix(nrow = 1, ncol = 4))
+  colnames(tmp_MNtest_alt) <- c("MeanAge1","ageDiff","Evidence4H1", "Evidence4H0")
+
+  count_H10 <- 0
+  count_H01 <- 0
+  
+  for (iter in seq(sim_N)){
+    # Generate data with truncated Normal:
+    ageData1 <- round(rtruncnorm(n=sampe_N, a=0, b =100, mean = Mean1, sd = SD1))
+    ageData2 <- round(rtruncnorm(n=sampe_N, a=0, b =100, mean = Mean2, sd = SD2))
+  
+    sim_age_df <- data.frame(obs = ageData1, expected=ageData2) %>%
+    tidyr::pivot_longer(., cols = obs:expected,
+                        names_to = "datasource",
+                        values_to = "age") %>%
+    dplyr::mutate(ageBins=cut(age,
+                              breaks= c(0, 17.5, 25.5, 40.5, 60.5, 100),
+                              labels= c("<=17", "18~25", "26~40", "41~60", ">=61")),
+                  ageBins = factor(ageBins,
+                                   levels = c("<=17", "18~25", "26~40", "41~60", ">=61"))) %>%
+    dplyr::count(datasource, ageBins) %>%
+    tidyr::complete(datasource, ageBins, 
+                    fill = list(n=1)) %>% # fill zero with ones
+    tidyr::pivot_wider(names_from = datasource,
+                       values_from = n)
+    
+    tmp_BF <- BayesMultiNomial(sim_age_df, 
+                              factor = 'ageBins', 
+                              observed = 'obs', 
+                              expected = 'expected')
+    
+    if (tmp_BF$BF$BF10 >=6){
+      count_H10 <- count_H10 + 1
+    } else if (tmp_BF$BF$BF01 >=6)
+      count_H01 <- count_H01 + 1
+  }
+  
+  tmp_MNtest_alt$MeanAge1[1] <- Mean1
+  tmp_MNtest_alt$ageDiff[1] <- diff_age
+  tmp_MNtest_alt$Evidence4H1[1] <- count_H10/sim_N
+  tmp_MNtest_alt$Evidence4H0[1] <- count_H01/sim_N
+  
+  return(tmp_MNtest_alt)
+}
+
+pacman::p_load("iterators", "foreach","parallel", "doParallel")
+pacman::p_load("truncnorm")
+
+Sim_Sens_mult_alt_par <- function(seed = 125, age_param, SD1, SD2, sampe_N=1200, sim_N=1000){
+  # Query the total number of threads
+  cl <- makeCluster(detectCores())
+  registerDoParallel(cl)
+  
+  # foreach
+  res_sens_mult <- foreach(jj = seq(nrow(age_param)), .combine = rbind) %dopar% {
+    
+    set.seed(125 + jj) # seed must be inside foreach
+    
+    #######################Function must be defined inside foreach#######################
+    BayesMultiNomial <- function(dataset, factor, observed, expected, 
+                                 default_prior = TRUE, prior = NA){
+        # datase - the input dataframe
+        # factor - column name of the factor,
+        # observed - column name of the column contains counts information for the observed,
+        # expected - column name of the column contains counts information for the expected,
+        # default_prior - whether use the default, defused prior
+        # prior - priors defined by users
+        
+        fact_level <- dataset %>% dplyr::select(all_of(factor)) %>% dplyr::pull()
+        observed_data <- dataset %>% dplyr::select(all_of(observed)) %>% dplyr::pull()
+        names(observed_data) <- fact_level
+        expected_data <- dataset %>% dplyr::select(all_of(expected)) %>% dplyr::pull()
+        n_levels <- length(observed_data)
+        
+        
+        if (default_prior & all(is.na(prior))) {
+          prior <- rep(1, n_levels)
+        } else{
+          if (is.character(prior)){
+            prior <- dataset %>% dplyr::select(all_of(prior)) %>% dplyr::pull()
+          } else if (is.array(prior)){
+            prior <-  prior
+          } else if (is.numeric(prior)){
+            prior <-  prior
+          } else{
+            print("prior much a column of the input data or a vector")
+          }
+        }
+        
+        alphas <- prior
+        counts <- observed_data
+        thetas <- expected_data
+        
+        if(sum(thetas) != 1) {
+          thetas <- thetas/sum(thetas)
+          }
+        
+        expected <- setNames(sum(counts)*thetas, names(counts))
+        
+        lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
+        lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
+      
+        if (any(rowSums(cbind(thetas, counts)) == 0)) {
+          LogBF10 <- (lbeta.xa-lbeta.a)
+        } else {
+          LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+        }
+      
+        BF <- data.frame(LogBF10 = LogBF10,
+                         BF10    = exp(LogBF10),
+                         BF01    = 1/exp(LogBF10))
+      
+        return(list(BF       = BF,
+                    expected = expected))
+        
+      }
+    
+    Sim_Sens_mult_alt <- function(Mean1, diff_age, SD1, SD2, sampe_N=1200, sim_N=1000){
+      
+      pacman::p_load("truncnorm", "tidyverse")
+      
+      
+      # get the mean of difference
+      Mean2 <- Mean1 + diff_age
+      
+      tmp_MNtest_alt <- data.frame(matrix(nrow = 1, ncol = 4))
+      colnames(tmp_MNtest_alt) <- c("MeanAge1","ageDiff","Evidence4H1", "Evidence4H0")
+    
+      count_H10 <- 0
+      count_H01 <- 0
+      
+      for (iter in seq(sim_N)){
+        # Generate data with truncated Normal:
+        ageData1 <- round(truncnorm::rtruncnorm(n=sampe_N, a=0, b =100, mean = Mean1, sd = SD1))
+        ageData2 <- round(truncnorm::rtruncnorm(n=sampe_N, a=0, b =100, mean = Mean2, sd = SD2))
+      
+        sim_age_df <- data.frame(obs = ageData1, expected=ageData2) %>%
+        tidyr::pivot_longer(., cols = obs:expected,
+                            names_to = "datasource",
+                            values_to = "age") %>%
+        dplyr::mutate(ageBins=cut(age,
+                                  breaks= c(0, 17.5, 25.5, 40.5, 60.5, 100),
+                                  labels= c("<=17", "18~25", "26~40", "41~60", ">=61")),
+                      ageBins = factor(ageBins,
+                                       levels = c("<=17", "18~25", "26~40", "41~60", ">=61"))) %>%
+        dplyr::count(datasource, ageBins) %>%
+        tidyr::complete(datasource, ageBins, 
+                        fill = list(n=1)) %>% # fill zero with ones
+        tidyr::pivot_wider(names_from = datasource,
+                           values_from = n)
+        
+        tmp_BF <- BayesMultiNomial(sim_age_df, 
+                                  factor = 'ageBins', 
+                                  observed = 'obs', 
+                                  expected = 'expected')
+        
+        if (tmp_BF$BF$BF10 >=6){
+          count_H10 <- count_H10 + 1
+        } else if (tmp_BF$BF$BF01 >=6){
+          count_H01 <- count_H01 + 1
+        }
+        
+        }
+  
+      tmp_MNtest_alt$MeanAge1[1] <- Mean1
+      tmp_MNtest_alt$ageDiff[1] <- diff_age
+      tmp_MNtest_alt$Evidence4H1[1] <- count_H10/sim_N
+      tmp_MNtest_alt$Evidence4H0[1] <- count_H01/sim_N
+      
+      return(tmp_MNtest_alt)
+      }
+    ######################################################################################
+    
+    tmp_power <- Sim_Sens_mult_alt(Mean1 = age_param$MeanAge1[jj], 
+                                   diff_age = age_param$age_diff[jj], 
+                                   SD1 = SD1, 
+                                   SD2= SD2, 
+                                   sampe_N=1200, 
+                                   sim_N=1000)
+    
+
+    return(tmp_power)
+  }
+  
+  # close the used thread
+  stopCluster(cl)
+  
+  return(res_sens_mult)
+}
+
+meanAges <- c(10, 15, 20, df_PSA001_CN_M, 25, 30, 35, 40, 45, 50, 55, 60)
+sim_age_diff <- seq(0, 2, 0.05)
+
+sim_age_param <- expand.grid(MeanAge1 = c(10, 15, 20, df_PSA001_CN_M, 25, 30, 35, 40, 45, 50, 55, 60),
+                             age_diff = seq(0, 2, 0.05))
+
+### test the function non-parallel
+startTime <- Sys.time()
+rm('sim_MNtest_alt')
+for (iter in seq(nrow(sim_age_param[1:4, ]))) {
+  
+    tmp_sens <- Sim_Sens_mult_alt(Mean1=sim_age_param$MeanAge1[iter], 
+                                  diff_age=sim_age_param$age_diff[iter],
+                                  SD1=df_PSA001_CN_SD, 
+                                  SD2=df_PSA001_CN_SD, 
+                                  sampe_N=1200,
+                                  sim_N=1000)
+    
+    if (!exists('sim_MNtest_alt')){
+      sim_MNtest_alt <- tmp_sens
+    } else{
+      sim_MNtest_alt <- rbind(sim_MNtest_alt, tmp_sens)
+    }
+}
+
+endTime <- Sys.time()
+print(endTime - startTime)   # 1.26 min for 4 iterates
+
+# Test the same function with parallel:
+startTime <- Sys.time()
+test_mt <- Sim_Sens_mult_alt_par(seed = 125, 
+                                 age_param = sim_age_param[1:4,], 
+                                 SD1=df_PSA001_CN_SD, 
+                                 SD2=df_PSA001_CN_SD, 
+                                 sampe_N=1200, sim_N=1000)
+endTime <- Sys.time()
+print(endTime - startTime) # 19 sec, approximately 1/8 of the original
+
+### run the above simulation with parallel will need 39 minutes
+rm('sim_MNtest_alt')
+
+startTime <- Sys.time()
+sim_MNtest_alt <- Sim_Sens_mult_alt_par(seed = 125, 
+                                 age_param = sim_age_param, 
+                                 SD1=df_PSA001_CN_SD, 
+                                 SD2=df_PSA001_CN_SD, 
+                                 sampe_N=1200, sim_N=1000)
+endTime <- Sys.time()
+print(endTime - startTime) # 28.55047 mins for Mac book pro with M1 chip
+
+sim_MNtest_alt_cr <- sim_MNtest_alt %>%
+  dplyr::filter(ageDiff == 0) %>%
+  dplyr::arrange(Evidence4H0)
+
+sim_MNtest_alt_pw <- sim_MNtest_alt %>%
+  dplyr::filter(ageDiff != 0)
+
+
+sim_MNtest_alt_pw %>% 
+  ggplot2::ggplot(aes(x = ageDiff, y = Evidence4H1, color = as.factor(MeanAge1))) + 
+  ggplot2::geom_point() +
+  ggplot2::geom_hline(yintercept = 0.8) +
+  ggplot2::theme_classic()
 ```
 
 # Load data and preprocess the data
