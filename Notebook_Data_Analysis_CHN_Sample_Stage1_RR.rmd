@@ -721,40 +721,32 @@ tmp <- Sim_Sens_mult(Mean1=df_PSA001_CN_M,
 
 ## record results
 sim_age_diff <- seq(0, 2, 0.05)
-
-rm('sim_MNtest')
-sim_MNtest <- data.frame(matrix(nrow = 0, ncol = 4))
-colnames(sim_MNtest) <- c("MeanAge1","ageDiff","BF10", "LogBF10")
-
+sim_sd <- df_PSA001_CN_SD
 meanAges <- c(10, 15, 20, df_PSA001_CN_M, 25, 30, 35, 40, 45, 50, 55, 60)
 
-for (age in meanAges) {
-  
-  tmp_sens  <- data.frame(matrix(nrow = length(sim_age_diff), ncol = 4))
-  colnames(tmp_sens) <- c("MeanAge1","ageDiff","BF10", "LogBF10")
-  tmp_sens$MeanAge1 <- age
-  
-  for (kk in (seq(length(sim_age_diff)))){
-    tmp_BF <- Sim_Sens_mult(Mean1=age, 
-                            diff_age=sim_age_diff[kk],
-                            SD1=df_PSA001_CN_SD, 
-                            SD2=df_PSA001_CN_SD, 
-                            sampe_N=1200)
-    
-    tmp_sens$ageDiff[kk] <- sim_age_diff[kk]
-    tmp_sens$BF10[kk] <- tmp_BF$BF$BF10
-    tmp_sens$LogBF10[kk] <- tmp_BF$BF$LogBF10
-  }
-  sim_MNtest <- rbind(sim_MNtest, tmp_sens)
+rm('sim_MNtest')
+sim_MNtest <- expand.grid(MeanAge1 = meanAges,
+                          age_diff = sim_age_diff,
+                          SD = sim_sd)
+sim_MNtest$BF10 <- NA
+sim_MNtest$LogBF10 <- NA
+for (iter in seq(nrow(sim_MNtest))) {
+  tmp_BF <- Sim_Sens_mult(Mean1=sim_MNtest$MeanAge1[iter], 
+                          diff_age=sim_MNtest$age_diff[iter],
+                          SD1=sim_MNtest$SD[iter], 
+                          SD2=sim_MNtest$SD[iter], 
+                          sampe_N=1200)
+
+  sim_MNtest$BF10[iter] <- tmp_BF$BF$BF10
+  sim_MNtest$LogBF10[iter] <- tmp_BF$BF$LogBF10
+
 }
 
-
-sim_MNtest %>% 
-  ggplot2::ggplot(aes(x = ageDiff, y = LogBF10, color = as.factor(MeanAge1))) + 
+figR2_1 <- sim_MNtest %>% 
+  ggplot2::ggplot(aes(x = age_diff, y = LogBF10, color = as.factor(MeanAge1))) + 
   ggplot2::geom_point() +
   ggplot2::geom_hline(yintercept = c(log(6), log(1/6))) +
   ggplot2::theme_classic()
-  
 ```
 
 ```{r sensitivity analysis by mean age alternative, eval=FALSE}
