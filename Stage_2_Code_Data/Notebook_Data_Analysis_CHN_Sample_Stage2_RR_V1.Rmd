@@ -22,7 +22,7 @@ library(dplyr)
 library(tidyverse)
 
 file_list <- list.files(
-  "C:/Users/yuelei/Desktop/Chin_Subj_Stage2_Preanalysis",
+  "C:\\Users\\yuelei\\Desktop\\chin-subj\\Stage_2_Code_Data",
   pattern = ".xlsx",
   full.names = TRUE, recursive = TRUE)
 
@@ -62,7 +62,49 @@ Group24567_bind_equal <- Group24567_bind %>%
                     Subjects_Group == Subjects_Group_N)) %>% 
   dplyr::mutate(Remark = ifelse(!(Article_IDs == Article_IDs_N), "Article_IDs", ifelse(!(Study_Number == Study_Number_N), "Study_Number", ifelse(!(Subjects_Group == Subjects_Group_N), "Subjects_Group", NA_character_))))
 
-## 7篇待重新核对
+## The Articles_IDs, Study_Number, and Subject_Group of groups 2,4,5,6 and 7 are different in two coding stages (see Gourp24567_bind_equal) and now  we go back to the paper for modification.
+
+Group24567_bind$Subjects_Group[125] <- Group24567_bind$Subjects_Group_N[125]
+
+Group24567_bind$Subjects_Group[126] <- Group24567_bind$Subjects_Group_N[126]
+
+Group24567_bind$Subjects_Group[127] <- Group24567_bind$Subjects_Group_N[127]
+  
+Group24567_bind$Subjects_Group[377] <- "传统识字教学组"
+  
+Group24567_bind$Subjects_Group[383] <- "健康对照组"
+
+Group24567_bind$Subjects_Group[858] <- Group24567_bind$Subjects_Group_N[858]
+
+Group24567_bind$Subjects_Group[859] <- Group24567_bind$Subjects_Group_N[859]
+
+Group24567_bind$Subjects_Group[880] <- Group24567_bind$Subjects_Group_N[880]
+
+Group24567_bind$Subjects_Group[881] <- Group24567_bind$Subjects_Group_N[881]
+
+Group24567_bind$Subjects_Group[882] <- Group24567_bind$Subjects_Group_N[882]
+  
+Group24567_bind$Study_Number_N[975] <- 1
+  
+Group24567_bind$Study_Number_N[976] <- 2
+  
+Group24567_bind$Article_IDs[1057] <- 20181078
+  
+Group24567_bind$Subjects_Group_N[1076] <- "快乐经历"
+  
+Group24567_bind$Study_Number[1081] <- 0.1
+  
+Group24567_bind$Study_Number_N[1081] <- 0.1
+  
+Group24567_bind$Study_Number_N[1082] <- 0.2
+  
+Group24567_bind$Subjects_Group[1112] <- "控制组"
+  
+Group24567_bind$Study_Number_N[1176] <- 2
+
+## run Group24567_bind_equal again and find this data.frame is not data available, thus we rm this data frame
+
+rm(Group24567_bind_equal)
 ```
 
 
@@ -101,9 +143,21 @@ Group1_bind_equal <- Group1_bind %>%
                     Subjects_Group == Subjects_Group_N)) %>% 
   dplyr::mutate(Remark = ifelse(!(Article_IDs == Article_IDs_N), "Article_IDs", ifelse(!(Study_Number == Study_Number_N), "Study_Number", ifelse(!(Subjects_Group == Subjects_Group_N), "Subjects_Group", NA_character_))))
 
-## 4 篇待重新核对
+Group1_bind <- bind_rows(Group1_bind,Group1_suppl)
 
-Group1 <- bind_rows(Group1_bind,Group1_suppl)
+## The Articles_IDs, Study_Number, and Subject_Group are different in two coding stages (see Gourp1_bind_equal) and now  we go back to the paper for modification.
+
+Group1_bind$Study_Number[170] <- Group1_bind$Study_Number_N[170]
+
+Group1_bind$Study_Number[171] <- Group1_bind$Study_Number_N[171] 
+
+Group1_bind$Study_Number[172] <- Group1_bind$Study_Number_N[172] 
+
+Group1_bind$Study_Number[173] <- Group1_bind$Study_Number_N[173] 
+
+## run Group1_bind_equal again and find this data.frame is not data available, thus we rm this data frame
+
+rm(Group1_bind_equal)
 ```
 
 
