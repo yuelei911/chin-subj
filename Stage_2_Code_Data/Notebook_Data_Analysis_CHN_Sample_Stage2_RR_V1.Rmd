@@ -178,10 +178,79 @@ Group3_2 <- df[[12]] %>%
   dplyr::filter(!Article_IDs %in% Suppl_ID$Article_IDs) %>%
   dplyr::rename_at(vars(1:4,7), ~paste0(., "_N"))
 
+## two data frame have different rows, check and find that Articles_IDs 20213137 is uncode
+
+Group3_1$Article_IDs[169] <- 20213137
+
+Group3_1$Article_IDs[170] <- 20213137
+
+Group3_1_20213137suppl <- data.frame(Coder = c("final","final"),
+                                Article_IDs =c(20213137,20213137),
+                                Article_Title =c("外显社会范畴加工与内隐社会范畴加工的年龄效应
+","外显社会范畴加工与内隐社会范畴加工的年龄效应"),Journal = c("中国临床心理学杂志","中国临床心理学杂志"),
+First_Author =c("王沛","王沛"),
+Abstract1 =c(1,1),
+Abstract2 =c(0,0),
+Study_Number =c(2,2),
+Remark1 =c(NA,NA),
+Study_Type =c(1,4),
+Subjects_Group =c("年轻被试","老年被试"),
+Sample_Szie =c(41,46),
+Gender = c(1,1),
+Male_Num =c(19,20),
+Female_Num =c(22,26),
+Age =c(1,1),
+M_age =c(21,63),
+SD_age=c(NA,NA),
+Other_age =c("19-26","58-88"),
+Ethnicity=c(0,0),
+Ethnicity_info=c(NA,NA),
+Religious=c(0,0),
+Religious_info=c(NA,NA),
+Subjects_Area =c(0,0),
+Subjects_Area_info =c(NA,NA),
+Subjects_Recruitment_Area =c(0,0),
+Sampling_Method =c(0,0),
+Remark2=c(NA,NA),
+Remark3=c(NA,NA))
+
+Group3_2_20213137suppl <- data.frame(Coder_N = c("final", "final","final","final"),
+                                Article_IDs_N = c(20213137,20213137,20213137,20213137),
+                                Study_Number_N = c(1,1,2,2),
+                                Subjects_Group_N = c("年轻被试","老年被试","年轻被试","老年被试"),
+                                Remark2_N = c(NA,NA,NA,NA),
+                                Remark3_N = c(NA,NA,NA,NA),
+                                Coder2_N = c(NA,NA,NA,NA),
+                                Target_Population_N =c(3,3,3,3),
+                                Coding_Basis_N = c("本研究采用 Garner 选择性注意范式探究了认
+知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系","本研究采用Garner选择性注意范式探究了认知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系","本研究采用Garner选择性注意范式探究了认知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系","本研究采用 Garner选择性注意范式探究了认知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系"),
+                                Remark1_N = c(NA,NA,NA,NA),
+                                Sample_Type_N = c(1,4,1,4),
+                                Sample_Type_info_N =c ("其中年轻被试40人（男性18人，女性22人），均为大学生","老年被试35人（男性17人，女性 18 人），均来自某老年大学，年龄 58-88 岁，平均年龄64岁","其中年轻大学生被试 41 人（男性 19 人，女性 22 人），年龄 19-26岁，平均年龄21岁","老年被试46人（男性20人，女性26人），均来自某老年大学，年龄58-88岁，平均年龄63岁"),
+                                Educational_Attainment_N =c(NA,0,NA,0),
+                                Educational_Attainment_info_N =c(NA,NA,NA,NA),
+                                Occupation_N = c(NA,0,NA,0),
+                                SES_N =c(0,0,0,0),
+                                SES_info_N =c(NA,NA,NA,NA),
+                                Subjects_Recruitment_Method_N =c(1,1,1,1),
+                                Subjects_Recruitment_Method_info_N =c(NA, NA,NA,NA))
+
+
+Group3_1_20213137 <- Group3_1 %>% 
+  dplyr::filter(Article_IDs == 20213137)
+
+Group3_1 <- Group3_1 %>% 
+  dplyr::filter(!(Article_IDs == 20213137))
+
+Group3_1_20213137_bind <- rbind(Group3_1_20213137,Group3_1_20213137suppl)
+
+Group3_1_20213137_bind <- cbind(Group3_1_20213137_bind,Group3_2_20213137suppl) %>% 
+    dplyr::select(1,30,2,31,8,32,11,33,3:7,9,10,12:29,34:48)
+
+
 Group3_bind <- cbind(Group3_1,Group3_2) %>%
   dplyr::select(1,30,2,31,8,32,11,33,3:7,9,10,12:29,34:48)
 
-##20213137校对编码漏编，Group3_1中编码为20211037，IDs错误
 
 Group3_bind_equal <- Group3_bind %>%
   dplyr::select(3:8) %>% 
@@ -190,15 +259,9 @@ Group3_bind_equal <- Group3_bind %>%
                     Subjects_Group == Subjects_Group_N)) %>% 
   dplyr::mutate(Remark = ifelse(!(Article_IDs == Article_IDs_N), "Article_IDs", ifelse(!(Study_Number == Study_Number_N), "Study_Number", ifelse(!(Subjects_Group == Subjects_Group_N), "Subjects_Group", NA_character_))))
 
-## 2 篇文章待核对
 
-Group3 <- bind_rows(Group3_bind,Group3_suppl)
+Group3_bind <- bind_rows(Group3_bind,Group3_suppl)
 
-#tabg3 <- data.frame(table(Group3_1$Article_IDs)) 
-#tabg32 <- data.frame(table(Group3_2$Article_IDs_N))
-
-#write.csv(tabg3,"tabg3.csv")
-#write.csv(tabg32,"tabg32.csv")
 ```
 
 
