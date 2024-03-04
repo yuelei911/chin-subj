@@ -1,0 +1,487 @@
+---
+title: "Chin_Subj_Analysis_Stage2_V1"
+author: "Lei Yue"
+date: "2024-01-01"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Loading the data and Precossing the data
+First, we load our first data sourse, namely, the five Chinese journals of coding data. Our coding scheme include three stage: pre-codding stage, coding stage and proofreading  coding stage. The coding data was producted in last two stages. We combine each coding data respectively becasuse these data was coded by different coding group.
+
+
+### Loading the data of coding stage 
+```{r message=FALSE, warning=FALSE}
+library(openxlsx)
+library(dplyr)
+library(tidyverse)
+
+file_list <- list.files(
+  "C:\\Users\\yuelei\\Desktop\\chin-subj\\Stage_2_Code_Data",
+  pattern = ".xlsx",
+  full.names = TRUE, recursive = TRUE)
+
+df <- setNames(
+  lapply(file_list, function(file) read.xlsx(file)),
+  sapply(file_list, basename))
+
+rm(file_list)
+names(df) <- paste0("[", seq_along(df), "] ", names(df))
+
+df <- lapply(df, function(df) {  
+  df[] <- lapply(df, as.character)  
+  return(df)  
+})  
+```
+
+
+### Combining the two stages' data (Group2,3,4,5,6, and 7)
+```{r}
+Group24567_1 <- dplyr::bind_rows(df[[3]],df[[6]],df[[7]],df[[8]],df[[9]]) %>% 
+  dplyr::filter(Coder == "final") %>% 
+  dplyr::select(-c(8,9,14:18,27,28,37,38)) %>% 
+  dplyr::select(-31)
+
+Group24567_2 <- dplyr::bind_rows(df[[11]],df[[13]],df[[14]],df[[15]],df[[16]]) %>% 
+  dplyr::filter(Coder == "final") %>%
+  dplyr::rename_at(vars(1:4,7), ~paste0(., "_N")) %>%
+  dplyr::select(-20)
+  
+Group24567_bind <-  cbind(Group24567_1,Group24567_2) %>% 
+  dplyr::select(1,31,2,32,8,33,11,34,3:7,9,10,12:30,35:49)
+
+Group24567_bind_equal <- Group24567_bind %>%
+  dplyr::select(3:8) %>% 
+  dplyr::filter(!(Article_IDs == Article_IDs_N &
+                    Study_Number == Study_Number_N &
+                    Subjects_Group == Subjects_Group_N)) %>% 
+  dplyr::mutate(Remark = ifelse(!(Article_IDs == Article_IDs_N), "Article_IDs", ifelse(!(Study_Number == Study_Number_N), "Study_Number", ifelse(!(Subjects_Group == Subjects_Group_N), "Subjects_Group", NA_character_))))
+
+## The Articles_IDs, Study_Number, and Subject_Group of groups 2,4,5,6 and 7 are different in two coding stages (see Gourp24567_bind_equal) and now  we go back to the paper for modification.
+
+Group24567_bind$Subjects_Group[125] <- Group24567_bind$Subjects_Group_N[125]
+
+Group24567_bind$Subjects_Group[126] <- Group24567_bind$Subjects_Group_N[126]
+
+Group24567_bind$Subjects_Group[127] <- Group24567_bind$Subjects_Group_N[127]
+  
+Group24567_bind$Subjects_Group[377] <- "传统识字教学组"
+  
+Group24567_bind$Subjects_Group[383] <- "健康对照组"
+
+Group24567_bind$Subjects_Group[858] <- Group24567_bind$Subjects_Group_N[858]
+
+Group24567_bind$Subjects_Group[859] <- Group24567_bind$Subjects_Group_N[859]
+
+Group24567_bind$Subjects_Group[880] <- Group24567_bind$Subjects_Group_N[880]
+
+Group24567_bind$Subjects_Group[881] <- Group24567_bind$Subjects_Group_N[881]
+
+Group24567_bind$Subjects_Group[882] <- Group24567_bind$Subjects_Group_N[882]
+  
+Group24567_bind$Study_Number_N[975] <- 1
+  
+Group24567_bind$Study_Number_N[976] <- 2
+  
+Group24567_bind$Article_IDs[1057] <- 20181078
+  
+Group24567_bind$Subjects_Group_N[1076] <- "快乐经历"
+  
+Group24567_bind$Study_Number[1081] <- 0.1
+  
+Group24567_bind$Study_Number_N[1081] <- 0.1
+  
+Group24567_bind$Study_Number_N[1082] <- 0.2
+  
+Group24567_bind$Subjects_Group[1112] <- "控制组"
+  
+Group24567_bind$Study_Number_N[1176] <- 2
+
+## run Group24567_bind_equal again and find this data.frame is not data available, thus we rm this data frame
+
+rm(Group24567_bind_equal)
+```
+
+
+### Finding the distinct Ids in suppl documents
+```{r }
+Suppl_ID <- dplyr::bind_rows(df[[2]],df[[5]]) %>% 
+  dplyr::filter(Coder == "final") %>%
+  dplyr::distinct(Article_IDs)
+```
+
+
+### Loading the Group 1 data (include suppl)
+```{r}
+Group1_1 <- df[[1]] %>% 
+  dplyr::filter(Coder == "final") %>% 
+  dplyr::filter(!Article_IDs %in% Suppl_ID$Article_IDs) %>% 
+  dplyr::select(-c(8,9,14:18,27,28,37,38)) %>% 
+  dplyr::select(-30)
+
+Group1_suppl <- df[[2]] %>% 
+  dplyr::filter(Coder == "final") %>% 
+  dplyr::rename_at(vars(8,9,14:18,27,28,37,38), ~paste0(., "_N"))
+
+Group1_2 <- df[[10]] %>% 
+  dplyr::filter(Coder == "final") %>%
+  dplyr::filter(!Article_IDs %in% Suppl_ID$Article_IDs) %>%
+  dplyr::rename_at(vars(1:4,7), ~paste0(., "_N"))
+
+Group1_bind <- cbind(Group1_1,Group1_2) %>%
+  dplyr::select(1,30,2,31,8,32,11,33,3:7,9,10,12:29,34:48)
+
+Group1_bind_equal <- Group1_bind %>%
+  dplyr::select(3:8) %>% 
+  dplyr::filter(!(Article_IDs == Article_IDs_N &
+                    Study_Number == Study_Number_N &
+                    Subjects_Group == Subjects_Group_N)) %>% 
+  dplyr::mutate(Remark = ifelse(!(Article_IDs == Article_IDs_N), "Article_IDs", ifelse(!(Study_Number == Study_Number_N), "Study_Number", ifelse(!(Subjects_Group == Subjects_Group_N), "Subjects_Group", NA_character_))))
+
+Group1_bind <- bind_rows(Group1_bind,Group1_suppl)
+
+## The Articles_IDs, Study_Number, and Subject_Group are different in two coding stages (see Gourp1_bind_equal) and now  we go back to the paper for modification.
+
+Group1_bind$Study_Number[170] <- Group1_bind$Study_Number_N[170]
+
+Group1_bind$Study_Number[171] <- Group1_bind$Study_Number_N[171] 
+
+Group1_bind$Study_Number[172] <- Group1_bind$Study_Number_N[172] 
+
+Group1_bind$Study_Number[173] <- Group1_bind$Study_Number_N[173] 
+
+## run Group1_bind_equal again and find this data.frame is not data available, thus we rm this data frame
+
+rm(Group1_bind_equal)
+```
+
+
+### Loading the Group 3 data (include suppl)
+```{r}
+Group3_1 <- df[[4]] %>% 
+  dplyr::filter(Coder == "final") %>% 
+  dplyr::filter(!Article_IDs %in% Suppl_ID$Article_IDs) %>% 
+  dplyr::select(-c(8,9,14:18,27,28,37,38)) #%>% 
+  #dplyr::select(-30)
+
+Group3_suppl <- df[[5]] %>% 
+  dplyr::filter(Coder == "final") %>% 
+  dplyr::rename_at(vars(8,9,14:18,27,28,37,38), ~paste0(., "_N"))
+
+Group3_2 <- df[[12]] %>% 
+  dplyr::filter(Coder == "final") %>%
+  dplyr::filter(!Article_IDs %in% Suppl_ID$Article_IDs) %>%
+  dplyr::rename_at(vars(1:4,7), ~paste0(., "_N"))
+
+## two data frame have different rows, check and find that Articles_IDs 20213137 is uncode
+
+Group3_1$Article_IDs[169] <- 20213137
+
+Group3_1$Article_IDs[170] <- 20213137
+
+Group3_1_20213137suppl <- data.frame(Coder = c("final","final"),
+                                Article_IDs =c(20213137,20213137),
+                                Article_Title =c("外显社会范畴加工与内隐社会范畴加工的年龄效应
+","外显社会范畴加工与内隐社会范畴加工的年龄效应"),Journal = c("中国临床心理学杂志","中国临床心理学杂志"),
+First_Author =c("王沛","王沛"),
+Abstract1 =c(1,1),
+Abstract2 =c(0,0),
+Study_Number =c(2,2),
+Remark1 =c(NA,NA),
+Study_Type =c(1,4),
+Subjects_Group =c("年轻被试","老年被试"),
+Sample_Szie =c(41,46),
+Gender = c(1,1),
+Male_Num =c(19,20),
+Female_Num =c(22,26),
+Age =c(1,1),
+M_age =c(21,63),
+SD_age=c(NA,NA),
+Other_age =c("19-26","58-88"),
+Ethnicity=c(0,0),
+Ethnicity_info=c(NA,NA),
+Religious=c(0,0),
+Religious_info=c(NA,NA),
+Subjects_Area =c(0,0),
+Subjects_Area_info =c(NA,NA),
+Subjects_Recruitment_Area =c(0,0),
+Sampling_Method =c(0,0),
+Remark2=c(NA,NA),
+Remark3=c(NA,NA))
+
+Group3_2_20213137suppl <- data.frame(Coder_N = c("final", "final","final","final"),
+                                Article_IDs_N = c(20213137,20213137,20213137,20213137),
+                                Study_Number_N = c(1,1,2,2),
+                                Subjects_Group_N = c("年轻被试","老年被试","年轻被试","老年被试"),
+                                Remark2_N = c(NA,NA,NA,NA),
+                                Remark3_N = c(NA,NA,NA,NA),
+                                Coder2_N = c(NA,NA,NA,NA),
+                                Target_Population_N =c(3,3,3,3),
+                                Coding_Basis_N = c("本研究采用 Garner 选择性注意范式探究了认
+知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系","本研究采用Garner选择性注意范式探究了认知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系","本研究采用Garner选择性注意范式探究了认知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系","本研究采用 Garner选择性注意范式探究了认知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系"),
+                                Remark1_N = c(NA,NA,NA,NA),
+                                Sample_Type_N = c(1,4,1,4),
+                                Sample_Type_info_N =c ("其中年轻被试40人（男性18人，女性22人），均为大学生","老年被试35人（男性17人，女性 18 人），均来自某老年大学，年龄 58-88 岁，平均年龄64岁","其中年轻大学生被试 41 人（男性 19 人，女性 22 人），年龄 19-26岁，平均年龄21岁","老年被试46人（男性20人，女性26人），均来自某老年大学，年龄58-88岁，平均年龄63岁"),
+                                Educational_Attainment_N =c(NA,0,NA,0),
+                                Educational_Attainment_info_N =c(NA,NA,NA,NA),
+                                Occupation_N = c(NA,0,NA,0),
+                                SES_N =c(0,0,0,0),
+                                SES_info_N =c(NA,NA,NA,NA),
+                                Subjects_Recruitment_Method_N =c(1,1,1,1),
+                                Subjects_Recruitment_Method_info_N =c(NA, NA,NA,NA))
+
+
+Group3_1_20213137 <- Group3_1 %>% 
+  dplyr::filter(Article_IDs == 20213137)
+
+Group3_1 <- Group3_1 %>% 
+  dplyr::filter(!(Article_IDs == 20213137))
+
+Group3_1_20213137_bind <- rbind(Group3_1_20213137,Group3_1_20213137suppl)
+
+Group3_1_20213137_bind <- cbind(Group3_1_20213137_bind,Group3_2_20213137suppl) %>% 
+    dplyr::select(1,30,2,31,8,32,11,33,3:7,9,10,12:29,34:48)
+
+
+Group3_bind <- cbind(Group3_1,Group3_2) %>%
+  dplyr::select(1,30,2,31,8,32,11,33,3:7,9,10,12:29,34:48)
+
+
+Group3_bind_equal <- Group3_bind %>%
+  dplyr::select(3:8) %>% 
+  dplyr::filter(!(Article_IDs == Article_IDs_N &
+                    Study_Number == Study_Number_N &
+                    Subjects_Group == Subjects_Group_N)) %>% 
+  dplyr::mutate(Remark = ifelse(!(Article_IDs == Article_IDs_N), "Article_IDs", ifelse(!(Study_Number == Study_Number_N), "Study_Number", ifelse(!(Subjects_Group == Subjects_Group_N), "Subjects_Group", NA_character_))))
+
+
+Group3_bind <- bind_rows(Group3_bind,Group3_suppl)
+
+```
+
+
+### Combine the coding data and the proofreading data
+```{r message=FALSE, warning=FALSE}
+
+df_bind <- bind_rows(Group24567_bind,Group1_bind,Group3_bind)
+
+```
+
+
+## Check the Articles Journals
+```{r}
+
+df_indentification_Journal <- df_bind %>% 
+  dplyr::mutate(IDs5=substr(Article_IDs_N,5,5)) %>% 
+  dplyr::mutate(IDs5=recode(IDs5,"1"="心理学报","2"="心理科学","3"="中国临床心理学杂志",
+                       "4"="心理发展与教育","5"="心理与行为研究")) %>% 
+  dplyr::mutate(Journal_IDs5 = ifelse(Journal == IDs5, TRUE,FALSE)) %>%  
+  dplyr::filter(Journal_IDs5 == "FALSE") %>% 
+  dplyr::distinct(Article_IDs,.keep_all = TRUE)
+
+## 117行数据待检查
+
+##table(Chin_Subj_Coding_Data$Article_IDs)
+
+## 20084071为摘要集，20081048缺少journal,20082370错误，20082379NA，20083033，20083067
+```
+
+
+## Check Articles' other coding information
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+#table(Chin_Subj_Coding_Data$Remark2)
+
+#tryanalysis <- Chin_Subj_Coding_Data %>% 
+ # dplyr::filter(Coder == "final") %>% 
+  #dplyr::filter(is.na(Remark1)) %>% 
+  #dplyr::filter(is.na(Remark2) | Remark2 != "被试重复使用")
+
+## 这里如果合并了Proofreading之后发现coding basis的final是空的需要补全
+
+#names(Chin_Subj_Coding_Data)
+
+#temp_rownames <- data.frame(cdf= c(names(Chin_Subj_Coding_Data)))
+
+#temp_un_reported01 <- c("Sample_Type","Age","Gender","SES",
+                       # "Religious","Subjects_Area","Sampling_Method")
+
+#class(Chin_Subj_Coding_Data$Study_Type)
+
+#temp11 <- Chin_Subj_Coding_Data %>% 
+ # filter(Coder == "final")
+```
+
+
+## Calculating report condition 
+In our data, there are some data columns that need to calculate the report of the data,such as Gender, Age, SES, Educational attachment, Occupation, Ethnicity, Religious,Subjects_Recruitment_Area and  Sampling_Method,Subjects_Recruitment_Method. In this part, we will finish this analysis.
+
+
+### Age report
+```{r}
+df_Age_Report <- Chin_Subj_Coding_Data %>%
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2)) %>% 
+  dplyr::select(Age) %>% 
+  dplyr::count(Age) %>% 
+  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
+                Site = "Age") %>% 
+  dplyr::rename(Group = "Age")
+
+df_Age_Report
+##报告数据的每一列必须转化为画成一个图的数据
+```  
+
+
+### Gender report
+```{r}
+df_Gender_Report <- Chin_Subj_Coding_Data %>%
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2)) %>% 
+  dplyr::select(Gender) %>% 
+  dplyr::count(Gender) %>% 
+  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
+                Site = "Gender") %>% 
+  dplyr::rename(Group = "Gender")
+
+df_Gender_Report
+```
+
+
+### SES report
+```{}
+
+```
+
+
+### Ethnicity report
+```{r}
+df_Ethnicity_Report <- Chin_Subj_Coding_Data %>%
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2)) %>% 
+  dplyr::select(Ethnicity) %>% 
+  dplyr::count(Ethnicity) %>% 
+  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
+                Site = "Ethnicity") %>% 
+  dplyr::rename(Group = "Ethnicity")
+
+df_Ethnicity_Report
+```
+
+
+### Religious report
+```{r}
+df_Religious_Report <- Chin_Subj_Coding_Data %>%
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2)) %>% 
+  dplyr::select(Religious) %>% 
+  dplyr::count(Religious) %>% 
+  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
+                Site = "Religious")%>% 
+  dplyr::rename(Group = "Religious")
+
+df_Religious_Report
+```
+
+
+### Subjects_Recruitment_Area report
+```{r}
+
+df_Subjects_Recruitment_Area_Report <- Chin_Subj_Coding_Data %>%
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2)) %>% 
+  dplyr::select(Subjects_Recruitment_Area) %>%
+  dplyr::mutate(Subjects_Recruitment_Area = ifelse(grepl("[\u4e00-\u9fa5]",
+                                                         Subjects_Recruitment_Area), 1, Subjects_Recruitment_Area)) %>%
+                  dplyr::count(Subjects_Recruitment_Area) %>%
+                  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
+                                Site = "Subjects_Recruitment_Area") %>% 
+  dplyr::rename(Group = "Subjects_Recruitment_Area")
+
+df_Subjects_Recruitment_Area_Report  
+```
+
+
+### Sampling_Method report
+```{R}
+df_Sampling_Method_Report <- Chin_Subj_Coding_Data %>%
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2)) %>% 
+  dplyr::select(Sampling_Method) %>% 
+  dplyr::mutate(ifelse(Sampling_Method > 0 , "1", "0")) %>% 
+  dplyr::count(Sampling_Method) %>% 
+  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
+                Site = "Sampling_Method") %>% 
+  dplyr::rename(Group = "Sampling_Method")
+
+df_Sampling_Method_Report
+
+```
+
+
+### Subjects_Recruitment_Method report
+```{r}
+
+```
+
+
+### Educational attachment report
+```{r}
+df_Educational_Attainment_Report <- Chin_Subj_Coding_Data %>%
+  dplyr::filter(Sample_Type == "4") %>%
+  dplyr::select(Educational_Attainment) %>% 
+  dplyr::count(Educational_Attainment) %>% 
+  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
+                Site = "Educational_Attainment")
+
+df_Educational_Attainment_Report
+```
+
+
+### Occupation repot
+```{r}
+df_Occupation_Report <- Chin_Subj_Coding_Data %>%
+  dplyr::filter(Sample_Type == "4") %>%
+  dplyr::select(Occupation) %>% 
+  dplyr::count(Occupation) %>% 
+  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
+                Site = "Occupation")
+
+df_Occupation_Report
+```
+
+
+### Combine all above data and plot
+```{r}
+
+
+df_report <- list(df_Age_Report,df_Gender_Report,df_Ethnicity_Report,
+                              df_Religious_Report,df_Sampling_Method_Report,df_Subjects_Recruitment_Area_Report)
+
+df_report <- dplyr::bind_rows(df_report)
+
+df_report$Group <- replace(df_report$Group, df_report$Group == "0" , "unreported")
+
+df_report$Group <- replace(df_report$Group, df_report$Group %in% c("1", "2","3") , "reported")
+
+df_report %>% 
+  ggplot(aes(Site,Proportion, fill = Group)) +
+  geom_bar(stat = "identity") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  xlab("Var")
+```
+
+
+
+
+
+
+
+
+```
