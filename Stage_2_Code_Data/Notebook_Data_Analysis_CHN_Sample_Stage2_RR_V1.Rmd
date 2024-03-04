@@ -17,17 +17,19 @@ First, we load our first data sourse, namely, the five Chinese journals of codin
 
 ### Loading the data of coding stage 
 ```{r message=FALSE, warning=FALSE}
-library(openxlsx)
-library(dplyr)
-library(tidyverse)
+# rm(list = ls())
+if (!require("pacman")) install.packages("pacman")
+
+# 使用pacman作为load R包的工具
+pacman::p_load("tidyverse","rio")
 
 file_list <- list.files(
-  "C:\\Users\\yuelei\\Desktop\\chin-subj\\Stage_2_Code_Data",
+  here::here("Stage_2_Code_Data"),
   pattern = ".xlsx",
   full.names = TRUE, recursive = TRUE)
 
 df <- setNames(
-  lapply(file_list, function(file) read.xlsx(file)),
+  lapply(file_list, function(file) rio::import(file)),
   sapply(file_list, basename))
 
 rm(file_list)
@@ -37,6 +39,10 @@ df <- lapply(df, function(df) {
   df[] <- lapply(df, as.character)  
   return(df)  
 })  
+
+# 或者可以试试如下导入函数，我初步试了一下，应该效果相当：
+# df2 <- rio::import_list(file_list)
+
 ```
 
 
