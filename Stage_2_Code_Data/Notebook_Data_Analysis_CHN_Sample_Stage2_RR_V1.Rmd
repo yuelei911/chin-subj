@@ -17,11 +17,14 @@ First, we load our first data sourse, namely, the five Chinese journals of codin
 
 ### Loading the data of coding stage 
 ```{r message=FALSE, warning=FALSE}
-# rm(list = ls())
+#rm(list = ls())
+
 if (!require("pacman")) install.packages("pacman")
 
-# 使用pacman作为load R包的工具
-pacman::p_load("tidyverse","rio")
+# use package "pacman" as loading R packages tools
+
+pacman::p_load("tidyverse","rio","here")
+
 
 file_list <- list.files(
   here::here("Stage_2_Code_Data"),
@@ -110,7 +113,8 @@ Group24567_bind$Study_Number_N[1176] <- 2
 
 ## run Group24567_bind_equal again and find this data.frame is not data available, thus we rm this data frame
 
-rm(Group24567_bind_equal)
+rm(Group24567_bind_equal,Group24567_1,Group24567_2)
+
 ```
 
 
@@ -128,7 +132,7 @@ Group1_1 <- df[[1]] %>%
   dplyr::filter(Coder == "final") %>% 
   dplyr::filter(!Article_IDs %in% Suppl_ID$Article_IDs) %>% 
   dplyr::select(-c(8,9,14:18,27,28,37,38)) %>% 
-  dplyr::select(-30)
+  dplyr::select(-c(30:33))
 
 Group1_suppl <- df[[2]] %>% 
   dplyr::filter(Coder == "final") %>% 
@@ -163,7 +167,7 @@ Group1_bind$Study_Number[173] <- Group1_bind$Study_Number_N[173]
 
 ## run Group1_bind_equal again and find this data.frame is not data available, thus we rm this data frame
 
-rm(Group1_bind_equal)
+rm(Group1_bind_equal,Group1_1,Group1_2,Group1_suppl)
 ```
 
 
@@ -266,7 +270,23 @@ Group3_bind_equal <- Group3_bind %>%
   dplyr::mutate(Remark = ifelse(!(Article_IDs == Article_IDs_N), "Article_IDs", ifelse(!(Study_Number == Study_Number_N), "Study_Number", ifelse(!(Subjects_Group == Subjects_Group_N), "Subjects_Group", NA_character_))))
 
 
-Group3_bind <- bind_rows(Group3_bind,Group3_suppl)
+## The Articles_IDs, Study_Number, and Subject_Group are different in two coding stages (see Gourp1_bind_equal) and now  we go back to the paper for modification.
+
+Group3_bind$Study_Number[27] <- 0
+
+Group3_bind$Study_Number_N[131] <- 1
+
+Group3_bind$Subjects_Group_N[130] <- "实验组"
+
+Group3_bind$Subjects_Group_N[131] <- "控制组"
+
+## Experiment 2 of Article_IDs 20184025 was not code, but experiment2 subjects was sames as experiment 1, therefore we  dont't recode it. 
+
+Group3_1_20213137_bind[] <- lapply(Group3_1_20213137_bind,as.character)
+
+Group3_bind <- bind_rows(Group3_bind,Group3_suppl,Group3_1_20213137_bind)
+
+rm(Group3_1,Group3_1_20213137,Group3_1_20213137_bind,Group3_1_20213137suppl,Group3_bind_equal,Group3_suppl,Group3_2,Group3_2_20213137suppl)
 
 ```
 
@@ -274,7 +294,7 @@ Group3_bind <- bind_rows(Group3_bind,Group3_suppl)
 ### Combine the coding data and the proofreading data
 ```{r message=FALSE, warning=FALSE}
 
-df_bind <- bind_rows(Group24567_bind,Group1_bind,Group3_bind)
+df_stage2_Journal_Code_ <- bind_rows(Group24567_bind,Group1_bind,Group3_bind)
 
 ```
 
