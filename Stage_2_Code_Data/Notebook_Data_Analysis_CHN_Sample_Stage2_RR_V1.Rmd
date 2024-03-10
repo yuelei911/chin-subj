@@ -178,7 +178,7 @@ Group1_bind$Study_Number[173] <- Group1_bind$Study_Number_N[173]
 
 ## run Group1_bind_equal again and find this data.frame is not data available, thus we rm this data frame
 
-#rm(Group1_bind_equal,Group1_1,Group1_2,Group1_suppl)
+rm(Group1_bind_equal,Group1_1,Group1_2,Group1_suppl)
 ```
 
 
@@ -249,7 +249,7 @@ Group3_2_20213137suppl <- data.frame(Coder_N = c("final", "final","final","final
                                 Subjects_Group_N = c("年轻被试","老年被试","年轻被试","老年被试"),
                                 Remark2_N = c(NA,NA,NA,NA),
                                 Remark3_N = c(NA,NA,NA,NA),
-                                Coder2_N = c(NA,NA,NA,NA),
+                                Coder2_N = c("final","final","final","final"),
                                 Target_Population_N =c(3,3,3,3),
                                 Coding_Basis_N = c("本研究采用 Garner 选择性注意范式探究了认
 知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系","本研究采用Garner选择性注意范式探究了认知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系","本研究采用Garner选择性注意范式探究了认知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系","本研究采用 Garner选择性注意范式探究了认知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系"),
@@ -321,32 +321,55 @@ df_stage2_Journal_Code <- bind_rows(Group24567_bind,Group1_bind,Group3_bind)
 ## Check each code information and modification code information
 ```{r}
 
-## Coder_N
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code
 
-df_stage2_Journal_Code2 <- df_stage2_Journal_Code %>% 
-  dplyr::mutate(Coder_N = if_else(is.na(Coder_N),"final",Coder_N))
+## Coder(Coder2_N/Coder_N)
 
+any(is.na(df_stage2_Journal_Code2$Coder)) ### The code runs result is FALSE
 
-## 
+any(is.na(df_stage2_Journal_Code2$Coder_N)) ### The code runs result is FALSE
 
+any(is.na(df_stage2_Journal_Code2$Coder2_N)) ### The code runs result is TURE and further find NA rows
+df_stage2_Journal_Code2$Article_IDs[is.na(df_stage2_Journal_Code2$Coder2_N)]
 
+### The results of code run shows that 20211059, 20211061, 20213236, 20213239 is NA
 
-df_indentification_Journal <- df_stage2_Journal_Code %>% 
-  dplyr::mutate(IDs5=substr(Article_IDs_N,5,5)) %>% 
-  dplyr::mutate(IDs5=recode(IDs5,"1"="心理学报","2"="心理科学","3"="中国临床心理学杂志",
-                       "4"="心理发展与教育","5"="心理与行为研究")) %>% 
-  dplyr::mutate(Journal_IDs5 = ifelse(Journal == IDs5, TRUE,FALSE)) %>%  
-  dplyr::filter(Journal_IDs5 == "FALSE") %>% 
-  dplyr::distinct(Article_IDs,.keep_all = TRUE)
-
-
-df_stage2_Journal_Code2 <-  df_stage2_Journal_Code %>% 
-  dplyr::mutate(First_Author = if_else(grepl("心理",First_Author),Journal,First_Author))
+df_stage2_Journal_Code2$Coder2_N[436] <- "final"
+df_stage2_Journal_Code2$Coder2_N[437] <- "final"
+df_stage2_Journal_Code2$Coder2_N[486] <- "final"
+df_stage2_Journal_Code2$Coder2_N[487] <- "final"
 
 
+## Article_IDs(Article_IDs_N)
+
+Article_IDs <-  df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Article_IDs))   ### The code runs results is 20083093 and 20181140
+
+df_stage2_Journal_Code2$Article_IDs[62] <- 20083093
+df_stage2_Journal_Code2$Article_IDs[73] <- 20081140
 
 
-##table(Chin_Subj_Coding_Data$Article_IDs)
+Article_IDs_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Article_IDs_N))  ### The code runs results is no data
+
+rm(Article_IDs,Article_IDs_N)
+
+
+## Study_Number(Study_Number_N)
+
+Study_Number <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Study_Number) | is.na(Study_Number_N))
+
+df_stage2_Journal_Code2$Study_Number[28] <- 1
+df_stage2_Journal_Code2$Study_Number_N[28] <- 1
+
+df_stage2_Journal_Code2$Study_Number[62] <- 1
+df_stage2_Journal_Code2$Study_Number_N[62] <- 1  ### 20083093 two coder codeed and completed "check", but they dont't complete "final"
+
+df_stage2_Journal_Code2$Study_Number[73] <- 2  ### 20081140 same as 20083093
+
+df_stage2_Journal_Code2$Study_Number_N[104] <- 0
+ 
 
 ## 20084071为摘要集，20081048缺少journal,20082370错误，20082379NA，20083033，20083067
 ```
