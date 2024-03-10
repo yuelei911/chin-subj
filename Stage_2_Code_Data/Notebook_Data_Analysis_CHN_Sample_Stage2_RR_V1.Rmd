@@ -319,7 +319,7 @@ df_stage2_Journal_Code <- bind_rows(Group24567_bind,Group1_bind,Group3_bind)
 
 
 ## Check each code information and modification code information
-```{r}
+```{r message=FALSE, warning=FALSE}
 
 df_stage2_Journal_Code2 <- df_stage2_Journal_Code
 
@@ -346,7 +346,7 @@ Article_IDs <-  df_stage2_Journal_Code2 %>%
   dplyr::filter(is.na(Article_IDs))   ### The code runs results is 20083093 and 20181140
 
 df_stage2_Journal_Code2$Article_IDs[62] <- 20083093
-df_stage2_Journal_Code2$Article_IDs[73] <- 20081140
+df_stage2_Journal_Code2$Article_IDs[73] <- 20181140
 
 
 Article_IDs_N <- df_stage2_Journal_Code2 %>% 
@@ -360,16 +360,124 @@ rm(Article_IDs,Article_IDs_N)
 Study_Number <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Study_Number) | is.na(Study_Number_N))
 
+### Article_IDs 20081127
 df_stage2_Journal_Code2$Study_Number[28] <- 1
 df_stage2_Journal_Code2$Study_Number_N[28] <- 1
 
+### Article_IDs 20083093
 df_stage2_Journal_Code2$Study_Number[62] <- 1
 df_stage2_Journal_Code2$Study_Number_N[62] <- 1  ### 20083093 two coder codeed and completed "check", but they dont't complete "final"
 
-df_stage2_Journal_Code2$Study_Number[73] <- 2  ### 20081140 same as 20083093
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Study_Number[73] <- 2  ### 20181140 same as 20083093
 
+### Article_IDs 20181168
 df_stage2_Journal_Code2$Study_Number_N[104] <- 0
+
+### Article_IDs 20082054
+df_stage2_Journal_Code2$Study_Number[246] <- 1
+df_stage2_Journal_Code2$Study_Number_N[246] <- 1
+
+### Article_IDs 20082069
+df_stage2_Journal_Code2$Study_Number_N[254] <- 1
+
+### Article_IDs 20082074
+df_stage2_Journal_Code2$Study_Number[257] <- 1
+df_stage2_Journal_Code2$Study_Number_N[257] <- 1
+df_stage2_Journal_Code2$Study_Number[258] <- 1
+df_stage2_Journal_Code2$Study_Number_N[258] <- 1
+
+### Article_IDs 20082087
+df_stage2_Journal_Code2$Study_Number_N[260] <- 1
+
+
+### Article_IDs 20211046
+df_stage2_Journal_Code2$Study_Number[432] <- 1
+df_stage2_Journal_Code2$Study_Number_N[432] <- 1
+
+### Article_IDs 20212097
+df_stage2_Journal_Code2$Study_Number[930] <- 0
+df_stage2_Journal_Code2$Study_Number_N[931] <- 0.1
+
+### Article_IDs 20182192
+df_stage2_Journal_Code2$Study_Number[1089] <- 1
+
+### Article_IDs 20182193
+df_stage2_Journal_Code2$Study_Number[1090] <- 1
+df_stage2_Journal_Code2$Study_Number_N[1090] <- 1
+
+### Article_IDs 20212172
+df_stage2_Journal_Code2$Study_Number[1182] <- 1
+df_stage2_Journal_Code2$Study_Number_N[1182] <- 1 
+
+### Article_IDs 20083017
+df_stage2_Journal_Code2$Study_Number_N[1301] <- 1
+
+### Article_IDs 20183268
+df_stage2_Journal_Code2$Study_Number[1396] <- 1
+df_stage2_Journal_Code2$Study_Number_N[1396] <- 1 
+
+### Article_IDs 20213023
+df_stage2_Journal_Code2$Study_Number[1440] <- 1
+
+### Article_IDs 20213039
+df_stage2_Journal_Code2$Study_Number[1446] <- 1
+
+### Article_IDs 20082013
+df_stage2_Journal_Code2$Study_Number[1476] <- 1
+
+### Artilce_IDs 20082029
+df_stage2_Journal_Code2$Study_Number[1488] <- 1
+
+
+### Article_IDs 20084071 20182070  20215037 are need to replaced
+rm(Study_Number)
+
+## Article_Title
+Article_Title <-  df_stage2_Journal_Code2 %>%
+  dplyr::filter(is.na(Article_Title))
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Article_Title[62] <-  "抑郁与自尊水平、自我效能感的关系研究"
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Article_IDs[73] <- 20181140
+df_stage2_Journal_Code2$Article_Title[73] <- "比例推理的过度使用及其认知机制：一项发展性的负启动研究"
+
+## Article_IDs 20085035
+df_stage2_Journal_Code2$Article_Title[749] <- "《适应分量表》在蒙古族青少年群体中使用的信、效度检验"
  
+### Article_IDs 20183171
+df_stage2_Journal_Code2$Article_Title[869:870] <- "母亲消极完美主义与女儿内化问题：一个多重中介模型"
+ 
+### Article_IDs 20183182
+df_stage2_Journal_Code2$Article_Title[872:874] <- "父亲婚姻满意度与幼儿社会适应：父亲反应方式的中介作用"
+ 
+### Article_IDs 20183188
+df_stage2_Journal_Code2$Article_Title[875] <- "非营利机构员工相对剥夺感对情绪耗竭的影响：心理契约违背的中介作用"
+ 
+### Article_IDs 20183052
+df_stage2_Journal_Code2$Article_Title[1574] <- "学生同伴依恋与抑郁：自我认同感和宿舍人际关系的中介作用"
+
+### Article_IDs 20183054
+df_stage2_Journal_Code2$Article_Title[1575] <- "父母心理控制、自主支持与青少年外化问题行为：控制动机的中介作用"
+
+### Article_IDs 20184022
+df_stage2_Journal_Code2$Article_Title[1590:1595] <- "幼儿的自我投射能力对情景预见的影响：来自典型发展儿童和孤独症谱系障碍儿童的证据"
+
+### Article_IDs 20211015
+df_stage2_Journal_Code2$Article_Title[1674:1675] <- "如何激发员工绿色行为？绿色变革型领导与绿色人力资源管理实践的作用"
+
+rm(Article_Title)
+
+
+## First author and Journal
+First_Author <-  df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(First_Author))
+
+Journal <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Journal))
+
 
 ## 20084071为摘要集，20081048缺少journal,20082370错误，20082379NA，20083033，20083067
 ```
