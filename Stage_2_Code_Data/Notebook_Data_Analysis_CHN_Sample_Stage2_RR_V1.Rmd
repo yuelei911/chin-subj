@@ -51,10 +51,12 @@ df <- lapply(df, function(df) {
 
 ### Combining the two stages' data (Group2,3,4,5,6, and 7)
 ```{r}
+colnames(df[[9]])[colnames(df[[9]]) == "First_author"] <- "First_Author"
+
 Group24567_1 <- dplyr::bind_rows(df[[3]],df[[6]],df[[7]],df[[8]],df[[9]]) %>% 
   dplyr::filter(Coder == "final") %>% 
   dplyr::select(-c(8,9,14:18,27,28,37,38)) %>% 
-  dplyr::select(-c(30:31))
+  dplyr::select(-c(30))
 
 #names(Group24567_1)
 
@@ -141,7 +143,7 @@ Group1_1 <- df[[1]] %>%
 Group1_suppl <- df[[2]] %>% 
   dplyr::filter(Coder == "final") %>% 
   dplyr::rename_at(vars(8,9,14:18,27,28,37,38), ~paste0(., "_N")) %>% 
-  dplyr::mutate(Coder_N = NA, Article_IDS_N = NA, Study_Number_N = NA, 
+  dplyr::mutate(Coder_N = NA, Article_IDs_N = NA, Study_Number_N = NA, 
                 Subjects_Group_N = NA, Remark1_N = NA, Remark2_N = NA, 
                 Remark3_N = NA, Coder2_N= NA) %>% 
   dplyr::mutate(Coder_N = Coder, Coder2_N = Coder,Article_IDs_N = Article_IDs,
@@ -471,13 +473,37 @@ df_stage2_Journal_Code2$Article_Title[1674:1675] <- "如何激发员工绿色行
 rm(Article_Title)
 
 
-## First author and Journal
-First_Author <-  df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(First_Author))
+## First_Author and Journal
+First_Author_Journal <-  df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(First_Author) | is.na(Journal)) %>% 
+  dplyr::select(3,4,10,11)
 
-Journal <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Journal))
+names(First_Author_Journal)
 
+### Article_IDs 20083093
+df_stage2_Journal_Code2$First_Author[62] <- "戴琴"
+df_stage2_Journal_Code2$Journal[62] <- "中国临床心理学杂志"
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$First_Author[73] <- "江荣焕"
+df_stage2_Journal_Code2$Journal[73] <-  "心理学报"
+
+### Article_IDs 20185116
+df_stage2_Journal_Code2$First_Author[208] <- "张林" 
+
+### Article_IDs 20215077
+df_stage2_Journal_Code2$First_Author[241] <- "张昕"
+
+### Article_IDs 20215078
+df_stage2_Journal_Code2$First_Author[242] <- "张野"
+
+### Article_IDs 20081048
+df_stage2_Journal_Code2$First_Author[1276] <- "冯冬冬"
+df_stage2_Journal_Code2$Journal[1276] <- "心理学报"
+
+### Article_IDs 20082379
+df_stage2_Journal_Code2$First_Author[1295] <- "安秋玲" 
+df_stage2_Journal_Code2$Journal[1295] <- "心理科学"
 
 ## 20084071为摘要集，20081048缺少journal,20082370错误，20082379NA，20083033，20083067
 ```
