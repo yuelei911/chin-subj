@@ -192,7 +192,18 @@ Group3_1 <- df[[4]] %>%
   dplyr::select(-c(8,9,14:18,27,28,37,38)) #%>% 
   #dplyr::select(-30)
 
+# The coders in the First_Author and Journal columns because of the wrong order of column names, so the two columns of 1:41 data position is reversed, now swap the data back, in order to facilitate the subsequent data merge
 
+Group3_1_Journal <- Group3_1[1:41,"Journal"]
+Group3_1_First_Author <- Group3_1[1:41,"First_Author"]
+
+Group3_1[1:41,"Journal"] <- Group3_1_First_Author
+Group3_1[1:41,"First_Author"] <- Group3_1_Journal
+
+Group3_1 <- Group3_1 %>% 
+  dplyr::rename(First_Author = "Journal",Journal = "First_Author")
+
+# continue sorting data
 Group3_suppl <- df[[5]] %>% 
   dplyr::filter(Coder == "final") %>% 
   dplyr::rename_at(vars(8,9,14:18,27,28,37,38), ~paste0(., "_N")) %>% 
@@ -308,6 +319,8 @@ Group3_1_20213137_bind[] <- lapply(Group3_1_20213137_bind,as.character)
 Group3_bind <- bind_rows(Group3_bind,Group3_suppl,Group3_1_20213137_bind)
 
 rm(Group3_1,Group3_1_20213137,Group3_1_20213137_bind,Group3_1_20213137suppl,Group3_bind_equal,Group3_suppl,Group3_2,Group3_2_20213137suppl)
+
+rm(Group3_1_Journal,Group3_1_First_Author)
 
 ```
 
@@ -478,8 +491,6 @@ First_Author_Journal <-  df_stage2_Journal_Code2 %>%
   dplyr::filter(is.na(First_Author) | is.na(Journal)) %>% 
   dplyr::select(3,4,10,11)
 
-names(First_Author_Journal)
-
 ### Article_IDs 20083093
 df_stage2_Journal_Code2$First_Author[62] <- "戴琴"
 df_stage2_Journal_Code2$Journal[62] <- "中国临床心理学杂志"
@@ -505,7 +516,93 @@ df_stage2_Journal_Code2$Journal[1276] <- "心理学报"
 df_stage2_Journal_Code2$First_Author[1295] <- "安秋玲" 
 df_stage2_Journal_Code2$Journal[1295] <- "心理科学"
 
-## 20084071为摘要集，20081048缺少journal,20082370错误，20082379NA，20083033，20083067
+### Article_IDS 20184027
+df_stage2_Journal_Code2$First_Author[1672:1673] <- "童钰" 
+df_stage2_Journal_Code2$Journal[1672:1673] <- "心理发展与教育"
+
+### Article_IDs 20213137
+df_stage2_Journal_Code2$First_Author[1680] <- "王沛"
+df_stage2_Journal_Code2$Journal[1680] <- "中国临床心理学杂志"
+
+### Article_IDs 20213153
+df_stage2_Journal_Code2$First_Author[1685] <- "王鸿飞"
+df_stage2_Journal_Code2$Journal[1685] <- "中国临床心理学杂志"
+
+rm(First_Author_Journal)
+
+## Abstract1
+Abstract1 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Abstract1) & (is.na(Remark1) | Remark1 == "")) %>%
+  dplyr::filter(is.na(Remark1_N)) %>% 
+  dplyr::select(3,12,14)
+
+### Article_IDs 20081070
+df_stage2_Journal_Code2$Abstract1[6:7] <- 0
+
+### Article_IDs 20081073
+df_stage2_Journal_Code2$Abstract1[10] <- 0
+
+### Article_IDs 20081127
+df_stage2_Journal_Code2$Abstract1[28] <- "1b"
+
+### Article_IDs 20081132
+df_stage2_Journal_Code2$Abstract1[30:31] <- 123 
+
+### Article_IDs 20081134
+df_stage2_Journal_Code2$Abstract1[33] <- 1234
+
+### Article_IDs 20083038
+df_stage2_Journal_Code2$Abstract1[38:39] <- 14
+
+### Article_IDs 20083039
+df_stage2_Journal_Code2$Abstract1[41] <- 134
+
+### Article_IDs 20083052
+df_stage2_Journal_Code2$Abstract1[44] <- 0
+
+### Article_IDs 20083067
+df_stage2_Journal_Code2$Abstract1[51] <- 134
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Abstract1[73] <- 123
+
+### Article_IDs 20183334
+df_stage2_Journal_Code2$Abstract1[183] <- 14
+
+### Article_IDs 20182035 
+df_stage2_Journal_Code2$Abstract1[556] <- 1
+
+### Article_IDs 20085044
+df_stage2_Journal_Code2$Abstract1[754:756] <- "1234b"
+
+### Article_IDs 20181017
+df_stage2_Journal_Code2$Abstract1[775:778] <- 0
+
+### Article_IDs 20181022
+df_stage2_Journal_Code2$Abstract1[784:789] <- 8
+
+### Article_IDs 20181023
+df_stage2_Journal_Code2$Abstract1[790:795] <- 1238
+
+### Article_IDs 20182103
+df_stage2_Journal_Code2$Abstract1[807:812] <- 123
+
+### Article_IDs 20182125
+df_stage2_Journal_Code2$Abstract1[827:831] <- 12345
+ 
+rm(Abstract1)
+
+## Abstract2
+Abstract2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N == c(1,5) & (is.na(Abstract2) | Abstract2 == "")) %>% 
+  dplyr::select(3,40,13,14,39) %>% 
+  dplyr::arrange(Sample_Type_N)
+
+rm(Abstract2)
+
+##
+
+
 ```
 
 
