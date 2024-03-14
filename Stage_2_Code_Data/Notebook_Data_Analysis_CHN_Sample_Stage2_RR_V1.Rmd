@@ -334,11 +334,14 @@ df_stage2_Journal_Code <- bind_rows(Group24567_bind,Group1_bind,Group3_bind)
 
 
 ## Check each code information and modification code information
+### Coder(Coder2_N/Coder_N)
+
+
 ```{r message=FALSE, warning=FALSE}
 
 df_stage2_Journal_Code2 <- df_stage2_Journal_Code
 
-## Coder(Coder2_N/Coder_N)
+
 
 any(is.na(df_stage2_Journal_Code2$Coder)) ### The code runs result is FALSE
 
@@ -353,10 +356,11 @@ df_stage2_Journal_Code2$Coder2_N[436] <- "final"
 df_stage2_Journal_Code2$Coder2_N[437] <- "final"
 df_stage2_Journal_Code2$Coder2_N[486] <- "final"
 df_stage2_Journal_Code2$Coder2_N[487] <- "final"
+```
 
 
-## Article_IDs(Article_IDs_N)
-
+### Article_IDs(Article_IDs_N)
+```{r}
 Article_IDs <-  df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Article_IDs))   ### The code runs results is 20083093 and 20181140
 
@@ -368,10 +372,11 @@ Article_IDs_N <- df_stage2_Journal_Code2 %>%
   dplyr::filter(is.na(Article_IDs_N))  ### The code runs results is no data
 
 rm(Article_IDs,Article_IDs_N)
+```
 
 
-## Study_Number(Study_Number_N)
-
+### Study_Number(Study_Number_N)
+```{r}
 Study_Number <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Study_Number) | is.na(Study_Number_N))
 
@@ -404,7 +409,6 @@ df_stage2_Journal_Code2$Study_Number_N[258] <- 1
 
 ### Article_IDs 20082087
 df_stage2_Journal_Code2$Study_Number_N[260] <- 1
-
 
 ### Article_IDs 20211046
 df_stage2_Journal_Code2$Study_Number[432] <- 1
@@ -447,8 +451,11 @@ df_stage2_Journal_Code2$Study_Number[1488] <- 1
 
 ### Article_IDs 20084071 20182070  20215037 are need to replaced
 rm(Study_Number)
+```
 
-## Article_Title
+
+### Article_Title
+```{r}
 Article_Title <-  df_stage2_Journal_Code2 %>%
   dplyr::filter(is.na(Article_Title))
 
@@ -484,9 +491,11 @@ df_stage2_Journal_Code2$Article_Title[1590:1595] <- "幼儿的自我投射能力
 df_stage2_Journal_Code2$Article_Title[1674:1675] <- "如何激发员工绿色行为？绿色变革型领导与绿色人力资源管理实践的作用"
 
 rm(Article_Title)
+```
 
 
-## First_Author and Journal
+### First_Author and Journal
+```{r}
 First_Author_Journal <-  df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(First_Author) | is.na(Journal)) %>% 
   dplyr::select(3,4,10,11)
@@ -529,8 +538,11 @@ df_stage2_Journal_Code2$First_Author[1685] <- "王鸿飞"
 df_stage2_Journal_Code2$Journal[1685] <- "中国临床心理学杂志"
 
 rm(First_Author_Journal)
+```
 
-## Abstract1
+
+### Abstract1
+```{r}
 Abstract1 <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Abstract1) & (is.na(Remark1) | Remark1 == "")) %>%
   dplyr::filter(is.na(Remark1_N)) %>% 
@@ -589,20 +601,203 @@ df_stage2_Journal_Code2$Abstract1[807:812] <- 123
 
 ### Article_IDs 20182125
 df_stage2_Journal_Code2$Abstract1[827:831] <- 12345
+
+### Article_IDs 20181028
+df_stage2_Journal_Code2$Abstract1[1017:1020] <- 0
+
+### Article_IDs 20181034
+df_stage2_Journal_Code2$Abstract1[1023:1024] <- 0
+
+### Article_IDs 20181037
+df_stage2_Journal_Code2$Abstract1[1025:1026] <- 0
+
+### Article_IDs 20181044
+df_stage2_Journal_Code2$Abstract1[1029] <- 0
+
+### Article_IDs 20181051
+df_stage2_Journal_Code2$Abstract1[1030:1032] <- 0
+
+### Article_IDs 20181052
+df_stage2_Journal_Code2$Abstract1[1033:1034] <- 0
+
+### Article_IDs 20181058
+df_stage2_Journal_Code2$Abstract1[1035:1036] <- 0
+
+### Article_IDs 20181061
+df_stage2_Journal_Code2$Abstract1[1037:1039] <- 0
+
+### Article_IDs 20181063
+df_stage2_Journal_Code2$Abstract1[1040:1041] <- 0
+
+### Article_IDs 20181065
+df_stage2_Journal_Code2$Abstract1[1042:1045] <- 1
+
+### Article_IDs 20181066
+df_stage2_Journal_Code2$Abstract1[1046:1047] <- 0
  
 rm(Abstract1)
+```
 
-## Abstract2
+
+### Abstract2
+```{r}
 Abstract2 <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Sample_Type_N == c(1,5) & (is.na(Abstract2) | Abstract2 == "")) %>% 
-  dplyr::select(3,40,13,14,39) %>% 
+  dplyr::select(3,40,13,14,39,41) %>% 
   dplyr::arrange(Sample_Type_N)
 
+### Article_IDs 20081070
+df_stage2_Journal_Code2$Abstract2[6:7] <- 0
+
+### Article_IDs 20081132
+df_stage2_Journal_Code2$Abstract2[30:31] <- 1
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Abstract2[73] <- 1
+
+### Article_IDs 20083204
+df_stage2_Journal_Code2$Abstract2[284:286] <- 1
+
+### Article_IDs 20181005
+df_stage2_Journal_Code2$Abstract2[761:766] <- 0
+  
+### Article_IDs 20182103
+df_stage2_Journal_Code2$Abstract2[807:812] <- 1
+
+### Article_IDs 20082313
+df_stage2_Journal_Code2$Abstract2[989:990] <- 0  
+
+### Article_IDs 20082343
+df_stage2_Journal_Code2$Abstract2[1002:1003] <- 0  
+
+### Article_IDs 20082346
+df_stage2_Journal_Code2$Abstract2[1005] <- 0 
+
+### Article_IDs 20181028
+df_stage2_Journal_Code2$Abstract2[1017:1020] <- 0
+
+### Article_IDs 20181034
+df_stage2_Journal_Code2$Abstract2[1023:1024] <- 0
+
+### Article_IDs 20181037
+df_stage2_Journal_Code2$Abstract2[1025:1026] <- 0
+
+### Article_IDs 20181044
+df_stage2_Journal_Code2$Abstract2[1029] <- 0
+
+### Article_IDs 20181051
+df_stage2_Journal_Code2$Abstract2[1030:1032] <- 0
+
+### Article_IDs 20181052
+df_stage2_Journal_Code2$Abstract2[1033:1034] <- 0
+
+### Article_IDs 20181058
+df_stage2_Journal_Code2$Abstract2[1035:1036] <- 0
+
+### Article_IDs 20181061
+df_stage2_Journal_Code2$Abstract2[1037:1039] <- 0
+
+### Article_IDs 20181063
+df_stage2_Journal_Code2$Abstract2[1040:1041] <- 0
+
+### Article_IDs 20181065
+df_stage2_Journal_Code2$Abstract2[1042:1045] <- 0
+
+### Article_IDs 20181066
+df_stage2_Journal_Code2$Abstract2[1046:1047] <- 0
+
+### Article_IDs 20181073
+df_stage2_Journal_Code2$Abstract2[1049:1052] <- 0
+
+### Article_IDs 20181075
+df_stage2_Journal_Code2$Abstract2[1053:1056] <- 0
+
+### Article_IDs 20181078
+df_stage2_Journal_Code2$Abstract2[1057] <- 0
+
+### Article_IDs 20182164
+df_stage2_Journal_Code2$Sample_Type_info_N[1062:1065] <- 0
+
+### Article_IDs 20182165
+df_stage2_Journal_Code2$Abstract2[1066:1067] <- 0
+
+### Article_IDs 20182168
+df_stage2_Journal_Code2$Abstract2[1069:1077] <- 0
+
+### Article_IDs 20182183
+df_stage2_Journal_Code2$Abstract2[1084:1085] <- 0
+
+### Article_IDs 20183231
+df_stage2_Journal_Code2$Abstract2[1113] <- 1
+
+### Article_IDs 20185044
+df_stage2_Journal_Code2$Abstract2[1137] <- 0
+
+### Article_IDs 20185058
+df_stage2_Journal_Code2$Abstract2[1149:1150] <- 0
+
+### Article_IDs 20185060
+df_stage2_Journal_Code2$Abstract2[1151] <- 0
+
+### Article_IDs 20185073
+df_stage2_Journal_Code2$Abstract2[1159]
+
+### Article_IDs 20185079
+df_stage2_Journal_Code2$Abstract2[1165] <- 0
+
+### Article_IDs 20212166
+df_stage2_Journal_Code2$Abstract2[1177:1180] <- 0
+
+### Article_IDs 20212171
+df_stage2_Journal_Code2$Abstract2[1181] <- 0
+
+### Article_IDs 20212175
+df_stage2_Journal_Code2$Abstract2[1185:1186] <- 0
+
+### Article_IDs 20212188
+df_stage2_Journal_Code2$Abstract2[1190:1193] <- 0
+
+### Article_IDs 20182164
+df_stage2_Journal_Code2$Abstract2[1062:1065] <- 0
+
+### Article_IDs 20185073
+df_stage2_Journal_Code2$Abstract2[1159] <- 0
+
+### Article_IDs 20214085
+df_stage2_Journal_Code2$Abstract2[1202:1203] <- 0
+
+### Article_IDs 20215005
+df_stage2_Journal_Code2$Abstract2[1205] <- 0
+
+### Article_IDs 20215006
+df_stage2_Journal_Code2$Abstract2[1206:1207] <- 0
+
+### Article_IDs 20215007
+df_stage2_Journal_Code2$Abstract2[1208:1209] <- 0
+
+### Article_IDs 20215017
+df_stage2_Journal_Code2$Abstract2[1213:1214] <- 0
+
+### Article_IDs 20215023
+df_stage2_Journal_Code2$Abstract2[1215:1217] <- 0
+
+### Article_IDs 20215068
+df_stage2_Journal_Code2$Abstract2[1235:1237] <- 0
+
+### Article_IDs 20185110
+df_stage2_Journal_Code2$Abstract2[1421] <- 0
+
+### Article_IDs 20082024
+df_stage2_Journal_Code2$Abstract2[1483] <- 1
+
+### Article_IDs 20213155
+df_stage2_Journal_Code2$Abstract2[1641:1642] <- 1
+
+### Article_IDs 20213168
+df_stage2_Journal_Code2$Abstract2[1647] <- 1
+
+
 rm(Abstract2)
-
-##
-
-
 ```
 
 
