@@ -796,6 +796,24 @@ df_stage2_Journal_Code2$Abstract2[1641:1642] <- 1
 ### Article_IDs 20213168
 df_stage2_Journal_Code2$Abstract2[1647] <- 1
 
+### Article_IDs 20211040
+df_stage2_Journal_Code2$Abstract2[424:428] <- 0
+df_stage2_Journal_Code2$Sample_Type_N[424:428] <- 1
+
+### Article_IDs 20211040
+df_stage2_Journal_Code2$Sample_Type_info_N[470] <- 4
+
+### Article_IDs 20213254
+df_stage2_Journal_Code2$Abstract2[493] <- 0
+
+### Article_IDs 20082188
+df_stage2_Journal_Code2$Abstract2[515] <- 0
+
+### Article_IDs 20084057
+df_stage2_Journal_Code2$Sample_Type_info_N[531:532] <- 4
+
+### Article_IDs 20182035
+df_stage2_Journal_Code2$Sample_Type_info_N[555:556] <- 4
 
 rm(Abstract2)
 ```
