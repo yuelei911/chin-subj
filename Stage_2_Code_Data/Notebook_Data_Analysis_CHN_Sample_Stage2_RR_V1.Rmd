@@ -618,9 +618,44 @@ df_stage2_Journal_Code2$Remark1[1577] <- "secondary"
 ### Article_IDs 20184029
 df_stage2_Journal_Code2$Remark1[1589] <- "secondary" 
 
+rm(Remark1)
+
 Remark2 <- df_stage2_Journal_Code2 %>% 
   dplyr::select(3,32,34) %>%
   dplyr::filter(grepl("重复",Remark2)| grepl("重复",Remark2_N))
+
+### Article_IDs 20081104
+df_stage2_Journal_Code2$Remark2_N[21] <- "被试重复使用"
+
+### Article_IDs 20081132
+df_stage2_Journal_Code2$Remark2_N[30:31] <- "被试重复使用"
+
+### Article_IDs 20083038
+df_stage2_Journal_Code2$Remark2[38:39] <- "被试重复使用"
+df_stage2_Journal_Code2$Remark2_N[38:39] <- "被试重复使用"
+
+### Article_IDs 20083085
+df_stage2_Journal_Code2$Remark2_N[60] <- "被试重复使用"
+
+### Article_IDs 20213104
+df_stage2_Journal_Code2$Remark2_N[231] <- "被试重复使用"
+df_stage2_Journal_Code2$Remark3_N[231] <- "样本3重复使用样本2为重测"
+
+### Article_IDs 20182030
+df_stage2_Journal_Code2$Remark2_N[357] <- "被试重复使用"
+
+### Article_IDs 20184042
+df_stage2_Journal_Code2$Remark2_N[388] <- "被试重复使用"
+
+### Article_IDs 20181022
+df_stage2_Journal_Code2$Remark2[784:785] <- ""
+
+### Article_IDs 20185003
+df_stage2_Journal_Code2$Remark2_N[899] <- ""
+df_stage2_Journal_Code2$Remark2[900] <- "被试重复使用"
+
+rm(Remark2)
+
 ```
 
 ### Abstract1
