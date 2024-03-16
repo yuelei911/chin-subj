@@ -541,6 +541,88 @@ rm(First_Author_Journal)
 ```
 
 
+### Remark
+```{r}
+Remark1 <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39) %>% 
+  dplyr::filter(if_any(c(Remark1, Remark1_N), ~!is.na(.) & nzchar(.)))
+
+
+### Article_IDs 20214072
+df_stage2_Journal_Code2$Remark1[978] <- "secondary"
+
+### Article_IDs 20182193
+df_stage2_Journal_Code2$Remark1_N[1090] <- "mining"
+
+### Article_ID 20213088
+df_stage2_Journal_Code2$Remark1_N[224] <- "qualitative"
+
+### Article_IDs 20182192
+df_stage2_Journal_Code2$Remark1_N[1089] <- "qualitative"
+
+### Article_IDs 20082029
+df_stage2_Journal_Code2$Remark1_N[1488] <- "qualitative"
+
+### Article_IDs 20181168
+df_stage2_Journal_Code2$Remark1[104] <- "mining"
+df_stage2_Journal_Code2$Remark1_N[104] <- "mining"
+df_stage2_Journal_Code2$Remark1_N[105:106] <- NA
+
+### Article_IDs 20082013
+df_stage2_Journal_Code2$Remark1_N[1476] <- "secondary"
+
+### Articel_IDs 20213305
+df_stage2_Journal_Code2$Remark1[685] <- "inapplicable"
+df_stage2_Journal_Code2$Remark1_N[685] <- "inapplicable"
+
+### Article_IDs 200081055
+df_stage2_Journal_Code2$Remark1[1281:1282] <- "inapplicable"
+df_stage2_Journal_Code2$Remark1_N[1281:1282] <- "inapplicable"
+
+### Article_IDs 20181039
+df_stage2_Journal_Code2$Remark1[1027] <- "secondary"
+
+### Article_IDs 20182257
+df_stage2_Journal_Code2$Remark1[130] <- "secondary"
+df_stage2_Journal_Code2$Remark1_N[130] <- "secondary"
+df_stage2_Journal_Code2$Remark2[130] <- "与20182255被试重复"
+df_stage2_Journal_Code2$Remark2_N[130] <- "与20182255被试重复"
+
+### Article_IDs 20182271
+df_stage2_Journal_Code2$Remark1[150] <- "secondary"
+
+### Article_IDs 20182283
+df_stage2_Journal_Code2$Remark1[155:156] <- "secondary"
+
+### Article_IDs 20182028
+df_stage2_Journal_Code2$Remark1[355] <- "non_human"
+df_stage2_Journal_Code2$Remark1_N[355] <- "non_human"
+
+### Article_IDs 20082165
+df_stage2_Journal_Code2$Remark1[503] <- "inapplicable"
+df_stage2_Journal_Code2$Remark1_N[503] <- "inapplicable"
+
+### Article_IDs 20212103
+df_stage2_Journal_Code2$Remark1[645] <- "inapplicable"
+df_stage2_Journal_Code2$Remark1_N[645] <- "inapplicable"
+
+### Article_IDs 20085023
+df_stage2_Journal_Code2$Remark1[744] <- "secondary"
+
+### Article_IDs 20213023
+df_stage2_Journal_Code2$Remark1[1440] <- "mining"
+
+### Article_IDs 20183360
+df_stage2_Journal_Code2$Remark1[1577] <- "secondary"
+
+### Article_IDs 20184029
+df_stage2_Journal_Code2$Remark1[1589] <- "secondary" 
+
+Remark2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,32,34) %>%
+  dplyr::filter(grepl("重复",Remark2)| grepl("重复",Remark2_N))
+```
+
 ### Abstract1
 ```{r}
 Abstract1 <- df_stage2_Journal_Code2 %>% 
@@ -817,7 +899,6 @@ df_stage2_Journal_Code2$Sample_Type_info_N[555:556] <- 4
 
 rm(Abstract2)
 ```
-
 
 ## Calculating report condition 
 In our data, there are some data columns that need to calculate the report of the data,such as Gender, Age, SES, Educational attachment, Occupation, Ethnicity, Religious,Subjects_Recruitment_Area and  Sampling_Method,Subjects_Recruitment_Method. In this part, we will finish this analysis.
