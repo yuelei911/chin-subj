@@ -454,6 +454,77 @@ rm(Study_Number)
 ```
 
 
+### Subjects_Group
+```{r}
+Subjects_Group <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter((!is.na(Subjects_Group) & !is.na(Subjects_Group_N) & Subjects_Group != Subjects_Group_N) |
+                  (is.na(Subjects_Group) & !is.na(Subjects_Group_N)) |
+                  (!is.na(Subjects_Group) & is.na(Subjects_Group_N))) 
+
+
+### Article_IDs 20083042
+df_stage2_Journal_Code2$Subjects_Group[42] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[42] <- NA
+
+### Article_IDs 20181148
+df_stage2_Journal_Code2$Subjects_Group[91] <- NA
+
+### Article_IDs 20181162
+df_stage2_Journal_Code2$Subjects_Group[98] <- NA
+
+### Article_IDs 20181187
+df_stage2_Journal_Code2$Subjects_Group_N[121] <- "积极怀旧组"
+df_stage2_Journal_Code2$Subjects_Group_N[122] <- "主题怀旧组"
+
+### Article_IDs 20182268
+df_stage2_Journal_Code2$Subjects_Group_N[140:148] <- df_stage2_Journal_Code2$Subjects_Group[140:148]
+
+df_stage2_Journal_Code2$Subjects_Group[339:341] <- df_stage2_Journal_Code2$Subjects_Group_N[339:341]
+
+### Article_IDs 20182031
+df_stage2_Journal_Code2$Subjects_Group[358:359] <- df_stage2_Journal_Code2$Subjects_Group_N[358:359]
+
+### Article_IDs 20183071
+df_stage2_Journal_Code2$Subjects_Group[369:370] <- df_stage2_Journal_Code2$Subjects_Group_N[369:370]
+
+### Article_IDs 20182035
+df_stage2_Journal_Code2$Subjects_Group_N[555] <- "海洛因戒断者组"
+
+### Article_IDs 20082210
+### Redundant Subjects Group
+df_stage2_Journal_Code2$Subjects_Group[701:703] <- NA
+
+### Article_IDs 20181023
+df_stage2_Journal_Code2$Subjects_Group_N[790:793] <- df_stage2_Journal_Code2$Subjects_Group[790:793]
+
+### Article_IDs 20182126
+### Redundant Subjects Group
+df_stage2_Journal_Code2$Subjects_Group[832:833] <- NA
+
+### Article_IDs 20182131
+df_stage2_Journal_Code2$Subjects_Group_N[834:835] <- df_stage2_Journal_Code2$Subjects_Group[834:835] 
+
+### Article_IDs 20182118
+### Redundant Subjects Group
+df_stage2_Journal_Code2$Subjects_Group[824] <- "应激有害心向组"
+
+### Article_IDs 20181078
+df_stage2_Journal_Code2$Subjects_Group_N[1078] <- NA
+
+### Article_IDs 20182192
+df_stage2_Journal_Code2$Subjects_Group_N[1089] <- NA
+
+### Article_IDs 20083017
+df_stage2_Journal_Code2$Subjects_Group_N[1301:1302] <- df_stage2_Journal_Code2$Subjects_Group[1301:1302]
+
+rm(Subjects_Group)
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Subjects_Group = if_else(Subjects_Group == 1, NA, Subjects_Group),
+                Subjects_Group_N = if_else(Subjects_Group_N == 1, NA, Subjects_Group_N))
+
+```
+
 ### Article_Title
 ```{r}
 Article_Title <-  df_stage2_Journal_Code2 %>%
@@ -935,164 +1006,18 @@ df_stage2_Journal_Code2$Sample_Type_info_N[555:556] <- 4
 rm(Abstract2)
 ```
 
+
+### Sample_Size
+```{r}
+#names(df_stage2_Journal_Code2)
+
+```
+
+
 ## Calculating report condition 
 In our data, there are some data columns that need to calculate the report of the data,such as Gender, Age, SES, Educational attachment, Occupation, Ethnicity, Religious,Subjects_Recruitment_Area and  Sampling_Method,Subjects_Recruitment_Method. In this part, we will finish this analysis.
 
 
-### Age report
-```{r}
-df_Age_Report <- Chin_Subj_Coding_Data %>%
-  dplyr::filter(is.na(Remark1)) %>% 
-  dplyr::filter(!grepl("重复", Remark2)) %>% 
-  dplyr::select(Age) %>% 
-  dplyr::count(Age) %>% 
-  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
-                Site = "Age") %>% 
-  dplyr::rename(Group = "Age")
-
-df_Age_Report
-##报告数据的每一列必须转化为画成一个图的数据
-```  
-
-
-### Gender report
-```{r}
-df_Gender_Report <- Chin_Subj_Coding_Data %>%
-  dplyr::filter(is.na(Remark1)) %>% 
-  dplyr::filter(!grepl("重复", Remark2)) %>% 
-  dplyr::select(Gender) %>% 
-  dplyr::count(Gender) %>% 
-  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
-                Site = "Gender") %>% 
-  dplyr::rename(Group = "Gender")
-
-df_Gender_Report
-```
-
-
-### SES report
-```{}
-
-```
-
-
-### Ethnicity report
-```{r}
-df_Ethnicity_Report <- Chin_Subj_Coding_Data %>%
-  dplyr::filter(is.na(Remark1)) %>% 
-  dplyr::filter(!grepl("重复", Remark2)) %>% 
-  dplyr::select(Ethnicity) %>% 
-  dplyr::count(Ethnicity) %>% 
-  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
-                Site = "Ethnicity") %>% 
-  dplyr::rename(Group = "Ethnicity")
-
-df_Ethnicity_Report
-```
-
-
-### Religious report
-```{r}
-df_Religious_Report <- Chin_Subj_Coding_Data %>%
-  dplyr::filter(is.na(Remark1)) %>% 
-  dplyr::filter(!grepl("重复", Remark2)) %>% 
-  dplyr::select(Religious) %>% 
-  dplyr::count(Religious) %>% 
-  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
-                Site = "Religious")%>% 
-  dplyr::rename(Group = "Religious")
-
-df_Religious_Report
-```
-
-
-### Subjects_Recruitment_Area report
-```{r}
-
-df_Subjects_Recruitment_Area_Report <- Chin_Subj_Coding_Data %>%
-  dplyr::filter(is.na(Remark1)) %>% 
-  dplyr::filter(!grepl("重复", Remark2)) %>% 
-  dplyr::select(Subjects_Recruitment_Area) %>%
-  dplyr::mutate(Subjects_Recruitment_Area = ifelse(grepl("[\u4e00-\u9fa5]",
-                                                         Subjects_Recruitment_Area), 1, Subjects_Recruitment_Area)) %>%
-                  dplyr::count(Subjects_Recruitment_Area) %>%
-                  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
-                                Site = "Subjects_Recruitment_Area") %>% 
-  dplyr::rename(Group = "Subjects_Recruitment_Area")
-
-df_Subjects_Recruitment_Area_Report  
-```
-
-
-### Sampling_Method report
-```{R}
-df_Sampling_Method_Report <- Chin_Subj_Coding_Data %>%
-  dplyr::filter(is.na(Remark1)) %>% 
-  dplyr::filter(!grepl("重复", Remark2)) %>% 
-  dplyr::select(Sampling_Method) %>% 
-  dplyr::mutate(ifelse(Sampling_Method > 0 , "1", "0")) %>% 
-  dplyr::count(Sampling_Method) %>% 
-  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
-                Site = "Sampling_Method") %>% 
-  dplyr::rename(Group = "Sampling_Method")
-
-df_Sampling_Method_Report
-
-```
-
-
-### Subjects_Recruitment_Method report
-```{r}
-
-```
-
-
-### Educational attachment report
-```{r}
-df_Educational_Attainment_Report <- Chin_Subj_Coding_Data %>%
-  dplyr::filter(Sample_Type == "4") %>%
-  dplyr::select(Educational_Attainment) %>% 
-  dplyr::count(Educational_Attainment) %>% 
-  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
-                Site = "Educational_Attainment")
-
-df_Educational_Attainment_Report
-```
-
-
-### Occupation repot
-```{r}
-df_Occupation_Report <- Chin_Subj_Coding_Data %>%
-  dplyr::filter(Sample_Type == "4") %>%
-  dplyr::select(Occupation) %>% 
-  dplyr::count(Occupation) %>% 
-  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
-                Site = "Occupation")
-
-df_Occupation_Report
-```
-
-
-### Combine all above data and plot
-```{r}
-
-
-df_report <- list(df_Age_Report,df_Gender_Report,df_Ethnicity_Report,
-                              df_Religious_Report,df_Sampling_Method_Report,df_Subjects_Recruitment_Area_Report)
-
-df_report <- dplyr::bind_rows(df_report)
-
-df_report$Group <- replace(df_report$Group, df_report$Group == "0" , "unreported")
-
-df_report$Group <- replace(df_report$Group, df_report$Group %in% c("1", "2","3") , "reported")
-
-df_report %>% 
-  ggplot(aes(Site,Proportion, fill = Group)) +
-  geom_bar(stat = "identity") +
-  theme_classic() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  xlab("Var")
-```
 
 
 
