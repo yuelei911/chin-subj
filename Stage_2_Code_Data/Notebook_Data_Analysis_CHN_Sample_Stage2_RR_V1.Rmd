@@ -25,45 +25,94 @@ if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load("tidyverse","rio","here")
 
-
 file_list <- list.files(
   here::here("Stage_2_Code_Data"),
   pattern = ".xlsx",
   full.names = TRUE, recursive = TRUE)
 
-df <- setNames(
-  lapply(file_list, function(file) rio::import(file)),
-  sapply(file_list, basename))
+df <- rio::import_list(file_list)
 
-rm(file_list)
-names(df) <- paste0("[", seq_along(df), "] ", names(df))
 
 df <- lapply(df, function(df) {  
   df[] <- lapply(df, as.character)  
   return(df)  
-})  
+})
 
-# 或者可以试试如下导入函数，我初步试了一下，应该效果相当：
-# df2 <- rio::import_list(file_list)
+rm(file_list)
+
+```
+
+
+### Check col names
+I only corrected the inconsistencies in the case of letters and spelling errors in the column names. For any other inconsistencies in column names, I made the necessary modifications during the subsequent merging process.
+```{r}
+## Check the coding stage col names
+
+Coding_Data_Names <- data.frame(Group1_Coding_Names = names(df[[1]]),
+                       Group1_Coding_Suppl_Names = names(df[[2]]),
+                       Group2_Coding_Names = names(df[[3]]),
+                       Group3_Coding_Names = names(df[[4]]),
+                       Group3_Coding_Suppl_Names = names(df[[5]]),
+                       Group4_Coding_Names = names(df[[6]]),
+                       Group5_Coding_Names = names(df[[7]]),
+                       Group6_Coding_Names = names(df[[8]]),
+                       Group7_Coding_Names = names(df[[9]])) 
+
+check_row_equality1 <- function(row) {  
+  all_equal <- all(row == row[1])  
+  return(all_equal)  
+}  
+  
+row_equalities1 <- apply(Coding_Data_Names, 1, check_row_equality1) 
+
+### I found the names of 3,4,5, 19 cols are different and I modfication them.
+
+colnames(df[[9]])[colnames(df[[9]]) == "First_author"] <- "First_Author"
+
+colnames(df[[3]])[colnames(df[[3]]) == "Sample_Szie"] <- "Sample_Size"
+colnames(df[[4]])[colnames(df[[4]]) == "Sample_Szie"] <- "Sample_Size"
+colnames(df[[5]])[colnames(df[[5]]) == "Sample_Szie"] <- "Sample_Size"
+colnames(df[[6]])[colnames(df[[6]]) == "Sample_Szie"] <- "Sample_Size"
+colnames(df[[7]])[colnames(df[[7]]) == "Sample_Szie"] <- "Sample_Size"
+colnames(df[[9]])[colnames(df[[9]]) == "Sample_Szie"] <- "Sample_Size"
+
+rm(Coding_Data_Names,row_equalities1,check_row_equality1)
+
+## Check the proofreading stage col names
+Proofreading_Data_Names <- data.frame(Group1_Proofreading_Names = names(df[[10]]),
+                                      Group2_Proofreading_Names = names(df[[11]]),
+                                      Group3_Proofreading_Names = names(df[[12]]),
+                                      Group4_Proofreading_Names = names(df[[13]]),
+                                      Group5_Proofreading_Names = names(df[[14]]),
+                                      Group6_Proofreading_Names = names(df[[15]]),
+                                      Group7_Proofreading_Names = names(df[[16]]))
+
+check_row_equality2 <- function(row) {  
+  all_equal <- all(row == row[1])  
+  return(all_equal)  
+}  
+  
+row_equalities2 <- apply(Proofreading_Data_Names, 1, check_row_equality2) 
+
+### I found the names of 8 cols are different and I modfication them.
+
+colnames(df[[11]])[colnames(df[[11]]) == "target_population_N"] <- "Target_Population_N"
+
+rm(Proofreading_Data_Names,row_equalities2,check_row_equality2)
 
 ```
 
 
 ### Combining the two stages' data (Group2,3,4,5,6, and 7)
 ```{r}
-colnames(df[[9]])[colnames(df[[9]]) == "First_author"] <- "First_Author"
-
 Group24567_1 <- dplyr::bind_rows(df[[3]],df[[6]],df[[7]],df[[8]],df[[9]]) %>% 
   dplyr::filter(Coder == "final") %>% 
-  dplyr::select(-c(8,9,14:18,27,28,37,38)) %>% 
-  dplyr::select(-c(30))
+  dplyr::select(-c(8,9,14:18,27,28,37,38))
 
-#names(Group24567_1)
 
 Group24567_2 <- dplyr::bind_rows(df[[11]],df[[13]],df[[14]],df[[15]],df[[16]]) %>% 
   dplyr::filter(Coder == "final") %>%
-  dplyr::rename_at(vars(1:4,7), ~paste0(., "_N")) %>%
-  dplyr::select(-20)
+  dplyr::rename_at(vars(1:4,7), ~paste0(., "_N"))
 
   
 Group24567_bind <-  cbind(Group24567_1,Group24567_2) %>% 
@@ -137,8 +186,7 @@ Suppl_ID <- dplyr::bind_rows(df[[2]],df[[5]]) %>%
 Group1_1 <- df[[1]] %>% 
   dplyr::filter(Coder == "final") %>% 
   dplyr::filter(!Article_IDs %in% Suppl_ID$Article_IDs) %>% 
-  dplyr::select(-c(8,9,14:18,27,28,37,38)) %>% 
-  dplyr::select(-c(30:33))
+  dplyr::select(-c(8,9,14:18,27,28,37,38))
 
 Group1_suppl <- df[[2]] %>% 
   dplyr::filter(Coder == "final") %>% 
@@ -207,7 +255,7 @@ Group3_1 <- Group3_1 %>%
 Group3_suppl <- df[[5]] %>% 
   dplyr::filter(Coder == "final") %>% 
   dplyr::rename_at(vars(8,9,14:18,27,28,37,38), ~paste0(., "_N")) %>% 
-  dplyr::mutate(Coder_N = NA, Article_IDS_N = NA, Study_Number_N = NA, 
+  dplyr::mutate(Coder_N = NA, Article_IDs_N = NA, Study_Number_N = NA, 
                 Subjects_Group_N = NA, Remark1_N = NA, Remark2_N = NA, 
                 Remark3_N = NA, Coder2_N= NA) %>% 
   dplyr::mutate(Coder_N = Coder, Coder2_N = Coder,Article_IDs_N = Article_IDs,
@@ -237,7 +285,7 @@ Study_Number =c(2,2),
 Remark1 =c(NA,NA),
 Study_Type =c(1,4),
 Subjects_Group =c("年轻被试","老年被试"),
-Sample_Szie =c(41,46),
+Sample_Size =c(41,46),
 Gender = c(1,1),
 Male_Num =c(19,20),
 Female_Num =c(22,26),
@@ -329,6 +377,7 @@ rm(Group3_1_Journal,Group3_1_First_Author)
 ```{r message=FALSE, warning=FALSE}
 
 df_stage2_Journal_Code <- bind_rows(Group24567_bind,Group1_bind,Group3_bind)
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code
 
 ```
 
@@ -336,12 +385,7 @@ df_stage2_Journal_Code <- bind_rows(Group24567_bind,Group1_bind,Group3_bind)
 ## Check each code information and modification code information
 ### Coder(Coder2_N/Coder_N)
 
-
 ```{r message=FALSE, warning=FALSE}
-
-df_stage2_Journal_Code2 <- df_stage2_Journal_Code
-
-
 
 any(is.na(df_stage2_Journal_Code2$Coder)) ### The code runs result is FALSE
 
@@ -1004,12 +1048,16 @@ df_stage2_Journal_Code2$Sample_Type_info_N[531:532] <- 4
 df_stage2_Journal_Code2$Sample_Type_info_N[555:556] <- 4
 
 rm(Abstract2)
+
+
 ```
-
-
 ### Sample_Size
 ```{r}
-#names(df_stage2_Journal_Code2)
+Sample_Size <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,16,32,34) %>% 
+  dplyr::filter(is.na(Sample_Size)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复",Remark2))
 
 ```
 
