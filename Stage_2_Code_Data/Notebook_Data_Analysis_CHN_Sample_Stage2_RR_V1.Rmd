@@ -377,7 +377,10 @@ rm(Group3_1_Journal,Group3_1_First_Author)
 ```{r message=FALSE, warning=FALSE}
 
 df_stage2_Journal_Code <- bind_rows(Group24567_bind,Group1_bind,Group3_bind)
-df_stage2_Journal_Code2 <- df_stage2_Journal_Code
+
+### There are three articles that need to be replaced, and we will filter them out.
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code %>% 
+  dplyr::filter(!Article_IDs %in% c(20084071,20182070,20185037))
 
 ```
 
@@ -446,10 +449,8 @@ df_stage2_Journal_Code2$Study_Number_N[246] <- 1
 df_stage2_Journal_Code2$Study_Number_N[254] <- 1
 
 ### Article_IDs 20082074
-df_stage2_Journal_Code2$Study_Number[257] <- 1
-df_stage2_Journal_Code2$Study_Number_N[257] <- 1
-df_stage2_Journal_Code2$Study_Number[258] <- 1
-df_stage2_Journal_Code2$Study_Number_N[258] <- 1
+df_stage2_Journal_Code2$Study_Number[257:258] <- 1
+df_stage2_Journal_Code2$Study_Number_N[257:258] <- 1
 
 ### Article_IDs 20082087
 df_stage2_Journal_Code2$Study_Number_N[260] <- 1
@@ -459,41 +460,39 @@ df_stage2_Journal_Code2$Study_Number[432] <- 1
 df_stage2_Journal_Code2$Study_Number_N[432] <- 1
 
 ### Article_IDs 20212097
-df_stage2_Journal_Code2$Study_Number[930] <- 0
-df_stage2_Journal_Code2$Study_Number_N[931] <- 0.1
+df_stage2_Journal_Code2$Study_Number[928] <- 0
+df_stage2_Journal_Code2$Study_Number[929] <- 0.1
 
 ### Article_IDs 20182192
-df_stage2_Journal_Code2$Study_Number[1089] <- 1
+df_stage2_Journal_Code2$Study_Number[1087] <- 1
 
 ### Article_IDs 20182193
-df_stage2_Journal_Code2$Study_Number[1090] <- 1
-df_stage2_Journal_Code2$Study_Number_N[1090] <- 1
+df_stage2_Journal_Code2$Study_Number[1088] <- 1
+df_stage2_Journal_Code2$Study_Number_N[1088] <- 1
 
 ### Article_IDs 20212172
-df_stage2_Journal_Code2$Study_Number[1182] <- 1
-df_stage2_Journal_Code2$Study_Number_N[1182] <- 1 
+df_stage2_Journal_Code2$Study_Number[1179] <- 1
+df_stage2_Journal_Code2$Study_Number_N[1179] <- 1 
 
 ### Article_IDs 20083017
-df_stage2_Journal_Code2$Study_Number_N[1301] <- 1
+df_stage2_Journal_Code2$Study_Number_N[1298] <- 1
 
 ### Article_IDs 20183268
-df_stage2_Journal_Code2$Study_Number[1396] <- 1
-df_stage2_Journal_Code2$Study_Number_N[1396] <- 1 
+df_stage2_Journal_Code2$Study_Number[1393] <- 1
+df_stage2_Journal_Code2$Study_Number_N[1393] <- 1 
 
 ### Article_IDs 20213023
-df_stage2_Journal_Code2$Study_Number[1440] <- 1
+df_stage2_Journal_Code2$Study_Number[1437] <- 1
 
 ### Article_IDs 20213039
-df_stage2_Journal_Code2$Study_Number[1446] <- 1
+df_stage2_Journal_Code2$Study_Number[1443] <- 1
 
 ### Article_IDs 20082013
-df_stage2_Journal_Code2$Study_Number[1476] <- 1
+df_stage2_Journal_Code2$Study_Number[1473] <- 1
 
 ### Artilce_IDs 20082029
-df_stage2_Journal_Code2$Study_Number[1488] <- 1
+df_stage2_Journal_Code2$Study_Number[1485] <- 1
 
-
-### Article_IDs 20084071 20182070  20215037 are need to replaced
 rm(Study_Number)
 ```
 
@@ -523,6 +522,7 @@ df_stage2_Journal_Code2$Subjects_Group_N[122] <- "主题怀旧组"
 ### Article_IDs 20182268
 df_stage2_Journal_Code2$Subjects_Group_N[140:148] <- df_stage2_Journal_Code2$Subjects_Group[140:148]
 
+### Article_IDs 20182019
 df_stage2_Journal_Code2$Subjects_Group[339:341] <- df_stage2_Journal_Code2$Subjects_Group_N[339:341]
 
 ### Article_IDs 20182031
@@ -532,34 +532,30 @@ df_stage2_Journal_Code2$Subjects_Group[358:359] <- df_stage2_Journal_Code2$Subje
 df_stage2_Journal_Code2$Subjects_Group[369:370] <- df_stage2_Journal_Code2$Subjects_Group_N[369:370]
 
 ### Article_IDs 20182035
-df_stage2_Journal_Code2$Subjects_Group_N[555] <- "海洛因戒断者组"
+df_stage2_Journal_Code2$Subjects_Group_N[554] <- "海洛因戒断者组"
 
 ### Article_IDs 20082210
 ### Redundant Subjects Group
-df_stage2_Journal_Code2$Subjects_Group[701:703] <- NA
+df_stage2_Journal_Code2$Subjects_Group[699:701] <- NA
 
 ### Article_IDs 20181023
-df_stage2_Journal_Code2$Subjects_Group_N[790:793] <- df_stage2_Journal_Code2$Subjects_Group[790:793]
+df_stage2_Journal_Code2$Subjects_Group_N[788:791] <- df_stage2_Journal_Code2$Subjects_Group[788:791]
 
 ### Article_IDs 20182126
 ### Redundant Subjects Group
-df_stage2_Journal_Code2$Subjects_Group[832:833] <- NA
+df_stage2_Journal_Code2$Subjects_Group[830:831] <- NA
 
 ### Article_IDs 20182131
-df_stage2_Journal_Code2$Subjects_Group_N[834:835] <- df_stage2_Journal_Code2$Subjects_Group[834:835] 
+df_stage2_Journal_Code2$Subjects_Group_N[832:833] <- df_stage2_Journal_Code2$Subjects_Group[832:833] 
 
-### Article_IDs 20182118
-### Redundant Subjects Group
-df_stage2_Journal_Code2$Subjects_Group[824] <- "应激有害心向组"
-
-### Article_IDs 20181078
-df_stage2_Journal_Code2$Subjects_Group_N[1078] <- NA
+### Article_IDs 20182174
+df_stage2_Journal_Code2$Subjects_Group_N[1076] <- NA
 
 ### Article_IDs 20182192
-df_stage2_Journal_Code2$Subjects_Group_N[1089] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[1087] <- NA
 
 ### Article_IDs 20083017
-df_stage2_Journal_Code2$Subjects_Group_N[1301:1302] <- df_stage2_Journal_Code2$Subjects_Group[1301:1302]
+df_stage2_Journal_Code2$Subjects_Group_N[1298:1299] <- df_stage2_Journal_Code2$Subjects_Group[1298:1299]
 
 rm(Subjects_Group)
 
@@ -580,30 +576,31 @@ df_stage2_Journal_Code2$Article_Title[62] <-  "抑郁与自尊水平、自我效
 ### Article_IDs 20181140
 df_stage2_Journal_Code2$Article_IDs[73] <- 20181140
 df_stage2_Journal_Code2$Article_Title[73] <- "比例推理的过度使用及其认知机制：一项发展性的负启动研究"
+## I found 20181140 had some coding info uncode
 
 ## Article_IDs 20085035
-df_stage2_Journal_Code2$Article_Title[749] <- "《适应分量表》在蒙古族青少年群体中使用的信、效度检验"
+df_stage2_Journal_Code2$Article_Title[747] <- "《适应分量表》在蒙古族青少年群体中使用的信、效度检验"
  
 ### Article_IDs 20183171
-df_stage2_Journal_Code2$Article_Title[869:870] <- "母亲消极完美主义与女儿内化问题：一个多重中介模型"
+df_stage2_Journal_Code2$Article_Title[867:868] <- "母亲消极完美主义与女儿内化问题：一个多重中介模型"
  
 ### Article_IDs 20183182
-df_stage2_Journal_Code2$Article_Title[872:874] <- "父亲婚姻满意度与幼儿社会适应：父亲反应方式的中介作用"
+df_stage2_Journal_Code2$Article_Title[870:872] <- "父亲婚姻满意度与幼儿社会适应：父亲反应方式的中介作用"
  
 ### Article_IDs 20183188
-df_stage2_Journal_Code2$Article_Title[875] <- "非营利机构员工相对剥夺感对情绪耗竭的影响：心理契约违背的中介作用"
+df_stage2_Journal_Code2$Article_Title[873] <- "非营利机构员工相对剥夺感对情绪耗竭的影响：心理契约违背的中介作用"
  
 ### Article_IDs 20183052
-df_stage2_Journal_Code2$Article_Title[1574] <- "学生同伴依恋与抑郁：自我认同感和宿舍人际关系的中介作用"
+df_stage2_Journal_Code2$Article_Title[1571] <- "学生同伴依恋与抑郁：自我认同感和宿舍人际关系的中介作用"
 
 ### Article_IDs 20183054
-df_stage2_Journal_Code2$Article_Title[1575] <- "父母心理控制、自主支持与青少年外化问题行为：控制动机的中介作用"
+df_stage2_Journal_Code2$Article_Title[1572] <- "父母心理控制、自主支持与青少年外化问题行为：控制动机的中介作用"
 
 ### Article_IDs 20184022
-df_stage2_Journal_Code2$Article_Title[1590:1595] <- "幼儿的自我投射能力对情景预见的影响：来自典型发展儿童和孤独症谱系障碍儿童的证据"
+df_stage2_Journal_Code2$Article_Title[1587:1592] <- "幼儿的自我投射能力对情景预见的影响：来自典型发展儿童和孤独症谱系障碍儿童的证据"
 
 ### Article_IDs 20211015
-df_stage2_Journal_Code2$Article_Title[1674:1675] <- "如何激发员工绿色行为？绿色变革型领导与绿色人力资源管理实践的作用"
+df_stage2_Journal_Code2$Article_Title[1671:1672] <- "如何激发员工绿色行为？绿色变革型领导与绿色人力资源管理实践的作用"
 
 rm(Article_Title)
 ```
@@ -623,7 +620,7 @@ df_stage2_Journal_Code2$Journal[62] <- "中国临床心理学杂志"
 df_stage2_Journal_Code2$First_Author[73] <- "江荣焕"
 df_stage2_Journal_Code2$Journal[73] <-  "心理学报"
 
-### Article_IDs 20185116
+### Article_IDs 20185166
 df_stage2_Journal_Code2$First_Author[208] <- "张林" 
 
 ### Article_IDs 20215077
@@ -633,24 +630,24 @@ df_stage2_Journal_Code2$First_Author[241] <- "张昕"
 df_stage2_Journal_Code2$First_Author[242] <- "张野"
 
 ### Article_IDs 20081048
-df_stage2_Journal_Code2$First_Author[1276] <- "冯冬冬"
-df_stage2_Journal_Code2$Journal[1276] <- "心理学报"
+df_stage2_Journal_Code2$First_Author[1273] <- "冯冬冬"
+df_stage2_Journal_Code2$Journal[1273] <- "心理学报"
 
 ### Article_IDs 20082379
-df_stage2_Journal_Code2$First_Author[1295] <- "安秋玲" 
-df_stage2_Journal_Code2$Journal[1295] <- "心理科学"
+df_stage2_Journal_Code2$First_Author[1292] <- "安秋玲" 
+df_stage2_Journal_Code2$Journal[1292] <- "心理科学"
 
 ### Article_IDS 20184027
-df_stage2_Journal_Code2$First_Author[1672:1673] <- "童钰" 
-df_stage2_Journal_Code2$Journal[1672:1673] <- "心理发展与教育"
+df_stage2_Journal_Code2$First_Author[1669:1670] <- "童钰" 
+df_stage2_Journal_Code2$Journal[1669:1670] <- "心理发展与教育"
 
 ### Article_IDs 20213137
-df_stage2_Journal_Code2$First_Author[1680] <- "王沛"
-df_stage2_Journal_Code2$Journal[1680] <- "中国临床心理学杂志"
+df_stage2_Journal_Code2$First_Author[1677] <- "王沛"
+df_stage2_Journal_Code2$Journal[1677] <- "中国临床心理学杂志"
 
 ### Article_IDs 20213153
-df_stage2_Journal_Code2$First_Author[1685] <- "王鸿飞"
-df_stage2_Journal_Code2$Journal[1685] <- "中国临床心理学杂志"
+df_stage2_Journal_Code2$First_Author[1682] <- "王鸿飞"
+df_stage2_Journal_Code2$Journal[1682] <- "中国临床心理学杂志"
 
 rm(First_Author_Journal)
 ```
@@ -664,38 +661,38 @@ Remark1 <- df_stage2_Journal_Code2 %>%
 
 
 ### Article_IDs 20214072
-df_stage2_Journal_Code2$Remark1[978] <- "secondary"
+df_stage2_Journal_Code2$Remark1[976] <- "secondary"
 
 ### Article_IDs 20182193
-df_stage2_Journal_Code2$Remark1_N[1090] <- "mining"
+df_stage2_Journal_Code2$Remark1_N[1088] <- "mining"
 
 ### Article_ID 20213088
 df_stage2_Journal_Code2$Remark1_N[224] <- "qualitative"
 
 ### Article_IDs 20182192
-df_stage2_Journal_Code2$Remark1_N[1089] <- "qualitative"
+df_stage2_Journal_Code2$Remark1_N[1087] <- "qualitative"
 
 ### Article_IDs 20082029
-df_stage2_Journal_Code2$Remark1_N[1488] <- "qualitative"
+df_stage2_Journal_Code2$Remark1_N[1485] <- "qualitative"
 
 ### Article_IDs 20181168
-df_stage2_Journal_Code2$Remark1[104] <- "mining"
-df_stage2_Journal_Code2$Remark1_N[104] <- "mining"
-df_stage2_Journal_Code2$Remark1_N[105:106] <- NA
+#df_stage2_Journal_Code2$Remark1[104] <- "mining"
+#df_stage2_Journal_Code2$Remark1_N[104] <- "mining"
+#df_stage2_Journal_Code2$Remark1_N[105:106] <- NA
 
 ### Article_IDs 20082013
-df_stage2_Journal_Code2$Remark1_N[1476] <- "secondary"
+df_stage2_Journal_Code2$Remark1_N[1473] <- "secondary"
 
 ### Articel_IDs 20213305
-df_stage2_Journal_Code2$Remark1[685] <- "inapplicable"
-df_stage2_Journal_Code2$Remark1_N[685] <- "inapplicable"
+df_stage2_Journal_Code2$Remark1[683] <- "inapplicable"
+df_stage2_Journal_Code2$Remark1_N[683] <- "inapplicable"
 
-### Article_IDs 200081055
-df_stage2_Journal_Code2$Remark1[1281:1282] <- "inapplicable"
-df_stage2_Journal_Code2$Remark1_N[1281:1282] <- "inapplicable"
+### Article_IDs 20081055
+df_stage2_Journal_Code2$Remark1[1278:1279] <- "inapplicable"
+df_stage2_Journal_Code2$Remark1_N[1278:1279] <- "inapplicable"
 
 ### Article_IDs 20181039
-df_stage2_Journal_Code2$Remark1[1027] <- "secondary"
+df_stage2_Journal_Code2$Remark1[1025] <- "secondary"
 
 ### Article_IDs 20182257
 df_stage2_Journal_Code2$Remark1[130] <- "secondary"
@@ -717,21 +714,21 @@ df_stage2_Journal_Code2$Remark1_N[355] <- "non_human"
 df_stage2_Journal_Code2$Remark1[503] <- "inapplicable"
 df_stage2_Journal_Code2$Remark1_N[503] <- "inapplicable"
 
-### Article_IDs 20212103
-df_stage2_Journal_Code2$Remark1[645] <- "inapplicable"
-df_stage2_Journal_Code2$Remark1_N[645] <- "inapplicable"
+### Article_IDs 20212013
+df_stage2_Journal_Code2$Remark1[643] <- "inapplicable"
+df_stage2_Journal_Code2$Remark1_N[643] <- "inapplicable"
 
 ### Article_IDs 20085023
-df_stage2_Journal_Code2$Remark1[744] <- "secondary"
+df_stage2_Journal_Code2$Remark1[742] <- "secondary"
 
 ### Article_IDs 20213023
-df_stage2_Journal_Code2$Remark1[1440] <- "mining"
+df_stage2_Journal_Code2$Remark1[1437] <- "mining"
 
 ### Article_IDs 20183360
-df_stage2_Journal_Code2$Remark1[1577] <- "secondary"
+df_stage2_Journal_Code2$Remark1[1574] <- "secondary"
 
-### Article_IDs 20184029
-df_stage2_Journal_Code2$Remark1[1589] <- "secondary" 
+### Article_IDs 20184019
+df_stage2_Journal_Code2$Remark1[1586] <- "secondary" 
 
 rm(Remark1)
 
@@ -763,11 +760,12 @@ df_stage2_Journal_Code2$Remark2_N[357] <- "被试重复使用"
 df_stage2_Journal_Code2$Remark2_N[388] <- "被试重复使用"
 
 ### Article_IDs 20181022
-df_stage2_Journal_Code2$Remark2[784:785] <- ""
+df_stage2_Journal_Code2$Remark2[782:783] <- NA
+df_stage2_Journal_Code2$Remark2[784:785] <- "被试重复使用"
 
 ### Article_IDs 20185003
-df_stage2_Journal_Code2$Remark2_N[899] <- ""
-df_stage2_Journal_Code2$Remark2[900] <- "被试重复使用"
+df_stage2_Journal_Code2$Remark2_N[897] <- NA
+df_stage2_Journal_Code2$Remark2[898] <- "被试重复使用"
 
 rm(Remark2)
 
@@ -814,58 +812,31 @@ df_stage2_Journal_Code2$Abstract1[73] <- 123
 df_stage2_Journal_Code2$Abstract1[183] <- 14
 
 ### Article_IDs 20182035 
-df_stage2_Journal_Code2$Abstract1[556] <- 1
+df_stage2_Journal_Code2$Abstract1[555] <- 1
+
+### Article_IDs 20085035
+df_stage2_Journal_Code2$Abstract1[747] <-  "12348b"
 
 ### Article_IDs 20085044
-df_stage2_Journal_Code2$Abstract1[754:756] <- "1234b"
+df_stage2_Journal_Code2$Abstract1[752:754] <- "1234b"
 
 ### Article_IDs 20181017
-df_stage2_Journal_Code2$Abstract1[775:778] <- 0
+df_stage2_Journal_Code2$Abstract1[773:776] <- 0
 
 ### Article_IDs 20181022
-df_stage2_Journal_Code2$Abstract1[784:789] <- 8
+df_stage2_Journal_Code2$Abstract1[782:787] <- 8
 
 ### Article_IDs 20181023
-df_stage2_Journal_Code2$Abstract1[790:795] <- 1238
+df_stage2_Journal_Code2$Abstract1[788:793] <- 1238
+
+### Article_IDs 20182075
+df_stage2_Journal_Code2$Abstract1[794] <- 123
 
 ### Article_IDs 20182103
-df_stage2_Journal_Code2$Abstract1[807:812] <- 123
+df_stage2_Journal_Code2$Abstract1[805:810] <- 123
 
 ### Article_IDs 20182125
-df_stage2_Journal_Code2$Abstract1[827:831] <- 12345
-
-### Article_IDs 20181028
-df_stage2_Journal_Code2$Abstract1[1017:1020] <- 0
-
-### Article_IDs 20181034
-df_stage2_Journal_Code2$Abstract1[1023:1024] <- 0
-
-### Article_IDs 20181037
-df_stage2_Journal_Code2$Abstract1[1025:1026] <- 0
-
-### Article_IDs 20181044
-df_stage2_Journal_Code2$Abstract1[1029] <- 0
-
-### Article_IDs 20181051
-df_stage2_Journal_Code2$Abstract1[1030:1032] <- 0
-
-### Article_IDs 20181052
-df_stage2_Journal_Code2$Abstract1[1033:1034] <- 0
-
-### Article_IDs 20181058
-df_stage2_Journal_Code2$Abstract1[1035:1036] <- 0
-
-### Article_IDs 20181061
-df_stage2_Journal_Code2$Abstract1[1037:1039] <- 0
-
-### Article_IDs 20181063
-df_stage2_Journal_Code2$Abstract1[1040:1041] <- 0
-
-### Article_IDs 20181065
-df_stage2_Journal_Code2$Abstract1[1042:1045] <- 1
-
-### Article_IDs 20181066
-df_stage2_Journal_Code2$Abstract1[1046:1047] <- 0
+df_stage2_Journal_Code2$Abstract1[825:829] <- 12345
  
 rm(Abstract1)
 ```
@@ -894,7 +865,7 @@ df_stage2_Journal_Code2$Abstract2[284:286] <- 1
 df_stage2_Journal_Code2$Abstract2[761:766] <- 0
   
 ### Article_IDs 20182103
-df_stage2_Journal_Code2$Abstract2[807:812] <- 1
+df_stage2_Journal_Code2$Abstract2[805:812] <- 1
 
 ### Article_IDs 20082313
 df_stage2_Journal_Code2$Abstract2[989:990] <- 0  
@@ -1058,6 +1029,37 @@ Sample_Size <- df_stage2_Journal_Code2 %>%
   dplyr::filter(is.na(Sample_Size)) %>% 
   dplyr::filter(is.na(Remark1)) %>% 
   dplyr::filter(!grepl("重复",Remark2))
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Sample_Size[62] <- 175
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Sample_Size[73] <- 43
+
+
+### Article_IDs 20182022
+df_stage2_Journal_Code2$Sample_Size[] <- 
+
+
+### Article_IDs 20182262
+
+
+### Article_IDs 20182283
+
+
+### Article_IDs 20185044
+
+
+### Article_IDs 20182101
+
+
+### Article_IDs 20182103
+
+
+### Article_IDs 20081026
+
+
+### Article_IDs 20082009
 
 ```
 
