@@ -1126,12 +1126,36 @@ df_stage2_Journal_Code2$SD_age[73] <- 2.3
 ### Article_IDs 20182248
 df_stage2_Journal_Code2$Age[126:127] <- 1
 
-  
 ### Article_IDs 20185187
 df_stage2_Journal_Code2$Age[215] <-  0
 
 rm(Age)
 ````
+
+
+### Ethnicity
+```{r}
+Ethnicity <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,24,32,34) %>% 
+  dplyr::filter(is.na(Ethnicity)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复",Remark2))
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Ethnicity <- 0
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Ethnicity <- 0
+
+### Article_IDs 20185191
+df_stage2_Journal_Code2$Ethnicity <- 0
+
+### Article_IDs 20181017
+df_stage2_Journal_Code2$Ethnicity <- 0
+
+rm(Ethnicity)
+
+```
 
 
 
