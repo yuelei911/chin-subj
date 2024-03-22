@@ -1102,6 +1102,39 @@ df_stage2_Journal_Code2$Gender[73] <- 1
 rm(Gender)
 ```
 
+
+### Age, M_age, SD_age and Other_age
+```{r}
+Age <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,20,32,34) %>% 
+  dplyr::filter(is.na(Age)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复",Remark2))
+  
+### Article_IDs 20083038
+df_stage2_Journal_Code2$Age[37] <- 1
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Age[62] <- 1
+df_stage2_Journal_Code2$M_age[62] <- 26.02
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Age[73] <- 1
+df_stage2_Journal_Code2$M_age[73] <- 21.72
+df_stage2_Journal_Code2$SD_age[73] <- 2.3
+
+### Article_IDs 20182248
+df_stage2_Journal_Code2$Age[126:127] <- 1
+
+  
+### Article_IDs 20185187
+df_stage2_Journal_Code2$Age[215] <-  0
+
+rm(Age)
+````
+
+
+
 ## Calculating report condition 
 In our data, there are some data columns that need to calculate the report of the data,such as Gender, Age, SES, Educational attachment, Occupation, Ethnicity, Religious,Subjects_Recruitment_Area and  Sampling_Method,Subjects_Recruitment_Method. In this part, we will finish this analysis.
 
