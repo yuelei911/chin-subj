@@ -563,6 +563,8 @@ df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>%
   dplyr::mutate(Subjects_Group = if_else(Subjects_Group == 1, NA, Subjects_Group),
                 Subjects_Group_N = if_else(Subjects_Group_N == 1, NA, Subjects_Group_N))
 
+### In the process of checking, I found that there were some Subjects_Group in the paper, but it was not recorded. The above code cannot check for both Subjects_Group and Subjects_Group_N columns as NA, so check the above again.
+
 ```
 
 ### Article_Title
@@ -1036,31 +1038,48 @@ df_stage2_Journal_Code2$Sample_Size[62] <- 175
 ### Article_IDs 20181140
 df_stage2_Journal_Code2$Sample_Size[73] <- 43
 
-
 ### Article_IDs 20182022
-df_stage2_Journal_Code2$Sample_Size[] <- 
-
+df_stage2_Journal_Code2$Remark2[354] <- "被试重复使用"
+df_stage2_Journal_Code2$Remark2_N[354] <- "被试重复使用"
 
 ### Article_IDs 20182262
+df_stage2_Journal_Code2$Sample_Size[724] <- 60
 
+### Article_IDs 20082283
+df_stage2_Journal_Code2$Sample_Size[732] <- 426
 
-### Article_IDs 20182283
-
-
-### Article_IDs 20185044
-
+### Article_IDs 20085044
+df_stage2_Journal_Code2$Sample_Size[753] <- 33
+#Meanwhile, I found this article' subjects group was uncode.
+#df_stage2_Journal_Code2$Subjects_Group[752:754] <- c("3岁组","4岁组","5岁组")
+#df_stage2_Journal_Code2$Subjects_Group_N[752:754] <- c("3岁组","4岁组","5岁组")
 
 ### Article_IDs 20182101
-
+df_stage2_Journal_Code2$Sample_Size[801] <- 29
+df_stage2_Journal_Code2$Female_Num[801] <- 12
 
 ### Article_IDs 20182103
+df_stage2_Journal_Code2$Sample_Size[807] <- 124
+##### row808 isn't need
+df_stage2_Journal_Code2$Sample_Size[812] <- 180
 
+df_stage2_Journal_Code2$Sample_Size[811] <- 30
+df_stage2_Journal_Code2$Female_Num[811] <- 17
+df_stage2_Journal_Code2$Male_Num[811] <- 13
+### Meanwhile, I found this article' Study3 should code "inapplicable" in Remark1( Remark1_N).
+#df_stage2_Journal_Code2$Remark1[811] <- "inapplicable"
+#df_stage2_Journal_Code2$Remark1_N[811] <- "inapplicable"
 
 ### Article_IDs 20081026
-
+df_stage2_Journal_Code2$Sample_Size[1251] <- 284
 
 ### Article_IDs 20082009
+df_stage2_Journal_Code2$Sample_Size[1471] <- 30
+#meanwhile, I found names error of study number
+df_stage2_Journal_Code2$Study_Number[1468:1471] <- c("1a","1b","2a","2b")
+df_stage2_Journal_Code2$Study_Number_N[1468:1471] <- c("1a","1b","2a","2b")
 
+rm(Sample_Size)
 ```
 
 
