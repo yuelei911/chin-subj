@@ -229,7 +229,7 @@ Group1_bind$Study_Number[173] <- Group1_bind$Study_Number_N[173]
 ## run Group1_bind_equal again and find this data.frame is not data available, thus we rm this data frame
 
 rm(Group1_bind_equal,Group1_1,Group1_2,Group1_suppl)
-```
+``` 
 
 
 ### Loading the Group 3 data (include suppl)
@@ -566,6 +566,7 @@ df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>%
 ### In the process of checking, I found that there were some Subjects_Group in the paper, but it was not recorded. The above code cannot check for both Subjects_Group and Subjects_Group_N columns as NA, so check the above again.
 
 ```
+
 
 ### Article_Title
 ```{r}
@@ -1130,7 +1131,7 @@ df_stage2_Journal_Code2$Age[126:127] <- 1
 df_stage2_Journal_Code2$Age[215] <-  0
 
 rm(Age)
-````
+```
 
 
 ### Ethnicity
@@ -1142,23 +1143,47 @@ Ethnicity <- df_stage2_Journal_Code2 %>%
   dplyr::filter(!grepl("重复",Remark2))
 
 ### Article_IDs 20083093
-df_stage2_Journal_Code2$Ethnicity <- 0
+df_stage2_Journal_Code2$Ethnicity[62] <- 0
 
 ### Article_IDs 20181140
-df_stage2_Journal_Code2$Ethnicity <- 0
+df_stage2_Journal_Code2$Ethnicity[73] <- 0
 
 ### Article_IDs 20185191
-df_stage2_Journal_Code2$Ethnicity <- 0
+df_stage2_Journal_Code2$Ethnicity[218] <- 0
 
 ### Article_IDs 20181017
-df_stage2_Journal_Code2$Ethnicity <- 0
+df_stage2_Journal_Code2$Ethnicity[775:776] <- 0
 
 rm(Ethnicity)
 
 ```
 
 
+### Religious
+```{r}
+Religious <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,26,32,34) %>% 
+  dplyr::filter(is.na(Religious)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2))
 
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Religious[62] <- 0
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Religious[73] <- 0
+
+### Article_IDs 20181081
+df_stage2_Journal_Code2$Religious[1056] <- 0
+
+### Article_IDs 20183229
+df_stage2_Journal_Code2$Religious[1109] <- 0
+
+### Article_IDs 20213029
+df_stage2_Journal_Code2$Religious[1440] <- 0
+
+rm(Religious)
+```
 ## Calculating report condition 
 In our data, there are some data columns that need to calculate the report of the data,such as Gender, Age, SES, Educational attachment, Occupation, Ethnicity, Religious,Subjects_Recruitment_Area and  Sampling_Method,Subjects_Recruitment_Method. In this part, we will finish this analysis.
 
