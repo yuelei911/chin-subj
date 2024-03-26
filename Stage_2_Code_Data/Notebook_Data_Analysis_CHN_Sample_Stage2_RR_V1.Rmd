@@ -1377,6 +1377,109 @@ rm(Sampling_Method)
 ```
 
 
+### Target_Population_N
+```{r}
+Target_Population_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,37,32,34) %>% 
+  dplyr::filter(is.na(Target_Population_N)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2))
+
+```
+
+
+### Sample_Type_N and Sample_Type_info_N
+```{R}
+Sample_Type_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,40,32,34) %>% 
+  dplyr::filter(is.na(Sample_Type_N)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2))
+
+
+### Article_IDs 20081136
+df_stage2_Journal_Code2$Sample_Type_N[35] <- 2
+
+### Article_IDs 20082002
+df_stage2_Journal_Code2$Sample_Type_N[36] <- 2
+
+### Article_IDs 20085022
+df_stage2_Journal_Code2$Sample_Type_N[741] <- 1
+
+### Article_IDs 20182104
+df_stage2_Journal_Code2$Sample_Type_N[813:814] <- 0
+
+### Article_IDs 20081026
+df_stage2_Journal_Code2$Sample_Type_N[1251] <- 0
+
+### Article_IDs 20184025
+df_stage2_Journal_Code2$Sample_Type_N[1596] <- 1
+
+rm(Sample_Type_N)
+
+Sample_Type_info_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Sample_Type_info_N)) %>% 
+  dplyr::filter(!is.na(Sample_Type_N)) %>% 
+  dplyr::select(3,14,39,41,32,34)
+
+
+### Article_IDs 20181176
+df_stage2_Journal_Code2$Sample_Type_info_N[109] <- "选取34名河北师范大学在校大校生(男生16名,女生18名)作为被试"
+
+### Article_IDs 20182018
+df_stage2_Journal_Code2$Sample_Type_info_N[335] <- "132名学前末期儿童参与实验1"
+
+### Article_IDs 20084068
+df_stage2_Journal_Code2$Sample_Type_info_N[537] <- "从上海两所中等水平幼儿园的325名幼儿中以年龄班分层随机抽取180名3～6岁幼儿。"
+
+### Article_IDs 20182050
+df_stage2_Journal_Code2$Sample_Type_info_N[565] <- "再另外随机选取78名本科生完成Buss-Perry攻击性量表"
+
+### Article_IDs 20182069
+df_stage2_Journal_Code2$Sample_Type_info_N[582] <- "来自上海某小学的154名7岁儿童参与本研究"
+
+### Article_IDs 20183142
+df_stage2_Journal_Code2$Sample_Type_info_N[611] <- "研究对象为来自湖南省某综合医院心理科门诊的心理咨询就诊患者"
+
+### Article_IDs 20212031
+df_stage2_Journal_Code2$Sample_Type_info_N[649] <- "采用方便取样和滚雪球抽样的方式，通过网络宣传、社区招募、熟人介绍等方式面向社会公开征集被试.确认愿意参与研究的有效被试为106对。夫 妻的婚龄为15.13±11.20月（1~36月之间）"
+
+### Sample_Type_N is 5, I need to reclassify the code once.
+
+### Article_IDs 20085022
+df_stage2_Journal_Code2$Sample_Type_info_N[741] <- "选取某大学二年级的理科生为被试"
+
+### Article_IDs 20181022
+df_stage2_Journal_Code2$Sample_Type_info_N[786] <- "汉族被试为四川省广安市两所公立中学的42名高中生"
+
+### Article_IDs 20181065
+df_stage2_Journal_Code2$Sample_Type_info_N[1042:1043] <- "大学生被试463人"
+### I found study1' Sample_Type_info_N of this article is incorrect.
+df_stage2_Journal_Code2$Sample_Type_info_N[1041] <- df_stage2_Journal_Code2$Sample_Type_info_N[1040]
+
+### Article_IDs 20081026
+df_stage2_Journal_Code2$Sample_Type_info_N[1251] <- "纸笔测验在中山大学完成，全部被试来自选修某选修课的学生"
+### I found this article' Sample_Type_N is incorrect.
+df_stage2_Journal_Code2$Sample_Type_N[1251] <- 1
+
+### Article_IDs 20184025
+df_stage2_Journal_Code2$Sample_Type_info_N[1596] <- "采用广告招募和公共课堂发问卷的方式从382名大学本科生中获取被试"
+
+rm(Sample_Type_info_N)
+```
+
+
+### Subjects_Recruitment_Method_N
+```{r}
+Subjects_Recruitment_Method_N <- df_stage2_Journal_Code2 %>%
+  dplyr::select(3,14,39,47,32,34) %>% 
+  dplyr::filter(is.na(Subjects_Recruitment_Method_N)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2))
+  
+```
+
+
 ## Calculating report condition 
 In our data, there are some data columns that need to calculate the report of the data,such as Gender, Age, SES, Educational attachment, Occupation, Ethnicity, Religious,Subjects_Recruitment_Area and  Sampling_Method,Subjects_Recruitment_Method. In this part, we will finish this analysis.
 
