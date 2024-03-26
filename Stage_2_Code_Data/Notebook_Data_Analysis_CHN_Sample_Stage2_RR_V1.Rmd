@@ -846,7 +846,7 @@ rm(Abstract1)
 
 
 ### Abstract2
-```{r}
+```{r message=FALSE, warning=FALSE}
 Abstract2 <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Sample_Type_N == c(1,5) & (is.na(Abstract2) | Abstract2 == "")) %>% 
   dplyr::select(3,40,13,14,39,41) %>% 
@@ -1328,6 +1328,52 @@ Sampling_Method <- df_stage2_Journal_Code2 %>%
   dplyr::filter(is.na(Sampling_Method)) %>% 
   dplyr::filter(is.na(Remark1)) %>% 
   dplyr::filter(!grepl("重复", Remark2))
+
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Sampling_Method[62] <- 0
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Sampling_Method[73] <- 0
+
+### Article_IDs 20082105
+df_stage2_Journal_Code2$Sampling_Method[260:267] <- 1
+
+### Article_IDs 20211067
+df_stage2_Journal_Code2$Sampling_Method[453:454] <- 0
+
+### Article_IDs 20082296
+df_stage2_Journal_Code2$Sampling_Method[735:737] <- 2
+
+### Article_IDs 20082298
+df_stage2_Journal_Code2$Sampling_Method[738] <- 2
+
+### Article_IDs 20182180
+df_stage2_Journal_Code2$Sampling_Method[1078] <- 0
+
+### Article_IDs 20182182
+df_stage2_Journal_Code2$Sampling_Method[1079:1081] <- 0
+
+### Article_IDs 2182183
+df_stage2_Journal_Code2$Sampling_Method[1082:1083] <- 0
+
+### Article_IDs 20182184
+#I found this is "secondary"
+df_stage2_Journal_Code2$Remark1[1084] <- "secondary"
+df_stage2_Journal_Code2$Remark1_N[1084] <- "secondary"
+
+### Article_IDs 20182188
+df_stage2_Journal_Code2$Sampling_Method[1085] <- 0
+
+### Article_IDs 20182191
+#I found this is "qualitative"
+df_stage2_Journal_Code2$Remark1[1086] <- "qualitative"
+df_stage2_Journal_Code2$Remark1_N[1086] <- "qualitative"
+
+### Article_IDs 20081026
+df_stage2_Journal_Code2$Sampling_Method[1251] <- 1
+
+rm(Sampling_Method)
 ```
 
 
