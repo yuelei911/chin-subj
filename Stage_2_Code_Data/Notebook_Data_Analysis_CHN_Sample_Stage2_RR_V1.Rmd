@@ -1234,7 +1234,100 @@ rm(Subjects_Area)
 
 ### Subjects_Recruitment_Area
 ```{r}
+Subjects_Recruitment_Area <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,30,32,34) %>% 
+  dplyr::filter(is.na(Subjects_Recruitment_Area)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2))
 
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[73] <- "广东"
+
+### Article_IDs 20182297
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[159] <- "东部;中部;西部"
+
+### Article_IDs 20183326
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[172] <- "湖北"
+
+### Article_IDs 20082064
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[250] <- "西北;东北;华北;华东;华南;华中;西南"
+
+### Article_IDs 20181243
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[319] <- "福建;上海;宁夏"
+
+### Article_IDs 20085035
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[747] <- "内蒙古"
+
+### Article_IDs 20085044
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[752:754] <- "北京"
+
+### Article_IDs 20181007
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[765:767] <- 0
+
+### Article_IDs 20082339
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[995] <- 0
+
+### Article_IDs 20081026
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1251] <- "广东"
+
+### Article_IDs 20183277
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1394] <- 0
+
+### Article_IDs 20183292
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1398:1399] <- 0
+
+### Article_IDs 20183308
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1406] <- 0
+
+### Article_IDs 20185083
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1409:1410] <- 0
+
+### Article_IDs 20185087
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1411:1414] <- 0
+
+### Article_IDs 20185096
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1415] <- 0
+
+### Article_IDs 20185110
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1418] <- 0
+
+### Article_IDs 20185114
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1421] <- 0
+
+### Article_IDs 20185121
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1424] <- 0
+
+### Article_IDs 20185128
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1428] <- 0
+
+### Article_IDs 20185130
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1429] <- 0
+
+### Article_IDs 20213037
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1442] <- 0
+### uncode experiment2????
+
+### Article_IDs 20213047
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1449:1450] <- 0
+
+### Article_IDs 20213048
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1451:1452] <- 0
+
+### Article_IDs 20215076
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1460] <- 0
+
+rm(Subjects_Recruitment_Area)
+```
+
+
+### Sampling_Method
+```{r}
+Sampling_Method <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,31,32,34) %>% 
+  dplyr::filter(is.na(Sampling_Method)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2))
 ```
 
 
