@@ -1138,6 +1138,7 @@ df_stage2_Journal_Code2$Male_Num[809:810] <- NA
 df_stage2_Journal_Code2$Male_Num[812] <- 180-86
 df_stage2_Journal_Code2$Female_Num[812] <- 86
 
+rm(Male_Female)
 ```
 
 
@@ -1168,6 +1169,11 @@ df_stage2_Journal_Code2$Age[126:127] <- 1
 df_stage2_Journal_Code2$Age[215] <-  0
 
 rm(Age)
+
+Age_info <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Age == 1) %>% 
+  dplyr::filter(is.na(M_age) | is.na(SD_age)) %>% 
+  dplyr::select(3,20:23,14,32,34,39)
 ```
 
 
@@ -1192,6 +1198,13 @@ df_stage2_Journal_Code2$Ethnicity[218] <- 0
 df_stage2_Journal_Code2$Ethnicity[775:776] <- 0
 
 rm(Ethnicity)
+
+
+Ethnicity_info <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Ethnicity == 1 & is.na(Ethnicity)) %>% 
+  dplyr::select(3,25,14,32,34,39)
+
+rm(Ethnicity_info)
 ```
 
 
@@ -1219,6 +1232,16 @@ df_stage2_Journal_Code2$Religious[1109] <- 0
 df_stage2_Journal_Code2$Religious[1440] <- 0
 
 rm(Religious)
+
+
+Religious_info <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Religious == 1 & is.na(Religious_info)) %>% 
+  dplyr::select(3,27,14,32,34,39)
+
+### In check process, 20182168' Religious_info need recode.
+df_stage2_Journal_Code2$Religious_info[1067:1068] <- "4(无宗教信仰)"
+
+rm(Religious_info)
 ```
 
 
@@ -1261,7 +1284,16 @@ df_stage2_Journal_Code2$Subjects_Area[1443] <- 0
 df_stage2_Journal_Code2$Subjects_Area[1675] <-  0
 
 rm(Subjects_Area)
-  
+
+Subjects_Area_info <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Subjects_Area >= 1 & is.na(Subjects_Area_info)) %>% 
+  dplyr::select(3,28:29,14,39,32,34)
+
+
+### Article_IDs 20215026
+df_stage2_Journal_Code2$Subjects_Area_info[1216] <- "天津本地居住"
+
+rm(Subjects_Area_info)
 ```
 
 
