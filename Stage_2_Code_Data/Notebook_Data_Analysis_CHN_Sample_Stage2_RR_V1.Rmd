@@ -1177,7 +1177,7 @@ Age_info <- df_stage2_Journal_Code2 %>%
 ```
 
 
-### Ethnicity
+### Ethnicity and info
 ```{r}
 Ethnicity <- df_stage2_Journal_Code2 %>% 
   dplyr::select(3,14,39,24,32,34) %>% 
@@ -1208,7 +1208,7 @@ rm(Ethnicity_info)
 ```
 
 
-### Religious
+### Religious and info
 ```{r}
 Religious <- df_stage2_Journal_Code2 %>% 
   dplyr::select(3,14,39,26,32,34) %>% 
@@ -1245,7 +1245,7 @@ rm(Religious_info)
 ```
 
 
-### Subjects_Area
+### Subjects_Area and info
 ```{r}
 Subjects_Area <- df_stage2_Journal_Code2 %>% 
   dplyr::select(3,14,39,28,32,34) %>% 
@@ -1534,7 +1534,7 @@ rm(Sample_Type_info_N)
 ```
 
 
-### Subjects_Recruitment_Method_N
+### Subjects_Recruitment_Method_N and info
 ```{r}
 Subjects_Recruitment_Method_N <- df_stage2_Journal_Code2 %>%
   dplyr::select(3,14,39,47,32,34) %>% 
@@ -1544,6 +1544,30 @@ Subjects_Recruitment_Method_N <- df_stage2_Journal_Code2 %>%
   
 ```
 
+
+### Educational_Attainment_N and info
+```{r}
+Educational_Attainment_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N >= 4 & is.na(Educational_Attainment_N)) %>% 
+  dplyr::select(3,40:43,14,32,34,39)
+
+```
+
+
+### Ocuupation_N
+```{r}
+Occupation_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N >= 4 & is.na(Occupation_N)) %>% 
+  dplyr::select(3,40:41,44,14,32,34,39)
+```
+
+
+### SES_N and info
+```{r}
+SES_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N >= 4 & is.na(SES_N)) %>% 
+  dplyr::select(3,40:41,45:46,14,32,34,39)
+```
 
 ## Calculating report condition 
 In our data, there are some data columns that need to calculate the report of the data,such as Gender, Age, SES, Educational attachment, Occupation, Ethnicity, Religious,Subjects_Recruitment_Area and  Sampling_Method,Subjects_Recruitment_Method. In this part, we will finish this analysis.
