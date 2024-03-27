@@ -1086,7 +1086,7 @@ rm(Sample_Size)
 ```
 
 
-### Gender
+### Gender, Male_Num and Female_Num
 ```{r}
 Gender <- df_stage2_Journal_Code2 %>% 
   dplyr::select(3,14,39,17,32,34) %>% 
@@ -1105,6 +1105,39 @@ df_stage2_Journal_Code2$Male_Num[73] <- 23
 df_stage2_Journal_Code2$Female_Num[73] <- 20
 
 rm(Gender)
+
+Male_Female <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Gender == 1 & (is.na(Male_Num) | is.na(Female_Num))) %>% 
+  dplyr::select(3,16:19)
+
+
+### Article_IDs 20184052
+df_stage2_Journal_Code2$Female_Num[398] <- 1-0.571
+
+
+### Article_IDs 20211034
+df_stage2_Journal_Code2$Female_Num[423] <- 1-0.55
+
+
+### Article_IDs 20211040
+df_stage2_Journal_Code2$Male_Num[426] <- 210-117
+
+
+### Article_IDs 20082283
+df_stage2_Journal_Code2$Male_Num[732] <- 426
+df_stage2_Journal_Code2$Female_Num[732] <- NA
+
+
+### Article_IDs 20181007
+df_stage2_Journal_Code2$Male_Num[765] <- 13
+df_stage2_Journal_Code2$Female_Num[765] <- 12
+
+
+### Article_IDs 20182103
+df_stage2_Journal_Code2$Male_Num[809:810] <- NA
+df_stage2_Journal_Code2$Male_Num[812] <- 180-86
+df_stage2_Journal_Code2$Female_Num[812] <- 86
+
 ```
 
 
