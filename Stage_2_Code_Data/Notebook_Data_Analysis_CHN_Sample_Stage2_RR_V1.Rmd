@@ -1383,6 +1383,8 @@ df_stage2_Journal_Code2$Subjects_Recruitment_Area[1451:1452] <- 0
 df_stage2_Journal_Code2$Subjects_Recruitment_Area[1460] <- 0
 
 rm(Subjects_Recruitment_Area)
+
+
 ```
 
 
@@ -1580,7 +1582,7 @@ df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[763] <- 1
 df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[897] <- 1 
 
 ### Article_IDs 20214060
-df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[970] <- 1;2
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[970] <- "1;2"
 
 ### Article_IDs 20181026
 df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1251] <- 1
@@ -1601,6 +1603,22 @@ df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1439] <- 1
 ### I found subjects of this study2 same as study1 ,namely "被试重复使用"
 df_stage2_Journal_Code2$Remark2[1596] <- "被试重复使用"
 df_stage2_Journal_Code2$Remark2_N[1596] <- "被试重复使用"
+
+rm(Subjects_Recruitment_Method_N)
+
+Subjects_Recruitment_Method_info_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Subjects_Recruitment_Method_N == 2 | Subjects_Recruitment_Method_N == "1;2") %>% 
+  dplyr::filter(is.na(Subjects_Recruitment_Method_info_N))%>% 
+  dplyr::select(3,47:48,14,39,34,36)
+
+
+### Article_IDs 20213104
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_info_N[230] <- "研究者社交网络招募被试，问卷星发放问卷"
+
+### Article_IDs 20211040
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_info_N[424:428] <- "营销实验室"
+
+rm(Subjects_Recruitment_Method_info_N)
 ```
 
 
