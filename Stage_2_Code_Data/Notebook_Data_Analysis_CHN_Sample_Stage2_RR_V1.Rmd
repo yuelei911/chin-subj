@@ -1541,7 +1541,66 @@ Subjects_Recruitment_Method_N <- df_stage2_Journal_Code2 %>%
   dplyr::filter(is.na(Subjects_Recruitment_Method_N)) %>% 
   dplyr::filter(is.na(Remark1)) %>% 
   dplyr::filter(!grepl("重复", Remark2))
-  
+
+
+### Article_IDs 20081134
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[33] <- 1
+
+### Article_IDs 20182255
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[129] <- 1
+
+### Article_IDs 20185165
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[206:207] <- 1
+
+### Article_IDs 20185174
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[211] <- 1
+
+### Article_IDs 20185191
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[218] <- 2
+
+### Article_IDs 20213089
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[225] <- 1
+
+### Article_IDs 20213091
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[226] <- 0
+
+### Article_IDs 20213120
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[237] <- 2
+
+### Article_IDs 20082067
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[252] <- 0
+
+### Article_IDs 20085022
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[741] <- 1
+
+### Article_IDs 20181005
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[763] <- 1
+
+### Article_IDs 20185003
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[897] <- 1 
+
+### Article_IDs 20214060
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[970] <- 1;2
+
+### Article_IDs 20181026
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1251] <- 1
+
+### Article_IDs 20183277
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1394] <- 0
+
+### Article_IDs 20183292
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1398:1399] <- 0
+
+### Article_IDs 20183295
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1400] <- 1
+
+### Article_IDs 20213024
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1439] <- 1
+
+### Article_IDs 20184025
+### I found subjects of this study2 same as study1 ,namely "被试重复使用"
+df_stage2_Journal_Code2$Remark2[1596] <- "被试重复使用"
+df_stage2_Journal_Code2$Remark2_N[1596] <- "被试重复使用"
 ```
 
 
