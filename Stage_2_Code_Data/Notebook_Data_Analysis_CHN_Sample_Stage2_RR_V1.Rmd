@@ -1628,6 +1628,49 @@ Educational_Attainment_N <- df_stage2_Journal_Code2 %>%
   dplyr::filter(Sample_Type_N >= 4 & is.na(Educational_Attainment_N)) %>% 
   dplyr::select(3,40:43,14,32,34,39)
 
+
+### Article_IDs 20083052
+df_stage2_Journal_Code2$Educational_Attainment_N[44] <- 1
+df_stage2_Journal_Code2$Educational_Attainment_info_N[43]  <- "平均教育程度为14.1±1.7年" 
+
+### Article_IDs 20083107
+df_stage2_Journal_Code2$Educational_Attainment_N[67] <- 1
+df_stage2_Journal_Code2$Educational_Attainment_info_N[67] <- "文化水平小学及以上"
+
+### Article_IDs 20181143
+df_stage2_Journal_Code2$Educational_Attainment_N[83:84] <- 0
+
+### Article_IDs 20082105
+df_stage2_Journal_Code2$Educational_Attainment_N[262:267] <- 0
+
+### Article_IDs 20182017
+df_stage2_Journal_Code2$Educational_Attainment_N[332] <- 0
+df_stage2_Journal_Code2$Educational_Attainment_N[334] <- 0
+
+### Article_IDs 20182085
+df_stage2_Journal_Code2$Educational_Attainment_N[795] <- 0
+
+### Article_IDs 20182148
+df_stage2_Journal_Code2$Educational_Attainment_N[841] <- 0
+
+### Article_IDs 20212122
+### I found sample type of this study is not 5 but 1.
+df_stage2_Journal_Code2$Sample_Type_N[942] <- 1
+df_stage2_Journal_Code2$Sample_Type_info_N[942] <- "对559 名有过网络游戏经验的大学生进行调查"
+
+### Article_IDs 20215035
+### I found sample type of this study is not 5 but 2.
+df_stage2_Journal_Code2$Sample_Type_N[1218] <- 2
+
+### Article_IDs 20081037
+df_stage2_Journal_Code2$Educational_Attainment_N[1266:1267] <- 1
+df_stage2_Journal_Code2$Educational_Attainment_info_N[1266] <- "本研究的被试是某大学商学院参加“组织行为学”课程的 MBA 学生"
+df_stage2_Journal_Code2$Educational_Attainment_info_N[1267] <- "本研究的参加者为商学院学习《组织行为学》课程的 MBA 学生"
+
+### Article_IDs 20183264
+df_stage2_Journal_Code2$Educational_Attainment_N[1388:1389] <- 1
+
+rm(Educational_Attainment_N)
 ```
 
 
