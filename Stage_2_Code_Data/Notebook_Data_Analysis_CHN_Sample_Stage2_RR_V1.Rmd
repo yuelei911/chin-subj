@@ -1734,6 +1734,20 @@ df_stage2_Journal_Code2$SES_N[268:269] <- 2
 df_stage2_Journal_Code2$SES_info_N[268] <- NA
 
 rm(SES_N)
+
+SES_info_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(SES_N == 5 | grepl("5",SES_N))
+
+### Article_IDs 20214060
+df_stage2_Journal_Code2$SES_info_N[970] <- "17.5%为贫困生,82.5%不是贫困生"
+
+SES_info_N_2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!is.na(SES_info_N))
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(SES_info_N = if_else(SES_N == 5 | grepl("5",SES_N),SES_info_N,NA))
+
+rm(SES_info_N,SES_info_N_2)
 ```
 
 ## Calculating report condition 
