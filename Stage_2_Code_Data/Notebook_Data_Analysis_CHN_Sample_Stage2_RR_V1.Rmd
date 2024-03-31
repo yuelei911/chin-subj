@@ -1452,6 +1452,53 @@ Target_Population_N <- df_stage2_Journal_Code2 %>%
   dplyr::filter(is.na(Remark1)) %>% 
   dplyr::filter(!grepl("重复", Remark2))
 
+
+### Article_IDs 20182267
+df_stage2_Journal_Code2$Target_Population_N[138] <- 3
+
+### Article_IDs 20213098
+df_stage2_Journal_Code2$Target_Population_N[227] <- 1
+
+### Article_IDs 20215077
+df_stage2_Journal_Code2$Target_Population_N[241] <- 1
+df_stage2_Journal_Code2$Coding_Basis_N[241] <- "负性生活事件与儿童反应性攻击性之间的关系：一个有多重中介变量的结构方程模型"
+
+### Article_IDs 20082105
+df_stage2_Journal_Code2$Target_Population_N[262:267] <- 3
+df_stage2_Journal_Code2$Coding_Basis_N[262:267] <- "中国的心理治疗和咨询业近年来发展迅速中国的心理治疗文献的快速增长表明我国的心理治疗目前正处于一个快速发展时期"
+
+### Article_IDs 20085022
+df_stage2_Journal_Code2$Target_Population_N[741] <- 1
+df_stage2_Journal_Code2$Coding_Basis_N[741] <- "本研究假定:思维风格会通过影响学习策略,而间接影响数学学业成就。也就是说,学习策略在思维风格与数学学业成就之间起到中介的作用。"
+
+### Article_IDs 20212148
+df_stage2_Journal_Code2$Target_Population_N[950] <- 3
+
+### Article_IDs 20214067
+df_stage2_Journal_Code2$Target_Population_N[972] <- 3
+
+### Article_IDs 20081051
+df_stage2_Journal_Code2$Target_Population_N[1274] <- 3
+df_stage2_Journal_Code2$Coding_Basis_N[1274] <- "这表明当代西方文化中的理想模型———男性化模型并不适用于中国,理想的性别角色模型具有文化特异性。这一结果不仅增进和丰富了人们对文化对心理和行为的影响的认识,还对我国目前青少年良好个性品质的塑造和培养以及心理健康教育的实践具有重要指导作用。"
+
+### Article_IDs 20183292
+df_stage2_Journal_Code2$Target_Population_N[1398:1399] <- 3
+
+### Article_IDs 20185096
+df_stage2_Journal_Code2$Target_Population_N[1415] <- 3
+df_stage2_Journal_Code2$Coding_Basis_N[1415] <- "（1）网站临场感对女性网络购买意愿具有显著的正向影响。（2）网站临场感可以通过风险感知和沉醉感的中介作用对女性网络购买意愿产生影响，且该中介作用包含了三条路径，即风险感知的中介作用、沉醉感的中介作用以及风险感知和沉醉感的链式中介作用。"
+
+### Article_IDs 20185102
+df_stage2_Journal_Code2$Target_Population_N[1416] <- 3
+
+rm(Target_Population_N)
+
+Coding_Basis <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!is.na(Target_Population_N) & is.na(Coding_Basis_N)) %>% 
+  dplyr::select(3,37:38,14,32,34,39)
+
+rm(Coding_Basis)
+
 ```
 
 
