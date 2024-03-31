@@ -1679,6 +1679,29 @@ rm(Educational_Attainment_N)
 Occupation_N <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Sample_Type_N >= 4 & is.na(Occupation_N)) %>% 
   dplyr::select(3,40:41,44,14,32,34,39)
+
+
+### Article_IDs 20083107
+df_stage2_Journal_Code2$Occupation_N[67] <- 0
+
+### Article_IDs 20185174
+df_stage2_Journal_Code2$Occupation_N[211] <- 0
+
+### Article_IDs 20182085
+df_stage2_Journal_Code2$Occupation_N[795] <- 0
+
+### Article_IDs 20182148
+### I found Sample_Type_info_N of this study is incorrect
+df_stage2_Journal_Code2$Sample_Type_info_N[841] <- "预实验2让被试对产品进行体验型和搜索型的评分，48名被试参与实验，有效被试46人，其中男性21人,女性25人"
+
+###Article_IDs 20081037
+df_stage2_Journal_Code2$Occupation_N[1266:1267] <- 0
+
+### Article_IDs 20183257
+df_stage2_Journal_Code2$Occupation_N[1385] <- 0
+
+rm(Occupation_N)
+
 ```
 
 
