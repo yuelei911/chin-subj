@@ -1444,7 +1444,7 @@ rm(Sampling_Method)
 ```
 
 
-### Target_Population_N
+### Target_Population_N and Coding_Basis 
 ```{r}
 Target_Population_N <- df_stage2_Journal_Code2 %>% 
   dplyr::select(3,14,39,37,32,34) %>% 
@@ -1796,6 +1796,64 @@ df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>%
 
 rm(SES_info_N,SES_info_N_2)
 ```
+
+
+### Study_Type
+```{r}
+Study_Type <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Study_Type)) %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复", Remark2_N)) %>% 
+  dplyr::select(3,15,14,39,32,34)
+
+
+### Article_IDs 20081127
+df_stage2_Journal_Code2$Study_Type[28] <- 2
+  
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Study_Type[73] <- 1
+  
+### Article_IDs 20182268
+df_stage2_Journal_Code2$Study_Type[143:148] <- 2
+  
+### Article_IDs 20183314
+df_stage2_Journal_Code2$Study_Type[163:164] <- 1
+
+### Article_IDs 20082054
+df_stage2_Journal_Code2$Study_Type[246] <- 2
+  
+### Article_IDs 20082074
+df_stage2_Journal_Code2$Study_Type[257:258] <- 1
+
+### Article_IDs 20082087
+df_stage2_Journal_Code2$Study_Type[260] <- df_stage2_Journal_Code2$Study_Type[259]
+
+### Article_IDs 20084023
+df_stage2_Journal_Code2$Study_Type[301] <- 2
+  
+### Article_IDs 20085040
+df_stage2_Journal_Code2$Study_Type[749:751] <- 2
+  
+### Article_IDs 20085054
+df_stage2_Journal_Code2$Study_Type[755:757] <- "测验"
+  
+### Article_IDs 20182125
+df_stage2_Journal_Code2$Study_Type[827:829] <- 2
+  
+### Article_IDs 20182148
+df_stage2_Journal_Code2$Study_Type[843] <- 1
+  
+### Article_IDs 20182188
+df_stage2_Journal_Code2$Study_Type[1085] <- 2
+  
+### Article_IDs 20081026
+df_stage2_Journal_Code2$Study_Type[1251] <- 2  
+  
+### Article_IDs 20213137
+df_stage2_Journal_Code2$Study_Type[1686:1689] <-  1   
+
+rm(Study_Type)
+```
+
 
 ## Calculating report condition 
 In our data, there are some data columns that need to calculate the report of the data,such as Gender, Age, SES, Educational attachment, Occupation, Ethnicity, Religious,Subjects_Recruitment_Area and  Sampling_Method,Subjects_Recruitment_Method. In this part, we will finish this analysis.
