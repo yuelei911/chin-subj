@@ -237,8 +237,7 @@ rm(Group1_bind_equal,Group1_1,Group1_2,Group1_suppl)
 Group3_1 <- df[[4]] %>% 
   dplyr::filter(Coder == "final") %>% 
   dplyr::filter(!Article_IDs %in% Suppl_ID$Article_IDs) %>% 
-  dplyr::select(-c(8,9,14:18,27,28,37,38)) #%>% 
-  #dplyr::select(-30)
+  dplyr::select(-c(8,9,14:18,27,28,37,38))
 
 # The coders in the First_Author and Journal columns because of the wrong order of column names, so the two columns of 1:41 data position is reversed, now swap the data back, in order to facilitate the subsequent data merge
 
@@ -283,7 +282,7 @@ Abstract1 =c(1,1),
 Abstract2 =c(0,0),
 Study_Number =c(2,2),
 Remark1 =c(NA,NA),
-Study_Type =c(1,4),
+Study_Type =c(1,1),
 Subjects_Group =c("年轻被试","老年被试"),
 Sample_Size =c(41,46),
 Gender = c(1,1),
@@ -363,6 +362,9 @@ Group3_bind$Subjects_Group_N[131] <- "控制组"
 ## Experiment 2 of Article_IDs 20184025 was not code, but experiment2 subjects was sames as experiment 1, therefore we  dont't recode it. 
 
 Group3_1_20213137_bind[] <- lapply(Group3_1_20213137_bind,as.character)
+
+Group3_suppl <- Group3_suppl %>% 
+  dplyr::filter(!(Article_IDs == 20213137))
 
 Group3_bind <- bind_rows(Group3_bind,Group3_suppl,Group3_1_20213137_bind)
 
@@ -562,9 +564,6 @@ rm(Subjects_Group)
 df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
   dplyr::mutate(Subjects_Group = if_else(Subjects_Group == 1, NA, Subjects_Group),
                 Subjects_Group_N = if_else(Subjects_Group_N == 1, NA, Subjects_Group_N))
-
-### In the process of checking, I found that there were some Subjects_Group in the paper, but it was not recorded. The above code cannot check for both Subjects_Group and Subjects_Group_N columns as NA, so check the above again.
-
 ```
 
 
@@ -644,13 +643,9 @@ df_stage2_Journal_Code2$Journal[1292] <- "心理科学"
 df_stage2_Journal_Code2$First_Author[1669:1670] <- "童钰" 
 df_stage2_Journal_Code2$Journal[1669:1670] <- "心理发展与教育"
 
-### Article_IDs 20213137
-df_stage2_Journal_Code2$First_Author[1677] <- "王沛"
-df_stage2_Journal_Code2$Journal[1677] <- "中国临床心理学杂志"
-
 ### Article_IDs 20213153
-df_stage2_Journal_Code2$First_Author[1682] <- "王鸿飞"
-df_stage2_Journal_Code2$Journal[1682] <- "中国临床心理学杂志"
+df_stage2_Journal_Code2$First_Author[1678] <- "王鸿飞"
+df_stage2_Journal_Code2$Journal[1678] <- "中国临床心理学杂志"
 
 rm(First_Author_Journal)
 ```
@@ -1849,10 +1844,159 @@ df_stage2_Journal_Code2$Study_Type[1085] <- 2
 df_stage2_Journal_Code2$Study_Type[1251] <- 2  
   
 ### Article_IDs 20213137
-df_stage2_Journal_Code2$Study_Type[1686:1689] <-  1   
+df_stage2_Journal_Code2$Study_Type[1682:1683] <-  1   
 
 rm(Study_Type)
 ```
+
+
+### Subjects_Group_NA and Redundant Group
+In the process of checking, I found that there were some Subjects_Group in the paper, but it was not recorded. The above code cannot check for both Subjects_Group and Subjects_Group_N columns as NA, so check the above again. Meanwhile,I found that our coding had some redundant group, so in this part, we tried to improve this problem as much as possible while checking that Subject_Group and Subject_Group_N were both NA.
+```{r}
+Subjects_Group2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::filter(n() >1 & (is.na(Subjects_Group) | is.na(Subjects_Group_N))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::select(3,7:8,14,32,34,39)
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Subjects_Group[62] <- "抑郁情绪组"
+df_stage2_Journal_Code2$Subjects_Group_N[62] <- "抑郁情绪组"
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Subjects_Group[73] <- "大学生"
+df_stage2_Journal_Code2$Subjects_Group_N[73] <- "大学生"
+
+### Article_IDs 20082210
+### Redundant Group
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(700:701))
+
+df_stage2_Journal_Code2$Sample_Size[699] <- 89
+
+### Article_IDs 20082258
+### Redundant Group
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(715:717,719:721))
+
+df_stage2_Journal_Code2$Sample_Size[714] <- 170
+df_stage2_Journal_Code2$Sample_Size[715] <- 170
+
+### Article_IDs 20085040
+df_stage2_Journal_Code2$Subjects_Group[741:743] <- c("初一","初二","初三")
+df_stage2_Journal_Code2$Subjects_Group_N[741:743] <- c("初一","初二","初三")
+
+### Article_IDs 20085044
+df_stage2_Journal_Code2$Subjects_Group[744:746] <- c("3岁组","4岁组","5岁组")
+df_stage2_Journal_Code2$Subjects_Group_N[744:746] <- c("3岁组","4岁组","5岁组")
+
+### Article_IDs 20181005
+df_stage2_Journal_Code2$Subjects_Group[751:752] <- c("年轻组","老年组")
+df_stage2_Journal_Code2$Subjects_Group_N[751:752] <- c("年轻组","老年组")
+df_stage2_Journal_Code2$Subjects_Group[753:756] <- c("老年人情景特异性诱导","老年人控制性诱导","大学生情景特异性诱导","大学生控制性诱导")
+df_stage2_Journal_Code2$Subjects_Group_N[753:756] <- c("老年人情景特异性诱导","老年人控制性诱导","大学生情景特异性诱导","大学生控制性诱导")
+
+### Article_IDs 20181017
+df_stage2_Journal_Code2$Subjects_Group[765:768] <- c("高汉语水平","低汉语水平","高汉语水平","低汉语水平")
+df_stage2_Journal_Code2$Subjects_Group_N[765:768] <- c("高汉语水平","低汉语水平","高汉语水平","低汉语水平")
+
+### Article_IDs 20182101
+### Redundant Group
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(790:792,794:796))
+
+df_stage2_Journal_Code2$Sample_Size[789] <- 114
+df_stage2_Journal_Code2$Sample_Size[790] <- 113
+
+df_stage2_Journal_Code2$Male_Num [789] <- 55
+df_stage2_Journal_Code2$Female_Num[789] <- 59
+df_stage2_Journal_Code2$Male_Num[790] <- 56
+df_stage2_Journal_Code2$Female_Num[790] <- 57
+
+### Article_IDs 20182103
+### Redundant Group
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-794)
+
+### Article_IDs 20182117
+### Redundant Group
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(803,801))
+
+df_stage2_Journal_Code2$Sample_Size[800] <- 168
+df_stage2_Journal_Code2$Male_Num[800] <- 37
+df_stage2_Journal_Code2$Female_Num[800] <- 131
+df_stage2_Journal_Code2$Age[800] <- 1
+df_stage2_Journal_Code2$M_age[800] <- 20.59
+df_stage2_Journal_Code2$SD_age[800] <- 1.46
+
+df_stage2_Journal_Code2$Sample_Size[801] <- 72
+df_stage2_Journal_Code2$Male_Num[801] <- 21
+df_stage2_Journal_Code2$Female_Num[801] <- 51
+df_stage2_Journal_Code2$Age[801] <- 1
+df_stage2_Journal_Code2$M_age[801] <- 21.68
+df_stage2_Journal_Code2$SD_age[801] <- 2.03
+
+### Article_IDs 20182125
+### Redundant Group
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-809)
+
+df_stage2_Journal_Code2$Sample_Size[808] <- 64
+df_stage2_Journal_Code2$Female_Num[808] <- 64
+df_stage2_Journal_Code2$Age[808] <- 1
+df_stage2_Journal_Code2$M_age[808] <- 19.84
+df_stage2_Journal_Code2$SD_age[808] <- 1.26
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(810:811))
+
+df_stage2_Journal_Code2$Sample_Size[809] <- 104
+df_stage2_Journal_Code2$Female_Num[809] <- 104
+df_stage2_Journal_Code2$Age[809] <- 1
+df_stage2_Journal_Code2$M_age[809] <- 24.56
+df_stage2_Journal_Code2$SD_age[809] <- 2.19
+df_stage2_Journal_Code2$Subjects_Group[809] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[809] <- NA
+
+### Article_IDs 20182126
+### Redundant Group
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-811)
+
+df_stage2_Journal_Code2$Sample_Size[810] <- 68
+df_stage2_Journal_Code2$Gender[810] <- 1
+df_stage2_Journal_Code2$Male_Num[810] <- 23
+df_stage2_Journal_Code2$Female_Num[810] <- 45
+df_stage2_Journal_Code2$Age[810] <- 1
+df_stage2_Journal_Code2$M_age[810] <- 21.24
+df_stage2_Journal_Code2$SD_age[810] <- 0.67
+
+### Article_IDs 20215065
+df_stage2_Journal_Code2$Subjects_Group[1208] <- "老年人"
+df_stage2_Journal_Code2$Subjects_Group_N[1208] <- "老年人"
+df_stage2_Journal_Code2$Age[1208] <- 1
+
+### Article_IDs 20181091
+df_stage2_Journal_Code2$Subjects_Group[1292] <- "场依存型"
+df_stage2_Journal_Code2$Subjects_Group_N[1292] <- "场依存型"
+
+### Article_IDs 20182239
+df_stage2_Journal_Code2$Subjects_Group[1356:1357] <- c("9岁被试","13岁被试")
+df_stage2_Journal_Code2$Subjects_Group_N[1356:1357] <- c("9岁被试","13岁被试")
+
+### Article_IDs 20185126
+df_stage2_Journal_Code2$Subjects_Group[1405] <- "中国样本"
+df_stage2_Journal_Code2$Subjects_Group_N[1405] <- "中国样本"
+
+### Article_IDs 20211015
+df_stage2_Journal_Code2$Subjects_Group[1652:1653] <- c("领导者样本","员工样本")
+df_stage2_Journal_Code2$Subjects_Group_N[1652:1653] <- c("领导者样本","员工样本")
+
+rm(Subjects_Group2)
+
+```
+
 
 
 ## Calculating report condition 
