@@ -860,165 +860,131 @@ df_stage2_Journal_Code2$Abstract2[73] <- 1
 df_stage2_Journal_Code2$Abstract2[284:286] <- 1
 
 ### Article_IDs 20181005
-df_stage2_Journal_Code2$Abstract2[761:766] <- 0
+df_stage2_Journal_Code2$Abstract2[759:764] <- 0
   
 ### Article_IDs 20182103
-df_stage2_Journal_Code2$Abstract2[805:812] <- 1
+df_stage2_Journal_Code2$Abstract2[805:810] <- 1
 
 ### Article_IDs 20082313
-df_stage2_Journal_Code2$Abstract2[989:990] <- 0  
+df_stage2_Journal_Code2$Abstract2[987:988] <- 0  
 
 ### Article_IDs 20082343
-df_stage2_Journal_Code2$Abstract2[1002:1003] <- 0  
+df_stage2_Journal_Code2$Abstract2[1000:1001] <- 0  
 
 ### Article_IDs 20082346
-df_stage2_Journal_Code2$Abstract2[1005] <- 0 
+df_stage2_Journal_Code2$Abstract2[1003] <- 0 
 
 ### Article_IDs 20181028
-df_stage2_Journal_Code2$Abstract2[1017:1020] <- 0
+df_stage2_Journal_Code2$Abstract2[1015:1018] <- 0
 
 ### Article_IDs 20181034
-df_stage2_Journal_Code2$Abstract2[1023:1024] <- 0
+df_stage2_Journal_Code2$Abstract2[1021:1022] <- 0
 
 ### Article_IDs 20181037
-df_stage2_Journal_Code2$Abstract2[1025:1026] <- 0
+df_stage2_Journal_Code2$Abstract2[1023:1024] <- 0
 
 ### Article_IDs 20181044
-df_stage2_Journal_Code2$Abstract2[1029] <- 0
+df_stage2_Journal_Code2$Abstract2[1027] <- 0
 
 ### Article_IDs 20181051
-df_stage2_Journal_Code2$Abstract2[1030:1032] <- 0
+df_stage2_Journal_Code2$Abstract2[1028:1030] <- 0
 
 ### Article_IDs 20181052
-df_stage2_Journal_Code2$Abstract2[1033:1034] <- 0
+df_stage2_Journal_Code2$Abstract2[1031:1032] <- 0
 
 ### Article_IDs 20181058
-df_stage2_Journal_Code2$Abstract2[1035:1036] <- 0
+df_stage2_Journal_Code2$Abstract2[1033:1034] <- 0
 
 ### Article_IDs 20181061
-df_stage2_Journal_Code2$Abstract2[1037:1039] <- 0
+df_stage2_Journal_Code2$Abstract2[1035:1037] <- 0
 
 ### Article_IDs 20181063
-df_stage2_Journal_Code2$Abstract2[1040:1041] <- 0
+df_stage2_Journal_Code2$Abstract2[1038:1039] <- 0
 
 ### Article_IDs 20181065
-df_stage2_Journal_Code2$Abstract2[1042:1045] <- 0
+df_stage2_Journal_Code2$Abstract2[1040:1043] <- 0
 
 ### Article_IDs 20181066
-df_stage2_Journal_Code2$Abstract2[1046:1047] <- 0
+df_stage2_Journal_Code2$Abstract2[1044:1045] <- 0
 
 ### Article_IDs 20181073
-df_stage2_Journal_Code2$Abstract2[1049:1052] <- 0
+df_stage2_Journal_Code2$Abstract2[1047:1050] <- 0
 
 ### Article_IDs 20181075
-df_stage2_Journal_Code2$Abstract2[1053:1056] <- 0
+df_stage2_Journal_Code2$Abstract2[1051:1054] <- 0
 
 ### Article_IDs 20181078
-df_stage2_Journal_Code2$Abstract2[1057] <- 0
+df_stage2_Journal_Code2$Abstract2[1055] <- 0
 
 ### Article_IDs 20182164
-df_stage2_Journal_Code2$Sample_Type_info_N[1062:1065] <- 0
+df_stage2_Journal_Code2$Abstract2[1060:1063] <- 0
 
 ### Article_IDs 20182165
-df_stage2_Journal_Code2$Abstract2[1066:1067] <- 0
+df_stage2_Journal_Code2$Abstract2[1064:1065] <- 0
 
 ### Article_IDs 20182168
-df_stage2_Journal_Code2$Abstract2[1069:1077] <- 0
+df_stage2_Journal_Code2$Abstract2[1067:1075] <- 0
 
 ### Article_IDs 20182183
-df_stage2_Journal_Code2$Abstract2[1084:1085] <- 0
+df_stage2_Journal_Code2$Abstract2[1082:1083] <- 0
 
 ### Article_IDs 20183231
-df_stage2_Journal_Code2$Abstract2[1113] <- 1
-
-### Article_IDs 20185044
-df_stage2_Journal_Code2$Abstract2[1137] <- 0
+df_stage2_Journal_Code2$Abstract2[1111] <- 1
 
 ### Article_IDs 20185058
-df_stage2_Journal_Code2$Abstract2[1149:1150] <- 0
+df_stage2_Journal_Code2$Abstract2[1146:1147] <- 0
 
-### Article_IDs 20185060
-df_stage2_Journal_Code2$Abstract2[1151] <- 0
-
-### Article_IDs 20185073
-df_stage2_Journal_Code2$Abstract2[1159]
-
-### Article_IDs 20185079
-df_stage2_Journal_Code2$Abstract2[1165] <- 0
+### Article_IDs 20185076
+df_stage2_Journal_Code2$Abstract2[1157] <- 0
 
 ### Article_IDs 20212166
-df_stage2_Journal_Code2$Abstract2[1177:1180] <- 0
-
-### Article_IDs 20212171
-df_stage2_Journal_Code2$Abstract2[1181] <- 0
+df_stage2_Journal_Code2$Abstract2[1174:1177] <- 0
 
 ### Article_IDs 20212175
-df_stage2_Journal_Code2$Abstract2[1185:1186] <- 0
+df_stage2_Journal_Code2$Abstract2[1182:1183] <- 0
 
 ### Article_IDs 20212188
-df_stage2_Journal_Code2$Abstract2[1190:1193] <- 0
-
-### Article_IDs 20182164
-df_stage2_Journal_Code2$Abstract2[1062:1065] <- 0
-
-### Article_IDs 20185073
-df_stage2_Journal_Code2$Abstract2[1159] <- 0
+df_stage2_Journal_Code2$Abstract2[1187:1190] <- 0
 
 ### Article_IDs 20214085
-df_stage2_Journal_Code2$Abstract2[1202:1203] <- 0
-
-### Article_IDs 20215005
-df_stage2_Journal_Code2$Abstract2[1205] <- 0
+df_stage2_Journal_Code2$Abstract2[1199:1200] <- 0
 
 ### Article_IDs 20215006
-df_stage2_Journal_Code2$Abstract2[1206:1207] <- 0
+df_stage2_Journal_Code2$Abstract2[1203:1204] <- 0
 
 ### Article_IDs 20215007
-df_stage2_Journal_Code2$Abstract2[1208:1209] <- 0
+df_stage2_Journal_Code2$Abstract2[1205:1206] <- 0
 
 ### Article_IDs 20215017
-df_stage2_Journal_Code2$Abstract2[1213:1214] <- 0
+df_stage2_Journal_Code2$Abstract2[1210:1211] <- 0
 
 ### Article_IDs 20215023
-df_stage2_Journal_Code2$Abstract2[1215:1217] <- 0
+df_stage2_Journal_Code2$Abstract2[1212:1214] <- 0
 
 ### Article_IDs 20215068
-df_stage2_Journal_Code2$Abstract2[1235:1237] <- 0
-
-### Article_IDs 20185110
-df_stage2_Journal_Code2$Abstract2[1421] <- 0
-
-### Article_IDs 20082024
-df_stage2_Journal_Code2$Abstract2[1483] <- 1
+df_stage2_Journal_Code2$Abstract2[1232:1234] <- 0
 
 ### Article_IDs 20213155
-df_stage2_Journal_Code2$Abstract2[1641:1642] <- 1
+df_stage2_Journal_Code2$Abstract2[1638:1639] <- 1
 
-### Article_IDs 20213168
-df_stage2_Journal_Code2$Abstract2[1647] <- 1
+### Article_IDs 20213167
+df_stage2_Journal_Code2$Abstract2[1643] <- 1
 
-### Article_IDs 20211040
-df_stage2_Journal_Code2$Abstract2[424:428] <- 0
-df_stage2_Journal_Code2$Sample_Type_N[424:428] <- 1
 
-### Article_IDs 20211040
-df_stage2_Journal_Code2$Sample_Type_info_N[470] <- 4
+### Sample_Type is 5
+### Article_IDs 20211064
+df_stage2_Journal_Code2$Abstract2[447:452] <- 0
 
 ### Article_IDs 20213254
-df_stage2_Journal_Code2$Abstract2[493] <- 0
+df_stage2_Journal_Code2$Abstract2[493:494] <- 1
 
 ### Article_IDs 20082188
-df_stage2_Journal_Code2$Abstract2[515] <- 0
+df_stage2_Journal_Code2$Abstract2[515:516] <- 0
 
-### Article_IDs 20084057
-df_stage2_Journal_Code2$Sample_Type_info_N[531:532] <- 4
-
-### Article_IDs 20182035
-df_stage2_Journal_Code2$Sample_Type_info_N[555:556] <- 4
+### Article_IDs 20213040
+df_stage2_Journal_Code2$Abstract2[1444] <- 0
 
 rm(Abstract2)
-
-
 ```
 
 
