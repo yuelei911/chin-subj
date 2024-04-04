@@ -1135,6 +1135,64 @@ Age_info <- df_stage2_Journal_Code2 %>%
   dplyr::filter(Age == 1) %>% 
   dplyr::filter(is.na(M_age) | is.na(SD_age)) %>% 
   dplyr::select(3,20:23,14,32,34,39)
+
+
+### Article_IDs 20081134
+df_stage2_Journal_Code2$M_age[33] <- 10.03
+
+### Article_IDs 20181150
+### I found 3 experiment in 20181150 and coder only code experiment 3.
+df_stage2_Journal_Code2$Study_Number[93] <- 3
+df_stage2_Journal_Code2$Study_Number_N[93] <- 3
+
+### Article_IDs 20181162 
+df_stage2_Journal_Code2$Other_age[100] <- "18-25"
+
+### Article_IDs 20182267
+df_stage2_Journal_Code2$SD_age[139] <- 1.64
+
+### Articles_IDs 20182279
+df_stage2_Journal_Code2$Other_age[153] <- "35-40为主(42.5%)"
+df_stage2_Journal_Code2$Other_age[154] <- "25-30为主(45.9%)"
+
+### Article_IDs 20183336
+df_stage2_Journal_Code2$SD_age[184] <- 0.591
+
+### Article_IDs 20183340
+df_stage2_Journal_Code2$Other_age[186] <- "11岁60人，12岁140人，13岁189人，14岁146人，15岁101人，16岁62人"
+
+### Article_IDs 20082069
+df_stage2_Journal_Code2$Other_age[253] <- "10.3-13.5"
+df_stage2_Journal_Code2$Other_age[254] <- "10.6-13.0"
+
+### Article_IDs 20083204
+df_stage2_Journal_Code2$Other_age[285:286] <- c("17-25","17-25")
+
+### Article_IDs 20084031
+df_stage2_Journal_Code2$M_age[313] <- 12.3
+
+### Article_IDs 20182003
+df_stage2_Journal_Code2$M_age[323] <- "男生8人（M=21.63），女生9人（M=21.89）"
+df_stage2_Journal_Code2$SD_age[323] <- "男生8人（SD=1.32），女生9人（SD=1.17）"
+
+### 20084045
+df_stage2_Journal_Code2$Other_age[522:523] <- NA
+
+### Article_IDs 20082281
+df_stage2_Journal_Code2$Other_age[731] <- "19-23"
+
+### Article_IDs 20082285
+df_stage2_Journal_Code2$Other_age[733:734] <- "18-22"
+
+### Article_IDs 20181020
+### Redundant Group
+df_stage2_Journal_Code2$M_age[779:779] <- 20.2
+df_stage2_Journal_Code2$SD_age[779:779] <- 2.17
+
+#### Article_IDs20181023 
+### Redundant Group
+
+### 
 ```
 
 
