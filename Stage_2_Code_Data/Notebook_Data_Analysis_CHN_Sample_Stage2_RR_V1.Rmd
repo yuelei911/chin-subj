@@ -1146,7 +1146,7 @@ df_stage2_Journal_Code2$Study_Number[93] <- 3
 df_stage2_Journal_Code2$Study_Number_N[93] <- 3
 
 ### Article_IDs 20181162 
-df_stage2_Journal_Code2$Other_age[100] <- "18-25"
+df_stage2_Journal_Code2$Other_age[100] <- "年龄集中在18-25岁"
 
 ### Article_IDs 20182267
 df_stage2_Journal_Code2$SD_age[139] <- 1.64
@@ -1189,14 +1189,110 @@ df_stage2_Journal_Code2$Other_age[733:734] <- "18-22"
 df_stage2_Journal_Code2$M_age[779:779] <- 20.2
 df_stage2_Journal_Code2$SD_age[779:779] <- 2.17
 
-#### Article_IDs20181023 
+#### Article_IDs 20181023 
 ### Redundant Group
 
-### 
+#### Article_IDs 20182133
+### Redundant Group
+
+### Article_IDs 20183192
+### Redundant Group
+
+### Article_IDs 20184162
+df_stage2_Journal_Code2$Other_age[893] <- "参与作答的父母中父亲1047人，母亲1139人(其中继母或养母2人)，父母年龄在27.25～62.83岁之间，其中父亲平均年龄为41.44岁，母亲平均年龄为40.23岁"
+
+### Article_IDs 20212091
+df_stage2_Journal_Code2$M_age[927] <- 20.59
+df_stage2_Journal_Code2$Other_age[927] <- "17-26"
+
+### Article_IDs 20214070
+df_stage2_Journal_Code2$M_age[975] <- 13.41
+df_stage2_Journal_Code2$SD_age[975] <- 0.62
+
+### Article_IDs 20214073
+df_stage2_Journal_Code2$M_age[977] <- 13.69
+df_stage2_Journal_Code2$SD_age[977] <- 1.42
+
+### 20185038 
+df_stage2_Journal_Code2$Other_age[1126] <- "年龄16–29岁439人，30–44岁153人，45–60岁27人，年龄资料缺失4人"
+
+### Article_IDs 20181022
+df_stage2_Journal_Code2$Other_age[1247] <- "13岁以下占28.9%，14到16岁占46.2%;17岁以上占24.9%"
+
+### Article_IDs 20081026
+df_stage2_Journal_Code2$M_age[1251] <- 20.20
+df_stage2_Journal_Code2$SD_age[1251] <- 0.81
+df_stage2_Journal_Code2$Other_age[1251] <- "18-24"
+
+### Article_IDs 20082374
+df_stage2_Journal_Code2$Age[1290] <- 1
+df_stage2_Journal_Code2$Other_age[1290] <- "20-23"
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1290] <- "福建"
+
+### Article_IDs 20083017
+df_stage2_Journal_Code2$Other_age[1298] <- "男女及各年级人数基本相等, 学生年龄为16-18岁"
+df_stage2_Journal_Code2$Other_age[1299] <- " 高一学生64人,高二学生65人,高三学生53人,平均年龄分别为16.2、17.1和18.2岁"
+
+### Article_IDs 20183018
+df_stage2_Journal_Code2$Other_age[1300] <- "19-25"
+
+### Article_IDs 20181091
+df_stage2_Journal_Code2$Other_age[1311] <- "18-25"
+
+### Article_IDs 20181133
+df_stage2_Journal_Code2$Other_age[1352] <- "20-25"
+
+### Article_IDs 20181139
+df_stage2_Journal_Code2$Other_age[1359] <- "18-22"
+df_stage2_Journal_Code2$Other_age[1360] <- "18-22"
+
+### Article_IDs 20182207
+df_stage2_Journal_Code2$SD_age[1364] <- "男性:6.56;女性:5.04"
+
+### Article_IDs 20182228
+df_stage2_Journal_Code2$M_age[1371] <-  "男性:10.01;女性:9.95"
+df_stage2_Journal_Code2$SD_age[1371] <-  "男性:1.31;女性:1.38"
+
+### Article_IDs 20182231
+df_stage2_Journal_Code2$Other_age[1374] <- "年龄以25~30岁为主（38.6%）"
+
+### Article_IDs 20183257
+df_stage2_Journal_Code2$Other_age[1384] <- "21岁以下(2人)21~30岁(6人)31~40岁(13人)40岁以上(4人)"
+df_stage2_Journal_Code2$Other_age[1385] <- "21岁以下(3人);21~30岁(9人);31~40岁(11人);40岁以上(2人)"
+
+### Article_IDs 20213067
+df_stage2_Journal_Code2$Other_age[1457] <- "年龄段：10~17岁10人，18~39岁355人，40~59岁159人，60~79岁21人"
+
+### Article_IDs 20083173
+df_stage2_Journal_Code2$Other_age[1514] <- "18-29岁:50人;30-39岁:18人;40岁以上:8人"
+
+### Article_IDs 20181210
+df_stage2_Journal_Code2$Other_age[1530] <- "按照年龄划分,25岁以下占18%,25~35岁占56.5,35~45岁占20.6%, 45岁以上占4.9%"
+df_stage2_Journal_Code2$Other_age[1531] <- "按照年龄划分,35岁以下占40.9%,35~45岁占37.2%,45岁以上占21.9%"
+
+### Article_IDs 20181213
+df_stage2_Journal_Code2$Other_age[1535] <- "90.3%年龄介于 21~40 岁之间"
+df_stage2_Journal_Code2$Other_age[1536] <- "21~40 岁占 95.7%"
+
+### Article_IDs 20183042
+df_stage2_Journal_Code2$Other_age[1568] <- "18-23"
+
+### Article_IDs 20185084
+df_stage2_Journal_Code2$Other_age[1658] <- "17-26"
+
+### Article_IDs 20215085
+df_stage2_Journal_Code2$Other_age[1659] <- "18-24"
+df_stage2_Journal_Code2$Other_age[1660] <- "17-26"
+
+### Article_IDs 20213137
+df_stage2_Journal_Code2$Other_age[1682] <- "19-26"
+df_stage2_Journal_Code2$Other_age[1683] <- "58-88"
+
+rm(Age_info)
 ```
 
 
-### Ethnicity and info
+### Redundant Group### Ethnicity and info
 ```{r}
 Ethnicity <- df_stage2_Journal_Code2 %>% 
   dplyr::select(3,14,39,24,32,34) %>% 
