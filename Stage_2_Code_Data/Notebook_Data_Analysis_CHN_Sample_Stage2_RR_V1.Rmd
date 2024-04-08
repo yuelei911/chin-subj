@@ -769,6 +769,7 @@ rm(Remark2)
 
 ```
 
+
 ### Abstract1
 ```{r}
 Abstract1 <- df_stage2_Journal_Code2 %>% 
@@ -837,6 +838,7 @@ df_stage2_Journal_Code2$Abstract1[805:810] <- 123
 df_stage2_Journal_Code2$Abstract1[825:829] <- 12345
  
 rm(Abstract1)
+
 ```
 
 
@@ -1292,7 +1294,7 @@ rm(Age_info)
 ```
 
 
-### Redundant Group### Ethnicity and info
+### Ethnicity and info
 ```{r}
 Ethnicity <- df_stage2_Journal_Code2 %>% 
   dplyr::select(3,14,39,24,32,34) %>% 
@@ -2117,6 +2119,56 @@ rm(Subjects_Group2)
 
 ```
 
+
+### All information detailed check again
+```{r}
+Abstract2_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N == 1 & !(Abstract2 == 0|Abstract2 == 1))
+rm(Abstract2_detailed)
+
+
+Sample_Size_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(if_any(c("Male_Num","Female_Num"),~!is.na(.))) %>% 
+  dplyr::filter(is.na(Sample_Size))
+rm(Sample_Size_detailed)
+
+
+Gender_detalied <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(if_any(c("Male_Num","Female_Num"),~!is.na(.))) %>%
+  dplyr::filter(Gender != 1)
+df_stage2_Journal_Code2$Female_Num[27] <- NA
+df_stage2_Journal_Code2$Male_Num[27] <- NA
+df_stage2_Journal_Code2$Gender[146] <- 1
+
+Male_Female <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Gender == 1 & (is.na(Male_Num) & is.na(Female_Num)))
+### I find 2 rows was listed, but its indeed not have specific data
+rm(Male_Female,Gender_detalied)
+
+
+Age_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(if_any(c("M_age","SD_age","Other_age"),~!is.na(.))) %>%
+  dplyr::filter(Age != 1)
+df_stage2_Journal_Code2$Subjects_Group[5] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[5] <- NA
+df_stage2_Journal_Code2$M_age[5] <- NA
+df_stage2_Journal_Code2$SD_age[5] <- NA
+df_stage2_Journal_Code2$Other_age[5] <- NA
+
+df_stage2_Journal_Code2$Subjects_Group[46] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[46] <- NA
+df_stage2_Journal_Code2$M_age[46] <- NA
+df_stage2_Journal_Code2$SD_age[46] <- NA
+df_stage2_Journal_Code2$Other_age[46] <- NA
+
+Age_m_sd_other <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Age == 1 & (is.na(M_age) & is.na(SD_age) & is.na(Other_age)))
+### Article_IDs 20181133
+df_stage2_Journal_Code2$Other_age[1330] <- "20-25"
+
+rm(Age_m_sd_other,Age_detailed)
+  
+```
 
 
 ## Calculating report condition 
