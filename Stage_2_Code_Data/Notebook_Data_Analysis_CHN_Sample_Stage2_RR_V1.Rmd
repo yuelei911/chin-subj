@@ -2120,8 +2120,29 @@ rm(Subjects_Group2)
 ```
 
 
+## Save Rdata
+In order to reduce code repetition, The Rdata is saved.
+```{r}
+save(df,df_stage2_Journal_Code,df_stage2_Journal_Code2,
+     Group1_bind,Group24567_bind,Group3_bind,
+     file = "df_Pre_Stage2_Journal_Code.Rdata")
+```
+
+
+## Load the pre Rdata
+```{r}
+load("df_Pre_Stage2_Journal_Code.Rdata")
+```
+
+
 ### All information detailed check again
 ```{r}
+#str(df_stage2_Journal_Code2)
+
+### fill all "  " character
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate_if(is.character, ~ifelse(. == "　",NA,.))
+
 Abstract2_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Sample_Type_N == 1 & !(Abstract2 == 0|Abstract2 == 1))
 rm(Abstract2_detailed)
@@ -2136,8 +2157,8 @@ rm(Sample_Size_detailed)
 Gender_detalied <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(if_any(c("Male_Num","Female_Num"),~!is.na(.))) %>%
   dplyr::filter(Gender != 1)
-df_stage2_Journal_Code2$Female_Num[27] <- NA
-df_stage2_Journal_Code2$Male_Num[27] <- NA
+
+### Article_IDs 20182268
 df_stage2_Journal_Code2$Gender[146] <- 1
 
 Male_Female <- df_stage2_Journal_Code2 %>% 
@@ -2149,25 +2170,113 @@ rm(Male_Female,Gender_detalied)
 Age_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(if_any(c("M_age","SD_age","Other_age"),~!is.na(.))) %>%
   dplyr::filter(Age != 1)
-df_stage2_Journal_Code2$Subjects_Group[5] <- NA
-df_stage2_Journal_Code2$Subjects_Group_N[5] <- NA
-df_stage2_Journal_Code2$M_age[5] <- NA
-df_stage2_Journal_Code2$SD_age[5] <- NA
-df_stage2_Journal_Code2$Other_age[5] <- NA
-
-df_stage2_Journal_Code2$Subjects_Group[46] <- NA
-df_stage2_Journal_Code2$Subjects_Group_N[46] <- NA
-df_stage2_Journal_Code2$M_age[46] <- NA
-df_stage2_Journal_Code2$SD_age[46] <- NA
-df_stage2_Journal_Code2$Other_age[46] <- NA
 
 Age_m_sd_other <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Age == 1 & (is.na(M_age) & is.na(SD_age) & is.na(Other_age)))
+
 ### Article_IDs 20181133
 df_stage2_Journal_Code2$Other_age[1330] <- "20-25"
-
 rm(Age_m_sd_other,Age_detailed)
-  
+
+
+Ethnicity_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!Ethnicity %in% c(0,1))
+
+Ethnicity_detailed2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Ethnicity != 1 & !is.na(Ethnicity_info))
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Ethnicity_info = if_else(Ethnicity == 0 , NA, Ethnicity_info))
+
+Ethnicity_info_detailed <- df_stage2_Journal_Code2 %>%
+  dplyr::filter(Ethnicity == 1 & is.na(Ethnicity_info))
+rm(Ethnicity_detailed,Ethnicity_detailed2,Ethnicity_info_detailed)
+
+
+Religious_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!Religious %in% c(0,1))
+
+Religious_info_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Religious == 0 & !is.na(Religious_info))
+rm(Religious_detailed,Religious_info_detailed)
+
+
+Subjects_Area_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!Subjects_Area %in% c(0,1))
+
+Subjects_Area_info_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Subjects_Area == 0 & !is.na(Subjects_Area_info))
+### Article_IDs 20083038
+df_stage2_Journal_Code2$Subjects_Area[37] <- 1
+rm(Subjects_Area_detailed,Subjects_Area_info_detailed)
+
+
+Subjects_Recruitment_Area_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!Subjects_Recruitment_Area %in% c(0,2)) %>% 
+  dplyr::select(Article_IDs,Subjects_Recruitment_Area,Remark1,Remark2)
+rm(Subjects_Recruitment_Area_detailed) 
+
+
+Sampling_Method_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!Sampling_Method %in% c(0,1,2)) %>% 
+  dplyr::select(Article_IDs,Sampling_Method,Remark1,Remark2)
+###Article_IDs 20185128
+df_stage2_Journal_Code2$Sampling_Method[1407] <- 0
+rm(Sampling_Method_detailed)
+
+
+Target_Population_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!Target_Population_N %in% c(0,1,2,3)) %>% 
+  dplyr::select(Article_IDs,Target_Population_N,Remark1,Remark2)
+
+Coding_Basis_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Target_Population_N %in% c(0,1,2,3) & is.na(Coding_Basis_N)) %>% 
+  dplyr::select(Article_IDs,Target_Population_N,Coding_Basis_N,Remark1,Remark2)
+rm(Target_Population_N_detailed)
+
+
+Sample_Type_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!Sample_Type_N %in% c(1:5)) %>% 
+  dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N, Remark1,Remark2)
+
+### Article_IDs 20182104
+df_stage2_Journal_Code2$Sample_Type_N[798:799] <- 1
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Sample_Type_N = ifelse(grepl(";",Sample_Type_N),5,Sample_Type_N))  
+
+Sample_Type_info_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N %in% c(1:5) & is.na(Sample_Type_info_N))
+rm(Sample_Type_info_N_detailed,Sample_Type_N_detailed)
+
+
+
+Educational_Attainment_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5) & is.na(Educational_Attainment_N)) %>% 
+  dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N,Educational_Attainment_N,Remark1,Remark2)
+### Article_IDs 20082248
+df_stage2_Journal_Code2$Educational_Attainment_N[709:710] <- 0
+
+Educational_Attainment_info_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Educational_Attainment_N == 1 & is.na(Educational_Attainment_info_N)) %>%
+  dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N,
+                 Educational_Attainment_N,Educational_Attainment_info_N,Remark1,Remark2)
+
+rm(Educational_Attainment_N_detailed)
+
+
+Occupation_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5) & is.na(Occupation_N)) %>% 
+  dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N,Occupation_N,Remark1,Remark2)
+rm(Occupation_N_detailed)
+
+
+SES_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5) & is.na(SES_N)) %>% 
+  dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N,SES_N,Remark1,Remark2)
+
+SES_info_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(SES_N == 5 & is.na(SES_info_N))
+rm(SES_N_detailed,SES_info_N_detailed)
 ```
 
 
