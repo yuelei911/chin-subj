@@ -2255,7 +2255,155 @@ Target_Population_N_detailed <- df_stage2_Journal_Code2 %>%
 Coding_Basis_N_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Target_Population_N %in% c(0,1,2,3) & is.na(Coding_Basis_N)) %>% 
   dplyr::select(Article_IDs,Target_Population_N,Coding_Basis_N,Remark1,Remark2)
-rm(Target_Population_N_detailed)
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Coding_Basis_N[68:79] <- "在解决问题的过程中,无论是儿童、青少年还是成人都需要抑制控制的参与,三者在抑制控制效率上没有差异"
+
+### Article_IDs 20181186
+df_stage2_Journal_Code2$Coding_Basis_N[118] <- df_stage2_Journal_Code2$Coding_Basis_N[120]
+
+### Article_IDs 20181197
+df_stage2_Journal_Code2$Coding_Basis_N[124] <- "(1)暴力环境接触对大学生网络攻击行为有着显著的正向影响,并间接地通过反刍思维对大学生网络攻击行为产生作用。"
+
+### Article_IDs 20182261
+df_stage2_Journal_Code2$Coding_Basis_N[132:135] <- "本研究的结论如下：（1）青少年的网络社交使用频率对网络成瘾倾向具有显著的影响；家庭社会经济地位调节着青少年网络社交使用频率与网络成瘾倾向直接的关系。具体而言，在高社会经济家庭中成长的个体,其网络成瘾倾向不受网络社交使用频率的影响，而在低社会经济家庭中成长的个体，其网络成瘾倾向受到网络社交使用频率的影响。" 
+
+### Article_IDs 20083203
+df_stage2_Journal_Code2$Coding_Basis_N[283] <- "编制中学生羞耻感量表"
+
+### Article_IDs 20083210
+df_stage2_Journal_Code2$Coding_Basis_N[288] <- "编制具有科学性和实用性的中学教师工作满意度量表"
+
+### Article_IDs 20083227
+df_stage2_Journal_Code2$Coding_Basis_N[290:291] <- "探讨心理干预对小学生学习困难的效果"
+
+### Article_IDs 20084004
+df_stage2_Journal_Code2$Coding_Basis_N[292:294] <- "本研究采用注意线索范式对小学生视觉选择性注意的发展及其影响因素进行了研究"
+
+### Article_IDs 20084005
+df_stage2_Journal_Code2$Coding_Basis_N[295] <- "结果发现：（1）分类记忆策略的发展既有突变过程也有渐变过程：分类记策略有生成缺陷表现为训练后的突然变化；分类忆策略则是一个可以自发形成的渐变过程.如果加以适当的训练也会发生突然的增长。（2）在材料熟悉度较低的情况下会使少量儿童产生分类记、忆策略使用缺陷现象。"
+
+### Article_IDs 20084016
+df_stage2_Journal_Code2$Coding_Basis_N[296] <- "（1）中学教师的创造力内隐观主要涵盖了创造性思维和创造性人格；教师一致认同高创造性学生有28个重要心理特征"
+
+### Article_IDs 20084020
+df_stage2_Journal_Code2$Coding_Basis_N[297:300] <- "目前,国内外并没有现成的工具直接测量儿童表征能力,为此我们拟编制一套儿童表征能力测验"
+
+### Article_IDs 20084023
+df_stage2_Journal_Code2$Coding_Basis_N[301] <- "本研究采用追踪研究方法,考察了儿童2岁、4岁、7岁、11岁时内隐问题行为和外显问题行为的稳定性和变化。"
+
+### Article_IDs 20084025
+df_stage2_Journal_Code2$Coding_Basis_N[302:305] <- "本研究从一个新的角度探讨了5～8岁儿童心理理论的发展,考察了为错误信念任务中的主人公贴上“聪明”或“笨”的标签是否能影响儿童错误信念任务的成绩"
+
+### Article_IDs 20084026
+df_stage2_Journal_Code2$Coding_Basis_N[306:309] <- "研究设计了无意义问题来考察5、6、8、10岁共128名儿童在回答问题时的反应倾向"
+
+### Article_IDs 20084029
+df_stage2_Journal_Code2$Coding_Basis_N[310] <- "（1）除坚毅进取性之外,小学儿童社会创造性倾向的各个维度及总分均与父亲的情感温暖、理解父亲的偏爱呈显著或极其显著的正相关,与父亲的惩罚、严厉呈显著的负相关"
+
+### Article_IDs 20183097
+df_stage2_Journal_Code2$Coding_Basis_N[378] <- "探讨体验式干预对减少学龄儿童意外伤害危险行为及意外伤害事件的效果"
+
+### Article_IDs 20183098
+df_stage2_Journal_Code2$Coding_Basis_N[379:381] <- "本研究为减少疾病的异质性，将首发精神分裂症患者分为阳性症状组（幻觉妄想）和阴性症状组（言语乏、自发运动减少及情感淡漠），对其可能的神经生物学基础进行研究"
+
+### Article_IDs 20211059
+df_stage2_Journal_Code2$Coding_Basis_N[436] <- "本研究从知觉和概念水平上为揭示物体颜色在联结记忆中的作用提供了证据。"
+
+### Article_IDs 20211061
+df_stage2_Journal_Code2$Coding_Basis_N[437] <- "本研究在中国社会文化背景下从外显和内隐两个层面验证了食物性别刻板印象的存在,系统考察了食物性别刻板印象对人们人物评价产生的影响,具有一定的理论价值与实践意义。"
+
+### Article_IDs 20213236
+df_stage2_Journal_Code2$Coding_Basis_N[486] <- "父母婚姻质量通过家庭亲密度与适应性的中介作用，以及家庭亲密度与适应性和亲子冲突的链式中介作用影响小学生内化问题"
+
+### Article_IDs 20213239
+df_stage2_Journal_Code2$Coding_Basis_N[487] <- "本研究发现护士出勤主义行为对健康生产力受损具有显著的正向预测作用，即护士带病参加工作行为频率越高，对其生产力的负面影响就越大，这一结论和前人的研究相似"
+
+### Article_IDs 20084068
+df_stage2_Journal_Code2$Coding_Basis_N[537] <- "3～6岁儿童数感发展的研究"
+  
+### Article_IDs 20182050  
+df_stage2_Journal_Code2$Coding_Basis_N[565] <- "本研究主要探讨了不同领域厌恶情绪的时程加工特点，结果表明，不同领域的厌恶情感得到识别的先后顺序存在差异，病原体厌恶和道德厌恶率先得到识别，三种类型厌恶情绪在加工中期均得到识别，后期加工中个体对性厌恶情绪更为敏感，不同领域的厌恶情感对应了不同的加工机制。"
+
+### Article_IDs 20182069
+df_stage2_Journal_Code2$Coding_Basis_N[582] <- "本研究追踪考察139名儿童7岁、8岁和9岁时在计划和注意任务上的表现，并利用交叉滞后模型分析此期间计划能力与注意能力不同成分（持续性注意，抑制控制和选择性注意）在发展上的关系"
+
+### Article_IDs 20212054
+df_stage2_Journal_Code2$Coding_Basis_N[657] <- "人类生活的大部分时间都在编织各类大小不同、复杂抽象或简单具体不一的意义之网（Baumeister,1991）。换言之，每个人都在寻找或构建自身存在的意义。缺乏生命意义，个体会感到存在空虚，各种的心理与行为问题将随之产生"
+
+### Article_IDs 20181017
+df_stage2_Journal_Code2$Coding_Basis_N[767] <- "汉语熟练度不同的蒙汉双语者颜色范畴知觉效应存在差异,语言对知觉的作用在早期前注意阶段已有显现,Spair-Whorf假设在知觉早期加工过程中也成立"
+  
+### Article_IDs 20185030
+df_stage2_Journal_Code2$Coding_Basis_N[895] <- "农民工是中国城镇化的产物，农民工群体的身份认同分化为本研究提供了典型的样本。众多学者的研究发现，新生代农民工群体产生了身份认同的分化，形成了“ 城市人” “ 农村人” “ 不清楚” 的不同认同类型"
+
+### Article_IDs 20185033
+df_stage2_Journal_Code2$Coding_Basis_N[896] <- "（1）亲社会动机对新颖性和有效性都有促进作用。（2）“自我-他人”与新颖性关系密切，对有效性影响不显著。（3）为自己创造比为他人创造更加具有创造性。（4）社会动机与“ 自我-他人” 对创造性的影响不存在交互作用。"
+
+### Article_IDs 20212079
+df_stage2_Journal_Code2$Coding_Basis_N[897] <- "本研究旨在探究父母学业参与和学生消极情绪的关系及作用机制"
+
+### Article_IDs 20212082
+df_stage2_Journal_Code2$Coding_Basis_N[898] <- "结果显示：(1)逻辑训练可以提高个体三段论推理的成绩；(2)训练前后非冲突任务的正确率均高于冲突任务，但训练后该差异趋势缩小；(3)训练对低理性思维方式个体在冲突任务正确率的提高效果更好。这表明逻辑训练可以有效地减弱推理中的信念偏差现象，且对低理性思维方式个体的效果尤其明显。"
+
+### Article_IDs 20212083
+df_stage2_Journal_Code2$Coding_Basis_N[899:900] <- "结果表明：词汇预测性影响儿童阅读的眼动行为和词汇加工，且作用大小和发生时程受阅读技能调节。"
+
+### Article_IDs 20212085
+df_stage2_Journal_Code2$Coding_Basis_N[901:902] <- "社交与工作导向情境对“热情优先效应”具有重要的增强与削弱作用。社交导向情境下，“热情优先效应”普遍存在；工作导向情境下，在热情与能力独立维度视角中，情境的削弱效应使得“热情优先效应”无法表现；而在热情与能力互依维度视角中，“热情优先效应”则强于情境对其的削弱效应。" 
+
+### Article_IDs 20212091
+df_stage2_Journal_Code2$Coding_Basis_N[906] <- "结果表明，红色及图形均可有效助推健康行为，与通常的黑色数字相比，二者相结合可使这一助推效果更为稳定。"
+
+### Article_IDs 20212097
+df_stage2_Journal_Code2$Coding_Basis_N[907:909] <- "无论处于何种加工方式，个体在人际互动中并非完全追求利益最大化或是积极互惠，而是会关注互动对象的信任水平。"
+
+### Article_IDs 20212100
+df_stage2_Journal_Code2$Coding_Basis_N[910] <- "总之，本研究结果表明采用基于认知诊断测评的个性化补救教学能够有效促进学生学习，为实践者应用认知诊断测评促进学生学习提供了实践依据"
+
+### Article_IDs 20212105
+df_stage2_Journal_Code2$Coding_Basis_N[912:914] <- "该结果表明实验操纵方式所引发的编码过程和记忆测试所需的检索过程性质上相匹配，而且延迟测试时，知觉非流畅可以促进学习，说明非流畅效应存在边界。"
+
+### Article_IDs 20182191
+df_stage2_Journal_Code2$Coding_Basis_N[1065] <- "通过对186名企业员工的调查分析发现，上司地位知觉对下属默契有显著的正向影响；反馈寻求行为在此过程中起部分中介作用；此外，下属观点采择能力调节了 反馈寻求行为与下属默契间的正向关系"
+
+### Article_IDs 20183227
+df_stage2_Journal_Code2$Coding_Basis_N[1087] <- "社交焦虑水平能够显著调节放逐后个体对积极面孔的注意脱离加工过程，对理解社交焦虑的起源与维持有重要启示"
+
+### Article_IDs 20183229
+df_stage2_Journal_Code2$Coding_Basis_N[1088] <- "长期海洛因戒断组在反应时上能够较好的解决冲突，但是长期吸食海洛因导致其认知控制功能损伤"
+
+### Article_IDs 20185076
+df_stage2_Journal_Code2$Coding_Basis_N[1136] <- "在本研究条件下，得到以下结论：（1）阅读水平和阅读任务均会影响英语阅读中的词频效应；（2）高水平组被试在英语阅读中的认知灵活性更强。"
+
+### Article_IDs 20185077
+df_stage2_Journal_Code2$Coding_Basis_N[1137] <- "本研究条件得出如下结论：（1）在以大学生为被试的研究中发现，次级任务影响被试内隐序列学习，且“数形”任务较“数声”任务产生更大的干扰作用；与单任务相比，双任务下的内隐学习量未发生显著消退。（2）在不同年级被试的研究中，除“数形组”小学生内隐学习消退以外，其他年级组均习得内隐规则且内隐学习量的任务效应与年级效应显著。"
+
+### Article_IDs 20215008
+df_stage2_Journal_Code2$Coding_Basis_N[1186] <- "对1137名一年级职高生实施问卷调查，探讨感知教师和父母自主支持、基本心理需要满足与内外化问题的关系。"
+
+### Article_IDs 20215009
+df_stage2_Journal_Code2$Coding_Basis_N[1187] <- "本研究旨在探讨累积生态风险与农村初中生攻击行为之间的关系，以及道德推脱的中介作用与共情的调节作用。"
+
+### Article_IDs 20083033
+df_stage2_Journal_Code2$Coding_Basis_N[1285] <- "探讨涉毒罪犯的改造意识。"
+
+### Article_IDs 20182236
+df_stage2_Journal_Code2$Coding_Basis_N[1354] <- "研究发现积极学业情绪在先前学业成就与学习策略、学习动机之间起完全中介作用；消极学业情绪（消极低唤醒）在先前学业成就与学习策略、学习动机之间起部分中介作用"
+
+### Article_IDs 20185116
+df_stage2_Journal_Code2$Coding_Basis_N[1442:1444] <- "本研究采用图-词干扰范式，通过检验口语句子产生中不同位置的名词的语义干扰效应,探讨大中小学生词汇选择的计划单元大小"
+
+### Article_IDs 20183039
+df_stage2_Journal_Code2$Coding_Basis_N[1641:1642] <- "状态权力感、特质权力感共同对补偿消费产生影响，大选择集不能有效修复低权力状态。"
+
+### Article_IDs 20184027
+df_stage2_Journal_Code2$Coding_Basis_N[1643:1649] <- "说明威胁性刺激觉察中的注意偏向在视觉搜索的早期阶段已经发生"
+
+### Article_IDs 20213153
+df_stage2_Journal_Code2$Coding_Basis_N[1656:1660] <- "编制青少年学业自豪与学业自大问卷，并检验其信效度"
+
+rm(Target_Population_N_detailed,Coding_Basis_N_detailed)
 
 
 ## Sample_Type
