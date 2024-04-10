@@ -2143,17 +2143,21 @@ load("df_Pre_Stage2_Journal_Code.Rdata")
 df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
   dplyr::mutate_if(is.character, ~ifelse(. == "　",NA,.))
 
+
+## Check Abstract2
 Abstract2_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Sample_Type_N == 1 & !(Abstract2 == 0|Abstract2 == 1))
 rm(Abstract2_detailed)
 
 
+## Check Sample_Size
 Sample_Size_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(if_any(c("Male_Num","Female_Num"),~!is.na(.))) %>% 
   dplyr::filter(is.na(Sample_Size))
 rm(Sample_Size_detailed)
 
 
+## Check Gender
 Gender_detalied <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(if_any(c("Male_Num","Female_Num"),~!is.na(.))) %>%
   dplyr::filter(Gender != 1)
@@ -2161,16 +2165,21 @@ Gender_detalied <- df_stage2_Journal_Code2 %>%
 ### Article_IDs 20182268
 df_stage2_Journal_Code2$Gender[146] <- 1
 
+
+## Check Male and Female
 Male_Female <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Gender == 1 & (is.na(Male_Num) & is.na(Female_Num)))
 ### I find 2 rows was listed, but its indeed not have specific data
 rm(Male_Female,Gender_detalied)
 
 
+## Check Age
 Age_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(if_any(c("M_age","SD_age","Other_age"),~!is.na(.))) %>%
   dplyr::filter(Age != 1)
 
+
+## Check Age_info
 Age_m_sd_other <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Age == 1 & (is.na(M_age) & is.na(SD_age) & is.na(Other_age)))
 
@@ -2179,6 +2188,7 @@ df_stage2_Journal_Code2$Other_age[1330] <- "20-25"
 rm(Age_m_sd_other,Age_detailed)
 
 
+## Check Ethnicity
 Ethnicity_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(!Ethnicity %in% c(0,1))
 
@@ -2188,22 +2198,30 @@ Ethnicity_detailed2 <- df_stage2_Journal_Code2 %>%
 df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
   dplyr::mutate(Ethnicity_info = if_else(Ethnicity == 0 , NA, Ethnicity_info))
 
+
+## Check Ethnicity_info
 Ethnicity_info_detailed <- df_stage2_Journal_Code2 %>%
   dplyr::filter(Ethnicity == 1 & is.na(Ethnicity_info))
 rm(Ethnicity_detailed,Ethnicity_detailed2,Ethnicity_info_detailed)
 
 
+## Check Religious
 Religious_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(!Religious %in% c(0,1))
 
+
+## Check Religious_info
 Religious_info_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Religious == 0 & !is.na(Religious_info))
 rm(Religious_detailed,Religious_info_detailed)
 
 
+## Check Subjects_Area
 Subjects_Area_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(!Subjects_Area %in% c(0,1))
 
+
+## Check Subjects_Area_info
 Subjects_Area_info_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Subjects_Area == 0 & !is.na(Subjects_Area_info))
 ### Article_IDs 20083038
@@ -2211,12 +2229,14 @@ df_stage2_Journal_Code2$Subjects_Area[37] <- 1
 rm(Subjects_Area_detailed,Subjects_Area_info_detailed)
 
 
+## Check Subjects_Recruitment_Area
 Subjects_Recruitment_Area_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(!Subjects_Recruitment_Area %in% c(0,2)) %>% 
   dplyr::select(Article_IDs,Subjects_Recruitment_Area,Remark1,Remark2)
 rm(Subjects_Recruitment_Area_detailed) 
 
 
+## Check Sampling_Method
 Sampling_Method_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(!Sampling_Method %in% c(0,1,2)) %>% 
   dplyr::select(Article_IDs,Sampling_Method,Remark1,Remark2)
@@ -2225,16 +2245,20 @@ df_stage2_Journal_Code2$Sampling_Method[1407] <- 0
 rm(Sampling_Method_detailed)
 
 
+## Target_Population
 Target_Population_N_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(!Target_Population_N %in% c(0,1,2,3)) %>% 
   dplyr::select(Article_IDs,Target_Population_N,Remark1,Remark2)
 
+
+## Coding_Basis
 Coding_Basis_N_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Target_Population_N %in% c(0,1,2,3) & is.na(Coding_Basis_N)) %>% 
   dplyr::select(Article_IDs,Target_Population_N,Coding_Basis_N,Remark1,Remark2)
 rm(Target_Population_N_detailed)
 
 
+## Sample_Type
 Sample_Type_N_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(!Sample_Type_N %in% c(1:5)) %>% 
   dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N, Remark1,Remark2)
@@ -2244,36 +2268,72 @@ df_stage2_Journal_Code2$Sample_Type_N[798:799] <- 1
 df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
   dplyr::mutate(Sample_Type_N = ifelse(grepl(";",Sample_Type_N),5,Sample_Type_N))  
 
+
+## Sample_Type_info
 Sample_Type_info_N_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Sample_Type_N %in% c(1:5) & is.na(Sample_Type_info_N))
 rm(Sample_Type_info_N_detailed,Sample_Type_N_detailed)
 
 
-
+## Educational_Attainment
 Educational_Attainment_N_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Sample_Type_N %in% c(4,5) & is.na(Educational_Attainment_N)) %>% 
   dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N,Educational_Attainment_N,Remark1,Remark2)
 ### Article_IDs 20082248
 df_stage2_Journal_Code2$Educational_Attainment_N[709:710] <- 0
 
+
+## Educational_Attainment_info
 Educational_Attainment_info_N_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Educational_Attainment_N == 1 & is.na(Educational_Attainment_info_N)) %>%
   dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N,
                  Educational_Attainment_N,Educational_Attainment_info_N,Remark1,Remark2)
 
-rm(Educational_Attainment_N_detailed)
+### Article_IDs 20081099
+df_stage2_Journal_Code2$Educational_Attainment_info_N[17] <- "高中、中专及以下占8.68%,大专占25.00%, 本科占 52.08%, 硕士及以上占 12.15%"
+
+### Article_IDs 20182258
+df_stage2_Journal_Code2$Educational_Attainment_info_N[131] <- "学历大专以下28人，大专61人，本科 100 人，研究生及以上 12 人"
+
+### Article_IDs 20183321
+df_stage2_Journal_Code2$Educational_Attainment_info_N[169] <- "小学8人，初中22人，高中24人，大学21人，大学以上6人"
+
+### Article_IDs 20185138
+df_stage2_Journal_Code2$Educational_Attainment_info_N[197] <- "6.88%的父亲具有本科及以上学历，14.38%的父亲为高中学历，51.88%父亲为初中学历，26.88%的父亲学历低于初中"
+df_stage2_Journal_Code2$Educational_Attainment_info_N[198] <- "5.00％的母亲具有本科及以上学历，5.63％的母亲为高中学历，43.75%的母亲为初中学历，45.63%的母亲学历低于初中"
+
+### Article_IDs 20185191
+df_stage2_Journal_Code2$Educational_Attainment_info_N[218] <- "本科5.36%，硕士30.35，博士64.29%"
+
+### Article_IDs 20183137
+df_stage2_Journal_Code2$Educational_Attainment_info_N[607] <- "平均受教育年限17.73"
+
+### Article_IDs 20082283
+df_stage2_Journal_Code2$Educational_Attainment_info_N[724] <- "大学文化程度"
+
+### Article-IDs 20181005
+df_stage2_Journal_Code2$Educational_Attainment_info_N[751:752] <- "老年被试为高中(中专)或以上学历, 与年轻被试的文化程度较为匹配"
+
+### Article_IDs 20212149
+df_stage2_Journal_Code2$Educational_Attainment_info_N[930] <- "在学历方面，高中或大专 96 人，占 37.209%；本科 156 人，占 60.465%，研究生或以上 7 人，占 2.713%"
+
+rm(Educational_Attainment_N_detailed,Educational_Attainment_info_N_detailed)
 
 
+## Occupation
 Occupation_N_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Sample_Type_N %in% c(4,5) & is.na(Occupation_N)) %>% 
   dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N,Occupation_N,Remark1,Remark2)
 rm(Occupation_N_detailed)
 
 
+## SES
 SES_N_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Sample_Type_N %in% c(4,5) & is.na(SES_N)) %>% 
   dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N,SES_N,Remark1,Remark2)
 
+
+## SES_info
 SES_info_N_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(SES_N == 5 & is.na(SES_info_N))
 rm(SES_N_detailed,SES_info_N_detailed)
