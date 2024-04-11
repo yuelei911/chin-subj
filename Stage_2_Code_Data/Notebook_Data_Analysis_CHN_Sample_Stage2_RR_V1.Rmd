@@ -1972,7 +1972,7 @@ rm(Study_Type)
 ```
 
 
-### Subjects_Group_NA and Redundant Group
+### Subjects_Group_NA
 In the process of checking, I found that there were some Subjects_Group in the paper, but it was not recorded. The above code cannot check for both Subjects_Group and Subjects_Group_N columns as NA, so check the above again. Meanwhile,I found that our coding had some redundant group, so in this part, we tried to improve this problem as much as possible while checking that Subject_Group and Subject_Group_N were both NA.
 ```{r}
 Subjects_Group2 <- df_stage2_Journal_Code2 %>% 
@@ -2488,8 +2488,114 @@ rm(SES_N_detailed,SES_info_N_detailed)
 ```
 
 
-## Calculating report condition 
-In our data, there are some data columns that need to calculate the report of the data,such as Gender, Age, SES, Educational attachment, Occupation, Ethnicity, Religious,Subjects_Recruitment_Area and  Sampling_Method,Subjects_Recruitment_Method. In this part, we will finish this analysis.
+## Redundant Group
+I found that some groups, especially the sixth group, had redundancy of subjects' group. Although some checks have been done above, in order to obtain more accurate and objective data, we conducted another check of the groups of subjects.
+```{r}
+
+### Article_IDs 20082280
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(721:722))
+
+df_stage2_Journal_Code2$Subjects_Group[720] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[720] <- NA
+df_stage2_Journal_Code2$Sample_Size[720] <- 12
+df_stage2_Journal_Code2$Gender[720] <- 1
+df_stage2_Journal_Code2$Male_Num[720] <- 5
+df_stage2_Journal_Code2$Female_Num[720] <- 7
+
+
+### Article_IDs 20085033
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(735:736))
+
+df_stage2_Journal_Code2$Subjects_Group[734] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[734] <- NA
+df_stage2_Journal_Code2$Male_Num[734] <- 30
+df_stage2_Journal_Code2$Sample_Size[734] <- 30
+
+### Article_IDs 20085054
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(744:745))
+
+df_stage2_Journal_Code2$Subjects_Group[743] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[743] <- NA
+df_stage2_Journal_Code2$Sample_Size[743] <- 314
+df_stage2_Journal_Code2$Gender[743] <- 1
+df_stage2_Journal_Code2$Male_Num[743] <- 161
+df_stage2_Journal_Code2$Female_Num[743] <- 153
+
+### Article_IDs 20181005
+df_stage2_Journal_Code2$Remark3_N[747] <- "性别分组和年龄分组有冲突"
+
+### Article_IDs 20181020
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(764:765))
+
+df_stage2_Journal_Code2$Subjects_Group[763] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[763] <- NA
+df_stage2_Journal_Code2$Sample_Size[763] <- 72
+df_stage2_Journal_Code2$Gender[763] <- 1
+df_stage2_Journal_Code2$Male_Num[763] <- 27
+df_stage2_Journal_Code2$Female_Num[763] <- 45
+df_stage2_Journal_Code2$M_age[763] <- 20.2
+df_stage2_Journal_Code2$SD_age[763] <- 2.17
+df_stage2_Journal_Code2$Other_age[763] <- "18-23"
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-765)
+
+df_stage2_Journal_Code2$Subjects_Group[764] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[764] <- NA
+df_stage2_Journal_Code2$Male_Num[764] <- 31
+df_stage2_Journal_Code2$Female_Num[764] <- 42
+df_stage2_Journal_Code2$M_age[764] <- 21.5
+df_stage2_Journal_Code2$SD_age[764] <- 1.93
+df_stage2_Journal_Code2$Other_age[764] <- "18-23"
+
+### Article_IDs 20182103
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(783:784))
+
+df_stage2_Journal_Code2$Subjects_Group[782] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[782] <- NA
+df_stage2_Journal_Code2$Sample_Size[782] <- 291
+
+### Article_IDs 20182120
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-796)
+
+df_stage2_Journal_Code2$Sample_Size[795] <- 90
+df_stage2_Journal_Code2$Gender[795] <- 1
+df_stage2_Journal_Code2$Male_Num[795] <- 30
+df_stage2_Journal_Code2$Female_Num[795] <- 60
+df_stage2_Journal_Code2$Age[795] <- 1
+df_stage2_Journal_Code2$M_age[795] <- 22.5
+df_stage2_Journal_Code2$SD_age[795] <- 0.28
+
+### Article_IDs 20182133
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-802)
+
+df_stage2_Journal_Code2$Subjects_Group[801] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[801] <- NA
+df_stage2_Journal_Code2$Sample_Size[801] <- 21
+df_stage2_Journal_Code2$Male_Num[801] <- 11
+df_stage2_Journal_Code2$Female_Num[801] <- 9
+
+### Article_IDs 20183150
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-823)
+
+df_stage2_Journal_Code2$Subjects_Group[822] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[822] <- NA
+df_stage2_Journal_Code2$Sample_Size[822] <- 643
+df_stage2_Journal_Code2$Gender[822] <- 1
+df_stage2_Journal_Code2$Male_Num[822] <- 296
+df_stage2_Journal_Code2$Female_Num[822] <- 347
+df_stage2_Journal_Code2$Age[822] <- 1
+df_stage2_Journal_Code2$M_age[822] <- 11.98
+df_stage2_Journal_Code2$SD_age[822] <- 1.74
+```
 
 
 
