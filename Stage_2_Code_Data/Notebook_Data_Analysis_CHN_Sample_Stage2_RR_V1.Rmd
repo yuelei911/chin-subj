@@ -2490,6 +2490,8 @@ rm(SES_N_detailed,SES_info_N_detailed)
 
 ## Redundant Group
 I found that some groups, especially the sixth group, had redundancy of subjects' group. Although some checks have been done above, in order to obtain more accurate and objective data, we conducted another check of the groups of subjects.
+
+### Group 6
 ```{r}
 
 ### Article_IDs 20082280
@@ -2595,6 +2597,58 @@ df_stage2_Journal_Code2$Female_Num[822] <- 347
 df_stage2_Journal_Code2$Age[822] <- 1
 df_stage2_Journal_Code2$M_age[822] <- 11.98
 df_stage2_Journal_Code2$SD_age[822] <- 1.74
+
+### Article_IDs 20183192
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-842)
+
+df_stage2_Journal_Code2$Subjects_Group[841] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[841] <- NA
+df_stage2_Journal_Code2$Study_Type[841] <- 1
+df_stage2_Journal_Code2$Sample_Size[841] <- 80
+df_stage2_Journal_Code2$Gender[841] <- 1
+df_stage2_Journal_Code2$Male_Num[841] <- 49
+df_stage2_Journal_Code2$Female_Num[841] <- 31
+df_stage2_Journal_Code2$Age[841] <- 1
+df_stage2_Journal_Code2$M_age[841] <- 30.51
+df_stage2_Journal_Code2$SD_age[841] <- 9.54
+df_stage2_Journal_Code2$Other_age[841] <- NA
+df_stage2_Journal_Code2$Educational_Attainment_info_N[841] <- "初中以下11人，高中及中专18人，大专以上51人"
+
+### Article_IDs 20183198
+df_stage2_Journal_Code2$Gender[843] <- 1
+df_stage2_Journal_Code2$Male_Num[843] <- 27
+df_stage2_Journal_Code2$Female_Num[843] <- 18
+df_stage2_Journal_Code2$Age[843] <- 1
+df_stage2_Journal_Code2$M_age[843] <- 53.63
+df_stage2_Journal_Code2$SD_age[843] <- 9.34
+df_stage2_Journal_Code2$Gender[844] <- 1
+df_stage2_Journal_Code2$Male_Num[844] <- 29
+df_stage2_Journal_Code2$Female_Num[844] <- 21
+df_stage2_Journal_Code2$Age[844] <- 1
+df_stage2_Journal_Code2$M_age[844] <- 57.30
+df_stage2_Journal_Code2$SD_age[844] <- 9.63   
+
+### Article_IDs 20184162
+df_stage2_Journal_Code2$M_age[857] <- "父亲:41.44;母亲:40.23"
+
+### Article_IDs 20185017
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(871:872))
+
+df_stage2_Journal_Code2$Subjects_Group[870] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[870] <- NA
+df_stage2_Journal_Code2$Sample_Size[870] <- 31
+df_stage2_Journal_Code2$Female_Num[870] <- 31
+df_stage2_Journal_Code2$M_age[870] <- 22.1
+
+### Article_IDs 20212083
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-883)
+
+df_stage2_Journal_Code2$Sample_Size[882] <- 44
+df_stage2_Journal_Code2$Subjects_Group[882] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[882] <- NA
 ```
 
 
