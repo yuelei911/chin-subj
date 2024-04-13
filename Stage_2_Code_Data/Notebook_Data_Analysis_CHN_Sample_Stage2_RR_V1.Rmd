@@ -2652,6 +2652,43 @@ df_stage2_Journal_Code2$Subjects_Group_N[882] <- NA
 ```
 
 
+### Other Groups
+```{r}
+### Article_IDs 20182248
+df_stage2_Journal_Code2$M_age[125:127] <- c("3.54","4.53","5.50")
+df_stage2_Journal_Code2$SD_age[125:127] <- c("0.28","0.27","0.26")
+
+### Article_IDs 20181225
+df_stage2_Journal_Code2$Male_Num[1502] <- 0.712
+df_stage2_Journal_Code2$Female_Num[1502] <- 1-0.712
+df_stage2_Journal_Code2$Male_Num[1503] <- 0.456
+df_stage2_Journal_Code2$Female_Num[1503] <- 1-0.456
+df_stage2_Journal_Code2$Age[1502:1503] <- 1
+df_stage2_Journal_Code2$Other_age[1502] <- "30 岁及以上的占 65.1%"
+df_stage2_Journal_Code2$Other_age[1503] <- "30 岁以下的人占56.4%"
+
+### Article_IDs 20183001
+df_stage2_Journal_Code2$Educational_Attainment_info_N[1513:1515] <- c("受教育水平(年):M=13.78,SD=1.72","受教育水平(年）:M=13.67,SD=2.90","受教育水平(年）:M=13.10,SD=1.63")
+
+### Article_IDs 20211013
+df_stage2_Journal_Code2$Remark3[1588] <- "分组时性别与年龄冲突，总数为68人，其中男生37人"
+
+### Article_IDs 20211025
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-1593)
+
+df_stage2_Journal_Code2$Subjects_Group[1592] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[1592] <- NA
+df_stage2_Journal_Code2$Sample_Size[1592] <- 480
+
+### Article_IDs 20182022
+df_stage2_Journal_Code2$Sample_Size[352:353] <- c(102,488)
+df_stage2_Journal_Code2$Age[352:353] <- 1
+df_stage2_Journal_Code2$Male_Num[352:353] <- c(0.353,0.336)
+df_stage2_Journal_Code2$Female_Num[352:353] <- c(1-0.353,1-0.336)
+
+### 
+```
 
 
 
