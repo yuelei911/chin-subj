@@ -2757,7 +2757,7 @@ df_stage2_Journal_Code2$Educational_Attainment_info_N[1486] <- "本科及以上�
 df_stage2_Journal_Code2$SES_N[1484] <- 2
 df_stage2_Journal_Code2$SES_N[1486] <- 2
 
-### Article_IDs 
+rm(Gender_none,Gender_none_distinct)
 ```
 
 
@@ -2765,10 +2765,32 @@ df_stage2_Journal_Code2$SES_N[1486] <- 2
 ```{r}
 Age_none <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Age == 0) %>%
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
   dplyr::select(Article_IDs,Study_Number,Age,M_age,SD_age,Other_age,Remark1,Remark2)
 
-Age_none_distinct <- df_stage2_Journal_Code2 %>% 
+Age_none_distinct <- Age_none %>% 
   dplyr::distinct(Article_IDs)
+
+### Article_IDs 20183334
+df_stage2_Journal_Code2$Age[183] <- 1
+df_stage2_Journal_Code2$M_age[183] <- 11.68
+df_stage2_Journal_Code2$SD_age[183] <- 2.55
+
+### Article_IDs 20185017
+df_stage2_Journal_Code2$Age[869] <- 1
+
+### Article_IDs 20212079
+df_stage2_Journal_Code2$Age[879] <- 1
+df_stage2_Journal_Code2$M_age[879] <- "高一821人:M=15.36;高二748人:M=16.35"
+df_stage2_Journal_Code2$SD_age[879] <- "高一:SD=0.52;高二:0.52"
+
+### Article_IDs 20212097
+df_stage2_Journal_Code2$Other_age[888] <- "17-26"
+
+### Article_IDs 20215005
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1162] <- 1
+
+### 大中小学生，很多研究可能报告了年级
 ```
 
 
