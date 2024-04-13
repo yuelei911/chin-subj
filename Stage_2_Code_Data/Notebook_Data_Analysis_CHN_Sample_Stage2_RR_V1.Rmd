@@ -2711,10 +2711,49 @@ df_stage2_Journal_Code2$Female_Num[1345:1346] <- 0
 df_stage2_Journal_Code2$Female_Num[1348:1350] <- 0
 ```
 
+### Unreported Gender
+```{r}
+Gender_none <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Gender == 0) %>%
+  dplyr::select(Article_IDs,Study_Number,Gender,Male_Num,Female_Num,Remark1,Remark2) 
+
+Gender_none_distinct <- Gender_none %>% 
+  dplyr::distinct(Article_IDs)
+
+### Article_IDs 20082112
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-271)
+
+df_stage2_Journal_Code2$Subjects_Group[271] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[271] <- NA
+
+### Article_IDs 20082296
+df_stage2_Journal_Code2$Remark3[724] <- "分组后年龄与性别产生冲突，本研究性别分半"
+
+### Article_IDs 20181005
+df_stage2_Journal_Code2$Remark3[746] <- "分组后年龄与性别产生冲突，老年组女40人，男8人"
+df_stage2_Journal_Code2$Remark3[748] <- "分组后年龄与性别产生冲突，大学生组女30人，男18人"
+
+### Article_IDs 20183178
+df_stage2_Journal_Code2$Gender[833] <- 1
+df_stage2_Journal_Code2$Female_Num[833] <- 113
+df_stage2_Journal_Code2$Male_Num[833] <- 227
+df_stage2_Journal_Code2$Age[833] <- 1
+df_stage2_Journal_Code2$Other_age[833] <- "19-29:32.0%;30-39:41.2%;40以上:26.8%"
+
+### 
+```
 
 
+### Unreported Age
+```{r}
+Age_none <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Age == 0) %>%
+  dplyr::select(Article_IDs,Study_Number,Age,M_age,SD_age,Other_age,Remark1,Remark2)
 
-
+Age_none_distinct <- df_stage2_Journal_Code2 %>% 
+  dplyr::distinct(Article_IDs)
+```
 
 
 
