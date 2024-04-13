@@ -2741,7 +2741,23 @@ df_stage2_Journal_Code2$Male_Num[833] <- 227
 df_stage2_Journal_Code2$Age[833] <- 1
 df_stage2_Journal_Code2$Other_age[833] <- "19-29:32.0%;30-39:41.2%;40以上:26.8%"
 
-### 
+### Article_IDs 20081024
+df_stage2_Journal_Code2$SES_N[1209:1210] <- 2
+
+### Article_IDs 20181208
+df_stage2_Journal_Code2$Sample_Size[1484:1487] <- c(195,112,251,83)
+df_stage2_Journal_Code2$Male_Num[1484] <- 0.949
+df_stage2_Journal_Code2$Female_Num[1484] <- 1-0.949
+df_stage2_Journal_Code2$Educational_Attainment_N[1484] <- 1
+df_stage2_Journal_Code2$Educational_Attainment_info_N[1484] <- "本科及以上学历为27.2%"
+df_stage2_Journal_Code2$Male_Num[1486] <- 0.61
+df_stage2_Journal_Code2$Female_Num[1486] <- 1-0.61
+df_stage2_Journal_Code2$Educational_Attainment_N[1486] <- 1
+df_stage2_Journal_Code2$Educational_Attainment_info_N[1486] <- "本科及以上学历为27.0%"
+df_stage2_Journal_Code2$SES_N[1484] <- 2
+df_stage2_Journal_Code2$SES_N[1486] <- 2
+
+### Article_IDs 
 ```
 
 
