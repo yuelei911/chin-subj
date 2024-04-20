@@ -2791,8 +2791,17 @@ df_stage2_Journal_Code2$Other_age[888] <- "17-26"
 df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1162] <- 1
 
 ### 大中小学生，很多研究可能报告了年级
+
+rm(Age_none,Age_none_distinct)
 ```
 
+
+## Save Rdata again
+```{r}
+save(df,df_stage2_Journal_Code,df_stage2_Journal_Code2,
+     Group1_bind,Group24567_bind,Group3_bind,
+     file = "df_Pre_Stage2_Journal_Code.Rdata")
+```
 
 
 ```
