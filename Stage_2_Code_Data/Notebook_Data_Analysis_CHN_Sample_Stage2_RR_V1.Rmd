@@ -2796,12 +2796,149 @@ rm(Age_none,Age_none_distinct)
 ```
 
 
+## Process Gender
+During the formal data analysis, I found that gender data needed to be improved in many ways. In order to increase the readability of the formal data analysis document(Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2.Rmd), this part was re-placed in this part for pre-processing.
+```{r message=FALSE, warning=FALSE}
+## in process data, I found Female_Num in Article_IDs 20211015 is incorrect.
+df_stage2_Journal_Code2$Female_Num[1633] <- 0.595
+## Meanwhile, I found some value is 0, but in our data is NA.
+df_stage2_Journal_Code2$Male_Num[139] <- 0
+df_stage2_Journal_Code2$Female_Num[1257] <- 0
+## Also other error
+df_stage2_Journal_Code2$Male_Num[214] <- 1442
+df_stage2_Journal_Code2$Female_Num[214] <- 1303
+df_stage2_Journal_Code2$Sample_Size[274:276] <- c(218,246,150)
+df_stage2_Journal_Code2$Sample_Size[335] <- 123
+df_stage2_Journal_Code2$Male_Num[335] <- 68
+df_stage2_Journal_Code2$Male_Num[402] <- 0.549
+df_stage2_Journal_Code2$Female_Num[402] <- 0.451
+df_stage2_Journal_Code2$Sample_Size[434] <- 28
+df_stage2_Journal_Code2$Sample_Size[510] <- 49
+df_stage2_Journal_Code2$Sample_Size[628] <- 530
+df_stage2_Journal_Code2$Sample_Size[763] <- 73
+df_stage2_Journal_Code2$Male_Num[800] <- 12
+df_stage2_Journal_Code2$Male_Num[801] <- 4
+df_stage2_Journal_Code2$Female_Num[856] <- 1141
+df_stage2_Journal_Code2$Sample_Size[1021] <- 23
+df_stage2_Journal_Code2$Sample_Size[1193:1194] <- 21
+df_stage2_Journal_Code2$Sample_Size[1231] <- 54
+df_stage2_Journal_Code2$Sample_Size[1420] <- 67
+df_stage2_Journal_Code2$Female_Num[1480] <- 45
+df_stage2_Journal_Code2$Male_Num[1499:1500] <- c(0.52,0.44)
+df_stage2_Journal_Code2$Female_Num[1499:1500] <- c(0.48,0.56)
+df_stage2_Journal_Code2$Sample_Size[1508] <- 1297
+df_stage2_Journal_Code2$Sample_Size[1543] <- 841
+
+df_stage2_Journal_Code_Gender <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::mutate(Male_Num = as.numeric(Male_Num),
+                Female_Num = as.numeric(Female_Num)) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,Gender,Male_Num,Female_Num,Remark1,Remark2,Remark3)
+
+df_stage2_Journal_Code_Gender_decimal <- df_stage2_Journal_Code_Gender %>% 
+  dplyr::filter(Male_Num < 1 & Female_Num < 1) %>% 
+  dplyr::select(Article_IDs,Sample_Size,Gender,Male_Num,Female_Num) %>% 
+  dplyr::mutate(Male_Num = round(Male_Num,2),
+                Female_Num = round(Female_Num,2),
+                Male_Female = Male_Num + Female_Num)
+
+### check Article with Male_Female < 1, all data have no problem.
+
+
+df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender %>% 
+  dplyr::filter(Male_Num > 1 | Female_Num > 1) %>% 
+  dplyr::select(Article_IDs,Sample_Size,Gender,Male_Num,Female_Num) %>% 
+  dplyr::mutate(Male_Female = Male_Num + Female_Num,
+                Juage = if_else(Male_Female == Sample_Size, "equal","no_equal"))
+
+### check Judge == "no_equal"
+df_stage2_Journal_Code_Gender_integer_noequal <- df_stage2_Journal_Code_Gender_integer %>% 
+  dplyr::filter(Juage == "no_equal") %>% 
+  dplyr::mutate(Remark=NA)
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[1] <- "23 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[2] <- "11 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[3] <- "unrepotred"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[4] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[5] <- "2 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[6] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[7] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[8:10] <- c("16 unreported","22 unreported","14 unreported")
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[11] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[12] <- "4 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[13] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[14] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[15] <- "56 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[16] <- "131 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[17] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[18] <- "17 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[19] <- "8 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[20] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[21] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[22] <- "2 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[23] <- "2 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[24] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[25] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[26] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[27] <- "37 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[28:29] <- c("12 unreported","5 unreported")
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[30] <- "5 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[31] <- "5 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[32] <- "224 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[33] <- "25 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[33] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[34] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[35] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[36] <- "59 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[37] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[38] <- "8 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[39] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[40] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[41] <- "7 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[42] <- "2 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[43] <- "2 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[44] <- "8 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[45] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[46] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[47] <- "14 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[48] <- "118 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[49] <- "67 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[50] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[51] <- "22 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[52] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[53] <- "14 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[54] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[55] <- "31 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[56] <- "5 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[57] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[58] <- "11 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[59] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[60] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[61] <- "5 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[62] <- "55 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[63] <- "383 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[64] <- "13 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[65] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[66] <- "52 unreported"
+
+rm(df_stage2_Journal_Code_Gender_integer_noequal,df_stage2_Journal_Code_Gender_integer,
+   df_stage2_Journal_Code_Gender_decimal,df_stage2_Journal_Code_Gender)
+
+```
+
+## Process M_age
+Meanwhile, I also age needed to improved
+```{r}
+df_stage2_Journal_Code2$M_age[993] <- NA
+df_stage2_Journal_Code2$M_age[995] <- NA
+df_stage2_Journal_Code2$M_age[1002] <- NA
+df_stage2_Journal_Code2$SD_age[993] <- NA
+df_stage2_Journal_Code2$SD_age[995] <- NA
+df_stage2_Journal_Code2$SD_age[1002] <- NA
+```
+
 ## Save Rdata again
 ```{r}
 save(df,df_stage2_Journal_Code,df_stage2_Journal_Code2,
      Group1_bind,Group24567_bind,Group3_bind,
      file = "df_Pre_Stage2_Journal_Code.Rdata")
-```
-
-
 ```
