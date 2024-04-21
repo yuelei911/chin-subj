@@ -1,0 +1,188 @@
+---
+title: "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2"
+author: "Lei Yue"
+date: "2024-04-20"
+output: html_document
+---
+
+In "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V1.Rmd"， We prereprocess the journal code data. In this Rmd(V2), we enter the informal process data.
+## Install and Load packages
+```{r message=FALSE, warning=FALSE}
+rm(list = ls())
+
+if (!require("pacman")) install.packages("pacman")
+
+# use package "pacman" as loading R packages tools
+
+pacman::p_load("tidyverse","here")
+```
+
+
+## Load data
+```{r}
+load("df_Pre_Stage2_Journal_Code.Rdata")
+
+load(here("df_chinese_subj_rr_stage1.Rdata"))
+```
+
+
+## Gender
+```{r message=FALSE, warning=FALSE}
+df_stage2_Journal_Code_Gender <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::mutate(Male_Num = as.numeric(Male_Num),
+                Female_Num = as.numeric(Female_Num)) %>% 
+  dplyr::select(Article_IDs,Sample_Size,Gender,Male_Num,Female_Num,Remark1,Remark2,Remark3)
+
+table(df_stage2_Journal_Code_Gender$Gender)
+
+df_stage2_Journal_Code_Gender_decimal <- df_stage2_Journal_Code_Gender %>% 
+  dplyr::filter(Gender == 1) %>% 
+  dplyr::filter(Male_Num < 1 & Female_Num < 1) %>% 
+  dplyr::select(Article_IDs,Sample_Size,Gender,Male_Num,Female_Num) %>% 
+  dplyr::mutate(Male_Num = round(Male_Num,2),
+                Female_Num = round(Female_Num,2),
+                Male_Female = Male_Num + Female_Num)
+
+df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender %>%
+  dplyr::filter(Gender == 1) %>% 
+  dplyr::filter(Male_Num > 1 | Female_Num > 1) %>% 
+  dplyr::select(Article_IDs,Sample_Size,Gender,Male_Num,Female_Num)
+```
+
+
+## Age
+```{r message=FALSE, warning=FALSE}
+df_stage2_Journal_Code_Age <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::mutate(M_age = as.numeric(M_age), SD_age = as.numeric(SD_age)) %>% 
+  dplyr::mutate(M_age = round(M_age,2), SD_age = round(SD_age,2)) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Age,M_age,SD_age,Other_age,Remark1,Remark2,Remark3)
+
+## count unreported/reported
+table(df_stage2_Journal_Code_Age$Age)
+
+df_stage2_Journal_Code_MAge <- df_stage2_Journal_Code_Age %>% 
+  dplyr::select(Article_IDs,M_age) %>% 
+  dplyr::filter(!is.na(M_age)) %>% 
+  dplyr::mutate(ageBins = cut(M_age,
+                breaks = c(-Inf, 9.5, 19.5, 29.5, 39.5, 49.5, 59.5, Inf),
+                labels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"),
+                levels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"))) %>% 
+  dplyr::count(ageBins) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
+  dplyr::mutate(Site = "CNH Journal data Total",n=as.numeric(n)) %>% 
+  dplyr::select(-2)
+
+df_stage2_Journal_Code_MAge_year <- df_stage2_Journal_Code_Age %>% 
+  dplyr::mutate(Data_Year = substring(Article_IDs,1,4)) %>% 
+  dplyr::select(Article_IDs,M_age,Data_Year) %>% 
+  dplyr::filter(!is.na(M_age)) %>% 
+  dplyr::group_by(Data_Year) %>% 
+  dplyr::mutate(ageBins = cut(M_age,
+                breaks = c(-Inf, 9.5, 19.5, 29.5, 39.5, 49.5, 59.5, Inf),
+                labels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"),
+                levels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"))) %>% 
+  dplyr::count(ageBins) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Data_Year= ifelse(Data_Year == "2008","CHN Journal data 2008", ifelse(Data_Year == "2018", "CHN Journal data 2018","CHN Journal data 2021")))
+
+df_stage2_Journal_Code_MAge_year_2021 <- df_stage2_Journal_Code_MAge_year %>% 
+  dplyr::filter(Data_Year == "CHN Journal data 2021")
+
+df_stage2_Journal_Code_MAge_year_2018 <- df_stage2_Journal_Code_MAge_year %>% 
+  dplyr::filter(Data_Year == "CHN Journal data 2018")
+
+df_stage2_Journal_Code_MAge_year_2008 <- df_stage2_Journal_Code_MAge_year %>% 
+  dplyr::filter(Data_Year == "CHN Journal data 2008") %>% 
+  
+
+
+
+#str(df_stage2_Journal_Code_Age_year)
+df_census6_Age <- df_census6 %>% 
+  dplyr::filter(row_number() %% 6 != 0) %>%
+  dplyr::slice(-c(1:5)) %>% 
+  dplyr::select(1,2,5) %>% 
+  dplyr::rename(ageBins = X3.1..全国分年龄.性别的人口,Proportion = X.3) %>% 
+  dplyr::mutate(Proportion = as.numeric(Proportion),ageBins = as.numeric(ageBins)) %>% 
+  dplyr::mutate(ageBins = cut(ageBins,
+                breaks = c(-Inf, 9.5, 19.5, 29.5, 39.5, 49.5, 59.5, Inf),
+                labels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"),
+                levels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"))) %>%
+  dplyr::slice(-c(99:100)) %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(Proportion = sum(Proportion)) %>% 
+  dplyr::mutate(Site = "Census 6") %>% 
+  dplyr::ungroup()
+
+
+
+df_census7_Age <- df_census7 %>% 
+  dplyr::slice(9:13,16:20,23:27,30:34,37:41,
+               44:48,50:54,57:61,64:68,
+               71:75,78:82,85:89,92:96,
+               99:103,106:110,113:117,120:124,
+               127:131,134:138,141:145,147) %>%
+  dplyr::select(1,2,5) %>% 
+  dplyr::rename(ageBins = X3.1..全国分年龄.性别的人口,Proportion = X.3)
+
+df_census7_Age$ageBins[101] <- 100
+
+df_census7_Age <- df_census7_Age %>% 
+  dplyr::mutate(Proportion = as.numeric(Proportion),ageBins = as.numeric(ageBins)) %>% 
+  dplyr::mutate(ageBins = cut(ageBins,
+                breaks = c(-Inf, 9.5, 19.5, 29.5, 39.5, 49.5, 59.5, Inf),
+                labels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"),
+                levels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"))) %>%
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(Proportion = sum(Proportion)) %>% 
+  dplyr::mutate(Site = "Census 7") %>% 
+  dplyr::ungroup()
+
+
+df_census_age <- bind_rows(df_census6_Age,df_census7_Age)
+
+
+CHN_Journal_age <- ggplot(data= df_census_age, 
+       aes(x=ageBins, y=ifelse(Site=="Census 6", -Proportion, Proportion), fill=Site)) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = df_stage2_Journal_Code_MAge, aes(x=ageBins, 
+                y = ifelse(Site == "CHN Journal data", -Proportion/4, Proportion/4),
+                group = "Site",color="CHN Journal data Total"),size=1, inherit.aes = FALSE) +
+  geom_line(data = df_stage2_Journal_Code_MAge_year_2021,aes(x = ageBins,
+                                                       y = ifelse(Data_Year == "CHN Journal data 2021", Proportion/4, -Proportion/4),group="Data_Year",color="CHN Journal data 2021"),size=1, inherit.aes = FALSE)+
+  geom_line(data = df_stage2_Journal_Code_MAge_year_2018,aes(x = ageBins,
+                                                       y = ifelse(Data_Year == "CHN Journal data 2018", Proportion/4, -Proportion/4),group="Data_Year",color="CHN Journal data 2018"),size=1, inherit.aes = FALSE)+
+  geom_line(data = df_stage2_Journal_Code_MAge_year_2008,aes(x = ageBins,
+                                                       y = ifelse(Data_Year == "CHN Journal data 2008", -Proportion/4, Proportion/4),group="Data_Year",color="CHN Journal data 2008"),size=1, inherit.aes = FALSE)+
+  scale_y_continuous(limits = c(-20,20),sec.axis = sec_axis(~.*4, name = "Proportion (CHN Jounral data)")) +
+  coord_flip() +
+  labs(y="Proportion (Census data)", x = "Age bins", color=NULL)+
+  scale_color_manual(values = c("red","blue","black","yellow"))+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+ggsave("CHN_Journal_age.pdf", CHN_Journal_age, device = "pdf", width=18, height = 9)
+
+  
+
+#age3 <- ggplot(df_agebins1, aes(Proportion,Site, fill=ageBins)) +
+  #geom_col(alpha = .75)+
+  #labs(X="Data Source") + 
+  #scale_fill_discrete(label=c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61")) +
+  #theme_classic()+
+  #theme(legend.title = element_text(size = 15,family = "serif"),
+       # axis.title= element_text(size = 15,family = "serif"),
+      #  axis.text = element_text(size = 10,family = "serif"),
+     #   strip.text = element_text(size = 15,family = "serif"),
+    #    strip.background = element_rect(fill = NA,color = NA),
+   #     panel.border = element_rect(fill = NA,color = "black"))+
+  #scale_x_continuous(breaks = seq(0, 100, by = 10))
+#ggsave("age3.pdf", age3, device = "pdf", width=18, height = 9)
+```
