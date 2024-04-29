@@ -43,6 +43,8 @@ df_stage2_Journal_Code2$SD_age[1052] <- NA
 df_stage2_Journal_Code2$Sample_Type_N[300] <- 3
 df_stage2_Journal_Code2$Age[351:352] <- 0 ## 20182022 Original article age report error, 0 here
 
+
+
 ## Filter M_age have multiple group data
 df_stage2_Journal_Code_Age_str <- df_stage2_Journal_Code2 %>% 
   dplyr::slice(492,370,856,879,1406,726,725,724,1413,
@@ -51,6 +53,8 @@ df_stage2_Journal_Code_Age_str <- df_stage2_Journal_Code2 %>%
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Age,M_age,SD_age,Other_age,Remark1,Remark2,Remark3)
 
 
+
+## Rebuild for M_age' multiple group of data
 df_stage2_Journal_Code_Mage_multiple_group <- data.frame(
   Article_IDs = c(20213254,20213254,20183078,20183078,20183078,20184162,20184162,20212079,
                   20212079,20213045,20213045,20213045,20082296,20082296,20082296,20082296,
@@ -83,12 +87,14 @@ df_stage2_Journal_Code_Mage_multiple_group <- data.frame(
   Remark3 = NA)
 
 
+## Process Other_age information separately
 df_stage2_Journal_Code_Mage_multiple_group$Other_age[1] <- "17-25"
 df_stage2_Journal_Code_Mage_multiple_group$Other_age[2] <- "15-19"
 
 
 
 ## I found that there are some M_age that have multiple groups, but no Chinese character identification, so it is not recognized in the above filter, so it is dealt with separately here
+
 df_stage2_Journal_Code_Mage_semicolon <- data.frame(
   Article_IDs = c(20084068,20084068,20084068,20084068,20084068,20084068,20082182,20082182,
                   20082182,20082182,20185082,20185082,20183133,20183133,20182052,20182052,
@@ -111,9 +117,12 @@ df_stage2_Journal_Code_Mage_semicolon <- data.frame(
   Remark2 = NA,
   Remark3 = NA)
 
+
+## Process Other_age information separately
 df_stage2_Journal_Code_Mage_semicolon$Other_age[21:22] <- c("27-53","26-50")
 
 
+#The above cases where there are multiple age groups will be recognized as NA in the code run, so they need to be removed.These removed data are the data contained in the data.frame above.
 df_stage2_Journal_Code_Age <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(Subjects_Recruitment_Area != 2) %>% 
   dplyr::mutate(M_age = as.numeric(M_age), SD_age = as.numeric(SD_age)) %>% 
@@ -124,6 +133,7 @@ df_stage2_Journal_Code_Age <- df_stage2_Journal_Code2 %>%
                   362,374,495,1419,536:538,509,
                   510,1368,600,567,568,648,630,696))
 
+## Merge data
 df_stage2_Journal_Code_Age2 <- rbind(df_stage2_Journal_Code_Age,df_stage2_Journal_Code_Mage_multiple_group) %>% 
   rbind(df_stage2_Journal_Code_Mage_semicolon)
 
@@ -160,9 +170,11 @@ df_stage2_Journal_Code2_SampleType5 <- df_stage2_Journal_Code2 %>%
 rm(df_stage2_Journal_Code2_SampleType5)
 
 
-## count unreported/reported
-table(df_stage2_Journal_Code_Age$Age)
+## Count unreported/reported
+#table(df_stage2_Journal_Code_Age$Age)
 
+
+## Formal processing of age data
 df_stage2_Journal_Code_MAge <- df_stage2_Journal_Code_Age2 %>% 
   dplyr::select(Article_IDs,M_age,Remark1,Remark2) %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
@@ -192,9 +204,8 @@ df_stage2_Journal_Code_MAge_missgroup <- data.frame(
   Proportion = 0,
   Data_Source = "CHN Journal data Total")
 
-df_stage2_Journal_Code_MAge <- rbind(df_stage2_Journal_Code_MAge,df_stage2_Journal_Code_MAge_missgroup)
+df_CHN_Journal_Age <- rbind(df_stage2_Journal_Code_MAge,df_stage2_Journal_Code_MAge_missgroup)
 
-df_stage2_Journal_Code_MAge$ageBins
 
 ## Split the data by year
 df_stage2_Journal_Code_MAge_year <- df_stage2_Journal_Code_Age2 %>%
@@ -239,15 +250,10 @@ df_stage2_Journal_Code_MAge_year <- df_stage2_Journal_Code_MAge_year %>%
   rbind(df_stage2_Journal_Code_MAge_year_missgroup) %>% 
   dplyr::arrange(Data_Source,ageBins)
 
-df_stage2_Journal_Code_MAge_year_2008 <- df_stage2_Journal_Code_MAge_year %>% 
-  dplyr::filter(Data_Source == "CHN Journal data 2008")
-df_stage2_Journal_Code_MAge_year <- df_stage2_Journal_Code_MAge_year %>% 
-  dplyr::filter(Data_Source != "CHN Journal data 2008")
-
 rm(df_stage2_Journal_Code_MAge_year_missgroup,df_stage2_Journal_Code_MAge_missgroup, Data_Source_num)
 
 
-#str(df_stage2_Journal_Code_Age_year)
+## Process age data for the census 6
 df_census6_Age <- df_census6 %>% 
   dplyr::filter(row_number() %% 6 == 0) %>%
   dplyr::select(1,2,5) %>% 
@@ -273,7 +279,7 @@ df_census6_Age <- df_census6_Age %>%
   
 
 
-
+## Process age data for the census 7 
 df_census7_Age <- df_census7 %>%
   dplyr::rename(ageBins = 1,Proportion = 5) %>% 
   dplyr::filter(str_detect(ageBins,"岁")) %>%
@@ -299,7 +305,7 @@ df_census7_Age <- df_census7_Age %>%
                                  "75~79","80~84","85~89", "90~94",">=95" )))
 
 
-CHN_Journal_data_age <- ggplot(data= df_census7_Age, 
+CHN_Journal_age <- ggplot(data= df_census7_Age, 
        aes(x=ageBins, y = Proportion, fill="Census 7")) +
   geom_col(alpha=0.5, width = 1) +
   geom_line(data = df_stage2_Journal_Code_MAge, aes(x=ageBins, 
@@ -318,34 +324,58 @@ CHN_Journal_data_age <- ggplot(data= df_census7_Age,
         axis.title = element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"))
 
-ggsave("CHN_Journal_data_age.pdf", CHN_Journal_data_age, device = "pdf", width=18, height = 9)
+ggsave("CHN_Journal_age.pdf", CHN_Journal_age, device = "pdf", width=18, height = 9)
 
 ```
 
 
 ## Gender
 ```{r message=FALSE, warning=FALSE}
-## Census 6
+df_stage2_Journal_Code2$Male_Num[1257] <- 0
+df_stage2_Journal_Code2$Female_Num[1257] <- 845
 
-## Census 7
+## Process the gender data of census 7
 
-## CFPS 2018
+## Process the gender data of census 7
+df_census7_Gender <- df_census7 %>%
+  dplyr::select(c(6,7)) %>%        
+  dplyr::slice(c(6)) %>%
+  dplyr::rename(male=1, 
+                female=2) %>%
+  dplyr::mutate(Data_Source = "Census 7") %>%
+  tidyr::pivot_longer(c(male, female), 
+                      names_to = "Gender",
+                      values_to = "Proportion") %>%
+  dplyr::mutate(Proportion = round(as.numeric(Proportion), 0))
+
+## Process the gender data of CFPS2018
+df_CFPS2018_Gender <- df_CFPS2018 %>%
+  dplyr::rename(Gender = QA002) %>%
+  dplyr::count(Gender) %>%
+  dplyr::filter(!is.na(Gender)) %>%
+  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
+                Data_Source = "CFPS 2018",
+                Gender= ifelse(Gender == 1, "male", "female")) %>%
+  dplyr::select(Data_Source, Gender, Proportion)
 
 
-## CHN Journal Code Data
+## Process the gender data of CHN Journal
 df_stage2_Journal_Code_Gender <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
   dplyr::filter(Subjects_Recruitment_Area !=2) %>% 
   dplyr::mutate(Male_Num = as.numeric(Male_Num),
                 Female_Num = as.numeric(Female_Num)) %>% 
-  dplyr::select(Article_IDs,Sample_Size,Gender,Male_Num,Female_Num,Remark1,Remark2,Remark3)
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,Male_Num,Female_Num,Remark1,Remark2,Remark3)
 
-table(df_stage2_Journal_Code_Gender$Gender)
+#table(df_stage2_Journal_Code_Gender$Gender)
+
+
+#Part of the gender data is the proportion recorded, and part is the number of people, so I deal with it separately.
 
 df_stage2_Journal_Code_Gender_decimal <- df_stage2_Journal_Code_Gender %>% 
   dplyr::filter(Gender == 1) %>% 
   dplyr::filter(Male_Num < 1 & Female_Num < 1) %>% 
-  dplyr::select(Article_IDs,Sample_Size,Gender,Male_Num,Female_Num) %>% 
+  dplyr::select(Article_IDs,Sample_Size,Study_Number,Subjects_Group_N,Gender,Male_Num,Female_Num) %>% 
   dplyr::mutate(Male_Num = round(Male_Num,2),
                 Female_Num = round(Female_Num,2),
                 Male_Female = Male_Num + Female_Num)
@@ -353,5 +383,37 @@ df_stage2_Journal_Code_Gender_decimal <- df_stage2_Journal_Code_Gender %>%
 df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender %>%
   dplyr::filter(Gender == 1) %>% 
   dplyr::filter(Male_Num > 1 | Female_Num > 1) %>% 
-  dplyr::select(Article_IDs,Sample_Size,Gender,Male_Num,Female_Num)
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,Male_Num,Female_Num)
+
+
+##Multiple groups of data are removed during processing, so re-create the data.frame and then merge them.
+
+df_stage2_Journal_Code_Gender_integer_add <- data.frame(
+  Article_IDs = c("20185082","20213045","20213048","20213048","20215075"),
+  Study_Number = c(1,1,1,2,1),
+  Subjects_Group_N = c(NA,NA,NA,NA,"父亲"),
+  Sample_Size = c(33,81,68,59,310),
+  Gender = 1,
+  Male_Num = c(26,49,31,28,310),
+  Female_Num = c(7,32,37,31,0))
+
+df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender_integer %>% 
+  rbind(df_stage2_Journal_Code_Gender_integer_add) %>% 
+  dplyr::mutate(Female_Num = ifelse(is.na(Female_Num), 0, Female_Num),
+                Sample_Size = as.numeric(Sample_Size))
+rm(df_stage2_Journal_Code_Gender_integer_add)
+
+
+df_CHN_Journal_Gender <- df_stage2_Journal_Code_Gender_integer %>% 
+  dplyr::summarise(male = sum(Male_Num)/sum(Sample_Size),
+          female =sum(Female_Num)/sum(Sample_Size)) %>% 
+  dplyr::mutate(male = round(male,2),
+                female = round( female,2),
+                Data_Source = "CHN Journal data") %>% 
+  tidyr::pivot_longer(c(male, female), 
+                      names_to = "Gender",
+                      values_to = "Proportion")
+
+sum(df_stage2_Journal_Code_Gender_decimal$Male_Num)/sum(df_stage2_Journal_Code_Gender_decimal$Male_Num+df_stage2_Journal_Code_Gender_decimal$Female_Num)
+
 ```
