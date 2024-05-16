@@ -639,5 +639,16 @@ df_stage2_Journal_Code2$Ethnicity_info[760:761] <- "蒙古族"
 df_stage2_Journal_Code2$Ethnicity[1587:1588] <- 1
 df_stage2_Journal_Code2$Ethnicity_info[1587:1588] <- "锡伯族"
 
+df_CHN_Ethnicity <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::select(Article_IDs,Article_Title,Study_Number,Subjects_Group,Ethnicity,Ethnicity_info) %>% 
+  dplyr::filter(Ethnicity == 1) %>% 
+  tidyr::separate_rows(Ethnicity_info,sep = ";") %>% 
+  dplyr::filter(!grepl("少数|汉族|其他",Ethnicity_info))
+
+
+#table(df_CHN_Ethnicity$Ethnicity) 1507~0, 63~1
+
+table_ethnicity <- data.frame(table(df_CHN_Ethnicity$Ethnicity_info))
 
 ```
