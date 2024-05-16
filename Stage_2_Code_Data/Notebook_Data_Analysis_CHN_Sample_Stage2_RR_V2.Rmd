@@ -15,7 +15,7 @@ if (!require("pacman")) install.packages("pacman")
 # use package "pacman" as loading R packages tools
 
 pacman::p_load("tidyverse","here","rio")
-pacman::p_load("geojsonsf","sf","RColorBrewer","ggspatial","patchwork")
+pacman::p_load("geojsonsf","sf","RColorBrewer","ggspatial","patchwork","ggrepel")
 ```
 
 
@@ -611,7 +611,7 @@ ggsave("Area_distribution.pdf", Area_distribution, device = "pdf", width=18, hei
 
 Area_distribution
 
-table(df_stage2_Journal_Code2$Educational_Attainment_N)
+#table(df_stage2_Journal_Code2$Educational_Attainment_N)
 ```
 
 
@@ -651,4 +651,56 @@ df_CHN_Ethnicity <- df_stage2_Journal_Code2 %>%
 
 table_ethnicity <- data.frame(table(df_CHN_Ethnicity$Ethnicity_info))
 
+```
+
+
+## Unreported and Reported
+```{r}
+df_CHN_report <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::select(12,17,20,24,26,28,30,31,42,44:45,47) %>% 
+  dplyr::mutate(Abstract1 = ifelse(Abstract1 ==0, 0, 1),
+                Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
+                Subjects_Area = ifelse(Subjects_Area == 0, 0, 1),
+                Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
+                SES_N = ifelse(SES_N == 0, 0, 1),
+                Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N
+ == 0, 0, 1))
+
+report_list <- list()
+
+for (i in names(df_CHN_report)){
+  report_table <- data.frame(table(df_CHN_report[[i]])) %>% 
+    dplyr::mutate(col_names = names(df_CHN_report[i]),
+                  proportion = round(Freq / sum(Freq),2))
+  
+  report_list[[i]] <- report_table
+  
+}
+
+df_CHN_report <- do.call(rbind, report_list) %>% 
+  dplyr::arrange(Var1,proportion) %>% 
+  dplyr::mutate(Var1 = ifelse(Var1 == 0, "Unreported","Reported")) %>% 
+  dplyr::mutate(col_names = factor(col_names,
+                                   labels = c("Gender","Age","Abstract1",      "Recruitment Method","Recruitment Area","Education","Sampling Method","Occupation","SES","Ethnicity","Religious","Subjects Area"),
+                                   levels = c("Gender","Age","Abstract1",      "Subjects_Recruitment_Method_N","Subjects_Recruitment_Area","Educational_Attainment_N","Sampling_Method","Occupation_N","SES_N","Ethnicity","Religious","Subjects_Area")))
+
+
+report <- ggplot(df_CHN_report,aes(col_names,proportion,fill=Var1))+
+  geom_col()+
+  labs(x="",y="%")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))+
+  scale_x_discrete(guide = guide_axis(angle = 45))
+
+
+ggsave("report.pdf", report, device = "pdf", width=18, height = 15)
+
+report
 ```
