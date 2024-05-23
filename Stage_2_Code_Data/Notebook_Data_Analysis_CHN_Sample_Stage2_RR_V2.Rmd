@@ -619,6 +619,8 @@ Area_distribution
 ```{r}
 ## In informal code stage, Because our code group haveare multiple coders, in order to reduce coding differences between individuals based on criteria and understanding, our coding for ethnic groups does not include information about native minority languages. For example: Tibetan language. I will now supplement this.
 
+df_stage2_Journal_Code2$Ethnicity_info[768] <- "汉族"
+
 ### Article_IDs 20181113 
 df_stage2_Journal_Code2$Ethnicity[1291:1292] <- 1
 df_stage2_Journal_Code2$Ethnicity_info[1291:1292] <- c("维吾尔族","维吾尔族")
@@ -641,7 +643,8 @@ df_stage2_Journal_Code2$Ethnicity_info[1587:1588] <- "锡伯族"
 
 df_CHN_Ethnicity <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
-  dplyr::select(Article_IDs,Article_Title,Study_Number,Subjects_Group,Ethnicity,Ethnicity_info) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,
+                Ethnicity,Ethnicity_info) %>% 
   dplyr::filter(Ethnicity == 1) %>% 
   tidyr::separate_rows(Ethnicity_info,sep = ";") %>% 
   dplyr::filter(!grepl("少数|汉族|其他",Ethnicity_info))
@@ -651,8 +654,64 @@ df_CHN_Ethnicity <- df_stage2_Journal_Code2 %>%
 
 table_ethnicity <- data.frame(table(df_CHN_Ethnicity$Ethnicity_info))
 
+ethnicity_add <- c("土家族","回族","蒙古族","畲族","满族","苗族","壮族","黎族","彝族","布依族")
+
+table_ethnicity <- table_ethnicity %>% 
+  dplyr::mutate(Freq = ifelse(Var1 %in% ethnicity_add, Freq+1, Freq))
+
+
+## sample size and different ethnicity
+df_CHN_Ethnicity$Sample_Size[2] <- 251
+df_CHN_Ethnicity$Sample_Size[3] <- 297
+df_CHN_Ethnicity$Sample_Size[4] <- 110
+df_CHN_Ethnicity$Sample_Size[5] <- 61
+
+df_CHN_Ethnicity$Sample_Size[6:21] <- c(14,16,18,9,20,10,18,12,19,10,
+                                           19,12,17,15,21,13)
+
+df_CHN_Ethnicity$Sample_Size[32:33] <- c(4,0)
+
+df_CHN_Ethnicity$Sample_Size[34:62] <- c(139,108,71,51,50,40,38,31,
+                                         27,24,18,16,16,11,9,6,5,4,
+                                         3,3,3,2,2,1,1,1,1,1,1)
+
+df_CHN_Ethnicity$Sample_Size[63:64] <- c(30,60)
+
+df_CHN_Ethnicity$Sample_Size[65] <- 1006
+
+df_CHN_Ethnicity$Sample_Size[72] <- 30
+
+## ethnicity sample size
+df_CHN_Ethnicity_group <- df_CHN_Ethnicity %>% 
+  dplyr::mutate(Sample_Size =as.numeric(Sample_Size)) %>% 
+  dplyr::group_by(Ethnicity_info) %>% 
+  dplyr::summarise(Sample = sum(Sample_Size)) %>% 
+  dplyr::ungroup()
+
+
+Ethnicity_Article_IDs_number <- df_CHN_Ethnicity %>% 
+  dplyr::distinct(Article_IDs)
+
+Code2_Article_IDs_number <-  df_stage2_Journal_Code2 %>% 
+  dplyr::distinct(Article_IDs)
+  
+### 17/997
+
 ```
 
+
+
+## education attachment
+```{r}
+df_CHN_edu <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2_N)) %>% 
+  dplyr::filter(Educational_Attainment_N == 1) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,Sample_Type_N,Educational_Attainment_N,Educational_Attainment_info_N)
+
+?save
+
+writexl::write_xlsx(df_CHN_edu,"df_CHN_edu.xlsx")
+```
 
 ## Unreported and Reported
 ```{r}
