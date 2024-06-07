@@ -56,7 +56,7 @@ This project used R 4.1.1 and JASP 16.0 for data analysis and visualization.
 ---- Journal: ...
 
 - Contact information for the authors
----- Lei Yue, email: yniannian911@163.com；yniannian911@outlook.com
+---- Lei Yue, email: yniannian911@163.com
 ---- Hu Chuan-Peng (Prof., Dr.), email: hcp4715@hotmail.com
 ----Wei-Wei Zhang, email: asdzhangww@163.com
 ----Chun-Xiao Wang, email: chxwang12@126.com
