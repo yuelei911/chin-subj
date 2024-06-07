@@ -1,0 +1,771 @@
+---
+title: "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2"
+author: "Lei Yue"
+date: "2024-04-20"
+output: html_document
+---
+
+In "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V1.Rmd"， We prereprocess the journal code data. In this Rmd(V2), we enter the informal process data.
+## Install and Load packages
+```{r message=FALSE, warning=FALSE}
+rm(list = ls())
+
+if (!require("pacman")) install.packages("pacman")
+
+# use package "pacman" as loading R packages tools
+
+pacman::p_load("tidyverse","here","rio")
+pacman::p_load("geojsonsf","sf","RColorBrewer","ggspatial","patchwork","ggrepel")
+```
+
+
+## Load data
+```{r}
+load("df_Pre_Stage2_Journal_Code.Rdata")
+
+load(here("df_chinese_subj_rr_stage1.Rdata"))
+```
+
+## Articles 
+```{r}
+df_articles <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2))
+
+df_articles_num <- df_articles %>% 
+  dplyr::distinct(Article_IDs)
+```
+
+## Age
+```{r message=FALSE, warning=FALSE}
+## I found some outliers for M_age, so I processed this part of the data first.
+df_stage2_Journal_Code2$Sample_Type_N[1082] <- 2
+df_stage2_Journal_Code2$Sample_Type_N[183] <- 2
+df_stage2_Journal_Code2$Sample_Type_N[1190:1191] <- 2
+df_stage2_Journal_Code2$M_age[1500] <- 31.6
+df_stage2_Journal_Code2$M_age[407] <- "男性69.14;女性67.16"
+df_stage2_Journal_Code2$M_age[1039] <- NA
+df_stage2_Journal_Code2$M_age[1041] <- NA
+df_stage2_Journal_Code2$SD_age[1039] <- NA
+df_stage2_Journal_Code2$SD_age[1041] <- NA
+df_stage2_Journal_Code2$M_age[1052] <- NA
+df_stage2_Journal_Code2$SD_age[1052] <- NA
+df_stage2_Journal_Code2$Sample_Type_N[300] <- 3
+df_stage2_Journal_Code2$Age[351:352] <- 0 ## 20182022 Original article age report error, 0 here
+
+
+
+## Filter M_age have multiple group data
+df_stage2_Journal_Code_Age_str <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(492,370,856,879,1406,726,725,724,1413,
+               1288,489,322,1331,1324,407,362,374,495,
+               1419) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Age,M_age,SD_age,Other_age,Remark1,Remark2,Remark3)
+
+
+
+## Rebuild for M_age' multiple group of data
+df_stage2_Journal_Code_Mage_multiple_group <- data.frame(
+  Article_IDs = c(20213254,20213254,20183078,20183078,20183078,20184162,20184162,20212079,
+                  20212079,20213045,20213045,20213045,20082296,20082296,20082296,20082296,
+                  20082296,20082296,20213054,20213054,20181109,20181109,20213244,20213244,
+                  20182003,20182003,20182228,20182228,20182207,20182207,20184083,20184083,
+                  20183060,20183060,20183087,20183087,20215094,20215094,20215094,20215075,20215075),
+  Study_Number = 1,
+  Subjects_Group = c("样本1大学生","样本1高中生","儿童","父亲","母亲","父亲","母亲","高一",
+                     "高二","精分患者","健康同胞","健康对照","小班男","小班女","中班男","中班女",
+                     "大班男","大班女","男生","女生","男生","女生","男生","女生",
+                     "男生","女生","男生","女生","男生","女生","男生","女生",
+                     "男生","女生","男生","女生","四年级","五年级", "六年级","幼儿","父亲"),
+  Sample_Type_N = c(1,2,2,4,4,4,4,2,2,4,4,
+                    4,3,3,3,3,3,3,3,3,2,
+                    2,1,1,1,1,2,2,4,4,4,
+                    4,1,1,1,1,2,2,2,3,4),
+  Age = 1,
+  M_age = c(21.12,16.44,9.74,39.15,36.99,41.44,40.23,15.36,16.35,25.44,
+            25.56,27.44,3.77,3.85,4.73,4.83,5.68,5.77,4.69,4.79,
+            14.23,14.08,18.71,18.84,21.63,21.89,10.01,9.95,27.90,
+            26.75,69.14,67.16,20.94,21.51,21.10,21.80,10.10,11.07,
+            12.03,5.02,36.11),
+  SD_age = c(1.45,0.73,1.46,3.73,2.95,NA,NA,0.52,0.52,5.92,6.44,7.24,
+             0.3,0.23,0.25,0.29,0.32,0.32,0.58,0.56,0.69,0.58,1.78,1.66,
+             1.32,1.17,1.31,1.38,6.56,5.04,7.40,6.44,2.33,2.31,2.37,1.69,
+             0.31,0.34,0.30,0.93,4.91),
+  Other_age = NA,
+  Remark1 = NA,
+  Remark2 = NA,
+  Remark3 = NA)
+
+
+## Process Other_age information separately
+df_stage2_Journal_Code_Mage_multiple_group$Other_age[1] <- "17-25"
+df_stage2_Journal_Code_Mage_multiple_group$Other_age[2] <- "15-19"
+
+
+
+## I found that there are some M_age that have multiple groups, but no Chinese character identification, so it is not recognized in the above filter, so it is dealt with separately here
+
+df_stage2_Journal_Code_Mage_semicolon <- data.frame(
+  Article_IDs = c(20084068,20084068,20084068,20084068,20084068,20084068,20082182,20082182,
+                  20082182,20082182,20185082,20185082,20183133,20183133,20182052,20182052,
+                  20182052,20182052,20212031,20212031,20184130,20184130,20215102,20215102),
+  Study_Number = c(1,1,1,1,1,1,1,1,2,2,1,1,
+                   1,1,1,1,2,2,1,1,1,1,1,1),
+  Subjects_Group = c("中班男","中班女","小班男","小班女","大班男","大班女",
+                     "6、7岁","10、11岁","6、7岁","10、11岁","男生","女生",
+                     "男生","女生","男生","女生","男生","女生","男生","女生",
+                     "父亲","母亲","父亲","母亲"),
+  Sample_Type_N =c(3,3,3,3,3,3,2,2,2,2,3,3,
+                   1,1,5,5,5,5,5,5,4,4,4,4),
+  Age = 1,
+  M_age = c(4.73,4.83,3.77,3.85,5.68,5.77,7.06,11.18,7.24,11.42,5.73,3.28,
+            20.4,20.3,20.77,20.69,20.91,20.67,29.62,28.00,36.61,34.24,41.37,38.88) ,
+  SD_age = c(0.25,0.29,0.3,0.23,0.32,0.32,0.38,0.35,0.39,0.34,0.74,0.56,
+             1.2,1.1,1.8,2.09,2.65,1.31,3.37,2.26,4.06,3.38,4.74,3.87),
+  Other_age = NA,
+  Remark1 = NA,
+  Remark2 = NA,
+  Remark3 = NA)
+
+
+## Process Other_age information separately
+df_stage2_Journal_Code_Mage_semicolon$Other_age[21:22] <- c("27-53","26-50")
+
+
+#The above cases where there are multiple age groups will be recognized as NA in the code run, so they need to be removed.These removed data are the data contained in the data.frame above.
+df_stage2_Journal_Code_Age <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Subjects_Recruitment_Area != 2) %>% 
+  dplyr::mutate(M_age = as.numeric(M_age), SD_age = as.numeric(SD_age)) %>% 
+  dplyr::mutate(M_age = round(M_age,2), SD_age = round(SD_age,2)) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Age,M_age,SD_age,Other_age,Remark1,Remark2,Remark3) %>% 
+  dplyr::slice(-c(492,370,856,879,1406,724:726,
+                  1413,1288,489,322,1331,1324,407,
+                  362,374,495,1419,536:538,509,
+                  510,1368,600,567,568,648,630,696))
+
+## Merge data
+df_stage2_Journal_Code_Age2 <- rbind(df_stage2_Journal_Code_Age,df_stage2_Journal_Code_Mage_multiple_group) %>% 
+  rbind(df_stage2_Journal_Code_Mage_semicolon)
+
+rm(df_stage2_Journal_Code_Mage_multiple_group,df_stage2_Journal_Code_Mage_semicolon,df_stage2_Journal_Code_Age_str)
+
+#Special Note 1: In the process of M_age data, I found some data that may be outlier, so I grouped them based on "Sample_Type_N" and indeed found some abnormal data. In order to ensure that subsequent analysis is affected as little as possible, we will check it based on "df_stage2_Journal_Code2" and put the relevant code at the beginning of this section. This way, subsequent analysis will not be affected by these outlier. I hope the order here will not cause any inconvenience for you.
+
+Summrise_MAge <- df_stage2_Journal_Code_Age2 %>%
+  dplyr::filter(!is.na(M_age)) %>% 
+  dplyr::group_by(Sample_Type_N) %>% 
+  dplyr::summarise(Min_Mage = min(M_age),
+                   Max_Mage  = max(M_age),
+                   Mean_Mage  = mean(M_age))
+rm(Summrise_MAge)
+
+df_stage2_Journal_Code2_SampleType1 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N == 1) ## M_age no outlier was found after sorting
+rm(df_stage2_Journal_Code2_SampleType1)
+
+df_stage2_Journal_Code2_SampleType2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N == 2) ## M_age no outlier was found after sorting
+rm(df_stage2_Journal_Code2_SampleType2)
+
+df_stage2_Journal_Code2_SampleType3 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N == 3) ## 1 outlier was found after sorting
+rm(df_stage2_Journal_Code2_SampleType3)
+
+df_stage2_Journal_Code2_SampleType4 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N == 4) ## outlier was found after sorting
+rm(df_stage2_Journal_Code2_SampleType4)
+
+df_stage2_Journal_Code2_SampleType5 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N == 5) ## I may need to re-process Sample_Type 5
+rm(df_stage2_Journal_Code2_SampleType5)
+
+
+## Count unreported/reported
+#table(df_stage2_Journal_Code_Age$Age)
+
+
+## Formal processing of age data
+df_stage2_Journal_Code_MAge <- df_stage2_Journal_Code_Age2 %>% 
+  dplyr::select(Article_IDs,M_age,Remark1,Remark2) %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::filter(!is.na(M_age)) %>% 
+  dplyr::mutate(ageBins = cut(M_age,
+                breaks = c(-Inf,4.5,9.5,14.5,19.5,24.5,
+                           29.5,34.5,39.5,44.5,49.5,
+                           54.5,59.5,64.5,69.5,74.5,
+                           79.5,84.5,89.5,94.5,Inf),
+                labels = c("0~4","5~9","10~14","15~19","20~24",
+                           "25~29","30~34","35~39","40~44","45~49",
+                           "50~54","55~59","60~64","65~69","70~74",
+                           "75~79","80~84","85~89", "90~94",">=95"),
+                levels = c("0~4","5~9","10~14","15~19","20~24",
+                           "25~29","30~34","35~39","40~44","45~49",
+                           "50~54","55~59","60~64","65~69","70~74",
+                           "75~79","80~84","85~89", "90~94",">=95"))) %>% 
+  dplyr::count(ageBins) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
+  dplyr::mutate(Data_Source = "CNH Journal data  Total",n=as.numeric(n))
+
+
+## Add a blank line for age groups without data
+df_stage2_Journal_Code_MAge_missgroup <- data.frame(
+  ageBins =c( "75~79","80~84","85~89", "90~94",">=95"),
+  n=0,
+  Proportion = 0,
+  Data_Source = "CHN Journal data Total")
+
+df_CHN_Journal_Age <- rbind(df_stage2_Journal_Code_MAge,df_stage2_Journal_Code_MAge_missgroup)
+
+
+## Split the data by year
+df_stage2_Journal_Code_MAge_year <- df_stage2_Journal_Code_Age2 %>%
+  dplyr::select(Article_IDs,M_age,Remark1,Remark2) %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::filter(!is.na(M_age)) %>%
+  dplyr::mutate( Data_Source= substring(Article_IDs,1,4)) %>% 
+  dplyr::group_by(Data_Source) %>% 
+  dplyr::mutate(ageBins = cut(M_age,
+                breaks = c(-Inf,4.5,9.5,14.5,19.5,24.5,
+                           29.5,34.5,39.5,44.5,49.5,
+                           54.5,59.5,64.5,69.5,74.5,
+                           79.5,84.5,89.5,94.5,Inf),
+                labels = c("0~4","5~9","10~14","15~19","20~24",
+                           "25~29","30~34","35~39","40~44","45~49",
+                           "50~54","55~59","60~64","65~69","70~74",
+                           "75~79","80~84","85~89", "90~94",">=95"),
+                levels = c("0~4","5~9","10~14","15~19","20~24",
+                           "25~29","30~34","35~39","40~44","45~49",
+                           "50~54","55~59","60~64","65~69","70~74",
+                           "75~79","80~84","85~89", "90~94",">=95"))) %>% 
+  dplyr::count(ageBins) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Data_Source= ifelse( Data_Source == "2008","CHN Journal data 2008", ifelse( Data_Source == "2018", "CHN Journal data 2018","CHN Journal data 2021")))
+
+## Add a blank line for age groups without data
+Data_Source_num <- 1:22
+
+df_stage2_Journal_Code_MAge_year_missgroup <- data.frame(
+  Data_Source= case_when(Data_Source_num %in% 1:10 ~ "CHN Journal data 2008",
+                        Data_Source_num %in% 11:15 ~ "CHN Journal data 2018",
+                        TRUE ~ "CHN Journal data 2021"),
+  ageBins = c("45~49","50~54","55~59","60~64","70~74","75~79","80~84",
+                "85~89", "90~94",">=95",
+                 "75~79","80~84","85~89", "90~94",">=95",
+                "55~59","70~74","75~79","80~84","85~89", "90~94",">=95"),
+  n = 0,
+  Proportion =0)
+
+df_stage2_Journal_Code_MAge_year <- df_stage2_Journal_Code_MAge_year %>% 
+  rbind(df_stage2_Journal_Code_MAge_year_missgroup) %>% 
+  dplyr::arrange(Data_Source,ageBins)
+
+rm(df_stage2_Journal_Code_MAge_year_missgroup,df_stage2_Journal_Code_MAge_missgroup, Data_Source_num)
+
+
+## Process age data for the census 6
+df_census6_Age <- df_census6 %>% 
+  dplyr::filter(row_number() %% 6 == 0) %>%
+  dplyr::select(1,2,5) %>% 
+  dplyr::rename(ageBins = 1, Proportion = 3) %>% 
+  dplyr::mutate(Proportion = as.numeric(Proportion)) %>% 
+  dplyr::mutate(ageBins = str_remove(ageBins, "岁")) %>%
+  dplyr::mutate(ageBins = str_replace_all(ageBins, "-", "~")) %>%
+  dplyr::slice(-21) 
+
+df_census6_Age$ageBins[20] <- ">=95"
+
+df_census6_Age <- df_census6_Age %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(Proportion = sum(Proportion)) %>% 
+  dplyr::mutate(Data_Source = "Census 6") %>% 
+  dplyr::ungroup() %>% 
+  dplyr::arrange(ageBins) %>% 
+  dplyr::mutate(ageBins = factor(ageBins, 
+                                 levels =c("0~4","5~9","10~14","15~19","20~24",
+                                 "25~29","30~34","35~39","40~44","45~49",
+                                 "50~54","55~59","60~64","65~69","70~74",
+                                 "75~79","80~84","85~89", "90~94",">=95" )))
+  
+
+
+## Process age data for the census 7 
+df_census7_Age <- df_census7 %>%
+  dplyr::rename(ageBins = 1,Proportion = 5) %>% 
+  dplyr::filter(str_detect(ageBins,"岁")) %>%
+  dplyr::select(1,2,5) %>% 
+  dplyr::mutate(Proportion = as.numeric(Proportion)) %>% 
+  dplyr::mutate(ageBins = str_remove(ageBins, "岁")) %>%
+  dplyr::mutate(ageBins = str_replace_all(ageBins, "-", "~")) %>% 
+  dplyr::slice(-21)
+
+df_census7_Age$ageBins[20] <- ">=95" 
+df_census7_Age$Proportion[20] <- 0.06+0.01
+
+
+df_census7_Age <- df_census7_Age %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(Proportion = sum(Proportion)) %>% 
+  dplyr::mutate(Data_Source = "Census 7") %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(ageBins = factor(ageBins, 
+                                 levels =c("0~4","5~9","10~14","15~19","20~24",
+                                 "25~29","30~34","35~39","40~44","45~49",
+                                 "50~54","55~59","60~64","65~69","70~74",
+                                 "75~79","80~84","85~89", "90~94",">=95" )))
+
+
+CHN_Journal_age <- ggplot(data= df_census7_Age, 
+       aes(x=ageBins, y = Proportion, fill="Census 7")) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = df_CHN_Journal_Age, aes(x=ageBins, 
+                y = Proportion, group = 1, color ="CHN Journal data Total"),size =1)+
+  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
+  scale_color_manual(values=c("CHN Journal data Total"="red")) +
+  scale_y_continuous(limits = c(0,40))+
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+
+ggsave("CHN_Journal_age.pdf", CHN_Journal_age, device = "pdf", width=18, height = 9)
+
+CHN_Journal_age
+```
+
+
+## Gender
+```{r message=FALSE, warning=FALSE}
+df_stage2_Journal_Code2$Male_Num[1257] <- 0
+df_stage2_Journal_Code2$Female_Num[1257] <- 845
+
+## Process the gender data of census 7
+
+## Process the gender data of census 7
+df_census7_Gender <- df_census7 %>%
+  dplyr::select(c(6,7)) %>%        
+  dplyr::slice(c(6)) %>%
+  dplyr::rename(male=1, 
+                female=2) %>%
+  dplyr::mutate(Data_Source = "Census 7") %>%
+  tidyr::pivot_longer(c(male, female), 
+                      names_to = "Gender",
+                      values_to = "Proportion") %>%
+  dplyr::mutate(Proportion = round(as.numeric(Proportion), 0))
+
+## Process the gender data of CFPS2018
+df_CFPS2018_Gender <- df_CFPS2018 %>%
+  dplyr::rename(Gender = QA002) %>%
+  dplyr::count(Gender) %>%
+  dplyr::filter(!is.na(Gender)) %>%
+  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
+                Data_Source = "CFPS 2018",
+                Gender= ifelse(Gender == 1, "male", "female")) %>%
+  dplyr::select(Data_Source, Gender, Proportion)
+
+
+## Process the gender data of CHN Journal
+df_stage2_Journal_Code_Gender <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::filter(Subjects_Recruitment_Area !=2) %>% 
+  dplyr::mutate(Male_Num = as.numeric(Male_Num),
+                Female_Num = as.numeric(Female_Num)) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,Male_Num,Female_Num,Remark1,Remark2,Remark3)
+
+#table(df_stage2_Journal_Code_Gender$Gender)
+
+
+#Part of the gender data is the proportion recorded, and part is the number of people, so I deal with it separately.
+
+df_stage2_Journal_Code_Gender_decimal <- df_stage2_Journal_Code_Gender %>% 
+  dplyr::filter(Gender == 1) %>% 
+  dplyr::filter(Male_Num < 1 & Female_Num < 1) %>% 
+  dplyr::select(Article_IDs,Sample_Size,Study_Number,Subjects_Group_N,Gender,Male_Num,Female_Num) %>% 
+  dplyr::mutate(Male_Num = round(Male_Num,2),
+                Female_Num = round(Female_Num,2)) %>% 
+  dplyr::rename(Male_Proportion = Male_Num,
+               Female_Proportion =  Female_Num)
+
+df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender %>%
+  dplyr::filter(Gender == 1) %>% 
+  dplyr::filter(Male_Num > 1 | Female_Num > 1) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,Male_Num,Female_Num)
+
+
+##Multiple groups of data are removed during processing, so re-create the data.frame and then merge them.
+
+df_stage2_Journal_Code_Gender_integer_add <- data.frame(
+  Article_IDs = c("20185082","20213045","20213048","20213048","20215075"),
+  Study_Number = c(1,1,1,2,1),
+  Subjects_Group_N = c(NA,NA,NA,NA,"父亲"),
+  Sample_Size = c(33,81,68,59,310),
+  Gender = 1,
+  Male_Num = c(26,49,31,28,310),
+  Female_Num = c(7,32,37,31,0))
+
+
+df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender_integer %>% 
+  rbind(df_stage2_Journal_Code_Gender_integer_add) %>% 
+  dplyr::mutate(Female_Num = ifelse(is.na(Female_Num), 0, Female_Num),
+                Sample_Size = as.numeric(Sample_Size)) %>%
+  dplyr::mutate(Male_Proportion = Male_Num/Sample_Size) %>% 
+  dplyr::mutate(Male_Proportion = round(Male_Proportion,2)) %>% 
+  dplyr::mutate(Female_Proportion = 1 - Male_Proportion) %>% 
+  dplyr::select(-c(6:7))
+  
+rm(df_stage2_Journal_Code_Gender_integer_add)
+
+df_CHN_Journal_Gender <- rbind(df_stage2_Journal_Code_Gender_decimal,
+                               df_stage2_Journal_Code_Gender_integer)
+
+df_CHN_Journal_Gender_Total <- df_CHN_Journal_Gender %>%
+  dplyr::summarise(male = round(mean(Male_Proportion),2),
+                   female = round(mean(Female_Proportion),2)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Data_Source = "CHN JTotal")
+
+df_CHN_Journal_Gender_Year <- df_CHN_Journal_Gender %>% 
+  dplyr::mutate(Data_Source = substring(Article_IDs,1,4)) %>% 
+  dplyr::group_by(Data_Source) %>% 
+  dplyr::summarise(male = round(mean(Male_Proportion),2),
+                   female = round(mean(Female_Proportion),2)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Data_Source= ifelse( Data_Source == "2008","CHN J08", ifelse(Data_Source == "2018", "CHN J18","CHN J21")))
+
+df_CHN_Journal_Gender2 <- rbind(df_CHN_Journal_Gender_Total,
+                                df_CHN_Journal_Gender_Year) %>% 
+  tidyr::pivot_longer(c(male,female), 
+                      names_to = "Gender") %>% 
+  dplyr::arrange(Gender,value) %>% 
+  dplyr::mutate(Data_Source = factor(Data_Source,levels = c("CHN J08","CHN JTotal","CHN J18","CHN J21")))
+
+
+
+ggplot(data = df_CHN_Journal_Gender2,aes(Data_Source,value,fill = Gender))+
+  geom_col()+
+  labs(y="Proportion")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+  
+
+
+```
+
+
+## Subjects_Recruitment_Area
+```{r}
+df_CHN_Journal_Area <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::select(Article_IDs,Study_Number_N,Subjects_Group_N,Subjects_Recruitment_Area)
+
+df_CHN_Journal_Area_02 <- df_CHN_Journal_Area %>% 
+  dplyr::filter(Subjects_Recruitment_Area == 0 | Subjects_Recruitment_Area == 2)
+
+df_CHN_Journal_Area_1 <- df_CHN_Journal_Area %>% 
+  dplyr::filter(Subjects_Recruitment_Area != 0 & Subjects_Recruitment_Area != 2)
+
+df_CHN_Journal_Area_1$Subjects_Recruitment_Area <- gsub("[；、,:]", ";", df_CHN_Journal_Area_1$Subjects_Recruitment_Area)
+
+df_CHN_Journal_Area_Separate <- df_CHN_Journal_Area_1 %>% 
+  tidyr::separate_rows(Subjects_Recruitment_Area,sep = ";") %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = gsub("自治区|回族自治区|维吾尔自治区|壮族自治区","",Subjects_Recruitment_Area))
+
+
+Province <- c("新疆","西藏","甘肃","青海","内蒙古",
+              "宁夏","四川","重庆","陕西","贵州","云南",
+              "北京","山西","河北","河南","湖北","湖南",
+              "广西","广东","香港","澳门","台湾","海南",
+              "黑龙江","吉林","辽宁","天津","山东","江苏",
+              "安徽","上海","浙江","江西","福建")
+
+df_CHN_Journal_Area_Province <- df_CHN_Journal_Area_Separate %>% 
+  dplyr::filter(Subjects_Recruitment_Area %in% Province)
+
+df_CHN_Journal_Area_Province_add <- data.frame(
+ Article_IDs = 20182261,
+ Study_Number_N = 1,
+ Subjects_Group_N = "小学生",
+ Subjects_Recruitment_Area = c("河南","甘肃"))
+
+df_CHN_Journal_Area_Province <- rbind(df_CHN_Journal_Area_Province,df_CHN_Journal_Area_Province_add)
+
+df_CHN_Journal_Province_count <- df_CHN_Journal_Area_Province %>% 
+  dplyr::count(Subjects_Recruitment_Area) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+                Count_Bins = cut(Proportion,
+                                 breaks = c(-Inf,1,5,10,Inf),
+                labels = c("<1","1~5","5~10",">=10")))
+
+df_census7_province <- readxl::read_xls("A0101.xls") %>% 
+  dplyr::select(1,5) %>% 
+  dplyr::rename(province = 1, population = 2) %>% 
+  dplyr::filter(!is.na(province)) %>% 
+  dplyr::slice(-c(1:2)) %>% 
+  dplyr::mutate(population = as.numeric(population))
+
+df_census7_3 <- data.frame(province = c("台湾","香港","澳门"),
+                           population =c(23561236,7474200,683218))
+df_census7_province <- rbind(df_census7_province,df_census7_3) %>% 
+  dplyr::mutate(proportion = round((population / sum(population))*100,2)) %>% 
+  dplyr::mutate(proportion_bins = cut(proportion,
+                                      breaks = c(-Inf,1,5,10,Inf),
+                                      labels = c("<1","1~5","5~10",">=10")))
+
+df_census7_province$province <- gsub(" ", "", df_census7_province$province)  
+
+
+
+### region distribution map
+
+API_pre <-  "http://xzqh.mca.gov.cn/data/"
+## 读取全国数据
+China <-  st_read(dsn = paste0(API_pre, "quanguo.json"), stringsAsFactors=FALSE) 
+## 使用 4326 地理坐标系
+st_crs(China) <-  4326
+
+# 读取国界线数据
+China_line <-  st_read(dsn = paste0(API_pre, "quanguo_Line.geojson"), stringsAsFactors=FALSE) 
+st_crs(China_line) <-  4326
+## 选择区划代码为国界线的区域
+gjx <- China_line[China_line$QUHUADAIMA == "guojiexian",]
+
+# 读取省份经纬度
+province <- readxl::read_xlsx("province.xlsx")
+colour <- readxl::read_xlsx("colour.xlsx") %>% 
+  dplyr::mutate(QUHUADAIMA = as.character(QUHUADAIMA),
+                colour_CHN_Journal = 0,
+                colour_census7 = 0)
+
+colour$QUHUADAIMA[which(colour$province =="重庆")] <- "500000"
+
+colour$colour_census7[colour$province %in% df_census7_province$province [df_census7_province$proportion_bins == "<1"]] <- 1
+colour$colour_census7[colour$province %in% df_census7_province$province [df_census7_province$proportion_bins == "1~5"]] <- 2
+colour$colour_census7[colour$province %in% df_census7_province$province [df_census7_province$proportion_bins == "5~10"]] <- 3
+colour$colour_census7[colour$province %in% df_census7_province$province [df_census7_province$proportion_bins == ">=10"]] <- 4
+
+
+
+colour$colour_CHN_Journal[which(colour$province =="台湾"| colour$province =="澳门")] <- "0"
+
+colour$colour_CHN_Journal[colour$province %in% df_CHN_Journal_Province_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == "<1"]] <- 1
+colour$colour_CHN_Journal[colour$province %in% df_CHN_Journal_Province_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == "1~5"]] <- 2
+colour$colour_CHN_Journal[colour$province %in% df_CHN_Journal_Province_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == "5~10"]] <- 3
+colour$colour_CHN_Journal[colour$province %in% df_CHN_Journal_Province_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == ">=10"]] <- 4
+
+colour <- colour %>%
+  dplyr::mutate(colour_CHN_Journal = factor(colour_CHN_Journal, 
+                                          levels = c("0","1", "2", "3", "4")),
+                colour_census7 = factor(colour_census7,
+                                         levels = c("0","1", "2", "3", "4")))
+
+China <- dplyr::left_join(China,colour,by= "QUHUADAIMA")
+China$colour_CHN_Journal[which(China$province =="台湾")] <- "0"
+
+
+CHN_Journal_Area <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(colour_CHN_Journal))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "Subjects recruitment area distribution") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.title = element_blank(),
+        legend.position = c(0.2, 0.2),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())+
+  annotation_north_arrow(location = 'tl',which_north = 'false',
+                         style = north_arrow_orienteering())
+
+CHN_Census7_Area <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(colour_census7))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "Census7 population area distribution") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.position = "none",
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())+
+  annotation_north_arrow(location = 'tl',which_north = 'false',
+                         style = north_arrow_orienteering())
+
+Area_distribution <- CHN_Census7_Area + CHN_Journal_Area + plot_layout(guides = "collect")+
+  plot_annotation(tag_levels = 'A', title = "Area distribution",
+                  theme = theme(plot.title = element_text(size = 24))) + 
+  theme(plot.tag = element_text(size = 20))
+
+ggsave("Area_distribution.pdf", Area_distribution, device = "pdf", width=18, height = 15)
+
+Area_distribution
+
+#table(df_stage2_Journal_Code2$Educational_Attainment_N)
+```
+
+
+## Ethnicity
+```{r}
+## In informal code stage, Because our code group haveare multiple coders, in order to reduce coding differences between individuals based on criteria and understanding, our coding for ethnic groups does not include information about native minority languages. For example: Tibetan language. I will now supplement this.
+
+df_stage2_Journal_Code2$Ethnicity_info[768] <- "汉族"
+
+### Article_IDs 20181113 
+df_stage2_Journal_Code2$Ethnicity[1291:1292] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1291:1292] <- c("维吾尔族","维吾尔族")
+
+### Article_IDs 20211018
+df_stage2_Journal_Code2$Ethnicity[1634:1635] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1634:1635] <- c("藏族","藏族")
+
+### Article_IDs 20213168
+df_stage2_Journal_Code2$Ethnicity[1603] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1603] <- "汉族;少数民族"
+
+### Article_IDs 20181017
+df_stage2_Journal_Code2$Ethnicity[760:761] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[760:761] <- "蒙古族"
+
+### Article_IDs 20211013
+df_stage2_Journal_Code2$Ethnicity[1587:1588] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1587:1588] <- "锡伯族"
+
+df_CHN_Ethnicity <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,
+                Ethnicity,Ethnicity_info) %>% 
+  dplyr::filter(Ethnicity == 1) %>% 
+  tidyr::separate_rows(Ethnicity_info,sep = ";") %>% 
+  dplyr::filter(!grepl("少数|汉族|其他",Ethnicity_info))
+
+
+#table(df_CHN_Ethnicity$Ethnicity) 1507~0, 63~1
+
+table_ethnicity <- data.frame(table(df_CHN_Ethnicity$Ethnicity_info))
+
+ethnicity_add <- c("土家族","回族","蒙古族","畲族","满族","苗族","壮族","黎族","彝族","布依族")
+
+table_ethnicity <- table_ethnicity %>% 
+  dplyr::mutate(Freq = ifelse(Var1 %in% ethnicity_add, Freq+1, Freq))
+
+
+## sample size and different ethnicity
+df_CHN_Ethnicity$Sample_Size[2] <- 251
+df_CHN_Ethnicity$Sample_Size[3] <- 297
+df_CHN_Ethnicity$Sample_Size[4] <- 110
+df_CHN_Ethnicity$Sample_Size[5] <- 61
+
+df_CHN_Ethnicity$Sample_Size[6:21] <- c(14,16,18,9,20,10,18,12,19,10,
+                                           19,12,17,15,21,13)
+
+df_CHN_Ethnicity$Sample_Size[32:33] <- c(4,0)
+
+df_CHN_Ethnicity$Sample_Size[34:62] <- c(139,108,71,51,50,40,38,31,
+                                         27,24,18,16,16,11,9,6,5,4,
+                                         3,3,3,2,2,1,1,1,1,1,1)
+
+df_CHN_Ethnicity$Sample_Size[63:64] <- c(30,60)
+
+df_CHN_Ethnicity$Sample_Size[65] <- 1006
+
+df_CHN_Ethnicity$Sample_Size[72] <- 30
+
+## ethnicity sample size
+df_CHN_Ethnicity_group <- df_CHN_Ethnicity %>% 
+  dplyr::mutate(Sample_Size =as.numeric(Sample_Size)) %>% 
+  dplyr::group_by(Ethnicity_info) %>% 
+  dplyr::summarise(Sample = sum(Sample_Size)) %>% 
+  dplyr::ungroup()
+
+
+Ethnicity_Article_IDs_number <- df_CHN_Ethnicity %>% 
+  dplyr::distinct(Article_IDs)
+
+Code2_Article_IDs_number <-  df_stage2_Journal_Code2 %>% 
+  dplyr::distinct(Article_IDs)
+  
+### 17/997
+
+```
+
+
+
+## education attachment
+```{r}
+df_CHN_edu <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2_N)) %>% 
+  dplyr::filter(Educational_Attainment_N == 1) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,M_age,SD_age,Sample_Type_N,Educational_Attainment_N,Educational_Attainment_info_N)
+
+writexl::write_xlsx(df_CHN_edu,"df_CHN_edu.xlsx")
+```
+
+## Unreported and Reported
+```{r}
+df_CHN_report <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::select(12,17,20,24,26,28,30,31,42,44:45,47) %>% 
+  dplyr::mutate(Abstract1 = ifelse(Abstract1 ==0, 0, 1),
+                Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
+                Subjects_Area = ifelse(Subjects_Area == 0, 0, 1),
+                Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
+                SES_N = ifelse(SES_N == 0, 0, 1),
+                Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N
+ == 0, 0, 1))
+
+report_list <- list()
+
+for (i in names(df_CHN_report)){
+  report_table <- data.frame(table(df_CHN_report[[i]])) %>% 
+    dplyr::mutate(col_names = names(df_CHN_report[i]),
+                  proportion = round(Freq / sum(Freq),2))
+  
+  report_list[[i]] <- report_table
+  
+}
+
+df_CHN_report <- do.call(rbind, report_list) %>% 
+  dplyr::arrange(Var1,proportion) %>% 
+  dplyr::mutate(Var1 = ifelse(Var1 == 0, "Unreported","Reported")) %>% 
+  dplyr::mutate(col_names = factor(col_names,
+                                   labels = c("Gender","Age","Abstract1",      "Recruitment Method","Recruitment Area","Education","Sampling Method","Occupation","SES","Ethnicity","Religious","Subjects Area"),
+                                   levels = c("Gender","Age","Abstract1",      "Subjects_Recruitment_Method_N","Subjects_Recruitment_Area","Educational_Attainment_N","Sampling_Method","Occupation_N","SES_N","Ethnicity","Religious","Subjects_Area")))
+
+
+report <- ggplot(df_CHN_report,aes(col_names,proportion,fill=Var1))+
+  geom_col()+
+  labs(x="",y="%")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))+
+  scale_x_discrete(guide = guide_axis(angle = 45))
+
+
+ggsave("report.pdf", report, device = "pdf", width=18, height = 15)
+
+report
+```
