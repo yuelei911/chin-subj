@@ -26,6 +26,14 @@ load("df_Pre_Stage2_Journal_Code.Rdata")
 load(here("df_chinese_subj_rr_stage1.Rdata"))
 ```
 
+## Articles 
+```{r}
+df_articles <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2))
+
+df_articles_num <- df_articles %>% 
+  dplyr::distinct(Article_IDs)
+```
 
 ## Age
 ```{r message=FALSE, warning=FALSE}
@@ -706,9 +714,7 @@ Code2_Article_IDs_number <-  df_stage2_Journal_Code2 %>%
 df_CHN_edu <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2_N)) %>% 
   dplyr::filter(Educational_Attainment_N == 1) %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,Sample_Type_N,Educational_Attainment_N,Educational_Attainment_info_N)
-
-?save
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,M_age,SD_age,Sample_Type_N,Educational_Attainment_N,Educational_Attainment_info_N)
 
 writexl::write_xlsx(df_CHN_edu,"df_CHN_edu.xlsx")
 ```
