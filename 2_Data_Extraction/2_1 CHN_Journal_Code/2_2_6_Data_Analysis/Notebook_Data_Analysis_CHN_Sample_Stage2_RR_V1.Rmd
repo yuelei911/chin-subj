@@ -495,7 +495,32 @@ df_stage2_Journal_Code2$Study_Number[1473] <- 1
 ### Artilce_IDs 20082029
 df_stage2_Journal_Code2$Study_Number[1485] <- 1
 
+### In this part, I found that the Study_Number of several studies were differentiated by Subjects_Gourp, so I recode them.
+
+### Article_IDs 20212067
+df_stage2_Journal_Code2$Study_Number[667:668] <- 2
+df_stage2_Journal_Code2$Study_Number_N[667:668] <- 2
+df_stage2_Journal_Code2$Subjects_Group[667:668] <- c("预研究1","正式研究")
+df_stage2_Journal_Code2$Subjects_Group_N[667:668] <- c("预研究1","正式研究")
+
+### Article_IDs 20185038
+df_stage2_Journal_Code2$Study_Number[1124:1125] <- df_stage2_Journal_Code2$Subjects_Group[1124:1125]
+df_stage2_Journal_Code2$Subjects_Group[1124:1125] <- df_stage2_Journal_Code2$Study_Number_N[1124:1125]
+df_stage2_Journal_Code2$Study_Number_N[1124:1125] <- df_stage2_Journal_Code2$Study_Number[1124:1125]
+df_stage2_Journal_Code2$Subjects_Group_N[1124:1125] <- df_stage2_Journal_Code2$Subjects_Group[1124:1125]
+df_stage2_Journal_Code2$Study_Number[1126] <- 1
+df_stage2_Journal_Code2$Study_Number_N[1126] <- 1
+df_stage2_Journal_Code2$Subjects_Group[1126] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[1126] <- NA
+
 rm(Study_Number)
+
+### I found some coding error of Study_Number when I check other information code.
+
+### Article_IDs 20181027
+df_stage2_Journal_Code2$Study_Number[1013:1014] <- 1
+df_stage2_Journal_Code2$Study_Number_N[1013:1014] <- 1
+
 ```
 
 
@@ -845,6 +870,7 @@ rm(Abstract1)
 ### Abstract2
 ```{r message=FALSE, warning=FALSE}
 Abstract2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Sample_Type_N = as.numeric(Sample_Type_N)) %>% 
   dplyr::filter(Sample_Type_N == c(1,5) & (is.na(Abstract2) | Abstract2 == "")) %>% 
   dplyr::select(3,40,13,14,39,41) %>% 
   dplyr::arrange(Sample_Type_N)
@@ -1070,6 +1096,7 @@ df_stage2_Journal_Code2$Female_Num[73] <- 20
 rm(Gender)
 
 Male_Female <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Gender = as.numeric(Gender)) %>% 
   dplyr::filter(Gender == 1 & (is.na(Male_Num) | is.na(Female_Num))) %>% 
   dplyr::select(3,16:19)
 
@@ -1134,6 +1161,7 @@ df_stage2_Journal_Code2$Age[215] <-  0
 rm(Age)
 
 Age_info <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Age = as.numeric(Age)) %>% 
   dplyr::filter(Age == 1) %>% 
   dplyr::filter(is.na(M_age) | is.na(SD_age)) %>% 
   dplyr::select(3,20:23,14,32,34,39)
@@ -1697,11 +1725,241 @@ df_stage2_Journal_Code2$Sample_Type_N[1251] <- 1
 df_stage2_Journal_Code2$Sample_Type_info_N[1596] <- "采用广告招募和公共课堂发问卷的方式从382名大学本科生中获取被试"
 
 rm(Sample_Type_info_N)
+
+
+## sample Type recode for 5
+Sample_Type5 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复", Remark2)) %>% 
+  dplyr::filter(Sample_Type_N == 5) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Sample_Type_info_N, M_age, SD_age)
+
+### Article_IDs 20081110
+df_stage2_Journal_Code2$Sample_Type_N[22] <- 4
+
+### Article_IDs 20083052
+df_stage2_Journal_Code2$Sample_Type_N[43:44] <- 4
+
+### Article_IDs 20083072
+df_stage2_Journal_Code2$Sample_Type_N[53] <- 4
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Sample_Type_N[63:64] <- 4
+
+### Article_IDs 20083099
+df_stage2_Journal_Code2$Sample_Type_N[65] <- 4
+
+### Article_IDs 20181143
+df_stage2_Journal_Code2$Sample_Type_N[83:84] <- 4
+
+### Article_IDs 20183321
+df_stage2_Journal_Code2$Sample_Type_N[166:169] <- 4
+
+### Article_IDs 20082061
+df_stage2_Journal_Code2$Sample_Type_N[249] <- 4
+
+### Article_IDs 20082107
+df_stage2_Journal_Code2$Sample_Type_N[269] <- 4
+
+### Article_IDs 20083218
+df_stage2_Journal_Code2$Sample_Type_N[289] <- 4
+
+### Article_IDs 20182017
+df_stage2_Journal_Code2$Sample_Type_N[330] <- 4
+df_stage2_Journal_Code2$Sample_Type_N[334] <- 4
+
+###Article_IDs 20183071
+df_stage2_Journal_Code2$Sample_Type_N[369:370] <- 4
+
+### Article_IDs 20183098
+df_stage2_Journal_Code2$Sample_Type_N[379:381] <- 4
+
+### Article_IDs 20183099
+df_stage2_Journal_Code2$Sample_Type_N[383] <- 4
+
+### Article_IDs 20211033
+df_stage2_Journal_Code2$Sample_Type_N[415:421] <- 4
+
+### Article_IDs 20211040
+df_stage2_Journal_Code2$Sample_Type_N[424:426] <- 4
+df_stage2_Journal_Code2$Sample_Type_N[428] <- 4
+
+### Article_IDs 20211061
+df_stage2_Journal_Code2$Sample_Type_N[437] <- 4
+df_stage2_Journal_Code2$Sample_Type_N[439] <- 4
+
+### Article_IDs 20211063
+df_stage2_Journal_Code2$Sample_Type_N[441:446] <- 4
+
+### Article_IDs 20211064
+df_stage2_Journal_Code2$Sample_Type_N[447:449] <- 4
+df_stage2_Journal_Code2$Sample_Type_N[451:452] <- 4
+
+### Article_IDs 20211067
+df_stage2_Journal_Code2$Sample_Type_N[453] <- 4
+df_stage2_Journal_Code2$Sample_Type_N[454] <- 1
+df_stage2_Journal_Code2$Educational_Attainment_N[454] <- NA
+df_stage2_Journal_Code2$Occupation_N[454] <- NA
+
+### Article_IDs 20211078
+df_stage2_Journal_Code2$Sample_Type_N[457:458] <- 4
+
+### Article_IDs 20211089
+df_stage2_Journal_Code2$Sample_Type_N[460:461] <- 4
+
+### Article_IDs 20213199
+df_stage2_Journal_Code2$Sample_Type_N[470] <- 4
+
+### Article_IDs 20084057
+df_stage2_Journal_Code2$Sample_Type_N[531:532] <- 4
+
+### Article_IDs 20084085
+df_stage2_Journal_Code2$Sample_Type_N[542] <- 4
+
+### Article_IDs 20182035
+df_stage2_Journal_Code2$Sample_Type_N[554:555] <- 4
+
+### Article_IDs 20182036
+df_stage2_Journal_Code2$Sample_Type_N[556:557] <- 4
+
+### Article_IDs 20182052
+df_stage2_Journal_Code2$Sample_Type_N[568:569] <- 4
+
+### Article_IDs 20183107
+df_stage2_Journal_Code2$Sample_Type_N[590] <- 4
+
+### Article_IDs 20183129
+df_stage2_Journal_Code2$Sample_Type_N[598] <- 4
+
+### Article_IDs 20183131
+df_stage2_Journal_Code2$Sample_Type_N[599:600] <- 4
+
+### Article_IDs 20212031
+df_stage2_Journal_Code2$Sample_Type_N[649] <- 4
+
+### Article_IDs 20212056
+df_stage2_Journal_Code2$Sample_Type_N[658] <- 4
+
+### Article_IDs 20212062
+df_stage2_Journal_Code2$Sample_Type_N[661:664] <- 4
+
+### Article_IDs 20212067
+df_stage2_Journal_Code2$Sample_Type_N[666] <- 4
+
+### Article_IDs 20214016
+df_stage2_Journal_Code2$Sample_Type_N[689:691] <- 4
+
+### Article_IDs 20182148
+df_stage2_Journal_Code2$Sample_Type_N[841]  <- 4
+
+### Article_IDs 20212122
+df_stage2_Journal_Code2$Sample_Type_N[942] <- 1
+
+###Article_IDs 20181030
+df_stage2_Journal_Code2$Sample_Type_N[1019:1020] <- 4
+
+### Article_IDs 20181069
+df_stage2_Journal_Code2$Sample_Type_N[1046] <- 4
+
+### Article_IDs 20182163
+df_stage2_Journal_Code2$Sample_Type_N[1059] <- 4
+
+### Article_IDs 20183221
+df_stage2_Journal_Code2$Sample_Type_N[1102] <- 4
+
+### Article_IDs 20183229
+df_stage2_Journal_Code2$Sample_Type_N[1109:1110] <- 4
+
+### Article_IDs 20185038
+df_stage2_Journal_Code2$Sample_Type_N[1124:1126] <- 4
+
+### Article_IDs 20185050
+df_stage2_Journal_Code2$Sample_Type_N[1138:1139] <- 3
+df_stage2_Journal_Code2$Sample_Type_N[1140:1142] <- 2
+
+### Article_IDs 20212155
+df_stage2_Journal_Code2$Sample_Type_N[1165:1166] <- 4
+
+### Article_IDs 20212165
+df_stage2_Journal_Code2$Sample_Type_N[1170:1173] <- 4
+
+### Article_IDs 20212173
+df_stage2_Journal_Code2$Sample_Type_N[1180:1181] <- 4
+
+### Article_IDs 20083109
+df_stage2_Journal_Code2$Sample_Type_N[1495] <- 4
+
+### Article_IDs 20083110
+df_stage2_Journal_Code2$Sample_Type_N[1496] <- 4
+
+### Article_IDs 20083170
+df_stage2_Journal_Code2$Sample_Type_N[1513] <- 4
+
+### Article_IDs 20083173
+df_stage2_Journal_Code2$Sample_Type_N[1514] <- 4
+
+### Article_IDs 20181202
+df_stage2_Journal_Code2$Sample_Type_N[1519] <- 4
+df_stage2_Journal_Code2$Sample_Type_N[1521] <- 4
+
+### Article_IDs 20183001
+df_stage2_Journal_Code2$Sample_Type_N[1552:1554] <- 4
+
+### Article_IDs 20183013
+df_stage2_Journal_Code2$Sample_Type_N[1558] <- 4
+
+### Article_IDs 20211025
+df_stage2_Journal_Code2$Sample_Type_N[1631:1632] <- 4
+
+
+
+### Some of the studies in the sample type are coded as 5 because they include a wide variety of groups that make it impossible to classify (for example, the sample contains both college and high school students). In our coding manual, the educational attachment and occupation of the coding is more applicable to adults who are not students, so in order to get more accurate coding information of the educational attachment and occupation, I am prepared to recode this type of situation.
+
+### Article_IDs 20083076
+df_stage2_Journal_Code2$Sample_Type_N[54:56] <- 23
+
+### Article_IDs 20182268
+df_stage2_Journal_Code2$Sample_Type_N[148] <- 12
+
+### Article_IDs 20183311
+df_stage2_Journal_Code2$Sample_Type_N[161] <- 12
+
+### Article_IDs 20213116
+df_stage2_Journal_Code2$Sample_Type_N[235] <- 12
+
+### Article_IDs 20183055
+df_stage2_Journal_Code2$Sample_Type_N[360] <- 12
+
+### Article_IDs 20211064
+df_stage2_Journal_Code2$Sample_Type_N[450] <- 12
+
+### Article_IDs 20213252
+df_stage2_Journal_Code2$Sample_Type_N[491] <- 12
+
+### Article_IDs 20213254
+df_stage2_Journal_Code2$Sample_Type_N[493] <- 12
+
+### Article_IDs 20183241
+df_stage2_Journal_Code2$Sample_Type_N[1113] <- 12
+
+### Article_IDs 20215015
+df_stage2_Journal_Code2$Sample_Type_N[1209] <- 12
+
+### Article_IDs 20182241
+df_stage2_Journal_Code2$Sample_Type_N[1380] <- 23
+
+### Article_IDs 20213040
+df_stage2_Journal_Code2$Sample_Type_N[1444] <- 12
+
+### Article_IDs 20082042
+df_stage2_Journal_Code2$Sample_Type_N[1491] <- 12
+
+rm(Sample_Type5)
+
 ```
 
 
 ### Subjects_Recruitment_Method_N and info
-```{r}
+```{r} 
 Subjects_Recruitment_Method_N <- df_stage2_Journal_Code2 %>%
   dplyr::select(3,14,39,47,32,34) %>% 
   dplyr::filter(is.na(Subjects_Recruitment_Method_N)) %>% 
@@ -1787,8 +2045,9 @@ rm(Subjects_Recruitment_Method_info_N)
 
 
 ### Educational_Attainment_N and info
-```{r}
-Educational_Attainment_N <- df_stage2_Journal_Code2 %>% 
+```{r message=FALSE, warning=FALSE}
+Educational_Attainment_N <- df_stage2_Journal_Code2 %>%
+  dplyr::mutate(Sample_Type_N = as.numeric(Sample_Type_N)) %>% 
   dplyr::filter(Sample_Type_N >= 4 & is.na(Educational_Attainment_N)) %>% 
   dplyr::select(3,40:43,14,32,34,39)
 
@@ -1839,11 +2098,11 @@ rm(Educational_Attainment_N)
 
 
 ### Ocuupation_N
-```{r}
+```{r message=FALSE, warning=FALSE}
 Occupation_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Sample_Type_N = as.numeric(Sample_Type_N)) %>% 
   dplyr::filter(Sample_Type_N >= 4 & is.na(Occupation_N)) %>% 
   dplyr::select(3,40:41,44,14,32,34,39)
-
 
 ### Article_IDs 20083107
 df_stage2_Journal_Code2$Occupation_N[67] <- 0
@@ -1866,12 +2125,32 @@ df_stage2_Journal_Code2$Occupation_N[1385] <- 0
 
 rm(Occupation_N)
 
+
+```
+
+
+###  Educational_Attainment and occupation recode
+```{r message=FALSE, warning=FALSE}
+Educational_Attainment_recode <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::mutate(Sample_Type_N = as.numeric(Sample_Type_N)) %>% 
+  dplyr::filter(Sample_Type_N >= 4) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
+                Sample_Type_N,Educational_Attainment_N,Educational_Attainment_info_N,Occupation_N)
+
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Sample_Type_N = as.numeric(Sample_Type_N)) %>% 
+  dplyr::mutate(Educational_Attainment_N = ifelse(Sample_Type_N > 10, NA, Educational_Attainment_N),
+                Educational_Attainment_info_N =ifelse(Sample_Type_N > 10 ,NA, Educational_Attainment_info_N),
+                Occupation_N = ifelse(Sample_Type_N > 10 , NA, Occupation_N))
 ```
 
 
 ### SES_N and info
 ```{r}
 SES_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Sample_Type_N = as.numeric(Sample_Type_N)) %>% 
   dplyr::filter(Sample_Type_N >= 4 & is.na(SES_N)) %>% 
   dplyr::select(3,40:41,45:46,14,32,34,39)
 
@@ -1896,6 +2175,9 @@ df_stage2_Journal_Code2$SES_N[262:267] <- 1
 ### Article_IDs 20082107
 df_stage2_Journal_Code2$SES_N[268:269] <- 2
 df_stage2_Journal_Code2$SES_info_N[268] <- NA
+
+### Article_IDs 20213116
+df_stage2_Journal_Code2$SES_N[235] <- 0
 
 rm(SES_N)
 
@@ -2485,6 +2767,127 @@ SES_N_detailed <- df_stage2_Journal_Code2 %>%
 SES_info_N_detailed <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(SES_N == 5 & is.na(SES_info_N))
 rm(SES_N_detailed,SES_info_N_detailed)
+
+
+### Process data.frame (Education_Attachment_recode)
+Educational_Attainment_recode_ocuupation <- Educational_Attainment_recode %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
+  dplyr::select(-c(5:6))
+
+### Article_IDs 20081099
+df_stage2_Journal_Code2$Occupation_N[16:17] <- 0
+
+### Article_IDs 20083107
+df_stage2_Journal_Code2$Occupation_N[67] <- 9  ## Prisoners and other types are in non-occupational status and are not applicable to the coding of occupational reports. Therefore, I use 9 represent this status.
+
+### Article_IDs 20082110
+df_stage2_Journal_Code2$Occupation_N[270] <- 0
+
+### Article_IDs 20181242
+df_stage2_Journal_Code2$Occupation_N[318] <- 0
+
+### Article_IDs 20181245
+df_stage2_Journal_Code2$Occupation_N[321] <- 0
+
+### Article_IDs 20183071
+df_stage2_Journal_Code2$Occupation_N[369:370] <- 9
+
+### Article_IDs 20183099
+df_stage2_Journal_Code2$Occupation_N[382] <- 9
+
+### Article_IDs 20183101
+df_stage2_Journal_Code2$Occupation_N[384] <- 9
+
+### Article_IDs 20211071
+df_stage2_Journal_Code2$Occupation_N[455] <- 1
+
+### Article_IDs 20213254
+df_stage2_Journal_Code2$Occupation_N[494] <- 0
+
+### Article_IDs 20082188
+df_stage2_Journal_Code2$Occupation_N[516] <- 1
+
+### Article_IDs 20084057
+df_stage2_Journal_Code2$Occupation_N[531:532] <- 0
+
+### Article_IDs 20084085
+df_stage2_Journal_Code2$Occupation_N[542] <- 9
+
+### Article_IDs 20182035
+df_stage2_Journal_Code2$Occupation_N[554] <- 9
+
+### Article_IDs 20182148
+df_stage2_Journal_Code2$Sample_Type_N[820] <- 5
+df_stage2_Journal_Code2$Occupation_N[820] <- 0
+
+### Article_IDs 20082348
+df_stage2_Journal_Code2$Occupation_N[984] <- 0
+
+### Article_IDs 20182182
+df_stage2_Journal_Code2$Occupation_N[1058:1060] <- 0
+
+### Article_IDs 20183229
+df_stage2_Journal_Code2$Occupation_N[1088] <- 9
+
+### Article_IDs 20183236
+df_stage2_Journal_Code2$Occupation_N[1091] <- 0
+
+### Article_IDs 20185039
+df_stage2_Journal_Code2$Occupation_N[1106] <- 1
+
+### Article_IDs 20212151
+df_stage2_Journal_Code2$Occupation_N[1143] <- 0
+
+### Article_IDs 20212155
+df_stage2_Journal_Code2$Occupation_N[1144] <- 9
+
+### Article_IDs 20212157
+df_stage2_Journal_Code2$Occupation_N[1146] <- 0
+
+### Article_IDs 20082369
+df_stage2_Journal_Code2$Occupation_N[1264] <- 1
+
+### Article_IDs 20083033
+df_stage2_Journal_Code2$Occupation_N[1285] <- 9
+
+### Article_IDs 20183257
+df_stage2_Journal_Code2$Occupation_N[1363:1364] <- 9
+
+### Article_IDs 20183264
+df_stage2_Journal_Code2$Occupation_N[1366:1367] <- 9
+
+### Article_IDs 20185128
+df_stage2_Journal_Code2$Occupation_N[1407] <- 0
+
+### Article_IDs 20213067
+df_stage2_Journal_Code2$Occupation_N[1436] <- 0
+
+### Article_IDs 20083114
+df_stage2_Journal_Code2$Occupation_N[1478] <- 0
+
+### Article_IDs 20083177
+df_stage2_Journal_Code2$Occupation_N[1496] <- 9
+
+### Article_IDs 20181208
+df_stage2_Journal_Code2$Occupation_N[1503:1506] <- 1
+
+### Article_IDs 20181209
+df_stage2_Journal_Code2$Occupation_N[1507:1508] <- 1
+
+### Article_IDs 20181212
+df_stage2_Journal_Code2$Occupation_N[1512:1513] <- 0
+
+### Article_IDs 20181220
+df_stage2_Journal_Code2$Occupation_N[1517] <- 0
+
+### Article_IDs 20181228
+df_stage2_Journal_Code2$Occupation_N[1522] <- 1
+
+### Article_IDs 20181235
+df_stage2_Journal_Code2$Occupation_N[1524] <- 1
+
+rm(Educational_Attainment_recode,Educational_Attainment_recode_ocuupation)
+
 ```
 
 
