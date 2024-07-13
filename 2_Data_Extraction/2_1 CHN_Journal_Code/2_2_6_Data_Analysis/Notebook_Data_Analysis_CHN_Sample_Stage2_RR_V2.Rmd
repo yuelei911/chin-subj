@@ -28,13 +28,18 @@ load("df_chinese_subj_rr_stage1.Rdata")
 
 ## Articles 
 ```{r}
-df_articles <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2))
+### In order to facilitate the subsequent exclusion of foreign samples, the Subjects_Recruitment_Area information 29 of 20211064 was changed to Chinese character 29
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[447] <- "被试填答IP覆盖了二十九个省、自治区、直辖市"
 
-df_articles_num <- df_articles %>% 
+
+df_Articles <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area))
+
+df_articles_num <- df_Articles %>% 
   dplyr::distinct(Article_IDs)
 
-df_study_num <- df_articles %>% 
+df_study_num <- df_Articles %>% 
   dplyr::distinct(Article_IDs,Study_Number)
 ```
 
@@ -727,6 +732,7 @@ writexl::write_xlsx(df_CHN_edu,"df_CHN_edu.xlsx")
 ```{r}
 df_CHN_report <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
   dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
                 Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
                 SES_N = ifelse(SES_N == 0, 0, 1),
@@ -757,14 +763,36 @@ for (i in names(df_CHN_report)){
 }
 
 df_CHN_report <- do.call(rbind, report_list) %>% 
-  dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) %>% 
-  dplyr::mutate(col_names = factor(col_names,
-                                   labels = c("Religious","Ethnicity","Sampling Method",
-                                              "Recruitment Area","Recruitment Method",
-                                              "SES","Age","Gender"),
-                                   levels = c("Religious","Ethnicity","Sampling_Method",
-                                              "Recruitment_Area","Recruitment_Method",
-                                              "SES","Age","Gender")))
+  dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
+
+
+
+### Calculate reported status of Educational_Attainment and Occupation
+Educational_Occupation <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>%
+  dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
+                Occupation_N = max(Occupation_N) > 0) %>% 
+  dplyr::ungroup()  ### 294 studies
+
+table(Educational_Occupation$Educational_Attainment_N) ## FALSE 162 TRUE 132
+table(Educational_Occupation$Occupation_N)  ## FALSE 193 TRUE 101
+
+
+Educational_Occupation_table <- data.frame(Var1 = c("Unreported","Reported","Unreported","Reported"),
+                                           Freq = c(162,132,193,101),
+                                           col_names= c("Educational_Attainment","Educational_Attainment","Occupation","Occupation"),
+                                           proportion = c(0.55,0.45,0.66,0.34))
+
+df_CHN_report <- rbind(df_CHN_report,Educational_Occupation_table) %>% 
+  dplyr::mutate(col_names = factor(col_names, 
+                                   labels = c("Gender","Age","Recruitment Method","Recruitment Area","Educational Attainment",
+                                              "Occupation","Sampling Method","SES","Ethnicity","Religious"
+                                             ),
+                                   levels = c("Gender","Age","Recruitment_Method","Recruitment_Area","Educational_Attainment",
+                                              "Occupation","Sampling_Method","SES","Ethnicity","Religious")))
 
 
 
@@ -780,7 +808,7 @@ report <- ggplot(df_CHN_report,aes(col_names,proportion,fill=Var1))+
         axis.title = element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"))+
   scale_x_discrete(guide = guide_axis(angle = 45))+
-  scale_fill_manual(values = c("#00BFC4","#F8766D"))
+  scale_fill_manual(values = c("#adc6ad","#B2B2B2"))
 
 report
 
@@ -792,21 +820,166 @@ ggsave("report.pdf", report, device = "pdf", width=16, height = 9)
 ## Age report
 df_age_report_detail <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Age,M_age,SD_age,Other_age) %>%
   dplyr::filter(Age == 1)
 
 ### Age report studies num
 df_age_report_detail_study_num <- df_age_report_detail %>%
-    dplyr::distinct(Article_IDs,Study_Number) ## 991 studies
+    dplyr::distinct(Article_IDs,Study_Number) ## 989 studies
   
 
 ### Age fuzzy report studies num
-df_fuzzy_report <- df_age_report_detail %>% 
+df_fuzzy_age_report <- df_age_report_detail %>% 
   dplyr::filter(is.na(M_age)) 
 
 ## 20082227,20083017,20183340,20183097,20214027 Other age include Mage
 ##这里后面还需要重新处理一下部分Otherage包含Mage的情况
 
-df_fuzzy_report_study_num <- df_fuzzy_report %>% 
-  dplyr::distinct(Article_IDs,Study_Number) ## 134-5=129
+df_fuzzy_age_report_study_num <- df_fuzzy_age_report %>% 
+  dplyr::distinct(Article_IDs,Study_Number) ## 130-5=125
+```
+
+
+### Abstract1 subjects information reported
+```{r message=FALSE, warning=FALSE}
+### In our coding, different subject groups will make the same article have multiple rows of data, but there is only one abstract and the multi-rows Abstract1 should be consistent. So, first, I check whether Abstract1 is consistent.
+
+Abstract_subj_info_filter <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Abstract1,Sample_Type_N,Sample_Type_info_N,
+                Abstract2)
+
+
+Abstract1_subj_info_equl <- Abstract_subj_info_filter %>%
+  dplyr::group_by(Article_IDs) %>%  
+  dplyr::mutate(Same_Abstract1 = n_distinct(Abstract1) == 1) %>%  
+  dplyr::ungroup() 
+
+### Article_IDs 20081099
+df_stage2_Journal_Code2$Abstract1[17] <- 0
+
+### Article_IDs 20183099
+df_stage2_Journal_Code2$Abstract1[382] <- 14
+
+### Article_IDs 20083116
+df_stage2_Journal_Code2$Abstract1[1460] <- 14
+
+### Article_IDs 20181236
+df_stage2_Journal_Code2$Abstract1[1506] <- 145
+
+### Article_IDs 20081096
+df_stage2_Journal_Code2$Abstract1[15] <- 1234
+
+### Article_IDs 20185111
+df_stage2_Journal_Code2$Abstract1[1380] <- 0
+
+### Article_IDs 20211025
+df_stage2_Journal_Code2$Abstract1[1590:1591] <- "1234b"
+
+### Article_IDs 20213237
+df_stage2_Journal_Code2$Abstract1[1641:1642] <- 1
+
+## Then, I check that the encoding of Abstract1 and Abstract2 is exactly the same
+Abstract1_Abstract2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Abstract2,Abstract1) %>% 
+  dplyr::filter(grepl("1",Sample_Type_N)) %>% 
+  dplyr::filter(grepl("1",Abstract1) & Abstract2 != 1)
+
+### Article_IDs 20213252
+df_stage2_Journal_Code2$Abstract2[490] <- 1
+
+### Article_IDs 20185009
+df_stage2_Journal_Code2$Abstract1[867:868] <- 0
+
+### Article_IDs 20181100
+df_stage2_Journal_Code2$Abstract2[1278:1279] <- 1
+
+### Article_IDs 20213184
+df_stage2_Journal_Code2$Abstract2[1605] <- 1
+
+
+### Process demographic information reports for different samples in the Abstract1
+Abstract1_subj_info_equl <- Abstract1_subj_info_equl %>% 
+  dplyr::filter(Sample_Type_N != 5) %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::mutate(Sample_type3 = ifelse(all(Sample_Type_N == 1),1,
+                                          ifelse(any(grepl("1",Sample_Type_N)) & any(Sample_Type_N !=1),2,
+                                      3))) %>% 
+  dplyr::ungroup()
+
+Abstract1_subj_info <- Abstract1_subj_info_equl %>% 
+  dplyr::mutate(Abstract1_demo_info = ifelse(Abstract1 == 0,0,1),  
+                Abstract1_sample_info = ifelse(grepl("1",Abstract1),1,0)) %>% 
+  dplyr::select(Article_IDs,Abstract1_demo_info,Abstract1_sample_info,Sample_type3) %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup() ### Abstract1_demo_info means demographic information report, Abstract2_sample_info means sample type report  
+
+### the demographic report of different sample type in Abstract1
+Abstract1_demo_info <- Abstract1_subj_info %>% 
+  dplyr::group_by(Sample_type3,Abstract1_demo_info) %>% 
+  dplyr::summarise(report = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(proportion = round(report/sum(report),2))
+  
+### the sample information report of different sample type in Abstract1
+#Abstract1_sample_info <- Abstract1_subj_info %>% 
+ # dplyr::group_by(Sample_type3,Abstract1_sample_info) %>% 
+  #dplyr::summarise(report = n()) %>% 
+  #dplyr::ungroup() %>% 
+  #dplyr::mutate(proportion = round(report/sum(report),2))
+
+### Abstract2 (univeristy students report)
+Abstract2_report_NA <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
+  dplyr::filter(grepl("1",Sample_Type_N)) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Abstract2,Abstract1) %>% 
+  dplyr::filter(is.na(Abstract2))
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Abstract2 = ifelse(is.na(Remark1) & !grepl("重复",Remark2) & 
+                                     !grepl("2",Subjects_Recruitment_Area) & 
+                                     grepl("1",Sample_Type_N) & Abstract1 == 0,0,Abstract2))
+
+### Article_IDs 20183311
+df_stage2_Journal_Code2$Abstract2[161] <- 0
+
+### Article_IDs 20182075
+df_stage2_Journal_Code2$Abstract2[776] <- 1
+
+### Article_IDs 20082324
+df_stage2_Journal_Code2$Abstract2[950] <- 0
+
+### Article_ID 20082024
+df_stage2_Journal_Code2$Abstract2[1440] <- 1
+
+### Article_IDs 20082042
+df_stage2_Journal_Code2$Abstract1[1451] <- 123
+df_stage2_Journal_Code2$Abstract2[1451] <- 1
+
+### Article_IDs 20213168
+df_stage2_Journal_Code2$Abstract2[1603] <- 1
+
+### Article_IDs 20213192
+df_stage2_Journal_Code2$Abstract2[1611:1612] <- 0
+
+
+Abstract2_report <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
+  dplyr::filter(grepl("1",Sample_Type_N)) %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::mutate(Same_Abstract2 = n_distinct(Abstract2) == 1) %>%  ## check multiple subjects group Abstract2 whether is consistent.
+  dplyr::slice(1) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(Abstract2) %>% 
+  dplyr::summarise(report = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(proportion = round(report/sum(report),2))
+
 ```
