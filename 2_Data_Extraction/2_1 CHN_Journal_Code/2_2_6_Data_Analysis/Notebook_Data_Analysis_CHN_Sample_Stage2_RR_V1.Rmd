@@ -2741,6 +2741,7 @@ Educational_Attainment_recode <- df_stage2_Journal_Code2 %>%
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,
                 Sample_Type_N,Occupation_N)
 
+##writexl::write_xlsx(Educational_Attainment_recode,"Educational_Attainment_recode.xlsx")
 
 ### Article_IDs 20081099
 df_stage2_Journal_Code2$Occupation_N[16:17] <- 0
