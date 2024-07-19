@@ -1122,93 +1122,152 @@ df_Arechar_et_al_2023_Oth_gender %>%
 
 ## CHN Journal and BTS age
 ```{r}
-Age_bins <- df_CHN_Journal_Age %>% 
+Function_Process_age <- function(data){
+  
+  data_age <- data %>% 
+    dplyr::mutate(ageBins = cut(Age,
+                                breaks = c(-Inf,4.5,9.5,14.5,19.5,24.5,
+                                           29.5,34.5,39.5,44.5,49.5,
+                                           54.5,59.5,64.5,69.5,74.5,
+                                           79.5,84.5,89.5,94.5,Inf),
+                                labels = c("0~4","5~9","10~14","15~19","20~24",
+                                           "25~29","30~34","35~39","40~44","45~49",
+                                           "50~54","55~59","60~64","65~69","70~74",
+                                           "75~79","80~84","85~89", "90~94",">=95"),
+                                levels = c("0~4","5~9","10~14","15~19","20~24",
+                                           "25~29","30~34","35~39","40~44","45~49",
+                                           "50~54","55~59","60~64","65~69","70~74",
+                                           "75~79","80~84","85~89", "90~94",">=95"))) %>% 
+    dplyr::count(ageBins) %>% 
+    dplyr::mutate(Proportion = round((n/sum(n))*100,2))
+  
+  ### Create a data frame to complete the missing ageBins 
+ 
+  Age_bins <- df_census7_Age %>% 
   dplyr::select(1) %>% 
   dplyr::mutate(n = NA, Proportion = NA , Data_Source = NA) 
+  
+  
+  data_age <- data_age %>% 
+  dplyr::full_join(Age_bins, by = "ageBins") %>% 
+  dplyr::rename(n = 2, Proportion = 3) %>% 
+  dplyr::select(1:3) %>% 
+  dplyr::mutate(n = ifelse(is.na(n),0,n),
+                Proportion = ifelse(is.na(Proportion),0,Proportion))
+  
+  
+## Turning ageBins into factor variables for easy plotting
+  agebins_code <- Age_bins %>% 
+    dplyr::arrange(ageBins) %>% 
+    dplyr::pull(ageBins)
+  
+  
+  data_age <- data_age %>% 
+    dplyr::mutate(ageBins = factor(ageBins,
+                                   levels = agebins_code))
+  
+}
 
+
+
+## Arechar_et_al_2023
 df_Arechar_et_al_2023_age <- df_Arechar_et_al_2023 %>% 
   dplyr::filter(Country == "cn") %>% 
-  dplyr::mutate(ageBins = cut(Age,
-                breaks = c(-Inf,4.5,9.5,14.5,19.5,24.5,
-                           29.5,34.5,39.5,44.5,49.5,
-                           54.5,59.5,64.5,69.5,74.5,
-                           79.5,84.5,89.5,94.5,Inf),
-                labels = c("0~4","5~9","10~14","15~19","20~24",
-                           "25~29","30~34","35~39","40~44","45~49",
-                           "50~54","55~59","60~64","65~69","70~74",
-                           "75~79","80~84","85~89", "90~94",">=95"),
-                levels = c("0~4","5~9","10~14","15~19","20~24",
-                           "25~29","30~34","35~39","40~44","45~49",
-                           "50~54","55~59","60~64","65~69","70~74",
-                           "75~79","80~84","85~89", "90~94",">=95"))) %>% 
-  dplyr::count(ageBins) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
-  dplyr::mutate(Data_Source = "Arechar_et_al_2023",n=as.numeric(n))
-
-df_Arechar_et_al_2023_age <- df_Arechar_et_al_2023_age %>% 
-  dplyr::full_join(Age_bins, by = "ageBins") %>% 
-  dplyr::rename(n = 2, Proportion = 3, Data_Source = 4) %>% 
-  dplyr::select(1:4) %>% 
-  dplyr::mutate(n = ifelse(is.na(n),0,n),
-                Proportion = ifelse(is.na(Proportion),0,Proportion),
-                Data_Source = ifelse(is.na(Data_Source),"Arechar_et_al_2023",Data_Source))
+  Function_Process_age()
 
 
+Arechar_et_al_2023_age <- ggplot(data= df_census7_Age, 
+       aes(x=ageBins, y = Proportion, fill="Census 7")) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = df_Arechar_et_al_2023_age, aes(x=ageBins, 
+                y = Proportion, group = 1, color ="Arechar_et_al_2023"),size =1)+
+  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
+  scale_color_manual(values=c("Arechar_et_al_2023"="red")) +
+  scale_y_continuous(limits = c(0,20))+
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+
+#ggsave("Arechar_et_al_2023_age.pdf", Arechar_et_al_2023_age, device = "pdf", width=18, height = 9)
+
+Arechar_et_al_2023_age
+
+
+
+## Azevedo_et_al_2022_mainland
 df_Azevedo_et_al_2022_mainland_age <- df_Azevedo_et_al_2022_mainland %>% 
-  dplyr::mutate(ageBins = cut(Age,
-                breaks = c(-Inf,4.5,9.5,14.5,19.5,24.5,
-                           29.5,34.5,39.5,44.5,49.5,
-                           54.5,59.5,64.5,69.5,74.5,
-                           79.5,84.5,89.5,94.5,Inf),
-                labels = c("0~4","5~9","10~14","15~19","20~24",
-                           "25~29","30~34","35~39","40~44","45~49",
-                           "50~54","55~59","60~64","65~69","70~74",
-                           "75~79","80~84","85~89", "90~94",">=95"),
-                levels = c("0~4","5~9","10~14","15~19","20~24",
-                           "25~29","30~34","35~39","40~44","45~49",
-                           "50~54","55~59","60~64","65~69","70~74",
-                           "75~79","80~84","85~89", "90~94",">=95"))) %>% 
-  dplyr::count(ageBins) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
-  dplyr::mutate(Data_Source = "Azevedo_et_al_2022_mainland",n=as.numeric(n))
+  Function_Process_age()
 
 
-df_Azevedo_et_al_2022_mainland_age <- df_Azevedo_et_al_2022_mainland_age %>% 
-  dplyr::full_join(Age_bins, by = "ageBins") %>% 
-  dplyr::rename(n = 2, Proportion = 3, Data_Source = 4) %>% 
-  dplyr::select(1:4) %>% 
-  dplyr::mutate(n = ifelse(is.na(n),0,n),
-                Proportion = ifelse(is.na(Proportion),0,Proportion),
-                Data_Source = ifelse(is.na(Data_Source),"Azevedo_et_al_2022_mainland",Data_Source))
+Azevedo_et_al_2022_mainland_age <- ggplot(data= df_census7_Age, 
+       aes(x=ageBins, y = Proportion, fill="Census 7")) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = df_Azevedo_et_al_2022_mainland_age, aes(x=ageBins, 
+                y = Proportion, group = 1, color ="Azevedo_et_al_2022_mainland"),size =1)+
+  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
+  scale_color_manual(values=c("Azevedo_et_al_2022_mainland"="red")) +
+  scale_y_continuous(limits = c(0,20))+
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
 
+#ggsave("Azevedo_et_al_2022_mainland_age.pdf", Azevedo_et_al_2022_mainland_age, device = "pdf", width=18, height = 9)
 
-df_Azevedo_et_al_2022_taiwan_age <- df_Azevedo_et_al_2022_taiwan %>%
-  dplyr::mutate(ageBins = cut(Age,
-                breaks = c(-Inf,4.5,9.5,14.5,19.5,24.5,
-                           29.5,34.5,39.5,44.5,49.5,
-                           54.5,59.5,64.5,69.5,74.5,
-                           79.5,84.5,89.5,94.5,Inf),
-                labels = c("0~4","5~9","10~14","15~19","20~24",
-                           "25~29","30~34","35~39","40~44","45~49",
-                           "50~54","55~59","60~64","65~69","70~74",
-                           "75~79","80~84","85~89", "90~94",">=95"),
-                levels = c("0~4","5~9","10~14","15~19","20~24",
-                           "25~29","30~34","35~39","40~44","45~49",
-                           "50~54","55~59","60~64","65~69","70~74",
-                           "75~79","80~84","85~89", "90~94",">=95"))) %>% 
-  dplyr::count(ageBins) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
-  dplyr::mutate(Data_Source = "Azevedo_et_al_2022_taiwan",n=as.numeric(n))
+Azevedo_et_al_2022_mainland_age 
 
 
 
-df_Azevedo_et_al_2022_taiwan_age <- df_Azevedo_et_al_2022_taiwan_age %>% 
-  dplyr::full_join(Age_bins, by = "ageBins") %>% 
-  dplyr::rename(n = 2, Proportion = 3, Data_Source = 4) %>% 
-  dplyr::select(1:4) %>% 
-  dplyr::mutate(n = ifelse(is.na(n),0,n),
-                Proportion = ifelse(is.na(Proportion),0,Proportion),
-                Data_Source = ifelse(is.na(Data_Source),"Azevedo_et_al_2022_taiwan",Data_Source))
+## Azevedo_et_al_2022_taiwan_age
+df_Azevedo_et_al_2022_taiwan_age <- df_Azevedo_et_al_2022_taiwan %>% 
+  Function_Process_age()
+
+
+Azevedo_et_al_2022_taiwan_age <- ggplot(data= df_census7_Age, 
+       aes(x=ageBins, y = Proportion, fill="Census 7")) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = df_Azevedo_et_al_2022_taiwan_age, aes(x=ageBins, 
+                y = Proportion, group = 1, color ="Azevedo_et_al_2022_taiwan"),size =1)+
+  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
+  scale_color_manual(values=c("Azevedo_et_al_2022_taiwan"="red")) +
+  scale_y_continuous(limits = c(0,20))+
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+
+#ggsave("Azevedo_et_al_2022_taiwan_age.pdf", Azevedo_et_al_2022_taiwan_age, device = "pdf", width=18, height = 9)
+
+Azevedo_et_al_2022_taiwan_age 
+
+age_plot <-  Arechar_et_al_2023_age + Azevedo_et_al_2022_mainland_age + 
+  Azevedo_et_al_2022_taiwan_age +
+  plot_layout(ncol = 2, nrow = 2,heights = c(4,4))+
+  patchwork::plot_annotation(tag_levels = 'A')
+
+ggsave("age_plot.pdf", age_plot, device = "pdf", width=18, height = 9)
+
+age_plot
+
 
 ```
 
