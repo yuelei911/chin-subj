@@ -1005,9 +1005,23 @@ countrycodelist_iso2_iso3 <- countrycodelist %>%
 df_Arechar_et_al_2023 <- read.csv("Arechar_et_al_2023.csv")
 df_Azevedo_et_al_2022_mainland <- read.csv("pro_Azevedo_et_al_2022_mainland.csv")
 df_Azevedo_et_al_2022_taiwan <- read.csv("pro_Azevedo_et_al_2022_taiwan.csv")
+df_Bosson_et_al_2021 <- read.csv("pro_Bosson_et_al_2021.csv")
+df_Buchanan_et_al_2023 <- read.csv("pro_Buchanan_et_al_2023.csv")
+df_Dorison_et_al_2020 <- read.csv("pro_Dorison_et_al_2020.csv")
 
 
 ## Precess data for gender
+
+
+## CHN Journal
+df_CHN_Journal_gender <- df_CHN_Journal_Gender_Total %>% 
+  dplyr::mutate(Data_Source = "CHN Journal") %>% 
+  tidyr::pivot_longer(cols = c("male","female"),
+                      names_to = "Gender",
+                      values_to = "Proportion")
+
+
+##Arechar_et_al_2023
 df_Arechar_et_al_2023_gender <- df_Arechar_et_al_2023 %>% 
   dplyr::filter(Country == "cn") %>% 
   dplyr::group_by(Gender) %>% 
@@ -1016,6 +1030,8 @@ df_Arechar_et_al_2023_gender <- df_Arechar_et_al_2023 %>%
   dplyr::mutate(Proportion = round(count/sum(count),2),
                 Data_Source = "Arechar_et_al_2023")
 
+
+## Azevedo_et_al_2022_mainland
 df_Azevedo_et_al_2022_mainland_gender <- df_Azevedo_et_al_2022_mainland %>%
   dplyr::group_by(Gender) %>% 
   dplyr::summarise(count = n()) %>%
@@ -1023,6 +1039,8 @@ df_Azevedo_et_al_2022_mainland_gender <- df_Azevedo_et_al_2022_mainland %>%
   dplyr::mutate(Proportion = round(count/sum(count),2),
                 Data_Source = "Azevedo_et_al_2022_mainland")
 
+
+## Azevedo_et_al_2022_taiwan
 df_Azevedo_et_al_2022_taiwan_gender <-  df_Azevedo_et_al_2022_taiwan %>% 
   dplyr::group_by(Gender) %>% 
   dplyr::summarise(count = n()) %>%
@@ -1030,13 +1048,45 @@ df_Azevedo_et_al_2022_taiwan_gender <-  df_Azevedo_et_al_2022_taiwan %>%
   dplyr::mutate(Proportion = round(count/sum(count),2),
                 Data_Source = "Azevedo_et_al_2022_taiwan")
 
-df_CHN_Journal_gender <- df_CHN_Journal_Gender_Total %>% 
-  dplyr::mutate(Data_Source = "CHN Journal") %>% 
-  tidyr::pivot_longer(cols = c("male","female"),
-                      names_to = "Gender",
-                      values_to = "Proportion")
 
-df_CHNJournal_BTS_gender <- bind_rows(df_Azevedo_et_al_2022_mainland_gender,df_Azevedo_et_al_2022_taiwan_gender,df_Arechar_et_al_2023_gender,df_CHN_Journal_gender)
+## Bosson_et_al_2021
+df_Bosson_et_al_2021_gender <- df_Bosson_et_al_2021 %>% 
+  dplyr::filter(Country == "China") %>% 
+  dplyr::filter(Gender == "Male" | Gender == "Female") %>%  ## gender has multiple categories.
+  dplyr::group_by(Gender) %>% 
+  dplyr::summarise(count = n()) %>%
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Proportion = round(count/sum(count),2),
+                Data_Source = "Bosson_et_al_2021")
+
+
+## Buchanan_et_al_2023
+df_Buchanan_et_al_2023_gender <- df_Buchanan_et_al_2023 %>% 
+  dplyr::filter(grepl("China | Hong Kong | Taiwan | Macao", Country)) %>% 
+  dplyr::filter(Gender == "Female" | Gender == "Male") %>% 
+  dplyr::group_by(Gender) %>% 
+  dplyr::summarise(count = n()) %>%
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Proportion = round(count/sum(count),2),
+                Data_Source = "Buchanan_et_al_2023")
+
+## Dorison_et_al_2020
+df_Dorison_et_al_2020_gender <- df_Dorison_et_al_2020 %>% 
+  dplyr::filter(grepl("CHN | HKG | TWN",Country)) %>% 
+  dplyr::filter(Gender == "Female" | Gender == "Male") %>% 
+  dplyr::group_by(Gender) %>% 
+  dplyr::summarise(count = n()) %>%
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Proportion = round(count/sum(count),2),
+                Data_Source = "Dorison_et_al_2020")
+  
+
+
+df_CHNJournal_BTS_gender <- bind_rows(df_Azevedo_et_al_2022_mainland_gender,df_Azevedo_et_al_2022_taiwan_gender,
+                                      df_Arechar_et_al_2023_gender,df_CHN_Journal_gender,
+                                      df_Bosson_et_al_2021_gender,df_Buchanan_et_al_2023_gender,
+                                      df_Dorison_et_al_2020_gender) %>% 
+  dplyr::mutate(Gender = str_to_title(Gender))
 
 
 CHNJournal_BTS_gender <- ggplot(data = df_CHNJournal_BTS_gender,aes(Data_Source,Proportion,fill = Gender))+
