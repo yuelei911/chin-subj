@@ -999,15 +999,64 @@ countrycodelist_iso2_iso3 <- countrycodelist %>%
 
 
 ## CHN Journa and BTS' CN gender
-```{r}
 
-## laod data
-df_Arechar_et_al_2023 <- read.csv("Arechar_et_al_2023.csv")
-df_Azevedo_et_al_2022_mainland <- read.csv("pro_Azevedo_et_al_2022_mainland.csv")
-df_Azevedo_et_al_2022_taiwan <- read.csv("pro_Azevedo_et_al_2022_taiwan.csv")
-df_Bosson_et_al_2021 <- read.csv("pro_Bosson_et_al_2021.csv")
-df_Buchanan_et_al_2023 <- read.csv("pro_Buchanan_et_al_2023.csv")
-df_Dorison_et_al_2020 <- read.csv("pro_Dorison_et_al_2020.csv")
+### Load BTS data
+```{r message=FALSE, warning=FALSE}
+file_list <- list.files(here("D://chin-subj//2_Data_Extraction//2_1 CHN_Journal_Code//2_2_6_Data_Analysis"),
+                        pattern = ".csv",
+                        full.names = TRUE,
+                        recursive = TRUE)
+
+BTS_data <- list()  
+ 
+for (file in file_list) {  
+    
+  BTS_file <- readr::read_csv(file)  
+  BTS_data[[tools::file_path_sans_ext(basename(file))]] <- BTS_file  
+
+}  
+
+BTS_data <- BTS_data[grepl("BTS_",names(BTS_data),ignore.case = TRUE)]
+rm(BTS_file)
+```
+
+
+### Create a function to batch process gender
+```{r}
+BTS_gender_list <- list()
+
+for(i in seq_along(BTS_data)) {
+  
+  BTS_data_name <- names(BTS_data)[i] 
+  
+  BTS_gender <- BTS_data[[i]] %>% 
+    dplyr::mutate(Gender = str_to_title(Gender)) %>% 
+    dplyr::filter(Gender == "Female" | Gender == "Male") %>% 
+    dplyr::group_by(Country,Gender) %>% 
+    dplyr::summarise(count = n()) %>%
+    dplyr::mutate(Proportion = round(count/sum(count),2),
+                  Data_Source =  BTS_data_name) %>% 
+    dplyr::ungroup()
+  
+  BTS_gender_list[[BTS_data_name]] <- BTS_gender
+  
+}
+
+BTS_gender_list[6]
+
+```
+
+##create a function to calculate gender proportion
+```{r}
+Func_gender_proportion <- function(data){
+  
+  data_gender <- data %>% 
+    dplyr::group_by(Gender) %>% 
+    dplyr::summarise(count = n()) %>%
+    dplyr::ungroup() %>% 
+    dplyr::mutate(Proportion = round(count/sum(count),2))
+  
+}
 
 
 ## Precess data for gender
