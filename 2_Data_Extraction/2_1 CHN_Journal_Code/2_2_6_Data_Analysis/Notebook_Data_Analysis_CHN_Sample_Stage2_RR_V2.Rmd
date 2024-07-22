@@ -6,7 +6,8 @@ output: html_document
 ---
 
 In "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V1.Rmd"， We prereprocess the journal code data. In this Rmd(V2), we enter the informal process data.
-## Install and Load packages
+
+# Install and Load packages
 ```{r message=FALSE, warning=FALSE}
 rm(list = ls())
 
@@ -15,18 +16,45 @@ if (!require("pacman")) install.packages("pacman")
 # use package "pacman" as loading R packages tools
 
 pacman::p_load("tidyverse","here","rio")
-pacman::p_load("geojsonsf","sf","RColorBrewer","ggspatial","patchwork","ggrepel")
+pacman::p_load("geojsonsf","sf","RColorBrewer","ggspatial","patchwork","ggrepel","maps")
 ```
 
 
-## Load data
+# Load data
+The data includes data from the first Stage 1 of the pre-registration report (primarily census data and CFPS2018 data), Chinese journal coding data, and data from Big Team Science (BTS).
+
+## Load the data of stage 1 and Chinese journal coding data
 ```{r}
 load("df_Pre_Stage2_Journal_Code.Rdata")
 
 load("df_chinese_subj_rr_stage1.Rdata")
 ```
 
-## Articles 
+
+## Load the data of BTS
+```{r message=FALSE, warning=FALSE}
+file_list <- list.files(here("D://chin-subj//2_Data_Extraction//2_1 CHN_Journal_Code//2_2_6_Data_Analysis"),
+                        pattern = ".csv",
+                        full.names = TRUE,
+                        recursive = TRUE)
+
+BTS_data <- list()  
+ 
+for (file in file_list) {  
+    
+  BTS_file <- readr::read_csv(file)  
+  BTS_data[[tools::file_path_sans_ext(basename(file))]] <- BTS_file  
+
+}  
+
+BTS_data <- BTS_data[grepl("BTS_",names(BTS_data),ignore.case = TRUE)]
+rm(BTS_file)
+```
+
+
+# Overview of participants
+
+## The basic situation of Chinese journal coding data
 ```{r}
 ### In order to facilitate the subsequent exclusion of foreign samples, the Subjects_Recruitment_Area information 29 of 20211064 was changed to Chinese character 29
 df_stage2_Journal_Code2$Subjects_Recruitment_Area[447] <- "被试填答IP覆盖了二十九个省、自治区、直辖市"
@@ -42,6 +70,18 @@ df_articles_num <- df_Articles %>%
 df_study_num <- df_Articles %>% 
   dplyr::distinct(Article_IDs,Study_Number)
 ```
+
+
+## The basic situation about BTS data
+```{r}
+```
+
+# Test three hypotheses
+## Test the 1st hypothesis
+
+## Test the 2st hypothesis
+
+## Test the 3st hypothesis
 
 ## Age
 ```{r message=FALSE, warning=FALSE}
@@ -435,37 +475,10 @@ df_CHN_Journal_Gender_Total <- df_CHN_Journal_Gender %>%
   dplyr::summarise(male = round(mean(Male_Proportion),2),
                    female = round(mean(Female_Proportion),2)) %>% 
   dplyr::ungroup() %>% 
-  dplyr::mutate(Data_Source = "CHN JTotal")
-
-df_CHN_Journal_Gender_Year <- df_CHN_Journal_Gender %>% 
-  dplyr::mutate(Data_Source = substring(Article_IDs,1,4)) %>% 
-  dplyr::group_by(Data_Source) %>% 
-  dplyr::summarise(male = round(mean(Male_Proportion),2),
-                   female = round(mean(Female_Proportion),2)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Data_Source= ifelse( Data_Source == "2008","CHN J08", ifelse(Data_Source == "2018", "CHN J18","CHN J21")))
-
-df_CHN_Journal_Gender2 <- rbind(df_CHN_Journal_Gender_Total,
-                                df_CHN_Journal_Gender_Year) %>% 
+  dplyr::mutate(Data_Source = "CHN Journal") %>% 
   tidyr::pivot_longer(c(male,female), 
                       names_to = "Gender") %>% 
-  dplyr::arrange(Gender,value) %>% 
-  dplyr::mutate(Data_Source = factor(Data_Source,levels = c("CHN J08","CHN JTotal","CHN J18","CHN J21")))
-
-
-
-ggplot(data = df_CHN_Journal_Gender2,aes(Data_Source,value,fill = Gender))+
-  geom_col()+
-  labs(y="Proportion")+
-  theme_classic()+
-  theme(panel.border =element_rect(fill=NA,color="black"),
-        legend.position = "bottom",
-        legend.box.spacing = unit(2,"pt"),
-        legend.text = element_text(size = 16, family = "serif"),
-        legend.title = element_blank(),
-        axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
-  
+  dplyr::rename(Proportion = 3)
 
 
 ```
@@ -998,31 +1011,23 @@ countrycodelist_iso2_iso3 <- countrycodelist %>%
 ```
 
 
-## CHN Journa and BTS' CN gender
+## CHN Journa and BTS' CHN gender
 
-### Load BTS data
+
+
+
+### Batch process BTS' gender
 ```{r message=FALSE, warning=FALSE}
-file_list <- list.files(here("D://chin-subj//2_Data_Extraction//2_1 CHN_Journal_Code//2_2_6_Data_Analysis"),
-                        pattern = ".csv",
-                        full.names = TRUE,
-                        recursive = TRUE)
+## The Mainland of China, Hong Kong of China, Macau of China, and Taiwan of China are assigned the unified value of China
 
-BTS_data <- list()  
- 
-for (file in file_list) {  
-    
-  BTS_file <- readr::read_csv(file)  
-  BTS_data[[tools::file_path_sans_ext(basename(file))]] <- BTS_file  
+BTS_data[[5]] <- BTS_data[[5]] %>% 
+  dplyr::mutate(Country = ifelse(Country %in% c("Taiwan (Province of China) - TWN","Macao - MAC","Hong Kong - HKG"), 
+                                 "China - CHN", Country))
 
-}  
+BTS_data[[6]] <- BTS_data[[6]] %>% 
+  dplyr::mutate(Country = ifelse(grepl("TWN |HKG ", Country),CHN,Country))
+  
 
-BTS_data <- BTS_data[grepl("BTS_",names(BTS_data),ignore.case = TRUE)]
-rm(BTS_file)
-```
-
-
-### Create a function to batch process gender
-```{r}
 BTS_gender_list <- list()
 
 for(i in seq_along(BTS_data)) {
@@ -1042,105 +1047,45 @@ for(i in seq_along(BTS_data)) {
   
 }
 
-BTS_gender_list[6]
-
 ```
 
-##create a function to calculate gender proportion
+
+### Gender data mapping in China
 ```{r}
-Func_gender_proportion <- function(data){
+## Extracting China data
+BTS_gender_CHN <- lapply(BTS_gender_list, function(df){
   
-  data_gender <- data %>% 
-    dplyr::group_by(Gender) %>% 
-    dplyr::summarise(count = n()) %>%
-    dplyr::ungroup() %>% 
-    dplyr::mutate(Proportion = round(count/sum(count),2))
-  
-}
+  df %>% 
+    dplyr::filter(grepl("CN|CHN|CHINA", Country, ignore.case = TRUE))
+
+})
+
+BTS_gender_CHN <- do.call(rbind, BTS_gender_CHN)  
 
 
-## Precess data for gender
+## Combine CHN journal data and set factor
+df_CHN_Journal_Gender_Total2 <- df_CHN_Journal_Gender_Total %>% 
+  dplyr::mutate(Proportion = Proportion * 100)
+
+Journal_BTS_gender_CHN <- BTS_gender_CHN %>% 
+  dplyr::mutate(Proportion = Proportion * 100) %>% 
+  bind_rows(df_census7_Gender,df_CFPS2018_Gender,df_CHN_Journal_Gender_Total2) %>% 
+  dplyr::mutate(Gender =  stringr::str_to_title(Gender))
+
+Journal_BTS_gender_CHN_factor <- Journal_BTS_gender_CHN %>% 
+  dplyr::filter(Gender == "Female") %>% 
+  dplyr::arrange(Proportion) %>% 
+  dplyr::pull(Data_Source)
+
+Journal_BTS_gender_CHN <- Journal_BTS_gender_CHN %>% 
+  dplyr::mutate(Data_Source = factor(Data_Source,
+                                     levels = Journal_BTS_gender_CHN_factor))
 
 
-## CHN Journal
-df_CHN_Journal_gender <- df_CHN_Journal_Gender_Total %>% 
-  dplyr::mutate(Data_Source = "CHN Journal") %>% 
-  tidyr::pivot_longer(cols = c("male","female"),
-                      names_to = "Gender",
-                      values_to = "Proportion")
-
-
-##Arechar_et_al_2023
-df_Arechar_et_al_2023_gender <- df_Arechar_et_al_2023 %>% 
-  dplyr::filter(Country == "cn") %>% 
-  dplyr::group_by(Gender) %>% 
-  dplyr::summarise(count = n()) %>%
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Proportion = round(count/sum(count),2),
-                Data_Source = "Arechar_et_al_2023")
-
-
-## Azevedo_et_al_2022_mainland
-df_Azevedo_et_al_2022_mainland_gender <- df_Azevedo_et_al_2022_mainland %>%
-  dplyr::group_by(Gender) %>% 
-  dplyr::summarise(count = n()) %>%
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Proportion = round(count/sum(count),2),
-                Data_Source = "Azevedo_et_al_2022_mainland")
-
-
-## Azevedo_et_al_2022_taiwan
-df_Azevedo_et_al_2022_taiwan_gender <-  df_Azevedo_et_al_2022_taiwan %>% 
-  dplyr::group_by(Gender) %>% 
-  dplyr::summarise(count = n()) %>%
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Proportion = round(count/sum(count),2),
-                Data_Source = "Azevedo_et_al_2022_taiwan")
-
-
-## Bosson_et_al_2021
-df_Bosson_et_al_2021_gender <- df_Bosson_et_al_2021 %>% 
-  dplyr::filter(Country == "China") %>% 
-  dplyr::filter(Gender == "Male" | Gender == "Female") %>%  ## gender has multiple categories.
-  dplyr::group_by(Gender) %>% 
-  dplyr::summarise(count = n()) %>%
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Proportion = round(count/sum(count),2),
-                Data_Source = "Bosson_et_al_2021")
-
-
-## Buchanan_et_al_2023
-df_Buchanan_et_al_2023_gender <- df_Buchanan_et_al_2023 %>% 
-  dplyr::filter(grepl("China | Hong Kong | Taiwan | Macao", Country)) %>% 
-  dplyr::filter(Gender == "Female" | Gender == "Male") %>% 
-  dplyr::group_by(Gender) %>% 
-  dplyr::summarise(count = n()) %>%
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Proportion = round(count/sum(count),2),
-                Data_Source = "Buchanan_et_al_2023")
-
-## Dorison_et_al_2020
-df_Dorison_et_al_2020_gender <- df_Dorison_et_al_2020 %>% 
-  dplyr::filter(grepl("CHN | HKG | TWN",Country)) %>% 
-  dplyr::filter(Gender == "Female" | Gender == "Male") %>% 
-  dplyr::group_by(Gender) %>% 
-  dplyr::summarise(count = n()) %>%
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Proportion = round(count/sum(count),2),
-                Data_Source = "Dorison_et_al_2020")
-  
-
-
-df_CHNJournal_BTS_gender <- bind_rows(df_Azevedo_et_al_2022_mainland_gender,df_Azevedo_et_al_2022_taiwan_gender,
-                                      df_Arechar_et_al_2023_gender,df_CHN_Journal_gender,
-                                      df_Bosson_et_al_2021_gender,df_Buchanan_et_al_2023_gender,
-                                      df_Dorison_et_al_2020_gender) %>% 
-  dplyr::mutate(Gender = str_to_title(Gender))
-
-
-CHNJournal_BTS_gender <- ggplot(data = df_CHNJournal_BTS_gender,aes(Data_Source,Proportion,fill = Gender))+
+## plot
+Journal_BTS_gender <- ggplot(data = Journal_BTS_gender_CHN,aes(Data_Source,Proportion,fill = Gender))+
   geom_col()+
-  geom_hline(yintercept = 0.5, linetype = "dashed", color = "#666666")+
+  geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
   labs(y="Proportion")+
   theme_classic()+
   theme(panel.border =element_rect(fill=NA,color="black"),
@@ -1150,12 +1095,13 @@ CHNJournal_BTS_gender <- ggplot(data = df_CHNJournal_BTS_gender,aes(Data_Source,
         legend.title = element_blank(),
         axis.title = element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"),
-        theme(axis.text.x = element_text(angle = 45, hjust = 1)))
+        axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggsave("CHNJournal_BTS_gender.pdf", CHNJournal_BTS_gender, device = "pdf", width=18, height = 9)
+ggsave("Journal_BTS_gender.pdf", Journal_BTS_gender, device = "pdf", width=18, height = 9)
 
-CHNJournal_BTS_gender
+Journal_BTS_gender
 ```
+
 
 
 ### CHN Journal and BTS gender in other region/country
