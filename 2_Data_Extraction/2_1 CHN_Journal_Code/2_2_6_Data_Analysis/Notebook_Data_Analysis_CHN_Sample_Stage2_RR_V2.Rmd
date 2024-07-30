@@ -23,7 +23,8 @@ pacman::p_load("geojsonsf","sf","RColorBrewer","ggspatial","patchwork","ggrepel"
 # Load data
 The data includes data from the first Stage 1 of the pre-registration report (primarily census data and CFPS2018 data), Chinese journal coding data, and data from Big Team Science (BTS).
 
-## Load the data of stage 1 and Chinese journal coding data
+
+## Load the data of stage 1 and Chinese journals coding data
 ```{r}
 load("df_Pre_Stage2_Journal_Code.Rdata")
 
@@ -32,7 +33,7 @@ load("df_chinese_subj_rr_stage1.Rdata")
 
 
 ## Load the data of BTS
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 file_list <- list.files(here("D://chin-subj//2_Data_Extraction//2_1 CHN_Journal_Code//2_2_6_Data_Analysis"),
                         pattern = ".csv",
                         full.names = TRUE,
@@ -54,7 +55,7 @@ rm(BTS_file)
 
 # Overview of participants
 
-## The basic situation of Chinese journal coding data
+## The basic situation of Chinese journals coding data
 ```{r}
 ### In order to facilitate the subsequent exclusion of foreign samples, the Subjects_Recruitment_Area information 29 of 20211064 was changed to Chinese character 29
 df_stage2_Journal_Code2$Subjects_Recruitment_Area[447] <- "被试填答IP覆盖了二十九个省、自治区、直辖市"
@@ -74,17 +75,329 @@ df_study_num <- df_Articles %>%
 
 ## The basic situation about BTS data
 ```{r}
+
 ```
+
+
+## The reported situation of Chinese Journals
+### Process reported situations data of Chinese Journals
+```{r}
+df_CHN_report <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
+                Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
+                SES_N = ifelse(SES_N == 0, 0, 1),
+                Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N == 0, 0, 1)) %>%
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Age = max(Age) > 0,
+                   Gender = max(Gender) > 0,
+                   Religious = max(Religious) > 0,
+                   Ethnicity = max(Ethnicity) > 0,
+                   Sampling_Method = max(Sampling_Method) > 0,
+                   Recruitment_Area = max(Subjects_Recruitment_Area) > 0,
+                   Recruitment_Method = max(Subjects_Recruitment_Method_N) > 0,
+                   SES = max(SES_N) > 0) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::select(3:last_col())
+
+report_list <- list()
+
+for (i in names(df_CHN_report)){
+  
+  
+  report_table <- data.frame(table(df_CHN_report[[i]])) %>% 
+    dplyr::mutate(col_names = names(df_CHN_report[i]),
+                  proportion = round(Freq / sum(Freq),2))
+  
+  report_list[[i]] <- report_table
+  
+}
+
+df_CHN_report <- do.call(rbind, report_list) %>% 
+  dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
+
+
+
+### Calculate reported status of Educational_Attainment and Occupation
+Educational_Occupation <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>%
+  dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
+                Occupation_N = max(Occupation_N) > 0) %>% 
+  dplyr::ungroup()  ### 294 studies
+
+table(Educational_Occupation$Educational_Attainment_N) ## FALSE 162 TRUE 132
+table(Educational_Occupation$Occupation_N)  ## FALSE 193 TRUE 101
+
+
+Educational_Occupation_table <- data.frame(Var1 = c("Unreported","Reported","Unreported","Reported"),
+                                           Freq = c(162,132,193,101),
+                                           col_names= c("Educational_Attainment","Educational_Attainment","Occupation","Occupation"),
+                                           proportion = c(0.55,0.45,0.66,0.34))
+
+df_CHN_report <- rbind(df_CHN_report,Educational_Occupation_table) %>% 
+  dplyr::mutate(col_names = factor(col_names, 
+                                   labels = c("Gender","Age","Recruitment Method","Recruitment Area","Educational Attainment",
+                                              "Occupation","Sampling Method","SES","Ethnicity","Religious"
+                                             ),
+                                   levels = c("Gender","Age","Recruitment_Method","Recruitment_Area","Educational_Attainment",
+                                              "Occupation","Sampling_Method","SES","Ethnicity","Religious")))
+```
+
+
+### Visualize subjects information reported  situations in Chinese journals 
+```{r}
+report <- ggplot(df_CHN_report,aes(col_names,proportion,fill=Var1))+
+  geom_col()+
+  labs(x="",y="%")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))+
+  scale_x_discrete(guide = guide_axis(angle = 45))+
+  scale_fill_manual(values = c("#adc6ad","#B2B2B2"))
+
+report
+
+ggsave("report.pdf", report, device = "pdf", width=16, height = 9)
+```
+
+
+### Specific reports on some demographic categories
+```{r}
+df_age_report_detail <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Age,M_age,SD_age,Other_age) %>%
+  dplyr::filter(Age == 1)
+
+### Age report studies num
+df_age_report_detail_study_num <- df_age_report_detail %>%
+    dplyr::distinct(Article_IDs,Study_Number) ## 989 studies
+  
+
+### Age fuzzy report studies num
+df_fuzzy_age_report <- df_age_report_detail %>% 
+  dplyr::filter(is.na(M_age)) 
+
+## 20082227,20083017,20183340,20183097,20214027 Other age include Mage
+##这里后面还需要重新处理一下部分Otherage包含Mage的情况
+
+df_fuzzy_age_report_study_num <- df_fuzzy_age_report %>% 
+  dplyr::distinct(Article_IDs,Study_Number) ## 130-5=125
+```
+
 
 # Test three hypotheses
 ## Test the 1st hypothesis
 
+### Gender
+### Process gender data from census
+```{r}
+## Process the gender data of census 7
+df_census7_Gender <- df_census7 %>%
+  dplyr::select(c(6,7)) %>%        
+  dplyr::slice(c(6)) %>%
+  dplyr::rename(male=1, 
+                female=2) %>%
+  dplyr::mutate(Data_Source = "Census 7") %>%
+  tidyr::pivot_longer(c(male, female), 
+                      names_to = "Gender",
+                      values_to = "Proportion") %>%
+  dplyr::mutate(Proportion = round(as.numeric(Proportion), 0))
+
+## Process the gender data of CFPS2018
+df_CFPS2018_Gender <- df_CFPS2018 %>%
+  dplyr::rename(Gender = QA002) %>%
+  dplyr::count(Gender) %>%
+  dplyr::filter(!is.na(Gender)) %>%
+  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
+                Data_Source = "CFPS 2018",
+                Gender= ifelse(Gender == 1, "male", "female")) %>%
+  dplyr::select(Data_Source, Gender, Proportion)
+```
+
+
+#### Process gender data from Chinese sample in Chinese journal
+```{r}
+## Minor revision
+df_stage2_Journal_Code2$Male_Num[1258] <- 0
+
+
+## Process the gender data of CHN Journal
+df_stage2_Journal_Code_Gender <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::filter(Subjects_Recruitment_Area !=2) %>% 
+  dplyr::mutate(Male_Num = as.numeric(Male_Num),
+                Female_Num = as.numeric(Female_Num)) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,Male_Num,Female_Num,Remark1,Remark2,Remark3)
+
+
+## Part of the gender data is the proportion recorded, and part is the number of people, so I deal with it separately.
+
+df_stage2_Journal_Code_Gender_decimal <- df_stage2_Journal_Code_Gender %>% 
+  dplyr::filter(Gender == 1) %>% 
+  dplyr::filter(Male_Num < 1 & Female_Num < 1) %>% 
+  dplyr::select(Article_IDs,Sample_Size,Study_Number,Subjects_Group_N,Gender,Male_Num,Female_Num) %>% 
+  dplyr::mutate(Male_Num = round(Male_Num,2),
+                Female_Num = round(Female_Num,2)) %>% 
+  dplyr::rename(Male_Proportion = Male_Num,
+               Female_Proportion =  Female_Num)
+
+df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender %>%
+  dplyr::filter(Gender == 1) %>% 
+  dplyr::filter(Male_Num > 1 | Female_Num > 1) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,Male_Num,Female_Num)
+
+
+## Multiple groups of data are removed during processing, so re-create the data.frame and then merge them.
+
+df_stage2_Journal_Code_Gender_integer_add <- data.frame(
+  Article_IDs = c("20185082","20213045","20213048","20213048","20215075"),
+  Study_Number = c(1,1,1,2,1),
+  Subjects_Group_N = c(NA,NA,NA,NA,"父亲"),
+  Sample_Size = c(33,81,68,59,310),
+  Gender = 1,
+  Male_Num = c(26,49,31,28,310),
+  Female_Num = c(7,32,37,31,0))
+
+
+df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender_integer %>% 
+  rbind(df_stage2_Journal_Code_Gender_integer_add) %>% 
+  dplyr::mutate(Female_Num = ifelse(is.na(Female_Num), 0, Female_Num),
+                Sample_Size = as.numeric(Sample_Size)) %>%
+  dplyr::mutate(Male_Proportion = Male_Num/Sample_Size) %>% 
+  dplyr::mutate(Male_Proportion = round(Male_Proportion,2)) %>% 
+  dplyr::mutate(Female_Proportion = 1 - Male_Proportion) %>% 
+  dplyr::select(-c(6:7))
+  
+## rm(df_stage2_Journal_Code_Gender_integer_add)
+
+df_CHN_Journal_Gender <- rbind(df_stage2_Journal_Code_Gender_decimal,
+                               df_stage2_Journal_Code_Gender_integer)
+
+df_CHN_Journal_Gender_Total <- df_CHN_Journal_Gender %>%
+  dplyr::summarise(male = round(mean(Male_Proportion),2),
+                   female = round(mean(Female_Proportion),2)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Data_Source = "CHN Journal") %>% 
+  tidyr::pivot_longer(c(male,female), 
+                      names_to = "Gender") %>% 
+  dplyr::rename(Proportion = 3)
+
+```
+
+
+#### Process gender data from BTS 
+```{r message=FALSE, warning=FALSE, include=FALSE}
+## The Mainland of China, Hong Kong of China, Macau of China, and Taiwan of China are assigned the unified value of China
+
+b1 <- BTS_data[[8]]
+
+## Fernandez-Velasco_et_al_2023 have TW CN AND HK
+
+## Hoogeveen_et_al_2022 only mainland
+
+BTS_data[[5]] <- BTS_data[[5]] %>% 
+  dplyr::mutate(Country = ifelse(Country %in% c("Taiwan (Province of China) - TWN","Macao - MAC","Hong Kong - HKG"), 
+                                 "China - CHN", Country))
+
+BTS_data[[6]] <- BTS_data[[6]] %>% 
+  dplyr::mutate(Country = ifelse(grepl("TWN |HKG ", Country),CHN,Country))
+  
+
+BTS_gender_list <- list()
+
+for(i in seq_along(BTS_data)) {
+  
+  BTS_data_name <- names(BTS_data)[i] 
+  
+  BTS_gender <- BTS_data[[i]] %>% 
+    dplyr::mutate(Gender = str_to_title(Gender)) %>% 
+    dplyr::filter(Gender == "Female" | Gender == "Male") %>% 
+    dplyr::group_by(Country,Gender) %>% 
+    dplyr::summarise(count = n()) %>%
+    dplyr::mutate(Proportion = round(count/sum(count),2),
+                  Data_Source =  BTS_data_name) %>% 
+    dplyr::ungroup()
+  
+  BTS_gender_list[[BTS_data_name]] <- BTS_gender
+  
+}
+
+```
+
+
+#### Combine gender data from Chinese Journal and BTS
+```{r}
+## Extracting China data
+BTS_gender_CHN <- lapply(BTS_gender_list, function(df){
+  
+  df %>% 
+    dplyr::filter(grepl("CN|CHN|CHINA", Country, ignore.case = TRUE))
+
+})
+
+BTS_gender_CHN <- do.call(rbind, BTS_gender_CHN)  
+
+
+## Combine CHN journal data and set factor
+df_CHN_Journal_Gender_Total2 <- df_CHN_Journal_Gender_Total %>% 
+  dplyr::mutate(Proportion = Proportion * 100)
+
+Journal_BTS_gender_CHN <- BTS_gender_CHN %>% 
+  dplyr::mutate(Proportion = Proportion * 100) %>% 
+  bind_rows(df_census7_Gender,df_CFPS2018_Gender,df_CHN_Journal_Gender_Total2) %>% 
+  dplyr::mutate(Gender =  stringr::str_to_title(Gender))
+
+Journal_BTS_gender_CHN_factor <- Journal_BTS_gender_CHN %>% 
+  dplyr::filter(Gender == "Female") %>% 
+  dplyr::arrange(Proportion) %>% 
+  dplyr::pull(Data_Source)
+
+Journal_BTS_gender_CHN <- Journal_BTS_gender_CHN %>% 
+  dplyr::mutate(Data_Source = factor(Data_Source,
+                                     levels = Journal_BTS_gender_CHN_factor))
+```
+
+
+#### Visualize gender data for Chinese journals and BTS
+```{r}
+Journal_BTS_gender <- ggplot(data = Journal_BTS_gender_CHN,aes(Data_Source,Proportion,fill = Gender))+
+  geom_col()+
+  geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
+  labs(y="Proportion")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggsave("Journal_BTS_gender.pdf", Journal_BTS_gender, device = "pdf", width=18, height = 9)
+
+Journal_BTS_gender
+```
+
+
+### Age
+
+
 ## Test the 2st hypothesis
 
-## Test the 3st hypothesis
-
-## Age
-```{r message=FALSE, warning=FALSE}
+### Age
+#### Re-process age data from Chinese sample in Chinese journal
+```{r}
 ## I found some outliers for M_age, so I processed this part of the data first.
 df_stage2_Journal_Code2$Sample_Type_N[1082] <- 2
 df_stage2_Journal_Code2$Sample_Type_N[183] <- 2
@@ -230,8 +543,11 @@ rm(df_stage2_Journal_Code2_SampleType5)
 ## Count unreported/reported
 #table(df_stage2_Journal_Code_Age$Age)
 
+```
 
-## Formal processing of age data
+
+#### Informal process age data from Chinese sample in Chinese journal
+```{r}
 df_stage2_Journal_Code_MAge <- df_stage2_Journal_Code_Age2 %>% 
   dplyr::select(Article_IDs,M_age,Remark1,Remark2) %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
@@ -309,7 +625,11 @@ df_stage2_Journal_Code_MAge_year <- df_stage2_Journal_Code_MAge_year %>%
 
 rm(df_stage2_Journal_Code_MAge_year_missgroup,df_stage2_Journal_Code_MAge_missgroup, Data_Source_num)
 
+```
 
+
+#### Process age data of census data
+```{r}
 ## Process age data for the census 6
 df_census6_Age <- df_census6 %>% 
   dplyr::filter(row_number() %% 6 == 0) %>%
@@ -360,9 +680,11 @@ df_census7_Age <- df_census7_Age %>%
                                  "25~29","30~34","35~39","40~44","45~49",
                                  "50~54","55~59","60~64","65~69","70~74",
                                  "75~79","80~84","85~89", "90~94",">=95" )))
+```
 
 
-
+#### Visualize age data from Chinese journals and census7
+```{r}
 CHN_Journal_age <- ggplot(data= df_census7_Age, 
        aes(x=ageBins, y = Proportion, fill="Census 7")) +
   geom_col(alpha=0.5, width = 1) +
@@ -388,103 +710,8 @@ CHN_Journal_age
 ```
 
 
-## Gender
-```{r message=FALSE, warning=FALSE}
-df_stage2_Journal_Code2$Male_Num[1258] <- 0
-
-## Process the gender data of census 7
-
-## Process the gender data of census 7
-df_census7_Gender <- df_census7 %>%
-  dplyr::select(c(6,7)) %>%        
-  dplyr::slice(c(6)) %>%
-  dplyr::rename(male=1, 
-                female=2) %>%
-  dplyr::mutate(Data_Source = "Census 7") %>%
-  tidyr::pivot_longer(c(male, female), 
-                      names_to = "Gender",
-                      values_to = "Proportion") %>%
-  dplyr::mutate(Proportion = round(as.numeric(Proportion), 0))
-
-## Process the gender data of CFPS2018
-df_CFPS2018_Gender <- df_CFPS2018 %>%
-  dplyr::rename(Gender = QA002) %>%
-  dplyr::count(Gender) %>%
-  dplyr::filter(!is.na(Gender)) %>%
-  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
-                Data_Source = "CFPS 2018",
-                Gender= ifelse(Gender == 1, "male", "female")) %>%
-  dplyr::select(Data_Source, Gender, Proportion)
-
-
-## Process the gender data of CHN Journal
-df_stage2_Journal_Code_Gender <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
-  dplyr::filter(Subjects_Recruitment_Area !=2) %>% 
-  dplyr::mutate(Male_Num = as.numeric(Male_Num),
-                Female_Num = as.numeric(Female_Num)) %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,Male_Num,Female_Num,Remark1,Remark2,Remark3)
-
-#table(df_stage2_Journal_Code_Gender$Gender)
-
-
-#Part of the gender data is the proportion recorded, and part is the number of people, so I deal with it separately.
-
-df_stage2_Journal_Code_Gender_decimal <- df_stage2_Journal_Code_Gender %>% 
-  dplyr::filter(Gender == 1) %>% 
-  dplyr::filter(Male_Num < 1 & Female_Num < 1) %>% 
-  dplyr::select(Article_IDs,Sample_Size,Study_Number,Subjects_Group_N,Gender,Male_Num,Female_Num) %>% 
-  dplyr::mutate(Male_Num = round(Male_Num,2),
-                Female_Num = round(Female_Num,2)) %>% 
-  dplyr::rename(Male_Proportion = Male_Num,
-               Female_Proportion =  Female_Num)
-
-df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender %>%
-  dplyr::filter(Gender == 1) %>% 
-  dplyr::filter(Male_Num > 1 | Female_Num > 1) %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,Male_Num,Female_Num)
-
-
-##Multiple groups of data are removed during processing, so re-create the data.frame and then merge them.
-
-df_stage2_Journal_Code_Gender_integer_add <- data.frame(
-  Article_IDs = c("20185082","20213045","20213048","20213048","20215075"),
-  Study_Number = c(1,1,1,2,1),
-  Subjects_Group_N = c(NA,NA,NA,NA,"父亲"),
-  Sample_Size = c(33,81,68,59,310),
-  Gender = 1,
-  Male_Num = c(26,49,31,28,310),
-  Female_Num = c(7,32,37,31,0))
-
-
-df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender_integer %>% 
-  rbind(df_stage2_Journal_Code_Gender_integer_add) %>% 
-  dplyr::mutate(Female_Num = ifelse(is.na(Female_Num), 0, Female_Num),
-                Sample_Size = as.numeric(Sample_Size)) %>%
-  dplyr::mutate(Male_Proportion = Male_Num/Sample_Size) %>% 
-  dplyr::mutate(Male_Proportion = round(Male_Proportion,2)) %>% 
-  dplyr::mutate(Female_Proportion = 1 - Male_Proportion) %>% 
-  dplyr::select(-c(6:7))
-  
-#rm(df_stage2_Journal_Code_Gender_integer_add)
-
-df_CHN_Journal_Gender <- rbind(df_stage2_Journal_Code_Gender_decimal,
-                               df_stage2_Journal_Code_Gender_integer)
-
-df_CHN_Journal_Gender_Total <- df_CHN_Journal_Gender %>%
-  dplyr::summarise(male = round(mean(Male_Proportion),2),
-                   female = round(mean(Female_Proportion),2)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Data_Source = "CHN Journal") %>% 
-  tidyr::pivot_longer(c(male,female), 
-                      names_to = "Gender") %>% 
-  dplyr::rename(Proportion = 3)
-
-
-```
-
-
-## Subjects_Recruitment_Area
+### Region
+#### Process Subjects_Recruitment_Area data from Chinese journal
 ```{r}
 df_CHN_Journal_Area <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
@@ -527,7 +754,11 @@ df_CHN_Journal_Province_count <- df_CHN_Journal_Area_Province %>%
                 Count_Bins = cut(Proportion,
                                  breaks = c(-Inf,1,5,10,Inf),
                 labels = c("<1","1~5","5~10",">=10")))
+```
 
+
+#### Processing of provincial distribution of population for census7
+```{r message=FALSE, warning=FALSE, include=FALSE}
 df_census7_province <- readxl::read_xls("A0101.xls") %>% 
   dplyr::select(1,5) %>% 
   dplyr::rename(province = 1, population = 2) %>% 
@@ -544,11 +775,11 @@ df_census7_province <- rbind(df_census7_province,df_census7_3) %>%
                                       labels = c("<1","1~5","5~10",">=10")))
 
 df_census7_province$province <- gsub(" ", "", df_census7_province$province)  
+```
 
 
-
-### region distribution map
-
+#### Visualize geographic distribution
+```{r}
 API_pre <-  "http://xzqh.mca.gov.cn/data/"
 ## 读取全国数据
 China <-  st_read(dsn = paste0(API_pre, "quanguo.json"), stringsAsFactors=FALSE) 
@@ -644,7 +875,20 @@ Area_distribution
 ```
 
 
-## Ethnicity
+### Educational attainment
+#### Process educational attainment data from Chinese journal
+```{r}
+df_CHN_edu <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2_N)) %>% 
+  dplyr::filter(Educational_Attainment_N == 1) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,M_age,SD_age,Sample_Type_N,Educational_Attainment_N,Educational_Attainment_info_N)
+
+writexl::write_xlsx(df_CHN_edu,"df_CHN_edu.xlsx")
+```
+
+
+### Ethnicity
+#### Process ethnicity data from Chinese journal
 ```{r}
 ## In informal code stage, Because our code group haveare multiple coders, in order to reduce coding differences between individuals based on criteria and understanding, our coding for ethnic groups does not include information about native minority languages. For example: Tibetan language. I will now supplement this.
 
@@ -725,93 +969,307 @@ Code2_Article_IDs_number <-  df_stage2_Journal_Code2 %>%
   dplyr::distinct(Article_IDs)
   
 ### 17/997
-
 ```
 
 
+## Test the 3st hypothesis
 
-## education attachment
+### Region
+#### Create a unified table of country codes
 ```{r}
-df_CHN_edu <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2_N)) %>% 
-  dplyr::filter(Educational_Attainment_N == 1) %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,M_age,SD_age,Sample_Type_N,Educational_Attainment_N,Educational_Attainment_info_N)
+if(!require("countrycode")) install.packages("countrycode")
 
-writexl::write_xlsx(df_CHN_edu,"df_CHN_edu.xlsx")
+countrycodelist <- codelist
+
+countrycodelist_iso2_iso3 <- countrycodelist %>% 
+  dplyr::select(country.name.en,iso2c,iso3c) %>% 
+  dplyr::rename(Country = 1)
 ```
 
 
-## Unreported and Reported
+#### Process region data of BTS 
 ```{r}
-df_CHN_report <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
-  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
-                Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
-                SES_N = ifelse(SES_N == 0, 0, 1),
-                Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N == 0, 0, 1)) %>%
-  dplyr::group_by(Article_IDs,Study_Number) %>% 
-  dplyr::summarise(Age = max(Age) > 0,
-                   Gender = max(Gender) > 0,
-                   Religious = max(Religious) > 0,
-                   Ethnicity = max(Ethnicity) > 0,
-                   Sampling_Method = max(Sampling_Method) > 0,
-                   Recruitment_Area = max(Subjects_Recruitment_Area) > 0,
-                   Recruitment_Method = max(Subjects_Recruitment_Method_N) > 0,
-                   SES = max(SES_N) > 0) %>% 
+if(!require("maps")) install.packages("maps")
+
+## creat a world map
+world_map <- ggplot2::map_data(map = "world")
+
+world_map2 <- world_map %>% 
+  dplyr::mutate(region = iso.alpha(region),
+                long = ifelse(long >= -180 & long <= -30, 
+                              long + 360, long),
+                region = ifelse(region == "TW","CN",region))  
+
+df_Arechar_et_al_2023 <- BTS_data[[1]]
+
+df_Arechar_et_al_2023_subj_region <- df_Arechar_et_al_2023 %>% 
+  dplyr::group_by(Country) %>% 
+  dplyr::summarise(n=n()) %>% 
   dplyr::ungroup() %>% 
-  dplyr::select(3:last_col())
+  dplyr::mutate(Proportion = round(n/sum(n),2)) %>%  ## sum only 0.98, need process
+  dplyr::mutate(Proportion_bins = if_else(Proportion >= 0.16, "0.16-1",
+                                          if_else(Proportion < 0.16 & Proportion >= 0.08, "0.08-0.16" ,
+                                                  if_else(Proportion < 0.08 & Proportion >= 0.04, "0.04-0.08" , 
+                                                          if_else(Proportion < 0.04 & Proportion >= 0.02, "0.02-0.04" , 
+                                                                  if_else(Proportion < 0.02 & Proportion >= 0.01, "0.01-0.02" , 
+                                                                          if_else(Proportion < 0.01 & Proportion >= 0.005, "0.005-0.01" ,         
+                                                                                  if_else(Proportion < 0.005 & Proportion >= 0.0025, "0.0025-0.005", "0-0.0025"))))))))
 
-report_list <- list()
+```
 
-for (i in names(df_CHN_report)){
+
+#### Visualize geographic distribution of BTS
+```{r}
+Arechar_et_al_2023_map <- ggplot2::ggplot(df_Arechar_et_al_2023_subj_region)+
+  geom_map(aes(map_id = toupper(Country), fill = Proportion_bins), map = world_map2,show.legend = TRUE) +
+  geom_polygon(data = world_map2, 
+               aes(x = long, y = lat, group = group), 
+               colour = 'black', size=0.1, fill = NA) + 
+  theme_void() + 
+  xlim(c(-30, 329)) + 
+  ylim(c(-60, 90)) +
+  scale_fill_manual(name = "sample proportion",
+                    values = c("#CCE5FF","#99CCFF", "#66B2FF","#3399FF","#0080FF" ,"#0066CC","#004C99","#003366"),
+                    limits = c("0-0.0025", "0.0025-0.005", "0.005-0.01", "0.01-0.02", "0.02-0.04", "0.04-0.08","0.08-0.16", "0.16-1")) +
+ggtitle("Geographical distribution of sample from Arechar_et_al_2023")+
+  theme(plot.title = element_text(hjust = 0.5, size = 15),
+        legend.text = element_text(size = 10),  
+        legend.title = element_text(size = 12),  
+        legend.key.size = unit(3, "pt"),  
+        legend.key.height = unit(3, "pt"), 
+        legend.key.width = unit(15, "pt")  
+        )
+
+Arechar_et_al_2023_map
+```
+
+
+#### Visualize geographic distribution of world population
+this data process and plot code from Liu and Hu, thanks them.
+```{r}
+wppdata <- read_csv("WPP2022.csv")
+
+
+wppdata1 <- subset(wppdata, select = c("country_map","continent", "pop"))
+
+wppdata3 <- dplyr::mutate(.data = wppdata1, percentage_pop = pop/7909295.151) 
+
+#wppdata3 <- wppdata2 %>% dplyr::left_join(df_PSA001, by = "country_map")
+
+#Merge data from Taiwan Province with data from mainland China
+sum_of_cn <- sum(wppdata3$percentage_pop[wppdata3$country_map %in% c("CN", "TW")])
+wppdata3$percentage_pop[wppdata3$country_map %in% c("CN", "TW")] <- sum_of_cn
+
+wppdata3$percentage_pop[wppdata3 $country_map == "GL"] <- NA
+
+
+
+wppdata3$n_binned <- 
+  if_else(wppdata3$percentage_pop >= 0.16, "0.16-1",
+  if_else(wppdata3$percentage_pop < 0.16 & wppdata3$percentage_pop >= 0.08, "0.08-0.16" , 
+   if_else(wppdata3$percentage_pop < 0.08 & wppdata3$percentage_pop >= 0.04, "0.04-0.08" , 
+  if_else(wppdata3$percentage_pop < 0.04 & wppdata3$percentage_pop >= 0.02, "0.02-0.04" , 
+   if_else(wppdata3$percentage_pop < 0.02 & wppdata3$percentage_pop >= 0.01, "0.01-0.02" , 
+   if_else(wppdata3$percentage_pop < 0.01 & wppdata3$percentage_pop >= 0.005, "0.005-0.01" ,         
+  if_else(wppdata3$percentage_pop < 0.005 & wppdata3$percentage_pop >= 0.0025, "0.0025-0.005",
+      "0-0.0025"
+    )
+  )
+ )
+))))
+
+
+wppdata4 <- wppdata3[complete.cases(wppdata3$percentage_pop), ]
+# map of World people data 
+world_population_map <- ggplot2::ggplot(wppdata4) +
+  ggplot2::geom_map(aes(map_id = country_map, fill = n_binned), map = world_map2,show.legend = TRUE) +
+  ggplot2::geom_polygon(data = world_map2, 
+               aes(x = long, y = lat, group = group), 
+               colour = 'black', size=0.1, fill = NA) + 
+  theme_void() + 
+   xlim(c(-30, 329)) + 
+  ylim(c(-60, 90)) + 
+  scale_fill_manual(name = "world people proportion",
+                    values = c("#CCE5FF","#99CCFF", "#66B2FF","#3399FF","#0080FF" ,"#0066CC","#004C99","#003366"),
+                    limits = c("0-0.0025", "0.0025-0.005", "0.005-0.01", "0.01-0.02", "0.02-0.04", "0.04-0.08","0.08-0.16", "0.16-1"),
+                    drop = FALSE) +
+ggtitle("Geographical distribution of world population")+
+  theme(plot.title = element_text(hjust = 0.5, size = 15),
+        legend.text = element_text(size = 10),  
+        legend.title = element_text(size = 12),  
+        legend.key.size = unit(3, "pt"),  
+        legend.key.height = unit(3, "pt"),  
+        legend.key.width = unit(15, "pt")  
+        )
+world_population_map
+
+library(patchwork)
+
+sample_map <- Arechar_et_al_2023_map + world_population_map + 
+  plot_layout(ncol = 2, heights = c(4,4))+
+  patchwork::plot_annotation(tag_levels = 'A')
+
+ggsave("sample_map.pdf", sample_map, device = "pdf", width=18, height = 9)
+
+sample_map 
+```
+
+
+### Gender
+####  Create a gender function for batch processing
+```{r}
+Func_Process_gender <- function(data){
+  ## Function is designed to preliminarily process the data and sort it based on gender ratios, in order to facilitate subsequent visualization.
+  
+  ## data is input data.frame
+ 
+   data_valid_country <- data %>% 
+    dplyr::group_by(iso3c) %>% 
+    dplyr::summarise(count = n()) %>%
+    dplyr::filter(iso3c > 30 & !is.na(iso3c)) %>% 
+    dplyr::pull(iso3c)
+   
+   
+   data <- data %>% 
+     dplyr::filter(iso3c %in% data_valid_country) %>% 
+     dplyr::group_by(iso3c,Gender) %>%
+     dplyr::summarise(count = n()) %>% 
+     dplyr::ungroup() %>% 
+     dplyr::group_by(iso3c) %>% 
+     dplyr::mutate(Proportion = round(count/sum(count),2)) %>% 
+     dplyr::ungroup()
   
   
-  report_table <- data.frame(table(df_CHN_report[[i]])) %>% 
-    dplyr::mutate(col_names = names(df_CHN_report[i]),
-                  proportion = round(Freq / sum(Freq),2))
   
-  report_list[[i]] <- report_table
+  data_country <- data %>% 
+    dplyr::filter(Gender == "female") %>% 
+    dplyr::arrange(Gender,Proportion) %>% 
+    dplyr::pull(iso3c)
+  
+  data <- data %>% 
+    dplyr::mutate(iso3c = factor(iso3c,levels = data_country))
+  
+}
+```
+
+
+#### Visualize gender data for countries around the world in BTS
+```{r}
+
+
+## example 1
+df_Arechar_et_al_2023_Oth_gender <- df_Arechar_et_al_2023 %>%  
+  dplyr::mutate(Country = toupper(Country)) %>% 
+  dplyr::left_join(countrycodelist_iso2_iso3, by = c("Country" = "iso2c")) %>% 
+  Func_Process_gender()
+
+## example 2
+
+
+df_Arechar_et_al_2023_Oth_gender %>% 
+  ggplot(aes(Proportion, iso3c,fill = Gender)) +
+           geom_col()+
+  ylab("Country")+
+  theme_classic()+
+  theme(legend.title = element_text(size = 15,family = "serif"),
+        axis.title= element_text(size = 15,family = "serif"),
+        axis.text = element_text(size = 10,family = "serif"),
+        strip.text = element_text(size = 15,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black")) +
+  scale_x_continuous(breaks = seq(0, 1, by = 0.1))
+  
+## 国家编码和WEIRD编码确定后完善数据处理和可视化  
+```
+
+
+### Age
+#### Create a age function for batch processing
+```{r}
+Function_Process_age <- function(data){
+  
+  data_age <- data %>% 
+    dplyr::mutate(ageBins = cut(Age,
+                                breaks = c(-Inf,4.5,9.5,14.5,19.5,24.5,
+                                           29.5,34.5,39.5,44.5,49.5,
+                                           54.5,59.5,64.5,69.5,74.5,
+                                           79.5,84.5,89.5,94.5,Inf),
+                                labels = c("0~4","5~9","10~14","15~19","20~24",
+                                           "25~29","30~34","35~39","40~44","45~49",
+                                           "50~54","55~59","60~64","65~69","70~74",
+                                           "75~79","80~84","85~89", "90~94",">=95"),
+                                levels = c("0~4","5~9","10~14","15~19","20~24",
+                                           "25~29","30~34","35~39","40~44","45~49",
+                                           "50~54","55~59","60~64","65~69","70~74",
+                                           "75~79","80~84","85~89", "90~94",">=95"))) %>% 
+    dplyr::count(ageBins) %>% 
+    dplyr::mutate(Proportion = round((n/sum(n))*100,2))
+  
+  ### Create a data frame to complete the missing ageBins 
+ 
+  Age_bins <- df_census7_Age %>% 
+  dplyr::select(1) %>% 
+  dplyr::mutate(n = NA, Proportion = NA , Data_Source = NA) 
+  
+  
+  data_age <- data_age %>% 
+  dplyr::full_join(Age_bins, by = "ageBins") %>% 
+  dplyr::rename(n = 2, Proportion = 3) %>% 
+  dplyr::select(1:3) %>% 
+  dplyr::mutate(n = ifelse(is.na(n),0,n),
+                Proportion = ifelse(is.na(Proportion),0,Proportion))
+  
+  
+## Turning ageBins into factor variables for easy plotting
+  agebins_code <- Age_bins %>% 
+    dplyr::arrange(ageBins) %>% 
+    dplyr::pull(ageBins)
+  
+  
+  data_age <- data_age %>% 
+    dplyr::mutate(ageBins = factor(ageBins,
+                                   levels = agebins_code))
   
 }
 
-df_CHN_report <- do.call(rbind, report_list) %>% 
-  dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
+```
 
 
-
-### Calculate reported status of Educational_Attainment and Occupation
-Educational_Occupation <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>%
-  dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
-  dplyr::group_by(Article_IDs,Study_Number) %>% 
-  dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
-                Occupation_N = max(Occupation_N) > 0) %>% 
-  dplyr::ungroup()  ### 294 studies
-
-table(Educational_Occupation$Educational_Attainment_N) ## FALSE 162 TRUE 132
-table(Educational_Occupation$Occupation_N)  ## FALSE 193 TRUE 101
+#### Process age data from countries around the world in BTS
+```{r}
+## Arechar_et_al_2023
+df_Arechar_et_al_2023_age <- df_Arechar_et_al_2023 %>% 
+  dplyr::filter(Country == "cn") %>% 
+  Function_Process_age()
 
 
-Educational_Occupation_table <- data.frame(Var1 = c("Unreported","Reported","Unreported","Reported"),
-                                           Freq = c(162,132,193,101),
-                                           col_names= c("Educational_Attainment","Educational_Attainment","Occupation","Occupation"),
-                                           proportion = c(0.55,0.45,0.66,0.34))
-
-df_CHN_report <- rbind(df_CHN_report,Educational_Occupation_table) %>% 
-  dplyr::mutate(col_names = factor(col_names, 
-                                   labels = c("Gender","Age","Recruitment Method","Recruitment Area","Educational Attainment",
-                                              "Occupation","Sampling Method","SES","Ethnicity","Religious"
-                                             ),
-                                   levels = c("Gender","Age","Recruitment_Method","Recruitment_Area","Educational_Attainment",
-                                              "Occupation","Sampling_Method","SES","Ethnicity","Religious")))
+## Azevedo_et_al_2022_mainland
+df_Azevedo_et_al_2022_mainland <- BTS_data[[2]]
+df_Azevedo_et_al_2022_mainland_age <- df_Azevedo_et_al_2022_mainland %>% 
+  Function_Process_age()
 
 
+## Azevedo_et_al_2022_taiwan_age
+df_Azevedo_et_al_2022_taiwan <- BTS_data[[3]]
+df_Azevedo_et_al_2022_taiwan_age <- df_Azevedo_et_al_2022_taiwan %>% 
+  Function_Process_age()
 
-report <- ggplot(df_CHN_report,aes(col_names,proportion,fill=Var1))+
-  geom_col()+
-  labs(x="",y="%")+
+```
+
+
+#### Visualize age data from countries around the world in BTS
+```{r}
+### Arechar_et_al_2023
+Arechar_et_al_2023_age <- ggplot(data= df_census7_Age, 
+       aes(x=ageBins, y = Proportion, fill="Census 7")) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = df_Arechar_et_al_2023_age, aes(x=ageBins, 
+                y = Proportion, group = 1, color ="Arechar_et_al_2023"),size =1)+
+  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
+  scale_color_manual(values=c("Arechar_et_al_2023"="red")) +
+  scale_y_continuous(limits = c(0,20))+
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins")+
   theme_classic()+
   theme(panel.border =element_rect(fill=NA,color="black"),
         legend.position = "bottom",
@@ -819,42 +1277,79 @@ report <- ggplot(df_CHN_report,aes(col_names,proportion,fill=Var1))+
         legend.text = element_text(size = 16, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))+
-  scale_x_discrete(guide = guide_axis(angle = 45))+
-  scale_fill_manual(values = c("#adc6ad","#B2B2B2"))
+        axis.text = element_text(size = 16,family = "serif"))
 
-report
+#ggsave("Arechar_et_al_2023_age.pdf", Arechar_et_al_2023_age, device = "pdf", width=18, height = 9)
 
-ggsave("report.pdf", report, device = "pdf", width=16, height = 9)
+Arechar_et_al_2023_age
 
 
+### Azevedo_et_al_2022_mainland
+Azevedo_et_al_2022_mainland_age <- ggplot(data= df_census7_Age, 
+       aes(x=ageBins, y = Proportion, fill="Census 7")) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = df_Azevedo_et_al_2022_mainland_age, aes(x=ageBins, 
+                y = Proportion, group = 1, color ="Azevedo_et_al_2022_mainland"),size =1)+
+  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
+  scale_color_manual(values=c("Azevedo_et_al_2022_mainland"="red")) +
+  scale_y_continuous(limits = c(0,20))+
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+
+#ggsave("Azevedo_et_al_2022_mainland_age.pdf", Azevedo_et_al_2022_mainland_age, device = "pdf", width=18, height = 9)
+
+Azevedo_et_al_2022_mainland_age 
 
 
-## Age report
-df_age_report_detail <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Age,M_age,SD_age,Other_age) %>%
-  dplyr::filter(Age == 1)
+## Azevedo_et_al_2022_taiwan
+Azevedo_et_al_2022_taiwan_age <- ggplot(data= df_census7_Age, 
+       aes(x=ageBins, y = Proportion, fill="Census 7")) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = df_Azevedo_et_al_2022_taiwan_age, aes(x=ageBins, 
+                y = Proportion, group = 1, color ="Azevedo_et_al_2022_taiwan"),size =1)+
+  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
+  scale_color_manual(values=c("Azevedo_et_al_2022_taiwan"="red")) +
+  scale_y_continuous(limits = c(0,20))+
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
 
-### Age report studies num
-df_age_report_detail_study_num <- df_age_report_detail %>%
-    dplyr::distinct(Article_IDs,Study_Number) ## 989 studies
-  
+#ggsave("Azevedo_et_al_2022_taiwan_age.pdf", Azevedo_et_al_2022_taiwan_age, device = "pdf", width=18, height = 9)
 
-### Age fuzzy report studies num
-df_fuzzy_age_report <- df_age_report_detail %>% 
-  dplyr::filter(is.na(M_age)) 
+Azevedo_et_al_2022_taiwan_age 
 
-## 20082227,20083017,20183340,20183097,20214027 Other age include Mage
-##这里后面还需要重新处理一下部分Otherage包含Mage的情况
 
-df_fuzzy_age_report_study_num <- df_fuzzy_age_report %>% 
-  dplyr::distinct(Article_IDs,Study_Number) ## 130-5=125
+## Combined graph
+age_plot <-  Arechar_et_al_2023_age + Azevedo_et_al_2022_mainland_age + 
+  Azevedo_et_al_2022_taiwan_age +
+  plot_layout(ncol = 2, nrow = 2,heights = c(4,4))+
+  patchwork::plot_annotation(tag_levels = 'A')
+
+ggsave("age_plot.pdf", age_plot, device = "pdf", width=18, height = 9)
+
+age_plot
+
 ```
 
 
-### Abstract1 subjects information reported
+# Exploratory analysis
+## Abstract1 subjects information reported of Chinese journal
+### Process Abstract data
 ```{r message=FALSE, warning=FALSE}
 ### In our coding, different subject groups will make the same article have multiple rows of data, but there is only one abstract and the multi-rows Abstract1 should be consistent. So, first, I check whether Abstract1 is consistent.
 
@@ -924,27 +1419,7 @@ Abstract1_subj_info_equl <- Abstract1_subj_info_equl %>%
                                       3))) %>% 
   dplyr::ungroup()
 
-Abstract1_subj_info <- Abstract1_subj_info_equl %>% 
-  dplyr::mutate(Abstract1_demo_info = ifelse(Abstract1 == 0,0,1),  
-                Abstract1_sample_info = ifelse(grepl("1",Abstract1),1,0)) %>% 
-  dplyr::select(Article_IDs,Abstract1_demo_info,Abstract1_sample_info,Sample_type3) %>% 
-  dplyr::group_by(Article_IDs) %>% 
-  dplyr::slice(1) %>% 
-  dplyr::ungroup() ### Abstract1_demo_info means demographic information report, Abstract2_sample_info means sample type report  
 
-### the demographic report of different sample type in Abstract1
-Abstract1_demo_info <- Abstract1_subj_info %>% 
-  dplyr::group_by(Sample_type3,Abstract1_demo_info) %>% 
-  dplyr::summarise(report = n()) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(proportion = round(report/sum(report),2))
-  
-### the sample information report of different sample type in Abstract1
-#Abstract1_sample_info <- Abstract1_subj_info %>% 
- # dplyr::group_by(Sample_type3,Abstract1_sample_info) %>% 
-  #dplyr::summarise(report = n()) %>% 
-  #dplyr::ungroup() %>% 
-  #dplyr::mutate(proportion = round(report/sum(report),2))
 
 ### Abstract2 (univeristy students report)
 Abstract2_report_NA <- df_stage2_Journal_Code2 %>% 
@@ -980,6 +1455,32 @@ df_stage2_Journal_Code2$Abstract2[1603] <- 1
 
 ### Article_IDs 20213192
 df_stage2_Journal_Code2$Abstract2[1611:1612] <- 0
+```
+
+
+### Specific reporting data
+```{r message=FALSE, warning=FALSE}
+Abstract1_subj_info <- Abstract1_subj_info_equl %>% 
+  dplyr::mutate(Abstract1_demo_info = ifelse(Abstract1 == 0,0,1),  
+                Abstract1_sample_info = ifelse(grepl("1",Abstract1),1,0)) %>% 
+  dplyr::select(Article_IDs,Abstract1_demo_info,Abstract1_sample_info,Sample_type3) %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup() ### Abstract1_demo_info means demographic information report, Abstract2_sample_info means sample type report  
+
+### the demographic report of different sample type in Abstract1
+Abstract1_demo_info <- Abstract1_subj_info %>% 
+  dplyr::group_by(Sample_type3,Abstract1_demo_info) %>% 
+  dplyr::summarise(report = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(proportion = round(report/sum(report),2))
+  
+### the sample information report of different sample type in Abstract1
+#Abstract1_sample_info <- Abstract1_subj_info %>% 
+ # dplyr::group_by(Sample_type3,Abstract1_sample_info) %>% 
+  #dplyr::summarise(report = n()) %>% 
+  #dplyr::ungroup() %>% 
+  #dplyr::mutate(proportion = round(report/sum(report),2))
 
 
 Abstract2_report <- df_stage2_Journal_Code2 %>% 
@@ -998,445 +1499,3 @@ Abstract2_report <- df_stage2_Journal_Code2 %>%
 ```
 
 
-
-## Create a unified table of country codes
-```{r}
-if(!require("countrycode")) install.packages("countrycode")
-
-countrycodelist <- codelist
-
-countrycodelist_iso2_iso3 <- countrycodelist %>% 
-  dplyr::select(country.name.en,iso2c,iso3c) %>% 
-  dplyr::rename(Country = 1)
-```
-
-
-## CHN Journa and BTS' CHN gender
-
-
-
-
-### Batch process BTS' gender
-```{r message=FALSE, warning=FALSE}
-## The Mainland of China, Hong Kong of China, Macau of China, and Taiwan of China are assigned the unified value of China
-
-BTS_data[[5]] <- BTS_data[[5]] %>% 
-  dplyr::mutate(Country = ifelse(Country %in% c("Taiwan (Province of China) - TWN","Macao - MAC","Hong Kong - HKG"), 
-                                 "China - CHN", Country))
-
-BTS_data[[6]] <- BTS_data[[6]] %>% 
-  dplyr::mutate(Country = ifelse(grepl("TWN |HKG ", Country),CHN,Country))
-  
-
-BTS_gender_list <- list()
-
-for(i in seq_along(BTS_data)) {
-  
-  BTS_data_name <- names(BTS_data)[i] 
-  
-  BTS_gender <- BTS_data[[i]] %>% 
-    dplyr::mutate(Gender = str_to_title(Gender)) %>% 
-    dplyr::filter(Gender == "Female" | Gender == "Male") %>% 
-    dplyr::group_by(Country,Gender) %>% 
-    dplyr::summarise(count = n()) %>%
-    dplyr::mutate(Proportion = round(count/sum(count),2),
-                  Data_Source =  BTS_data_name) %>% 
-    dplyr::ungroup()
-  
-  BTS_gender_list[[BTS_data_name]] <- BTS_gender
-  
-}
-
-```
-
-
-### Gender data mapping in China
-```{r}
-## Extracting China data
-BTS_gender_CHN <- lapply(BTS_gender_list, function(df){
-  
-  df %>% 
-    dplyr::filter(grepl("CN|CHN|CHINA", Country, ignore.case = TRUE))
-
-})
-
-BTS_gender_CHN <- do.call(rbind, BTS_gender_CHN)  
-
-
-## Combine CHN journal data and set factor
-df_CHN_Journal_Gender_Total2 <- df_CHN_Journal_Gender_Total %>% 
-  dplyr::mutate(Proportion = Proportion * 100)
-
-Journal_BTS_gender_CHN <- BTS_gender_CHN %>% 
-  dplyr::mutate(Proportion = Proportion * 100) %>% 
-  bind_rows(df_census7_Gender,df_CFPS2018_Gender,df_CHN_Journal_Gender_Total2) %>% 
-  dplyr::mutate(Gender =  stringr::str_to_title(Gender))
-
-Journal_BTS_gender_CHN_factor <- Journal_BTS_gender_CHN %>% 
-  dplyr::filter(Gender == "Female") %>% 
-  dplyr::arrange(Proportion) %>% 
-  dplyr::pull(Data_Source)
-
-Journal_BTS_gender_CHN <- Journal_BTS_gender_CHN %>% 
-  dplyr::mutate(Data_Source = factor(Data_Source,
-                                     levels = Journal_BTS_gender_CHN_factor))
-
-
-## plot
-Journal_BTS_gender <- ggplot(data = Journal_BTS_gender_CHN,aes(Data_Source,Proportion,fill = Gender))+
-  geom_col()+
-  geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
-  labs(y="Proportion")+
-  theme_classic()+
-  theme(panel.border =element_rect(fill=NA,color="black"),
-        legend.position = "bottom",
-        legend.box.spacing = unit(2,"pt"),
-        legend.text = element_text(size = 16, family = "serif"),
-        legend.title = element_blank(),
-        axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"),
-        axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggsave("Journal_BTS_gender.pdf", Journal_BTS_gender, device = "pdf", width=18, height = 9)
-
-Journal_BTS_gender
-```
-
-
-
-### CHN Journal and BTS gender in other region/country
-```{r}
-Func_Process_gender <- function(data){
-  ## Function is designed to preliminarily process the data and sort it based on gender ratios, in order to facilitate subsequent visualization.
-  
-  ## data is input data.frame
- 
-   data_valid_country <- data %>% 
-    dplyr::group_by(iso3c) %>% 
-    dplyr::summarise(count = n()) %>%
-    dplyr::filter(iso3c > 30 & !is.na(iso3c)) %>% 
-    dplyr::pull(iso3c)
-   
-   
-   data <- data %>% 
-     dplyr::filter(iso3c %in% data_valid_country) %>% 
-     dplyr::group_by(iso3c,Gender) %>%
-     dplyr::summarise(count = n()) %>% 
-     dplyr::ungroup() %>% 
-     dplyr::group_by(iso3c) %>% 
-     dplyr::mutate(Proportion = round(count/sum(count),2)) %>% 
-     dplyr::ungroup()
-  
-  
-  
-  data_country <- data %>% 
-    dplyr::filter(Gender == "female") %>% 
-    dplyr::arrange(Gender,Proportion) %>% 
-    dplyr::pull(iso3c)
-  
-  data <- data %>% 
-    dplyr::mutate(iso3c = factor(iso3c,levels = data_country))
-  
-}
-
-## example 1
-df_Arechar_et_al_2023_Oth_gender <- df_Arechar_et_al_2023 %>%  
-  dplyr::mutate(Country = toupper(Country)) %>% 
-  dplyr::left_join(countrycodelist_iso2_iso3, by = c("Country" = "iso2c")) %>% 
-  Func_Process_gender()
-
-## example 2
-
-
-df_Arechar_et_al_2023_Oth_gender %>% 
-  ggplot(aes(Proportion, iso3c,fill = Gender)) +
-           geom_col()+
-  ylab("Country")+
-  theme_classic()+
-  theme(legend.title = element_text(size = 15,family = "serif"),
-        axis.title= element_text(size = 15,family = "serif"),
-        axis.text = element_text(size = 10,family = "serif"),
-        strip.text = element_text(size = 15,family = "serif"),
-        strip.background = element_rect(fill = NA,color = NA),
-        panel.border = element_rect(fill = NA,color = "black")) +
-  scale_x_continuous(breaks = seq(0, 1, by = 0.1))
-  
-## 国家编码和WEIRD编码确定后完善数据处理和可视化  
-
-```
-
-## CHN Journal and BTS age
-```{r}
-Function_Process_age <- function(data){
-  
-  data_age <- data %>% 
-    dplyr::mutate(ageBins = cut(Age,
-                                breaks = c(-Inf,4.5,9.5,14.5,19.5,24.5,
-                                           29.5,34.5,39.5,44.5,49.5,
-                                           54.5,59.5,64.5,69.5,74.5,
-                                           79.5,84.5,89.5,94.5,Inf),
-                                labels = c("0~4","5~9","10~14","15~19","20~24",
-                                           "25~29","30~34","35~39","40~44","45~49",
-                                           "50~54","55~59","60~64","65~69","70~74",
-                                           "75~79","80~84","85~89", "90~94",">=95"),
-                                levels = c("0~4","5~9","10~14","15~19","20~24",
-                                           "25~29","30~34","35~39","40~44","45~49",
-                                           "50~54","55~59","60~64","65~69","70~74",
-                                           "75~79","80~84","85~89", "90~94",">=95"))) %>% 
-    dplyr::count(ageBins) %>% 
-    dplyr::mutate(Proportion = round((n/sum(n))*100,2))
-  
-  ### Create a data frame to complete the missing ageBins 
- 
-  Age_bins <- df_census7_Age %>% 
-  dplyr::select(1) %>% 
-  dplyr::mutate(n = NA, Proportion = NA , Data_Source = NA) 
-  
-  
-  data_age <- data_age %>% 
-  dplyr::full_join(Age_bins, by = "ageBins") %>% 
-  dplyr::rename(n = 2, Proportion = 3) %>% 
-  dplyr::select(1:3) %>% 
-  dplyr::mutate(n = ifelse(is.na(n),0,n),
-                Proportion = ifelse(is.na(Proportion),0,Proportion))
-  
-  
-## Turning ageBins into factor variables for easy plotting
-  agebins_code <- Age_bins %>% 
-    dplyr::arrange(ageBins) %>% 
-    dplyr::pull(ageBins)
-  
-  
-  data_age <- data_age %>% 
-    dplyr::mutate(ageBins = factor(ageBins,
-                                   levels = agebins_code))
-  
-}
-
-
-
-## Arechar_et_al_2023
-df_Arechar_et_al_2023_age <- df_Arechar_et_al_2023 %>% 
-  dplyr::filter(Country == "cn") %>% 
-  Function_Process_age()
-
-
-Arechar_et_al_2023_age <- ggplot(data= df_census7_Age, 
-       aes(x=ageBins, y = Proportion, fill="Census 7")) +
-  geom_col(alpha=0.5, width = 1) +
-  geom_line(data = df_Arechar_et_al_2023_age, aes(x=ageBins, 
-                y = Proportion, group = 1, color ="Arechar_et_al_2023"),size =1)+
-  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
-  scale_color_manual(values=c("Arechar_et_al_2023"="red")) +
-  scale_y_continuous(limits = c(0,20))+
-  coord_flip() +
-  labs(y="Proportion", x = "Age bins")+
-  theme_classic()+
-  theme(panel.border =element_rect(fill=NA,color="black"),
-        legend.position = "bottom",
-        legend.box.spacing = unit(2,"pt"),
-        legend.text = element_text(size = 16, family = "serif"),
-        legend.title = element_blank(),
-        axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
-
-#ggsave("Arechar_et_al_2023_age.pdf", Arechar_et_al_2023_age, device = "pdf", width=18, height = 9)
-
-Arechar_et_al_2023_age
-
-
-
-## Azevedo_et_al_2022_mainland
-df_Azevedo_et_al_2022_mainland_age <- df_Azevedo_et_al_2022_mainland %>% 
-  Function_Process_age()
-
-
-Azevedo_et_al_2022_mainland_age <- ggplot(data= df_census7_Age, 
-       aes(x=ageBins, y = Proportion, fill="Census 7")) +
-  geom_col(alpha=0.5, width = 1) +
-  geom_line(data = df_Azevedo_et_al_2022_mainland_age, aes(x=ageBins, 
-                y = Proportion, group = 1, color ="Azevedo_et_al_2022_mainland"),size =1)+
-  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
-  scale_color_manual(values=c("Azevedo_et_al_2022_mainland"="red")) +
-  scale_y_continuous(limits = c(0,20))+
-  coord_flip() +
-  labs(y="Proportion", x = "Age bins")+
-  theme_classic()+
-  theme(panel.border =element_rect(fill=NA,color="black"),
-        legend.position = "bottom",
-        legend.box.spacing = unit(2,"pt"),
-        legend.text = element_text(size = 16, family = "serif"),
-        legend.title = element_blank(),
-        axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
-
-#ggsave("Azevedo_et_al_2022_mainland_age.pdf", Azevedo_et_al_2022_mainland_age, device = "pdf", width=18, height = 9)
-
-Azevedo_et_al_2022_mainland_age 
-
-
-
-## Azevedo_et_al_2022_taiwan_age
-df_Azevedo_et_al_2022_taiwan_age <- df_Azevedo_et_al_2022_taiwan %>% 
-  Function_Process_age()
-
-
-Azevedo_et_al_2022_taiwan_age <- ggplot(data= df_census7_Age, 
-       aes(x=ageBins, y = Proportion, fill="Census 7")) +
-  geom_col(alpha=0.5, width = 1) +
-  geom_line(data = df_Azevedo_et_al_2022_taiwan_age, aes(x=ageBins, 
-                y = Proportion, group = 1, color ="Azevedo_et_al_2022_taiwan"),size =1)+
-  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
-  scale_color_manual(values=c("Azevedo_et_al_2022_taiwan"="red")) +
-  scale_y_continuous(limits = c(0,20))+
-  coord_flip() +
-  labs(y="Proportion", x = "Age bins")+
-  theme_classic()+
-  theme(panel.border =element_rect(fill=NA,color="black"),
-        legend.position = "bottom",
-        legend.box.spacing = unit(2,"pt"),
-        legend.text = element_text(size = 16, family = "serif"),
-        legend.title = element_blank(),
-        axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
-
-#ggsave("Azevedo_et_al_2022_taiwan_age.pdf", Azevedo_et_al_2022_taiwan_age, device = "pdf", width=18, height = 9)
-
-Azevedo_et_al_2022_taiwan_age 
-
-age_plot <-  Arechar_et_al_2023_age + Azevedo_et_al_2022_mainland_age + 
-  Azevedo_et_al_2022_taiwan_age +
-  plot_layout(ncol = 2, nrow = 2,heights = c(4,4))+
-  patchwork::plot_annotation(tag_levels = 'A')
-
-ggsave("age_plot.pdf", age_plot, device = "pdf", width=18, height = 9)
-
-age_plot
-
-
-```
-
-
-
-## The distrbution of subjects recruitment region about CHN Journal and BTS 
-```{r}
-if(!require("maps")) install.packages("maps")
-
-## creat a world map
-world_map <- ggplot2::map_data(map = "world")
-
-world_map2 <- world_map %>% 
-  dplyr::mutate(region = iso.alpha(region),
-                long = ifelse(long >= -180 & long <= -30, 
-                              long + 360, long),
-                region = ifelse(region == "TW","CN",region))  
-
-
-df_Arechar_et_al_2023_subj_region <- df_Arechar_et_al_2023 %>% 
-  dplyr::group_by(Country) %>% 
-  dplyr::summarise(n=n()) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Proportion = round(n/sum(n),2)) %>%  ## sum only 0.98, need process
-  dplyr::mutate(Proportion_bins = if_else(Proportion >= 0.16, "0.16-1",
-                                          if_else(Proportion < 0.16 & Proportion >= 0.08, "0.08-0.16" ,
-                                                  if_else(Proportion < 0.08 & Proportion >= 0.04, "0.04-0.08" , 
-                                                          if_else(Proportion < 0.04 & Proportion >= 0.02, "0.02-0.04" , 
-                                                                  if_else(Proportion < 0.02 & Proportion >= 0.01, "0.01-0.02" , 
-                                                                          if_else(Proportion < 0.01 & Proportion >= 0.005, "0.005-0.01" ,         
-                                                                                  if_else(Proportion < 0.005 & Proportion >= 0.0025, "0.0025-0.005", "0-0.0025"))))))))
-
-
-Arechar_et_al_2023_map <- ggplot2::ggplot(df_Arechar_et_al_2023_subj_region)+
-  geom_map(aes(map_id = toupper(Country), fill = Proportion_bins), map = world_map2,show.legend = TRUE) +
-  geom_polygon(data = world_map2, 
-               aes(x = long, y = lat, group = group), 
-               colour = 'black', size=0.1, fill = NA) + 
-  theme_void() + 
-  xlim(c(-30, 329)) + 
-  ylim(c(-60, 90)) +
-  scale_fill_manual(name = "sample proportion",
-                    values = c("#CCE5FF","#99CCFF", "#66B2FF","#3399FF","#0080FF" ,"#0066CC","#004C99","#003366"),
-                    limits = c("0-0.0025", "0.0025-0.005", "0.005-0.01", "0.01-0.02", "0.02-0.04", "0.04-0.08","0.08-0.16", "0.16-1")) +
-ggtitle("Geographical distribution of sample from Arechar_et_al_2023")+
-  theme(plot.title = element_text(hjust = 0.5, size = 15),
-        legend.text = element_text(size = 10),  
-        legend.title = element_text(size = 12),  
-        legend.key.size = unit(3, "pt"),  
-        legend.key.height = unit(3, "pt"), 
-        legend.key.width = unit(15, "pt")  
-        )
-
-Arechar_et_al_2023_map
-```
-
-
-## World population plot
-this data process and plot code from Liu and Hu, thanks them.
-```{r}
-wppdata <- read_csv("WPP2022.csv")
-
-
-wppdata1 <- subset(wppdata, select = c("country_map","continent", "pop"))
-
-wppdata3 <- dplyr::mutate(.data = wppdata1, percentage_pop = pop/7909295.151) 
-
-#wppdata3 <- wppdata2 %>% dplyr::left_join(df_PSA001, by = "country_map")
-
-#Merge data from Taiwan Province with data from mainland China
-sum_of_cn <- sum(wppdata3$percentage_pop[wppdata3$country_map %in% c("CN", "TW")])
-wppdata3$percentage_pop[wppdata3$country_map %in% c("CN", "TW")] <- sum_of_cn
-
-wppdata3$percentage_pop[wppdata3 $country_map == "GL"] <- NA
-
-
-
-wppdata3$n_binned <- 
-  if_else(wppdata3$percentage_pop >= 0.16, "0.16-1",
-  if_else(wppdata3$percentage_pop < 0.16 & wppdata3$percentage_pop >= 0.08, "0.08-0.16" , 
-   if_else(wppdata3$percentage_pop < 0.08 & wppdata3$percentage_pop >= 0.04, "0.04-0.08" , 
-  if_else(wppdata3$percentage_pop < 0.04 & wppdata3$percentage_pop >= 0.02, "0.02-0.04" , 
-   if_else(wppdata3$percentage_pop < 0.02 & wppdata3$percentage_pop >= 0.01, "0.01-0.02" , 
-   if_else(wppdata3$percentage_pop < 0.01 & wppdata3$percentage_pop >= 0.005, "0.005-0.01" ,         
-  if_else(wppdata3$percentage_pop < 0.005 & wppdata3$percentage_pop >= 0.0025, "0.0025-0.005",
-      "0-0.0025"
-    )
-  )
- )
-))))
-
-
-wppdata4 <- wppdata3[complete.cases(wppdata3$percentage_pop), ]
-# map of World people data 
-world_population_map <- ggplot2::ggplot(wppdata4) +
-  ggplot2::geom_map(aes(map_id = country_map, fill = n_binned), map = world_map2,show.legend = TRUE) +
-  ggplot2::geom_polygon(data = world_map2, 
-               aes(x = long, y = lat, group = group), 
-               colour = 'black', size=0.1, fill = NA) + 
-  theme_void() + 
-   xlim(c(-30, 329)) + 
-  ylim(c(-60, 90)) + 
-  scale_fill_manual(name = "world people proportion",
-                    values = c("#CCE5FF","#99CCFF", "#66B2FF","#3399FF","#0080FF" ,"#0066CC","#004C99","#003366"),
-                    limits = c("0-0.0025", "0.0025-0.005", "0.005-0.01", "0.01-0.02", "0.02-0.04", "0.04-0.08","0.08-0.16", "0.16-1"),
-                    drop = FALSE) +
-ggtitle("Geographical distribution of world population")+
-  theme(plot.title = element_text(hjust = 0.5, size = 15),
-        legend.text = element_text(size = 10),  
-        legend.title = element_text(size = 12),  
-        legend.key.size = unit(3, "pt"),  
-        legend.key.height = unit(3, "pt"),  
-        legend.key.width = unit(15, "pt")  
-        )
-world_population_map
-
-library(patchwork)
-
-sample_map <- Arechar_et_al_2023_map + world_population_map + 
-  plot_layout(ncol = 2, heights = c(4,4))+
-  patchwork::plot_annotation(tag_levels = 'A')
-
-ggsave("sample_map.pdf", sample_map, device = "pdf", width=18, height = 9)
-
-sample_map 
-
-```
