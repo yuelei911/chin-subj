@@ -39,23 +39,81 @@ file_list <- list.files(here("D://chin-subj//2_Data_Extraction//2_1 CHN_Journal_
                         full.names = TRUE,
                         recursive = TRUE)
 
-BTS_data <- list()  
+BTS_data_list <- list()  
  
 for (file in file_list) {  
     
   BTS_file <- readr::read_csv(file)  
-  BTS_data[[tools::file_path_sans_ext(basename(file))]] <- BTS_file  
+  BTS_data_list[[tools::file_path_sans_ext(basename(file))]] <- BTS_file  
 
 }  
 
-BTS_data <- BTS_data[grepl("BTS_",names(BTS_data),ignore.case = TRUE)]
+BTS_data_list <- BTS_data_list[grepl("BTS_",names(BTS_data_list),ignore.case = TRUE)]
+
+BTS_data <- BTS_data_list
 rm(BTS_file)
 ```
 
 
+### Process Country code of BTS
+Uniform country codes facilitate subsequent data processing and analysis, especially for batch processing and analysis of data.
+#### Create a unified table of country codes
+```{r}
+if(!require("countrycode")) install.packages("countrycode")
+
+countrycodelist <- codelist
+
+countrycodelist_iso2_iso3 <- countrycodelist %>% 
+  dplyr::select(country.name.en,iso2c,iso3c) %>% 
+  dplyr::rename(Countryfullname = 1,ISO2 = 2, ISO3 = 3)
+```
+
+
+#### Batch country code of BTS
+```{r}
+## Handle some more specific encodings
+BTS_data[[5]]$Country <- trimws(sub(".*-(\\s*)", "", BTS_data[[5]]$Country))  
+
+## Batch processing of country codes for different data sources
+BTS_data <- lapply(BTS_data,function(df){
+  
+  df <- df %>% 
+    mutate(Country = toupper(Country),
+           Country = case_when(Country %in% c("TW","HK","MO") ~ "CN",
+                               Country %in% c("TWN","HKG","MAC") ~ "CHN",
+                               TRUE ~ Country
+                               ))
+  
+  return(df)
+  
+})
+
+BTS_data22 <- BTS_data
+
+merged_list <- lapply(BTS_data22, function(df) {  
+     
+    if (any(grepl("CN", df$Country, ignore.case = TRUE))) {  
+       
+      merge(df, countrycodelist_iso2_iso3, by.x = "Country", by.y = "ISO2", all.x = TRUE)  
+    } else if (any(grepl("CHN", df$Country, ignore.case = TRUE))) {  
+      
+      merge(df, countrycodelist_iso2_iso3, by.x = "Country", by.y = "ISO3", all.x = TRUE)  
+    } else {  
+      
+          merge(df, countrycodelist_iso2_iso3, by.x = "Country", by.y = "Countryfullname", all.x = TRUE) 
+    }  
+  return(df)
+  
+  }) 
+
+
+BTS_data1 <- merged_list[[8]]
+
+```
+
 # Overview of participants
 
-## The basic situation of Chinese journals coding data
+## The basic situation of Chinese jourlnals coding data
 ```{r}
 ### In order to facilitate the subsequent exclusion of foreign samples, the Subjects_Recruitment_Area information 29 of 20211064 was changed to Chinese character 29
 df_stage2_Journal_Code2$Subjects_Recruitment_Area[447] <- "被试填答IP覆盖了二十九个省、自治区、直辖市"
@@ -150,7 +208,7 @@ df_CHN_report <- rbind(df_CHN_report,Educational_Occupation_table) %>%
 
 ### Visualize subjects information reported  situations in Chinese journals 
 ```{r}
-report <- ggplot(df_CHN_report,aes(col_names,proportion,fill=Var1))+
+Journal_report <- ggplot(df_CHN_report,aes(col_names,proportion,fill=Var1))+
   geom_col()+
   labs(x="",y="%")+
   theme_classic()+
@@ -162,11 +220,11 @@ report <- ggplot(df_CHN_report,aes(col_names,proportion,fill=Var1))+
         axis.title = element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"))+
   scale_x_discrete(guide = guide_axis(angle = 45))+
-  scale_fill_manual(values = c("#adc6ad","#B2B2B2"))
+  scale_fill_manual(values = c("#00BFC4","#B2B2B2"))
 
-report
+Journal_report
 
-ggsave("report.pdf", report, device = "pdf", width=16, height = 9)
+ggsave("Journal_report.pdf", Journal_report, device = "pdf", width=16, height = 9)
 ```
 
 
@@ -199,7 +257,7 @@ df_fuzzy_age_report_study_num <- df_fuzzy_age_report %>%
 ## Test the 1st hypothesis
 
 ### Gender
-### Process gender data from census
+#### Process gender data from census
 ```{r}
 ## Process the gender data of census 7
 df_census7_Gender <- df_census7 %>%
@@ -297,22 +355,6 @@ df_CHN_Journal_Gender_Total <- df_CHN_Journal_Gender %>%
 
 #### Process gender data from BTS 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-## The Mainland of China, Hong Kong of China, Macau of China, and Taiwan of China are assigned the unified value of China
-
-b1 <- BTS_data[[8]]
-
-## Fernandez-Velasco_et_al_2023 have TW CN AND HK
-
-## Hoogeveen_et_al_2022 only mainland
-
-BTS_data[[5]] <- BTS_data[[5]] %>% 
-  dplyr::mutate(Country = ifelse(Country %in% c("Taiwan (Province of China) - TWN","Macao - MAC","Hong Kong - HKG"), 
-                                 "China - CHN", Country))
-
-BTS_data[[6]] <- BTS_data[[6]] %>% 
-  dplyr::mutate(Country = ifelse(grepl("TWN |HKG ", Country),CHN,Country))
-  
-
 BTS_gender_list <- list()
 
 for(i in seq_along(BTS_data)) {
@@ -338,39 +380,39 @@ for(i in seq_along(BTS_data)) {
 #### Combine gender data from Chinese Journal and BTS
 ```{r}
 ## Extracting China data
-BTS_gender_CHN <- lapply(BTS_gender_list, function(df){
+BTS_CN_gender <- lapply(BTS_gender_list, function(df){
   
   df %>% 
     dplyr::filter(grepl("CN|CHN|CHINA", Country, ignore.case = TRUE))
 
 })
 
-BTS_gender_CHN <- do.call(rbind, BTS_gender_CHN)  
+BTS_CN_gender <- do.call(rbind, BTS_CN_gender)  
 
 
 ## Combine CHN journal data and set factor
 df_CHN_Journal_Gender_Total2 <- df_CHN_Journal_Gender_Total %>% 
   dplyr::mutate(Proportion = Proportion * 100)
 
-Journal_BTS_gender_CHN <- BTS_gender_CHN %>% 
+Journal_BTS_CN_gender <- BTS_CN_gender %>% 
   dplyr::mutate(Proportion = Proportion * 100) %>% 
   bind_rows(df_census7_Gender,df_CFPS2018_Gender,df_CHN_Journal_Gender_Total2) %>% 
   dplyr::mutate(Gender =  stringr::str_to_title(Gender))
 
-Journal_BTS_gender_CHN_factor <- Journal_BTS_gender_CHN %>% 
+Journal_BTS_CN_gender_factor <- Journal_BTS_CN_gender %>% 
   dplyr::filter(Gender == "Female") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(Data_Source)
 
-Journal_BTS_gender_CHN <- Journal_BTS_gender_CHN %>% 
+Journal_BTS_CN_gender <- Journal_BTS_CN_gender %>% 
   dplyr::mutate(Data_Source = factor(Data_Source,
-                                     levels = Journal_BTS_gender_CHN_factor))
+                                     levels = Journal_BTS_CN_gender_factor))
 ```
 
 
 #### Visualize gender data for Chinese journals and BTS
 ```{r}
-Journal_BTS_gender <- ggplot(data = Journal_BTS_gender_CHN,aes(Data_Source,Proportion,fill = Gender))+
+Journal_BTS_CN_gender <- ggplot(data = Journal_BTS_CN_gender,aes(Data_Source,Proportion,fill = Gender))+
   geom_col()+
   geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
   labs(y="Proportion")+
@@ -384,9 +426,9 @@ Journal_BTS_gender <- ggplot(data = Journal_BTS_gender_CHN,aes(Data_Source,Propo
         axis.text = element_text(size = 16,family = "serif"),
         axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggsave("Journal_BTS_gender.pdf", Journal_BTS_gender, device = "pdf", width=18, height = 9)
+ggsave("Journal_BTS_CN_gender.pdf", Journal_BTS_CN_gender, device = "pdf", width=18, height = 9)
 
-Journal_BTS_gender
+Journal_BTS_CN_gender
 ```
 
 
@@ -685,13 +727,13 @@ df_census7_Age <- df_census7_Age %>%
 
 #### Visualize age data from Chinese journals and census7
 ```{r}
-CHN_Journal_age <- ggplot(data= df_census7_Age, 
+Journal_age <- ggplot(data= df_census7_Age, 
        aes(x=ageBins, y = Proportion, fill="Census 7")) +
   geom_col(alpha=0.5, width = 1) +
   geom_line(data = df_CHN_Journal_Age, aes(x=ageBins, 
-                y = Proportion, group = 1, color ="CHN Journal data Total"),size =1)+
+                y = Proportion, group = 1, color ="CHN Journal data"),size =1)+
   scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
-  scale_color_manual(values=c("CHN Journal data Total"="red")) +
+  scale_color_manual(values=c("CHN Journal data"="red")) +
   scale_y_continuous(limits = c(0,40))+
   coord_flip() +
   labs(y="Proportion", x = "Age bins")+
@@ -704,9 +746,170 @@ CHN_Journal_age <- ggplot(data= df_census7_Age,
         axis.title = element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"))
 
-#ggsave("CHN_Journal_age.pdf", CHN_Journal_age, device = "pdf", width=18, height = 9)
+#ggsave("Journal_age.pdf", Journal_age, device = "pdf", width=18, height = 9)
 
-CHN_Journal_age
+Journal_age
+```
+
+
+#### Create a age function for batch processing
+```{r}
+Function_Process_age <- function(data){
+  
+  data_age <- data %>% 
+    dplyr::mutate(ageBins = cut(Age,
+                                breaks = c(-Inf,4.5,9.5,14.5,19.5,24.5,
+                                           29.5,34.5,39.5,44.5,49.5,
+                                           54.5,59.5,64.5,69.5,74.5,
+                                           79.5,84.5,89.5,94.5,Inf),
+                                labels = c("0~4","5~9","10~14","15~19","20~24",
+                                           "25~29","30~34","35~39","40~44","45~49",
+                                           "50~54","55~59","60~64","65~69","70~74",
+                                           "75~79","80~84","85~89", "90~94",">=95"),
+                                levels = c("0~4","5~9","10~14","15~19","20~24",
+                                           "25~29","30~34","35~39","40~44","45~49",
+                                           "50~54","55~59","60~64","65~69","70~74",
+                                           "75~79","80~84","85~89", "90~94",">=95"))) %>% 
+    dplyr::count(ageBins) %>% 
+    dplyr::mutate(Proportion = round((n/sum(n))*100,2))
+  
+  ### Create a data frame to complete the missing ageBins 
+ 
+  Age_bins <- df_census7_Age %>% 
+  dplyr::select(1) %>% 
+  dplyr::mutate(n = NA, Proportion = NA , Data_Source = NA) 
+  
+  
+  data_age <- data_age %>% 
+  dplyr::full_join(Age_bins, by = "ageBins") %>% 
+  dplyr::rename(n = 2, Proportion = 3) %>% 
+  dplyr::select(1:3) %>% 
+  dplyr::mutate(n = ifelse(is.na(n),0,n),
+                Proportion = ifelse(is.na(Proportion),0,Proportion))
+  
+  
+## Turning ageBins into factor variables for easy plotting
+  agebins_code <- Age_bins %>% 
+    dplyr::arrange(ageBins) %>% 
+    dplyr::pull(ageBins)
+  
+  
+  data_age <- data_age %>% 
+    dplyr::mutate(ageBins = factor(ageBins,
+                                   levels = agebins_code))
+  
+}
+
+```
+
+
+#### Process age data from BTS
+```{r}
+## Arechar_et_al_2023
+df_Arechar_et_al_2023 <- BTS_data[[1]]
+df_Arechar_et_al_2023_age <- df_Arechar_et_al_2023 %>% 
+  dplyr::filter(Country == "CN") %>% 
+  Function_Process_age()
+
+
+## Azevedo_et_al_2022_mainland
+df_Azevedo_et_al_2022_mainland <- BTS_data[[2]]
+df_Azevedo_et_al_2022_mainland_age <- df_Azevedo_et_al_2022_mainland %>% 
+  Function_Process_age()
+
+
+## Azevedo_et_al_2022_taiwan_age
+df_Azevedo_et_al_2022_taiwan <- BTS_data[[3]]
+df_Azevedo_et_al_2022_taiwan_age <- df_Azevedo_et_al_2022_taiwan %>% 
+  Function_Process_age()
+
+```
+
+
+#### Visualize age data from countries around the world in BTS
+```{r}
+### Arechar_et_al_2023
+Arechar_et_al_2023_CN_age <- ggplot(data= df_census7_Age, 
+       aes(x=ageBins, y = Proportion, fill="Census 7")) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = df_Arechar_et_al_2023_age, aes(x=ageBins, 
+                y = Proportion, group = 1, color ="Arechar_et_al_2023"),size =1)+
+  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
+  scale_color_manual(values=c("Arechar_et_al_2023"="red")) +
+  scale_y_continuous(limits = c(0,20))+
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+
+
+Arechar_et_al_2023_CN_age
+
+
+### Azevedo_et_al_2022_mainland
+Azevedo_et_al_2022_mainland_CN_age <- ggplot(data= df_census7_Age, 
+       aes(x=ageBins, y = Proportion, fill="Census 7")) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = df_Azevedo_et_al_2022_mainland_age, aes(x=ageBins, 
+                y = Proportion, group = 1, color ="Azevedo_et_al_2022_mainland"),size =1)+
+  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
+  scale_color_manual(values=c("Azevedo_et_al_2022_mainland"="red")) +
+  scale_y_continuous(limits = c(0,20))+
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+
+
+Azevedo_et_al_2022_mainland_CN_age
+
+
+## Azevedo_et_al_2022_taiwan
+Azevedo_et_al_2022_taiwan_CN_age <- ggplot(data= df_census7_Age, 
+       aes(x=ageBins, y = Proportion, fill="Census 7")) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = df_Azevedo_et_al_2022_taiwan_age, aes(x=ageBins, 
+                y = Proportion, group = 1, color ="Azevedo_et_al_2022_taiwan"),size =1)+
+  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
+  scale_color_manual(values=c("Azevedo_et_al_2022_taiwan"="red")) +
+  scale_y_continuous(limits = c(0,20))+
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+
+
+Azevedo_et_al_2022_taiwan_CN_age
+
+
+## Combined graph
+Journal_BTS_CN_age <-  Journal_age + Arechar_et_al_2023_CN_age + 
+  Azevedo_et_al_2022_mainland_CN_age + Azevedo_et_al_2022_taiwan_CN_age +
+  plot_layout(ncol = 2, nrow = 2,heights = c(4,4))+
+  patchwork::plot_annotation(tag_levels = 'A')
+
+ggsave("Journal_BTS_CN_age.pdf", Journal_BTS_CN_age, device = "pdf", width=18, height = 9)
+
+Journal_BTS_CN_age
+
 ```
 
 
@@ -825,7 +1028,7 @@ China <- dplyr::left_join(China,colour,by= "QUHUADAIMA")
 China$colour_CHN_Journal[which(China$province =="台湾")] <- "0"
 
 
-CHN_Journal_Area <- ggplot() +
+Journal_Area <- ggplot() +
   geom_sf(data = China,aes(fill = factor(colour_CHN_Journal))) +
   scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
                     breaks = c("0","1","2", "3", "4"),
@@ -844,7 +1047,7 @@ CHN_Journal_Area <- ggplot() +
   annotation_north_arrow(location = 'tl',which_north = 'false',
                          style = north_arrow_orienteering())
 
-CHN_Census7_Area <- ggplot() +
+Census7_Area <- ggplot() +
   geom_sf(data = China,aes(fill = factor(colour_census7))) +
   scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
                     breaks = c("0","1","2", "3", "4"),
@@ -862,14 +1065,14 @@ CHN_Census7_Area <- ggplot() +
   annotation_north_arrow(location = 'tl',which_north = 'false',
                          style = north_arrow_orienteering())
 
-Area_distribution <- CHN_Census7_Area + CHN_Journal_Area + plot_layout(guides = "collect")+
+Journal_region_distribution <- Census7_Area + Journal_Area + plot_layout(guides = "collect")+
   plot_annotation(tag_levels = 'A', title = "Area distribution",
                   theme = theme(plot.title = element_text(size = 24))) + 
   theme(plot.tag = element_text(size = 20))
 
-ggsave("Area_distribution.pdf", Area_distribution, device = "pdf", width=18, height = 15)
+ggsave("Journal_region_distribution.pdf", Journal_region_distribution, device = "pdf", width=18, height = 15)
 
-Area_distribution
+Journal_region_distribution
 
 #table(df_stage2_Journal_Code2$Educational_Attainment_N)
 ```
@@ -975,18 +1178,6 @@ Code2_Article_IDs_number <-  df_stage2_Journal_Code2 %>%
 ## Test the 3st hypothesis
 
 ### Region
-#### Create a unified table of country codes
-```{r}
-if(!require("countrycode")) install.packages("countrycode")
-
-countrycodelist <- codelist
-
-countrycodelist_iso2_iso3 <- countrycodelist %>% 
-  dplyr::select(country.name.en,iso2c,iso3c) %>% 
-  dplyr::rename(Country = 1)
-```
-
-
 #### Process region data of BTS 
 ```{r}
 if(!require("maps")) install.packages("maps")
@@ -1153,19 +1344,21 @@ Func_Process_gender <- function(data){
 ```
 
 
-#### Visualize gender data for countries around the world in BTS
+#### Process age data all countries in BTS
 ```{r}
-
-
-## example 1
+## df_Arechar_et_al_2023
 df_Arechar_et_al_2023_Oth_gender <- df_Arechar_et_al_2023 %>%  
   dplyr::mutate(Country = toupper(Country)) %>% 
   dplyr::left_join(countrycodelist_iso2_iso3, by = c("Country" = "iso2c")) %>% 
   Func_Process_gender()
 
 ## example 2
+```
 
 
+#### Visualize gender data for countries around the world in BTS
+```{r}
+## df_Arechar_et_al_2023
 df_Arechar_et_al_2023_Oth_gender %>% 
   ggplot(aes(Proportion, iso3c,fill = Gender)) +
            geom_col()+
@@ -1180,170 +1373,6 @@ df_Arechar_et_al_2023_Oth_gender %>%
   scale_x_continuous(breaks = seq(0, 1, by = 0.1))
   
 ## 国家编码和WEIRD编码确定后完善数据处理和可视化  
-```
-
-
-### Age
-#### Create a age function for batch processing
-```{r}
-Function_Process_age <- function(data){
-  
-  data_age <- data %>% 
-    dplyr::mutate(ageBins = cut(Age,
-                                breaks = c(-Inf,4.5,9.5,14.5,19.5,24.5,
-                                           29.5,34.5,39.5,44.5,49.5,
-                                           54.5,59.5,64.5,69.5,74.5,
-                                           79.5,84.5,89.5,94.5,Inf),
-                                labels = c("0~4","5~9","10~14","15~19","20~24",
-                                           "25~29","30~34","35~39","40~44","45~49",
-                                           "50~54","55~59","60~64","65~69","70~74",
-                                           "75~79","80~84","85~89", "90~94",">=95"),
-                                levels = c("0~4","5~9","10~14","15~19","20~24",
-                                           "25~29","30~34","35~39","40~44","45~49",
-                                           "50~54","55~59","60~64","65~69","70~74",
-                                           "75~79","80~84","85~89", "90~94",">=95"))) %>% 
-    dplyr::count(ageBins) %>% 
-    dplyr::mutate(Proportion = round((n/sum(n))*100,2))
-  
-  ### Create a data frame to complete the missing ageBins 
- 
-  Age_bins <- df_census7_Age %>% 
-  dplyr::select(1) %>% 
-  dplyr::mutate(n = NA, Proportion = NA , Data_Source = NA) 
-  
-  
-  data_age <- data_age %>% 
-  dplyr::full_join(Age_bins, by = "ageBins") %>% 
-  dplyr::rename(n = 2, Proportion = 3) %>% 
-  dplyr::select(1:3) %>% 
-  dplyr::mutate(n = ifelse(is.na(n),0,n),
-                Proportion = ifelse(is.na(Proportion),0,Proportion))
-  
-  
-## Turning ageBins into factor variables for easy plotting
-  agebins_code <- Age_bins %>% 
-    dplyr::arrange(ageBins) %>% 
-    dplyr::pull(ageBins)
-  
-  
-  data_age <- data_age %>% 
-    dplyr::mutate(ageBins = factor(ageBins,
-                                   levels = agebins_code))
-  
-}
-
-```
-
-
-#### Process age data from countries around the world in BTS
-```{r}
-## Arechar_et_al_2023
-df_Arechar_et_al_2023_age <- df_Arechar_et_al_2023 %>% 
-  dplyr::filter(Country == "cn") %>% 
-  Function_Process_age()
-
-
-## Azevedo_et_al_2022_mainland
-df_Azevedo_et_al_2022_mainland <- BTS_data[[2]]
-df_Azevedo_et_al_2022_mainland_age <- df_Azevedo_et_al_2022_mainland %>% 
-  Function_Process_age()
-
-
-## Azevedo_et_al_2022_taiwan_age
-df_Azevedo_et_al_2022_taiwan <- BTS_data[[3]]
-df_Azevedo_et_al_2022_taiwan_age <- df_Azevedo_et_al_2022_taiwan %>% 
-  Function_Process_age()
-
-```
-
-
-#### Visualize age data from countries around the world in BTS
-```{r}
-### Arechar_et_al_2023
-Arechar_et_al_2023_age <- ggplot(data= df_census7_Age, 
-       aes(x=ageBins, y = Proportion, fill="Census 7")) +
-  geom_col(alpha=0.5, width = 1) +
-  geom_line(data = df_Arechar_et_al_2023_age, aes(x=ageBins, 
-                y = Proportion, group = 1, color ="Arechar_et_al_2023"),size =1)+
-  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
-  scale_color_manual(values=c("Arechar_et_al_2023"="red")) +
-  scale_y_continuous(limits = c(0,20))+
-  coord_flip() +
-  labs(y="Proportion", x = "Age bins")+
-  theme_classic()+
-  theme(panel.border =element_rect(fill=NA,color="black"),
-        legend.position = "bottom",
-        legend.box.spacing = unit(2,"pt"),
-        legend.text = element_text(size = 16, family = "serif"),
-        legend.title = element_blank(),
-        axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
-
-#ggsave("Arechar_et_al_2023_age.pdf", Arechar_et_al_2023_age, device = "pdf", width=18, height = 9)
-
-Arechar_et_al_2023_age
-
-
-### Azevedo_et_al_2022_mainland
-Azevedo_et_al_2022_mainland_age <- ggplot(data= df_census7_Age, 
-       aes(x=ageBins, y = Proportion, fill="Census 7")) +
-  geom_col(alpha=0.5, width = 1) +
-  geom_line(data = df_Azevedo_et_al_2022_mainland_age, aes(x=ageBins, 
-                y = Proportion, group = 1, color ="Azevedo_et_al_2022_mainland"),size =1)+
-  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
-  scale_color_manual(values=c("Azevedo_et_al_2022_mainland"="red")) +
-  scale_y_continuous(limits = c(0,20))+
-  coord_flip() +
-  labs(y="Proportion", x = "Age bins")+
-  theme_classic()+
-  theme(panel.border =element_rect(fill=NA,color="black"),
-        legend.position = "bottom",
-        legend.box.spacing = unit(2,"pt"),
-        legend.text = element_text(size = 16, family = "serif"),
-        legend.title = element_blank(),
-        axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
-
-#ggsave("Azevedo_et_al_2022_mainland_age.pdf", Azevedo_et_al_2022_mainland_age, device = "pdf", width=18, height = 9)
-
-Azevedo_et_al_2022_mainland_age 
-
-
-## Azevedo_et_al_2022_taiwan
-Azevedo_et_al_2022_taiwan_age <- ggplot(data= df_census7_Age, 
-       aes(x=ageBins, y = Proportion, fill="Census 7")) +
-  geom_col(alpha=0.5, width = 1) +
-  geom_line(data = df_Azevedo_et_al_2022_taiwan_age, aes(x=ageBins, 
-                y = Proportion, group = 1, color ="Azevedo_et_al_2022_taiwan"),size =1)+
-  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
-  scale_color_manual(values=c("Azevedo_et_al_2022_taiwan"="red")) +
-  scale_y_continuous(limits = c(0,20))+
-  coord_flip() +
-  labs(y="Proportion", x = "Age bins")+
-  theme_classic()+
-  theme(panel.border =element_rect(fill=NA,color="black"),
-        legend.position = "bottom",
-        legend.box.spacing = unit(2,"pt"),
-        legend.text = element_text(size = 16, family = "serif"),
-        legend.title = element_blank(),
-        axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
-
-#ggsave("Azevedo_et_al_2022_taiwan_age.pdf", Azevedo_et_al_2022_taiwan_age, device = "pdf", width=18, height = 9)
-
-Azevedo_et_al_2022_taiwan_age 
-
-
-## Combined graph
-age_plot <-  Arechar_et_al_2023_age + Azevedo_et_al_2022_mainland_age + 
-  Azevedo_et_al_2022_taiwan_age +
-  plot_layout(ncol = 2, nrow = 2,heights = c(4,4))+
-  patchwork::plot_annotation(tag_levels = 'A')
-
-ggsave("age_plot.pdf", age_plot, device = "pdf", width=18, height = 9)
-
-age_plot
-
 ```
 
 
