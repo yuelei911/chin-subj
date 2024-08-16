@@ -185,6 +185,11 @@ df_study_num <- df_Articles %>%
 ## The basic situation about BTS data
 ```{r}
 
+#bts_detailed <- BTS_data[[11]]
+#names(bts_detailed)
+#df1 <- data.frame(table(bts_detailed$SES))
+#df1
+
 ```
 
 
@@ -259,7 +264,7 @@ df_CHN_report <- rbind(df_CHN_report,Educational_Occupation_table) %>%
 
 ### Visualize subjects information reported  situations in Chinese journals 
 ```{r}
-Journal_report <- ggplot(df_CHN_report,aes(col_names,proportion,fill=Var1))+
+Fig_Journal_report <- ggplot(df_CHN_report,aes(col_names,proportion,fill=Var1))+
   geom_col()+
   labs(x="",y="%")+
   theme_classic()+
@@ -273,9 +278,9 @@ Journal_report <- ggplot(df_CHN_report,aes(col_names,proportion,fill=Var1))+
   scale_x_discrete(guide = guide_axis(angle = 45))+
   scale_fill_manual(values = c("#00BFC4","#B2B2B2"))
 
-Journal_report
+Fig_Journal_report
 
-ggsave("Journal_report.pdf", Journal_report, device = "pdf", width=16, height = 9)
+ggsave("Fig_Journal_report.pdf", Fig_Journal_report, device = "pdf", width=16, height = 9)
 ```
 
 
@@ -417,11 +422,11 @@ for(i in seq_along(BTS_data)) {
   BTS_gender <- BTS_data[[i]] %>% 
     dplyr::mutate(Gender = str_to_title(Gender)) %>% 
     dplyr::filter(Gender == "Female" | Gender == "Male") %>% 
-    dplyr::group_by(ISO3,Gender) %>% 
-    dplyr::summarise(count = n()) %>%
-    dplyr::mutate(Proportion = round(count/sum(count),2),
-                  Data_Source =  BTS_data_name) %>% 
-    dplyr::ungroup()
+    #dplyr::group_by(ISO3,Gender) %>% 
+    #dplyr::summarise(count = n()) %>%
+    dplyr::mutate(#Proportion = round(count/sum(count),2),
+                  Data_Source =  BTS_data_name)
+    #dplyr::ungroup()
   
   BTS_gender_list[[BTS_data_name]] <- BTS_gender
   
@@ -443,19 +448,25 @@ BTS1 <- BTS_gender_list[[1]]
 BTS_CHN_gender <- lapply(BTS_gender_list, function(df){
   
   df %>% 
-    dplyr::filter(grepl("CHN", ISO3, ignore.case = TRUE))
+    dplyr::filter(grepl("CHN", ISO3, ignore.case = TRUE)) %>% 
+    dplyr::select(ISO3,Data_Source,Gender) 
 
 })
 
-BTS_CHN_gender <- do.call(rbind, BTS_CHN_gender)  
-
+BTS_CHN_gender <- do.call(rbind, BTS_CHN_gender) %>% 
+  dplyr::group_by(Gender) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::mutate(Proportion = round(n/sum(n),2)*100) %>% 
+  dplyr::ungroup() %>%
+  dplyr::mutate(Data_Source = "BTS CHN")
+  
+  
 
 ## Combine CHN journal data and set factor
 df_CHN_Journal_Gender_Total2 <- df_CHN_Journal_Gender_Total %>% 
   dplyr::mutate(Proportion = Proportion * 100)
 
 Journal_BTS_CHN_gender <- BTS_CHN_gender %>% 
-  dplyr::mutate(Proportion = Proportion * 100) %>% 
   bind_rows(df_CHN_Journal_Gender_Total2) %>% 
   dplyr::mutate(Gender =  stringr::str_to_title(Gender))
 
@@ -472,7 +483,7 @@ Journal_BTS_CHN_gender <- Journal_BTS_CHN_gender %>%
 
 #### Visualize gender data for Chinese journals and BTS
 ```{r}
-Journal_BTS_CHN_gender <- ggplot(data = Journal_BTS_CHN_gender,aes(Data_Source,Proportion,fill = Gender))+
+Fig_Journal_BTS_CHN_gender <- ggplot(data = Journal_BTS_CHN_gender,aes(Data_Source,Proportion,fill = Gender))+
   geom_col()+
   geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
   labs(y="Proportion")+
@@ -483,12 +494,12 @@ Journal_BTS_CHN_gender <- ggplot(data = Journal_BTS_CHN_gender,aes(Data_Source,P
         legend.text = element_text(size = 20, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 20,family = "serif"),
-        axis.text = element_text(size = 20,family = "serif"),
-        axis.text.x = element_text(angle = 90, hjust = 1))
+        axis.text = element_text(size = 20,family = "serif"))#,
+      #  axis.text.x = element_text(angle = 90, hjust = 1))
 
-ggsave("Journal_BTS_CHN_gender.pdf", Journal_BTS_CHN_gender, device = "pdf", width=18, height = 9)
+ggsave("Fig_Journal_BTS_CHN_gender.pdf", Fig_Journal_BTS_CHN_gender, device = "pdf", width=18, height = 9)
 
-Journal_BTS_CHN_gender
+Fig_Journal_BTS_CHN_gender
 
 BTS1 <- Journal_BTS_CHN_gender$data
 ```
@@ -666,7 +677,7 @@ df_stage2_Journal_Code_MAge <- df_stage2_Journal_Code_Age2 %>%
                            "75~79","80~84","85~89", "90~94",">=95"))) %>% 
   dplyr::count(ageBins) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
-  dplyr::mutate(Data_Source = "CNH Journal data  Total",n=as.numeric(n))
+  dplyr::mutate(Data_Source = "CHN Journal age",n=as.numeric(n))
 
 
 ## Add a blank line for age groups without data
@@ -674,7 +685,7 @@ df_stage2_Journal_Code_MAge_missgroup <- data.frame(
   ageBins =c( "75~79","80~84","85~89", "90~94",">=95"),
   n=0,
   Proportion = 0,
-  Data_Source = "CHN Journal data Total")
+  Data_Source = "CHN Journal age")
 
 df_CHN_Journal_Age <- rbind(df_stage2_Journal_Code_MAge,df_stage2_Journal_Code_MAge_missgroup)
 
@@ -702,15 +713,15 @@ df_stage2_Journal_Code_MAge_year <- df_stage2_Journal_Code_Age2 %>%
   dplyr::count(ageBins) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
   dplyr::ungroup() %>% 
-  dplyr::mutate(Data_Source= ifelse( Data_Source == "2008","CHN Journal data 2008", ifelse( Data_Source == "2018", "CHN Journal data 2018","CHN Journal data 2021")))
+  dplyr::mutate(Data_Source= ifelse( Data_Source == "2008","CHN Journal age 2008", ifelse( Data_Source == "2018", "CHN Journal age 2018","CHN Journal age 2021")))
 
 ## Add a blank line for age groups without data
 Data_Source_num <- 1:22
 
 df_stage2_Journal_Code_MAge_year_missgroup <- data.frame(
-  Data_Source= case_when(Data_Source_num %in% 1:10 ~ "CHN Journal data 2008",
-                        Data_Source_num %in% 11:15 ~ "CHN Journal data 2018",
-                        TRUE ~ "CHN Journal data 2021"),
+  Data_Source= case_when(Data_Source_num %in% 1:10 ~ "CHN Journal age 2008",
+                        Data_Source_num %in% 11:15 ~ "CHN Journal age 2018",
+                        TRUE ~ "CHN Journal age 2021"),
   ageBins = c("45~49","50~54","55~59","60~64","70~74","75~79","80~84",
                 "85~89", "90~94",">=95",
                  "75~79","80~84","85~89", "90~94",">=95",
@@ -794,23 +805,26 @@ for(i in seq_along(BTS_data)){
     
     BTS_age <- BTS_data[[i]] %>% 
       dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
-      dplyr::group_by(ISO3) %>% 
+      dplyr::select(Article_Id,Age,ISO3) %>% 
+      #dplyr::group_by(ISO3) %>% 
       dplyr::mutate(ageBins = cut(Age,
-                                breaks = c(-Inf, 17.5, 25.5, 40.5, 59.5, Inf),
-                                labels = c("0~17","18~25","26~40", "41~59", ">=60"),
-                                levels = c("0~17","18~25","26~40", "41~59", ">=60"))) %>% 
-    dplyr::count(ageBins) %>% 
-    dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                  BTS_data_source = BTS_data_name)
+                                breaks = c(-Inf,4.5,9.5,14.5,19.5,24.5,
+                                           29.5,34.5,39.5,44.5,49.5,
+                                           54.5,59.5,64.5,69.5,74.5,
+                                           79.5,84.5,89.5,94.5,Inf),
+                                labels = c("0~4","5~9","10~14","15~19","20~24",
+                                 "25~29","30~34","35~39","40~44","45~49",
+                                 "50~54","55~59","60~64","65~69","70~74",
+                                 "75~79","80~84","85~89", "90~94",">=95" ),
+                                levels = c("0~4","5~9","10~14","15~19","20~24",
+                                 "25~29","30~34","35~39","40~44","45~49",
+                                 "50~54","55~59","60~64","65~69","70~74",
+                                 "75~79","80~84","85~89", "90~94",">=95" ))) #%>% 
+    #dplyr::count(ageBins) %>% 
+    #dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+     #             BTS_data_source = BTS_data_name)
   
-  ### Create a data frame to complete the missing ageBins 
- 
-  Age_bins <- c("0~17","18~25","26~40","41~59",">=60")
-                         
-  
- BTS_age <- BTS_age %>% 
-    dplyr::mutate(ageBins = factor(ageBins,
-                                   levels = Age_bins))
+
  
   
 BTS_age_list[[BTS_data_name]] <- BTS_age
@@ -826,17 +840,17 @@ BTS_age_list[[BTS_data_name]] <- BTS_age
 BTS_age <-  bind_rows(BTS_age_list)
 
 ## 
-BTS_age_country_datasourse <- BTS_age %>% 
-  dplyr::distinct(BTS_data_source,ISO3)
+#BTS_age_country_datasourse <- BTS_age %>% 
+ # dplyr::distinct(BTS_data_source,ISO3)
 
-BTS_agebins_template <- expand.grid(ISO3 = BTS_age_country_datasourse$ISO3,
-            BTS_data_source = BTS_age_country_datasourse$BTS_data_source,
-            ageBins = Age_bins) %>% 
-  dplyr::distinct(ISO3,BTS_data_source,ageBins)
+#BTS_agebins_template <- expand.grid(ISO3 = BTS_age_country_datasourse$ISO3,
+ #           BTS_data_source = BTS_age_country_datasourse$BTS_data_source,
+  #          ageBins = Age_bins) %>% 
+  #dplyr::distinct(ISO3,BTS_data_source,ageBins)
 
-BTS_age <- full_join(BTS_agebins_template, BTS_age, by = c("ISO3", "BTS_data_source", "ageBins")) %>% 
-  dplyr::mutate(n = replace_na(n,0),
-                Proportion = replace_na( Proportion,0))
+#BTS_age <- full_join(BTS_agebins_template, BTS_age, by = c("ISO3", "BTS_data_source", "ageBins")) %>% 
+ # dplyr::mutate(n = replace_na(n,0),
+  #              Proportion = replace_na( Proportion,0))
 
 
 #bts1 <- BTS_age_list[[1]]
@@ -847,30 +861,69 @@ BTS_age <- full_join(BTS_agebins_template, BTS_age, by = c("ISO3", "BTS_data_sou
 ## Filter CHN age data from BTS, Combine BTS data and CHN journal data
 ```{r}
 BTS_CHN_age <- BTS_age %>% 
-  dplyr::filter(ISO3 == "CHN")
+  dplyr::filter(ISO3 == "CHN") %>% 
+  dplyr::count(ageBins) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+                Data_Source = "BTS CHN age")
+
+## add 3 rows of ageBins without data
+BTS_CHN_age_3rows <- data.frame(ageBins = c("0~4","5~9","10~14"),
+                                n = 0,
+                                Proportion = 0,
+                                Data_Source = "BTS CHN age")
+
+## combine 2 dataframe
+Journal_BTS_CHN_age <- bind_rows(BTS_CHN_age,BTS_CHN_age_3rows,df_CHN_Journal_Age)
+
+
+## set ageBins as factor to plot
+Journal_BTS_CHN_age <- Journal_BTS_CHN_age %>% 
+  dplyr::mutate(ageBins = factor(ageBins,
+                                 levels = c("0~4","5~9","10~14","15~19","20~24",
+                                 "25~29","30~34","35~39","40~44","45~49",
+                                 "50~54","55~59","60~64","65~69","70~74",
+                                 "75~79","80~84","85~89", "90~94",">=95" )))
 
 ```
 
 ## Visualize age data from Chinese journals and census7
 ```{r}
-Journal_BTS_CHN_age <- ggplot(BTS_CHN_age, aes(x=Proportion, y=BTS_data_source, fill=ageBins)) +
-  geom_col(alpha = .75)+
-  labs(y="Data Source") + 
-  scale_fill_discrete(label=c("0~17", "18~25", "26~40", "41~59",">=60" )) +
-  theme_classic()+
+#Journal_BTS_CHN_age <- ggplot(BTS_CHN_age, aes(x=Proportion, y=BTS_data_source, fill=ageBins)) +
+ # geom_col(alpha = .75)+
+#  labs(y="Data Source") + 
+ # scale_fill_discrete(label=c("0~17", "18~25", "26~40", "41~59",">=60" )) +
+#  theme_classic()+
   #guides(y="axis_nested") +
-  theme(legend.title = element_text(size = 20,family = "serif"),
-        axis.title= element_text(size = 20,family = "serif"),
-        axis.text = element_text(size = 20,family = "serif"),
-        strip.text = element_text(size = 20,family = "serif"),
-        strip.background = element_rect(fill = NA,color = NA),
-        panel.border = element_rect(fill = NA,color = "black")) +
-  scale_x_continuous(breaks = seq(0, 100, by = 10),expand = c(0,0))+
-  scale_y_discrete(expand = c(0,0))
+ # theme(legend.title = element_text(size = 20,family = "serif"),
+  #      axis.title= element_text(size = 20,family = "serif"),
+   #     axis.text = element_text(size = 20,family = "serif"),
+     #   strip.text = element_text(size = 20,family = "serif"),
+    #    strip.background = element_rect(fill = NA,color = NA),
+      #  panel.border = element_rect(fill = NA,color = "black")) +
+  #scale_x_continuous(breaks = seq(0, 100, by = 10),expand = c(0,0))+
+#  scale_y_discrete(expand = c(0,0))
 
-ggsave("Journal_BTS_CHN_age.pdf", Journal_BTS_CHN_age, device = "pdf", width=18, height = 9)
+#ggsave("Journal_BTS_CHN_age.pdf", Journal_BTS_CHN_age, device = "pdf", width=18, height = 9)
 
-Journal_BTS_CHN_age
+#Journal_BTS_CHN_age
+
+Fig_Journal_BTS_CHN_age <- ggplot(data= Journal_BTS_CHN_age, aes(x=ageBins, y=ifelse(Data_Source=="BTS CHN age", -Proportion, Proportion),fill = Data_Source)) +
+  geom_col(alpha=0.8, width = 1) +
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins", color=NULL)+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position ="bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+
+
+ggsave("Fig_Journal_BTS_CHN_age.pdf", Fig_Journal_BTS_CHN_age, device = "pdf", width=16, height = 9)
+
+Fig_Journal_BTS_CHN_age
 ```
 
 
