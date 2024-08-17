@@ -244,7 +244,7 @@ df_study_num <- df_Articles %>%
 BTS_Overview <- lapply(BTS_data,function(df){
   
   df <- df %>% 
-    dplyr::select(Article_Id,ISO3)
+    dplyr::select(Article_Id,ISO3,ISO2)
   
   return(df)
 })
@@ -252,9 +252,12 @@ BTS_Overview <- lapply(BTS_data,function(df){
 BTS_Overview <- do.call(rbind,BTS_Overview)
 
 BTS_Overview2 <- BTS_Overview %>% 
-  dplyr::group_by(ISO3) %>% 
+  dplyr::filter(!is.na(ISO2)) %>%   ## ISO2 is used to subsequent visualize the spatial distribution in and filter out the data with countries as NA.
+  dplyr::group_by(ISO2) %>% 
   dplyr::summarise(n = n()) %>% 
   dplyr::mutate(Proportion = round(n/sum(n)*100,2))
+
+#sum(BTS_Overview2$Proportion)
 
 
 ```
@@ -1301,13 +1304,8 @@ world_map2 <- world_map %>%
                               long + 360, long),
                 region = ifelse(region == "TW","CN",region))  
 
-df_Arechar_et_al_2023 <- BTS_data[[1]]
 
-df_Arechar_et_al_2023_subj_region <- df_Arechar_et_al_2023 %>% 
-  dplyr::group_by(Country) %>% 
-  dplyr::summarise(n=n()) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Proportion = round(n/sum(n),2)) %>%  ## sum only 0.98, need process
+BTS_region <- BTS_Overview2 %>%  ## sum only 100.02, need process
   dplyr::mutate(Proportion_bins = if_else(Proportion >= 0.16, "0.16-1",
                                           if_else(Proportion < 0.16 & Proportion >= 0.08, "0.08-0.16" ,
                                                   if_else(Proportion < 0.08 & Proportion >= 0.04, "0.04-0.08" , 
@@ -1321,8 +1319,8 @@ df_Arechar_et_al_2023_subj_region <- df_Arechar_et_al_2023 %>%
 
 #### Visualize geographic distribution of BTS
 ```{r}
-Arechar_et_al_2023_map <- ggplot2::ggplot(df_Arechar_et_al_2023_subj_region)+
-  geom_map(aes(map_id = toupper(Country), fill = Proportion_bins), map = world_map2,show.legend = TRUE) +
+Fig_BTS_region <- ggplot2::ggplot(BTS_region)+
+  geom_map(aes(map_id = ISO2, fill = Proportion_bins), map = world_map2,show.legend = TRUE) +
   geom_polygon(data = world_map2, 
                aes(x = long, y = lat, group = group), 
                colour = 'black', size=0.1, fill = NA) + 
@@ -1341,7 +1339,7 @@ ggtitle("Geographical distribution of sample from Arechar_et_al_2023")+
         legend.key.width = unit(15, "pt")  
         )
 
-Arechar_et_al_2023_map
+Fig_BTS_region
 ```
 
 
@@ -1406,7 +1404,7 @@ world_population_map
 
 library(patchwork)
 
-sample_map <- Arechar_et_al_2023_map + world_population_map + 
+sample_map <- Fig_BTS_region + world_population_map + 
   plot_layout(ncol = 2, heights = c(4,4))+
   patchwork::plot_annotation(tag_levels = 'A')
 
