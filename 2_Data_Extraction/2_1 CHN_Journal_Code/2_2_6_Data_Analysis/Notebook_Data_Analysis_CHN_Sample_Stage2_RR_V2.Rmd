@@ -66,6 +66,9 @@ Countrycodelist <- codelist
 Countrycodelist_iso2_iso3 <- Countrycodelist %>% 
   dplyr::select(country.name.en,iso2c,iso3c) %>% 
   dplyr::rename(Countryfullname = 1,ISO2 = 2, ISO3 = 3)
+
+Countrycodelist_iso2_iso3$ISO2[Countrycodelist_iso2_iso3$Countryfullname == "Kosovo"] <- "XK"
+Countrycodelist_iso2_iso3$ISO3[Countrycodelist_iso2_iso3$Countryfullname == "Kosovo"] <- "XKX"
 ```
 
 
@@ -84,6 +87,13 @@ BTS_data <- lapply(BTS_data,function(df){
            Country = case_when(Country %in% c("TW","HK","MO") ~ "CN",
                                Country %in% c("TWN","HKG","MAC") ~ "CHN",
                                Country %in% c("Taiwan","Macao","Hong Kong, China","Hong Kong") ~ "China",
+                               Country %in% c("Bosnia and Herzegovina","Bosnia and. Herz.") ~ "Bosnia & Herzegovina",
+                               Country %in% c("England","Northern Ireland","Wales") ~ "United Kingdom",
+                               Country %in% c("SlovakRepublic") ~ "Slovakia",
+                               Country %in% c("Czech Republic") ~ "Czechia",
+                               Country %in% c("Macedonia") ~ "North Macedonia",
+                               Country %in% c("The Netherlands") ~ "Netherlands",
+                               #Country %in% c("US","USA") ~ "United States",
                                TRUE ~ Country
                                ),
            Country = toupper(Country),
@@ -162,7 +172,21 @@ BTS_data <- lapply(BTS_data,function(df){
 })
 
 
-## 
+## Change the column name so that each BTS data has "ISO2"
+BTS_data <- lapply(BTS_data,function(df){
+  
+  if(!"ISO2" %in% names(df)){
+    
+    df <- df %>% 
+      dplyr::mutate(ISO2 = Country)
+  }
+  
+  return(df)
+  
+})
+
+
+## Because the country code of the countrycode package is the full name, but some of the actual data set is recorded by abbreviation (for example: United States is USA), so this part is not converted properly, and is now found and processed separately.
 BTS_data_na <- lapply(BTS_data, function(df){
   
   df <- df %>% 
@@ -174,7 +198,21 @@ BTS_data_na <- lapply(BTS_data, function(df){
 
 BTS_data_na <- do.call(rbind,BTS_data_na)
 
-BTS_data_na_table <- data.frame(table(BTS_data_na$Country))
+BTS_data_na_table <- data.frame(table(BTS_data_na$Country)) 
+
+
+## Handle UK and UA separately
+BTS_data <- lapply(BTS_data,function(df){
+  
+  df <- df %>% 
+    dplyr::mutate(ISO2 = ifelse(Country == "UK" |Country == "UEA","GB",ISO2),
+                  ISO2 = ifelse(Country == "US" | Country == "USA", "US",ISO2),
+                  ISO3 = ifelse(Country == "UK"|Country == "UEA","GBR",ISO3),
+                  ISO3 = ifelse(Country == "US" | Country == "USA", "USA",ISO3))
+  
+  return(df)
+  
+})
 
 ```
 
@@ -216,7 +254,7 @@ BTS_Overview2 <- BTS_Overview %>%
   dplyr::mutate(Proportion = round(n/sum(n)*100,2))
 
 
-bts2 <- BTS_data[[4]]
+bts2 <- BTS_data_list[[10]]
 
 ```
 
