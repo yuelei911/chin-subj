@@ -52,6 +52,8 @@ BTS_data_list <- BTS_data_list[grepl("BTS_",names(BTS_data_list),ignore.case = T
 
 BTS_data <- BTS_data_list
 rm(BTS_file)
+
+BTS1 <- BTS_data[[12]]
 ```
 
 
@@ -76,6 +78,7 @@ Countrycodelist_iso2_iso3$ISO3[Countrycodelist_iso2_iso3$Countryfullname == "Kos
 ```{r}
 ## Handle some more specific encodings
 BTS_data[[5]]$Country <- trimws(sub(".*-(\\s*)", "", BTS_data[[5]]$Country)) 
+BTS_data[[12]]$Country <- trimws(sub(".*-(\\s*)", "", BTS_data[[12]]$Country)) 
 names(BTS_data[[11]])[names(BTS_data[[11]]) == "Country_now"] <- "Country"
 
 
@@ -253,8 +256,6 @@ BTS_Overview2 <- BTS_Overview %>%
   dplyr::summarise(n = n()) %>% 
   dplyr::mutate(Proportion = round(n/sum(n)*100,2))
 
-
-bts2 <- BTS_data_list[[10]]
 
 ```
 
