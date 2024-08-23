@@ -255,11 +255,47 @@ BTS_Overview2 <- BTS_Overview %>%
   dplyr::filter(!is.na(ISO2)) %>%   ## ISO2 is used to subsequent visualize the spatial distribution in and filter out the data with countries as NA.
   dplyr::group_by(ISO2) %>% 
   dplyr::summarise(n = n()) %>% 
-  dplyr::mutate(Proportion = round(n/sum(n)*100,2))
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
+                FloorPro = floor(Proportion),
+                index = Proportion - FloorPro,
+                Site = "BTS")
 
-#sum(BTS_Overview2$Proportion)
+sum(BTS_Overview2$Proportion)
 
 
+BTS_Overview2_idx <- BTS_Overview2 %>% 
+  group_by(Site) %>% 
+  summarise(sum = sum(FloorPro)) %>% 
+  ungroup()
+
+```
+
+
+## try percent 100
+```{r}
+bts_overviewfill <- data.frame(matrix(ncol = ncol(BTS_Overview2),nrow = 0))
+colnames(bts_overviewfill) <- colnames(BTS_Overview2)
+
+for (i in 1:nrow(BTS_Overview2_idx)) {
+  
+  df55 <- BTS_Overview2 %>% 
+    dplyr::filter(Site == BTS_Overview2_idx$Site[i]) %>% 
+    dplyr::arrange(desc(index))
+  
+  if(BTS_Overview2_idx$sum[i] < 100) {
+    
+    for(j in seq(100 - BTS_Overview2_idx$sum[i])){
+      
+      df55$FloorPro[j] <- df55$FloorPro[j] + 1
+    }
+      bts_overviewfill <- rbind(bts_overviewfill,df55)
+  }
+
+   return(bts_overviewfill)
+
+}
+
+sum(bts_overviewfill$FloorPro)
 ```
 
 
@@ -1305,7 +1341,8 @@ world_map2 <- world_map %>%
                 region = ifelse(region == "TW","CN",region))  
 
 
-BTS_region <- BTS_Overview2 %>%  ## sum only 100.02, need process
+BTS_region <- BTS_Overview2 %>% 
+  dplyr::mutate(Proportion = Proportion * 0.01) %>% 
   dplyr::mutate(Proportion_bins = if_else(Proportion >= 0.16, "0.16-1",
                                           if_else(Proportion < 0.16 & Proportion >= 0.08, "0.08-0.16" ,
                                                   if_else(Proportion < 0.08 & Proportion >= 0.04, "0.04-0.08" , 
@@ -1330,7 +1367,7 @@ Fig_BTS_region <- ggplot2::ggplot(BTS_region)+
   scale_fill_manual(name = "sample proportion",
                     values = c("#CCE5FF","#99CCFF", "#66B2FF","#3399FF","#0080FF" ,"#0066CC","#004C99","#003366"),
                     limits = c("0-0.0025", "0.0025-0.005", "0.005-0.01", "0.01-0.02", "0.02-0.04", "0.04-0.08","0.08-0.16", "0.16-1")) +
-ggtitle("Geographical distribution of sample from Arechar_et_al_2023")+
+ggtitle("Geographical distribution of sample from BTS")+
   theme(plot.title = element_text(hjust = 0.5, size = 15),
         legend.text = element_text(size = 10),  
         legend.title = element_text(size = 12),  
