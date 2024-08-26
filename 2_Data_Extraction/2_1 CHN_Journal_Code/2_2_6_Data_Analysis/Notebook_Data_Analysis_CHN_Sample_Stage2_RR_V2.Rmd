@@ -17,6 +17,7 @@ if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load("tidyverse","here","rio")
 pacman::p_load("geojsonsf","sf","RColorBrewer","ggspatial","patchwork","ggrepel","maps")
+pacman::p_load("truncnorm","BayesFactor", "gtools", "bruceR")
 ```
 
 
@@ -218,6 +219,80 @@ BTS_data <- lapply(BTS_data,function(df){
 })
 
 ```
+
+
+# Define a Func to calculate Bayesian multinomial test
+## Algorithm in R
+```
+lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
+lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
+
+LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+```
+
+
+Here, `alphas` defined the prior Dirichlet distribution, e.g., noninformative prior is a vector of $1$s, `counts` are the observed frequencies.
+
+To use the algorithm in R, we defined a function here:
+```{r}
+BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior = TRUE, prior = NA){
+  # datase - the input dataframe
+  # factor - column name of the factor,
+  # observed - column name of the column contains counts information for the observed,
+  # expected - column name of the column contains counts information for the expected,
+  # default_prior - whether use the default, defused prior
+  # prior - priors defined by users
+  
+  fact_level <- dataset %>% dplyr::select(all_of(factor)) %>% dplyr::pull()
+  observed_data <- dataset %>% dplyr::select(all_of(observed)) %>% dplyr::pull()
+  names(observed_data) <- fact_level
+  expected_data <- dataset %>% dplyr::select(all_of(expected)) %>% dplyr::pull()
+  n_levels <- length(observed_data)
+  
+  
+  if (default_prior & all(is.na(prior))) {
+    prior <- rep(1, n_levels)
+  } else{
+    if (is.character(prior)){
+      prior <- dataset %>% dplyr::select(all_of(prior)) %>% dplyr::pull()
+    } else if (is.array(prior)){
+      prior <-  prior
+    } else if (is.numeric(prior)){
+      prior <-  prior
+    } else{
+      print("prior much a column of the input data or a vector")
+    }
+  }
+  
+  alphas <- prior
+  counts <- observed_data
+  thetas <- expected_data
+  
+  if(sum(thetas) != 1) {
+    thetas <- thetas/sum(thetas)
+    }
+  
+  expected <- setNames(sum(counts)*thetas, names(counts))
+  
+  lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
+  lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
+
+  if (any(rowSums(cbind(thetas, counts)) == 0)) {
+    LogBF10 <- (lbeta.xa-lbeta.a)
+  } else {
+    LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+  }
+
+  BF <- data.frame(LogBF10 = LogBF10,
+                   BF10    = exp(LogBF10),
+                   BF01    = 1/exp(LogBF10))
+
+  return(list(BF       = BF,
+              expected = expected))
+  
+}
+```
+
 
 # Overview of participants
 
@@ -609,6 +684,27 @@ Fig_Journal_BTS_CHN_gender
 
 BTS1 <- Journal_BTS_CHN_gender$data
 ```
+
+
+#### Bayesian multinomial test for CHN journal data and BTS
+Here we will test whether the gender proportion distribution from Chinese five journal data are similar to that of the BTS data. We use Bayesian multinomial test (Bayesian goodness-of-fit test) to examine whether the observed (BTS data) fit the expected (Chinese five journal data). 
+
+$H_0$: $\theta = c$, where $c$ is defined by Chinese five journal data;
+$H_1$: $\theta$ is free to vary.
+
+```{r}
+Journal_BTS_CHN_gender_bayes <- Journal_BTS_CHN_gender %>% 
+  dplyr::select(1,3:4) %>% 
+  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
+
+BF_H1_Gender_Jouranl_BTS <- BayesMultiNomial(dataset = Journal_BTS_CHN_gender_bayes,
+                                             factor = "Gender",
+                                             observed = "BTS CHN",
+                                             expected = "CHN Journal") 
+```
+
+
+We found moderate evidence for the $H_1$ that the gender proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r BF_H1_Gender_Jouranl_BTS$BF$LogBF10`.
 
 
 ### Age
@@ -1031,6 +1127,115 @@ ggsave("Fig_Journal_BTS_CHN_age.pdf", Fig_Journal_BTS_CHN_age, device = "pdf", w
 
 Fig_Journal_BTS_CHN_age
 ```
+
+
+## Reprocess age for Bayesian multinomial test
+### Reprocess BTS CHN age in psychological development stages
+```{r}
+BTS_age_list_PsyStages <- list()
+
+for(i in seq_along(BTS_data)){
+  
+  BTS_data_name <- names(BTS_data)[i]
+  
+  if("Age" %in% names(BTS_data[[i]])){
+    
+    BTS_age <- BTS_data[[i]] %>% 
+      dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
+      dplyr::select(Article_Id,Age,ISO3) %>% 
+      #dplyr::group_by(ISO3) %>% 
+      dplyr::mutate(ageBins = cut(Age,
+                                breaks = c(0, 17.5, 25.5, 40.5, 59.5, Inf),
+                                labels = c("0~17","18~25","26~40", "41~59", ">=60"),
+                                levels = c("0~17","18~25","26~40", "41~59", ">=60")))
+  
+BTS_age_list_PsyStages[[BTS_data_name]] <- BTS_age
+  
+} else {  
+ 
+    cat(sprintf("Skipping '%s' because it does not contain a 'Age' column.\n", BTS_data_name))  
+  } 
+}
+
+
+## merge data.frame in list
+BTS_age_PsyStages <-  bind_rows(BTS_age_list_PsyStages)
+```
+
+
+### Reprocess BTS CHN age in 10-year-old segment
+```{r}
+BTS_age_list_interval10 <- list()
+
+for(i in seq_along(BTS_data)){
+  
+  BTS_data_name <- names(BTS_data)[i]
+  
+  if("Age" %in% names(BTS_data[[i]])){
+    
+    BTS_age <- BTS_data[[i]] %>% 
+      dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
+      dplyr::select(Article_Id,Age,ISO3) %>% 
+      #dplyr::group_by(ISO3) %>% 
+      dplyr::mutate(ageBins = cut(Age,
+                                breaks = c(-Inf, 9.5, 19.5, 29.5, 30.5, 40.5, 59.5, Inf),
+                                labels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"),
+                                levels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60")))
+  
+BTS_age_list_interval10[[BTS_data_name]] <- BTS_age
+  
+} else {  
+ 
+    cat(sprintf("Skipping '%s' because it does not contain a 'Age' column.\n", BTS_data_name))  
+  } 
+}
+
+
+## merge data.frame in list
+BTS_age_interval10 <-  bind_rows(BTS_age_list_interval10)
+```
+
+
+### Filter BTS CHN data
+```{r}
+## psychological development stages in BTS
+BTS_CHN_age_PsyStages <- BTS_age_PsyStages %>% 
+  dplyr::filter(ISO3 == "CHN") %>% 
+  dplyr::select(1,4) %>% 
+  dplyr::count(ageBins) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+                Data_Source = "BTS CHN age") %>% 
+  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion) %>% 
+  dplyr::select(-2)
+
+
+## 10-year-old segment in BTS
+BTS_CHN_age_interval10 <- BTS_age_interval10 %>% 
+  dplyr::filter(ISO3 == "CHN") %>% 
+  dplyr::select(1,4) %>% 
+  dplyr::count(ageBins) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+                Data_Source = "BTS CHN age") %>% 
+  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion) %>% 
+  dplyr::select(-2)
+```
+
+
+### Reprocess Chinses journal data in psychological development stages
+```{r}
+Journal_age_PsyStage <- df_stage2_Journal_Code_Age2 %>% 
+  dplyr::select(Article_IDs,M_age,Remark1,Remark2) %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::filter(!is.na(M_age)) %>% 
+  dplyr::mutate(ageBins = cut(M_age,
+                breaks = c(0, 17.5, 25.5, 40.5, 59.5, Inf),
+                labels = c("0~17","18~25","26~40", "41~59", ">=60"),
+                levels = c("0~17","18~25","26~40", "41~59", ">=60"))) %>% 
+  dplyr::count(ageBins) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
+  dplyr::mutate(Data_Source = "CHN Journal age",n=as.numeric(n))
+```
+
 
 
 ## Test the 2st hypothesis
