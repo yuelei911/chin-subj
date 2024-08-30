@@ -726,6 +726,15 @@ df_stage2_Journal_Code2$Sample_Type_N[300] <- 3
 df_stage2_Journal_Code2$Age[351:352] <- 0 ## 20182022 Original article age report error, 0 here
 
 
+## In the following process, we found 3 rows include Mage = 0 and SDage = 0.
+## 20182182
+df_stage2_Journal_Code2$M_age[1040] <- NA
+df_stage2_Journal_Code2$M_age[1042] <- NA
+df_stage2_Journal_Code2$M_age[1053] <- NA
+
+df_stage2_Journal_Code2$SD_age[1040] <- NA
+df_stage2_Journal_Code2$SD_age[1042] <- NA
+df_stage2_Journal_Code2$SD_age[1053] <- NA
 
 ## Filter M_age have multiple group data
 df_stage2_Journal_Code_Age_str <- df_stage2_Journal_Code2 %>% 
@@ -854,6 +863,7 @@ rm(df_stage2_Journal_Code2_SampleType5)
 
 ## Count unreported/reported
 #table(df_stage2_Journal_Code_Age$Age)
+
 
 ```
 
@@ -1088,6 +1098,7 @@ Journal_BTS_CHN_age <- Journal_BTS_CHN_age %>%
 
 ```
 
+
 ## Visualize age data from Chinese journals and census7
 ```{r}
 #Journal_BTS_CHN_age <- ggplot(BTS_CHN_age, aes(x=Proportion, y=BTS_data_source, fill=ageBins)) +
@@ -1159,7 +1170,7 @@ BTS_age_list_PsyStages[[BTS_data_name]] <- BTS_age
 
 
 ## merge data.frame in list
-BTS_age_PsyStages <-  bind_rows(BTS_age_list_PsyStages)
+BTS_age_PsyStages <-  do.call(rbind,BTS_age_list_PsyStages)
 ```
 
 
@@ -1192,7 +1203,7 @@ BTS_age_list_interval10[[BTS_data_name]] <- BTS_age
 
 
 ## merge data.frame in list
-BTS_age_interval10 <-  bind_rows(BTS_age_list_interval10)
+BTS_age_interval10 <-  do.call(rbind,BTS_age_list_interval10)
 ```
 
 
@@ -1204,9 +1215,9 @@ BTS_CHN_age_PsyStages <- BTS_age_PsyStages %>%
   dplyr::select(1,4) %>% 
   dplyr::count(ageBins) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                Data_Source = "BTS CHN age") %>% 
-  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion) %>% 
-  dplyr::select(-2)
+                Data_Source = "BTS CHN age")# %>% 
+ # tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion) %>% 
+  #dplyr::select(-2)
 
 
 ## 10-year-old segment in BTS
@@ -1215,15 +1226,17 @@ BTS_CHN_age_interval10 <- BTS_age_interval10 %>%
   dplyr::select(1,4) %>% 
   dplyr::count(ageBins) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                Data_Source = "BTS CHN age") %>% 
-  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion) %>% 
-  dplyr::select(-2)
+                Data_Source = "BTS CHN age") #%>% 
+  #tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion) %>% 
+  #dplyr::select(-2)
+
 ```
 
 
 ### Reprocess Chinses journal data in psychological development stages
 ```{r}
-Journal_age_PsyStage <- df_stage2_Journal_Code_Age2 %>% 
+## psychological development stages in CHN journal
+Journal_age_PsyStages <- df_stage2_Journal_Code_Age2 %>% 
   dplyr::select(Article_IDs,M_age,Remark1,Remark2) %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
   dplyr::filter(!is.na(M_age)) %>% 
@@ -1237,6 +1250,58 @@ Journal_age_PsyStage <- df_stage2_Journal_Code_Age2 %>%
 ```
 
 
+### Reprocess Chinses journal data in 10-year-old segment
+```{r}
+## 10-year-old-segment in CHN journal
+Journal_age_interval10 <- df_stage2_Journal_Code_Age2 %>% 
+  dplyr::select(Article_IDs,M_age,Remark1,Remark2) %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::filter(!is.na(M_age)) %>% 
+  dplyr::mutate(ageBins = cut(M_age,
+                breaks = c(-Inf, 9.5, 19.5, 29.5, 30.5, 40.5, 59.5, Inf),
+                labels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"),
+                levels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"))) %>% 
+  dplyr::count(ageBins) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
+  dplyr::mutate(Data_Source = "CHN Journal age",n=as.numeric(n))
+```
+
+
+### Combine two CHN data to Bayesian multinomial test(PsyStages)
+```{r}
+Journal_BTS_CHN_PsyStages_bayes <- bind_rows(BTS_CHN_age_PsyStages,Journal_age_PsyStages) %>% 
+  dplyr::select(-2) %>% 
+  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
+
+
+BF_H1_PsyStages_Journal_BTS <- BayesMultiNomial(dataset = Journal_BTS_CHN_PsyStages_bayes,
+                                          factor = "ageBins",
+                                          observed = "BTS CHN age",
+                                          expected = "CHN Journal age")
+
+```
+
+
+### Combine two CHN data to Bayesian multinomial test(interval10)
+```{r}
+BTS_CHN_age_interval10 <- BTS_CHN_age_interval10 %>% 
+  dplyr::add_row(ageBins = "0~9", n = 0, Proportion = 0, Data_Source = "BTS CHN age")
+
+Journal_BTS_CHN_interval10_bayes <- bind_rows(BTS_CHN_age_interval10,Journal_age_interval10) %>% 
+  dplyr::select(-2) %>% 
+  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
+
+
+BF_H1_interval10_Journal_BTS <- BayesMultiNomial(dataset = Journal_BTS_CHN_interval10_bayes,
+                                          factor = "ageBins",
+                                          observed = "BTS CHN age",
+                                          expected = "CHN Journal age")
+```
+
+
+When we divide the age into 10 years,we found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r BF_H1_interval10_Journal_BTS$BF$LogBF10`.
+
+When we divide age into stages of psychological development, we found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r BF_H1_PsyStages_Journal_BTS$BF$LogBF10`.
 
 ## Test the 2st hypothesis
 ### Age
