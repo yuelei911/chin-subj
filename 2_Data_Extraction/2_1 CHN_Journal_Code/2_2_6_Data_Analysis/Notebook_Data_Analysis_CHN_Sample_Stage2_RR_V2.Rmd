@@ -34,6 +34,20 @@ load("df_chinese_subj_rr_stage1.Rdata")
 
 
 ## Load the data of BTS
+First, we convert some data that is not in .xlsx format.
+```{r}
+library(haven)
+
+## read data
+BTS_Van_Bavel_et_al_2022 <- haven::read_sav("BTS_Van_Bavel_et_al_2022.sav") %>% 
+  dplyr::mutate(Gender = ifelse(Gender == 1, "Male", "Female"))
+
+## save data
+write.csv(BTS_Van_Bavel_et_al_2022, file = "BTS_Van_Bavel_et_al_2022.csv",row.names = FALSE)
+```
+
+
+Then, we load all BTS data.
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 file_list <- list.files(here("D://chin-subj//2_Data_Extraction//2_1 CHN_Journal_Code//2_2_6_Data_Analysis"), ## If you need to learn or repeat the code document, please replace it with your local file address
                         pattern = ".csv",
