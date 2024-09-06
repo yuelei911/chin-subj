@@ -380,29 +380,29 @@ BTS_Overview2_idx <- BTS_Overview2 %>%
 
 ## try percent 100
 ```{r}
-bts_overviewfill <- data.frame(matrix(ncol = ncol(BTS_Overview2),nrow = 0))
-colnames(bts_overviewfill) <- colnames(BTS_Overview2)
-
-for (i in 1:nrow(BTS_Overview2_idx)) {
-  
-  df55 <- BTS_Overview2 %>% 
-    dplyr::filter(Site == BTS_Overview2_idx$Site[i]) %>% 
-    dplyr::arrange(desc(index))
-  
-  if(BTS_Overview2_idx$sum[i] < 100) {
-    
-    for(j in seq(100 - BTS_Overview2_idx$sum[i])){
-      
-      df55$FloorPro[j] <- df55$FloorPro[j] + 1
-    }
-      bts_overviewfill <- rbind(bts_overviewfill,df55)
-  }
-
-   return(bts_overviewfill)
-
-}
-
-sum(bts_overviewfill$FloorPro)
+# bts_overviewfill <- data.frame(matrix(ncol = ncol(BTS_Overview2),nrow = 0))
+# colnames(bts_overviewfill) <- colnames(BTS_Overview2)
+# 
+# for (i in 1:nrow(BTS_Overview2_idx)) {
+#   
+#   df55 <- BTS_Overview2 %>% 
+#     dplyr::filter(Site == BTS_Overview2_idx$Site[i]) %>% 
+#     dplyr::arrange(desc(index))
+#   
+#   if(BTS_Overview2_idx$sum[i] < 100) {
+#     
+#     for(j in seq(100 - BTS_Overview2_idx$sum[i])){
+#       
+#       df55$FloorPro[j] <- df55$FloorPro[j] + 1
+#     }
+#       bts_overviewfill <- rbind(bts_overviewfill,df55)
+#   }
+# 
+#    return(bts_overviewfill)
+# 
+# }
+# 
+# sum(bts_overviewfill$FloorPro)
 ```
 
 
@@ -1222,9 +1222,9 @@ for(i in seq_along(BTS_data)){
       dplyr::select(Article_Id,Age,ISO3) %>% 
       #dplyr::group_by(ISO3) %>% 
       dplyr::mutate(ageBins = cut(Age,
-                                breaks = c(-Inf, 9.5, 19.5, 29.5, 30.5, 40.5, 59.5, Inf),
-                                labels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"),
-                                levels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60")))
+                                breaks = c(0, 10.5, 20.5, 30.5, 40.5, 50.5, 60.5, Inf),
+                                labels = c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"),
+                                levels = c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61")))
   
 BTS_age_list_interval10[[BTS_data_name]] <- BTS_age
   
@@ -1291,9 +1291,9 @@ Journal_age_interval10 <- df_stage2_Journal_Code_Age2 %>%
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
   dplyr::filter(!is.na(M_age)) %>% 
   dplyr::mutate(ageBins = cut(M_age,
-                breaks = c(-Inf, 9.5, 19.5, 29.5, 30.5, 40.5, 59.5, Inf),
-                labels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"),
-                levels = c("0~9","10~19","20~29", "30~39", "40~49", "50~59", ">=60"))) %>% 
+                breaks = c(0, 10.5, 20.5, 30.5, 40.5, 50.5, 60.5, Inf),
+                labels = c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"),
+                levels = c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"))) %>% 
   dplyr::count(ageBins) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
   dplyr::mutate(Data_Source = "CHN Journal age",n=as.numeric(n))
@@ -1317,10 +1317,10 @@ BF_H1_PsyStages_Journal_BTS <- BayesMultiNomial(dataset = Journal_BTS_CHN_PsySta
 
 ### Combine two CHN data to Bayesian multinomial test(interval10)
 ```{r}
-BTS_CHN_age_interval10 <- BTS_CHN_age_interval10 %>% 
-  dplyr::add_row(ageBins = "0~9", n = 0, Proportion = 0, Data_Source = "BTS CHN age")
+BTS_CHN_age_interval10_addrow <- BTS_CHN_age_interval10 %>% 
+  dplyr::add_row(ageBins = "0~10", n = 0, Proportion = 0, Data_Source = "BTS CHN age")
 
-Journal_BTS_CHN_interval10_bayes <- bind_rows(BTS_CHN_age_interval10,Journal_age_interval10) %>% 
+Journal_BTS_CHN_interval10_bayes <- bind_rows(BTS_CHN_age_interval10_addrow,Journal_age_interval10) %>% 
   dplyr::select(-2) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
 
@@ -1843,7 +1843,7 @@ BTS_ALL_age_factor <- BTS_ALL_age %>%
 # dftabgender <- data.frame(table(BTS_ALL_age_factor))
 
 BTS_ALL_age <- BTS_ALL_age %>% 
-  dplyr::left_join(WEIRD_code2, by = c("ISO3" = "iso3c")) %>% 
+  dplyr::left_join(WEIRD_code_gender, by = c("ISO3" = "iso3c")) %>% 
   dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>%
   dplyr::mutate(ISO3 = factor(ISO3,BTS_ALL_age_factor)) %>% 
   dplyr::filter(!is.na(ageBins))
@@ -1852,7 +1852,7 @@ BTS_ALL_age <- BTS_ALL_age %>%
 ```
 
 
-#### Visualize gender data for countries around the world in BTS
+#### Visualize age data for countries around the world in BTS
 ```{r}
 Fig_Journal_BTS_ALL_age <- ggplot(BTS_ALL_age, aes(x=Proportion, y=ISO3, fill=ageBins)) +
   geom_col(alpha = .75)+
@@ -1876,9 +1876,52 @@ Fig_Journal_BTS_ALL_age
 
 
 
-#### Process age data (PsyStages)
+#### Process age data (10-year-old)
 ```{r}
+BTS_ALL_interval10 <- BTS_age_interval10 %>% 
+  dplyr::filter(ISO3 %in% BTS_ALL_gender_tab) %>% 
+  dplyr::group_by(ISO3,ageBins) %>% 
+  dplyr::summarise(n=n()) %>% 
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2)) %>% 
+  dplyr::ungroup()
 
+BTS_ALL_interval10_factor <- BTS_ALL_interval10 %>% 
+  dplyr::filter(ageBins == "11~20") %>% 
+  dplyr::arrange(Proportion) %>% 
+  dplyr::pull(ISO3)
+
+# table(BTS_ALL_interval10$ageBins)
+# dftabage <- data.frame(table(BTS_ALL_age_factor))
+# dftabgender <- data.frame(table(BTS_ALL_age_factor))
+
+BTS_ALL_interval10 <- BTS_ALL_interval10 %>% 
+  dplyr::left_join(WEIRD_code_gender, by = c("ISO3" = "iso3c")) %>% 
+  dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>%
+  dplyr::mutate(ISO3 = factor(ISO3,BTS_ALL_interval10_factor)) %>% 
+  dplyr::filter(!is.na(ageBins) & !is.na(ISO3)) 
+```
+
+
+#### Visualization age data of all countries
+```{r}
+Fig_Journal_BTS_ALL_interval10 <- ggplot(BTS_ALL_interval10, aes(x=Proportion, y=ISO3, fill=ageBins)) +
+  geom_col(alpha = .75)+
+  labs(y="Countries") + 
+  scale_fill_discrete(label=c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61")) +
+  theme_classic()+
+  #guides(y="axis_nested") +
+  theme(legend.title = element_text(size = 15,family = "serif"),
+        axis.title= element_text(size = 15,family = "serif"),
+        axis.text = element_text(size = 10,family = "serif"),
+        strip.text = element_text(size = 15,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black")) +
+  scale_x_continuous(breaks = seq(0, 100, by = 10)) +
+  facet_wrap(~ WEIRD, scales = "free") 
+
+ggsave("Fig_Journal_BTS_ALL_interval10.pdf", Fig_Journal_BTS_ALL_interval10, device = "pdf", width=18, height = 9)
+
+Fig_Journal_BTS_ALL_interval10 
 ```
 
 
