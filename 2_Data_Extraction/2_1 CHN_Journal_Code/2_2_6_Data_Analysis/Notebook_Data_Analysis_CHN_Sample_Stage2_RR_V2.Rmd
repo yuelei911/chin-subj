@@ -1082,24 +1082,6 @@ BTS_age_list[[BTS_data_name]] <- BTS_age
 
 ## merge data.frame in list
 BTS_age <-  bind_rows(BTS_age_list)
-
-## 
-#BTS_age_country_datasourse <- BTS_age %>% 
- # dplyr::distinct(BTS_data_source,ISO3)
-
-#BTS_agebins_template <- expand.grid(ISO3 = BTS_age_country_datasourse$ISO3,
- #           BTS_data_source = BTS_age_country_datasourse$BTS_data_source,
-  #          ageBins = Age_bins) %>% 
-  #dplyr::distinct(ISO3,BTS_data_source,ageBins)
-
-#BTS_age <- full_join(BTS_agebins_template, BTS_age, by = c("ISO3", "BTS_data_source", "ageBins")) %>% 
- # dplyr::mutate(n = replace_na(n,0),
-  #              Proportion = replace_na( Proportion,0))
-
-
-#bts1 <- BTS_age_list[[1]]
-#bts2 <- BTS_data[[1]]
-
 ```
 
 
@@ -1134,25 +1116,6 @@ Journal_BTS_CHN_age <- Journal_BTS_CHN_age %>%
 
 ## Visualize age data from Chinese journals and census7
 ```{r}
-#Journal_BTS_CHN_age <- ggplot(BTS_CHN_age, aes(x=Proportion, y=BTS_data_source, fill=ageBins)) +
- # geom_col(alpha = .75)+
-#  labs(y="Data Source") + 
- # scale_fill_discrete(label=c("0~17", "18~25", "26~40", "41~59",">=60" )) +
-#  theme_classic()+
-  #guides(y="axis_nested") +
- # theme(legend.title = element_text(size = 20,family = "serif"),
-  #      axis.title= element_text(size = 20,family = "serif"),
-   #     axis.text = element_text(size = 20,family = "serif"),
-     #   strip.text = element_text(size = 20,family = "serif"),
-    #    strip.background = element_rect(fill = NA,color = NA),
-      #  panel.border = element_rect(fill = NA,color = "black")) +
-  #scale_x_continuous(breaks = seq(0, 100, by = 10),expand = c(0,0))+
-#  scale_y_discrete(expand = c(0,0))
-
-#ggsave("Journal_BTS_CHN_age.pdf", Journal_BTS_CHN_age, device = "pdf", width=18, height = 9)
-
-#Journal_BTS_CHN_age
-
 Fig_Journal_BTS_CHN_age <- ggplot(data= Journal_BTS_CHN_age, aes(x=ageBins, y=ifelse(Data_Source=="BTS CHN age", -Proportion, Proportion),fill = Data_Source)) +
   geom_col(alpha=0.8, width = 1) +
   coord_flip() +
@@ -1885,20 +1848,18 @@ BTS_ALL_interval10 <- BTS_age_interval10 %>%
   dplyr::mutate(Proportion = round(n/sum(n)*100,2)) %>% 
   dplyr::ungroup()
 
-BTS_ALL_interval10_factor <- BTS_ALL_interval10 %>% 
-  dplyr::filter(ageBins == "21~30") %>% 
+BTS_ALL_interval10_factor <- BTS_ALL_interval10 %>%
+  dplyr::add_row(ISO3 = c("CUB","JAM"),ageBins = "11~20",n = 0, Proportion =0) %>% ##add data to visualization 
+  dplyr::filter(ageBins == "11~20") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(ISO3)
-
-table(BTS_ALL_interval10$ageBins)
-# dftabage <- data.frame(table(BTS_ALL_age_factor))
-# dftabgender <- data.frame(table(BTS_ALL_age_factor))
 
 Journal_BTS_ALL_interval10 <- BTS_ALL_interval10 %>% 
   dplyr::left_join(WEIRD_code_gender, by = c("ISO3" = "iso3c")) %>% 
   dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>%
   dplyr::mutate(ISO3 = factor(ISO3,BTS_ALL_interval10_factor)) %>% 
   dplyr::filter(!is.na(ageBins) & !is.na(ISO3)) 
+
 ```
 
 
