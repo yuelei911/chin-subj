@@ -74,7 +74,9 @@ BTS_data_list <- BTS_data_list[grepl("BTS_",names(BTS_data_list),ignore.case = T
 BTS_data <- BTS_data_list
 rm(BTS_file)
 
-BTS1 <- BTS_data[[12]]
+# BTS1 <- BTS_data[[12]]
+# 
+# memory.limit()
 ```
 
 
@@ -556,6 +558,7 @@ df_CFPS2018_Gender <- df_CFPS2018 %>%
 ```{r warning=FALSE}
 ## Minor revision
 df_stage2_Journal_Code2$Male_Num[1258] <- 0
+df_stage2_Journal_Code2$Female_Num[1634] <- 0.5950
 
 
 ## Process the gender data of CHN Journal
@@ -573,8 +576,8 @@ df_stage2_Journal_Code_Gender_decimal <- df_stage2_Journal_Code_Gender %>%
   dplyr::filter(Gender == 1) %>% 
   dplyr::filter(Male_Num < 1 & Female_Num < 1) %>% 
   dplyr::select(Article_IDs,Sample_Size,Study_Number,Subjects_Group_N,Gender,Male_Num,Female_Num) %>% 
-  dplyr::mutate(Male_Num = round(Male_Num,2),
-                Female_Num = round(Female_Num,2)) %>% 
+  # dplyr::mutate(Male_Num = round(Male_Num,2),
+  #               Female_Num = round(Female_Num,2)) %>% 
   dplyr::rename(Male_Proportion = Male_Num,
                Female_Proportion =  Female_Num)
 
@@ -595,29 +598,47 @@ df_stage2_Journal_Code_Gender_integer_add <- data.frame(
   Male_Num = c(26,49,31,28,310),
   Female_Num = c(7,32,37,31,0))
 
+df_stage2_Journal_Code_Gender_integer2 <- df_stage2_Journal_Code_Gender_integer %>% 
+  rbind(df_stage2_Journal_Code_Gender_integer_add)
 
-df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender_integer %>% 
-  rbind(df_stage2_Journal_Code_Gender_integer_add) %>% 
-  dplyr::mutate(Female_Num = ifelse(is.na(Female_Num), 0, Female_Num),
-                Sample_Size = as.numeric(Sample_Size)) %>%
-  dplyr::mutate(Male_Proportion = Male_Num/Sample_Size) %>% 
-  dplyr::mutate(Male_Proportion = round(Male_Proportion,2)) %>% 
-  dplyr::mutate(Female_Proportion = 1 - Male_Proportion) %>% 
-  dplyr::select(-c(6:7))
+
+# df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender_integer %>% 
+#   rbind(df_stage2_Journal_Code_Gender_integer_add) %>% 
+#   dplyr::mutate(Female_Num = ifelse(is.na(Female_Num), 0, Female_Num),
+#                 Sample_Size = as.numeric(Sample_Size)) %>%
+#   dplyr::mutate(Male_Proportion = Male_Num/Sample_Size) %>% 
+#   dplyr::mutate(Male_Proportion = round(Male_Proportion,2)) %>% 
+#   dplyr::mutate(Female_Proportion = 1 - Male_Proportion) %>% 
+#   dplyr::select(-c(6:7))
   
 ## rm(df_stage2_Journal_Code_Gender_integer_add)
 
-df_CHN_Journal_Gender <- rbind(df_stage2_Journal_Code_Gender_decimal,
-                               df_stage2_Journal_Code_Gender_integer)
+## Process decimal
+df_stage2_Journal_Code_Gender_decimal2 <- df_stage2_Journal_Code_Gender_decimal %>% 
+  dplyr::mutate(Sample_Size = as.numeric(Sample_Size),
+                Male_Num = floor(Sample_Size*Male_Proportion),
+                Female_Num = Sample_Size - Male_Num) %>% 
+  dplyr::select(1:5,8:9)
 
+
+## merge all chinese journal gender data
+df_CHN_Journal_Gender <- rbind(df_stage2_Journal_Code_Gender_decimal2,
+                               df_stage2_Journal_Code_Gender_integer2)
+
+
+## calculate total gender proportion
 df_CHN_Journal_Gender_Total <- df_CHN_Journal_Gender %>%
-  dplyr::summarise(male = round(mean(Male_Proportion),2),
-                   female = round(mean(Female_Proportion),2)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Data_Source = "CHN Journal") %>% 
-  tidyr::pivot_longer(c(male,female), 
-                      names_to = "Gender") %>% 
-  dplyr::rename(Proportion = 3)
+  dplyr::summarise(Male_Num = sum(Male_Num),
+                   Female_Num = sum(Female_Num,na.rm = TRUE),
+                   Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
+                   Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
+                   Data_Source = "Chinese papers") 
+
+
+df_CHN_Journal_Gender_Total2 <- data.frame(Gender = c("Male","Female"),
+                                          n = c(233377,272477),
+                                          Proportion = c(46,54),
+                                          Data_Source = "Chinese papers")
 
 ```
 
@@ -671,13 +692,11 @@ BTS_CHN_gender <- do.call(rbind, BTS_CHN_gender) %>%
   dplyr::summarise(n = n()) %>% 
   dplyr::mutate(Proportion = round(n/sum(n),2)*100) %>% 
   dplyr::ungroup() %>%
-  dplyr::mutate(Data_Source = "BTS CHN")
+  dplyr::mutate(Data_Source = "BTS Chinese")
   
   
 
 ## Combine CHN journal data and set factor
-df_CHN_Journal_Gender_Total2 <- df_CHN_Journal_Gender_Total %>% 
-  dplyr::mutate(Proportion = Proportion * 100)
 
 Journal_BTS_CHN_gender <- BTS_CHN_gender %>% 
   bind_rows(df_CHN_Journal_Gender_Total2) %>% 
@@ -710,11 +729,11 @@ Fig_Journal_BTS_CHN_gender <- ggplot(data = Journal_BTS_CHN_gender,aes(Data_Sour
         axis.text = element_text(size = 20,family = "serif"))#,
       #  axis.text.x = element_text(angle = 90, hjust = 1))
 
-ggsave("Fig_Journal_BTS_CHN_gender.pdf", Fig_Journal_BTS_CHN_gender, device = "pdf", width=18, height = 9)
+# ggsave("Fig_Journal_BTS_CHN_gender.pdf", Fig_Journal_BTS_CHN_gender, device = "pdf", width=18, height = 9)
 
 Fig_Journal_BTS_CHN_gender
 
-BTS1 <- Journal_BTS_CHN_gender$data
+# BTS1 <- Journal_BTS_CHN_gender$data
 ```
 
 
@@ -731,8 +750,8 @@ Journal_BTS_CHN_gender_bayes <- Journal_BTS_CHN_gender %>%
 
 BF_H1_Gender_Jouranl_BTS <- BayesMultiNomial(dataset = Journal_BTS_CHN_gender_bayes,
                                              factor = "Gender",
-                                             observed = "BTS CHN",
-                                             expected = "CHN Journal") 
+                                             observed = "BTS Chinese",
+                                             expected = "Chinese papers") 
 ```
 
 
@@ -921,7 +940,7 @@ df_stage2_Journal_Code_MAge <- df_stage2_Journal_Code_Age2 %>%
                            "75~79","80~84","85~89", "90~94",">=95"))) %>% 
   dplyr::count(ageBins) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
-  dplyr::mutate(Data_Source = "CHN Journal age",n=as.numeric(n))
+  dplyr::mutate(Data_Source = "Chinese papers",n=as.numeric(n))
 
 
 ## Add a blank line for age groups without data
@@ -929,7 +948,7 @@ df_stage2_Journal_Code_MAge_missgroup <- data.frame(
   ageBins =c( "75~79","80~84","85~89", "90~94",">=95"),
   n=0,
   Proportion = 0,
-  Data_Source = "CHN Journal age")
+  Data_Source = "Chinese papers")
 
 df_CHN_Journal_Age <- rbind(df_stage2_Journal_Code_MAge,df_stage2_Journal_Code_MAge_missgroup)
 
@@ -1091,13 +1110,13 @@ BTS_CHN_age <- BTS_age %>%
   dplyr::filter(ISO3 == "CHN") %>% 
   dplyr::count(ageBins) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                Data_Source = "BTS CHN age")
+                Data_Source = "BTS Chineses")
 
 ## add 3 rows of ageBins without data
 BTS_CHN_age_3rows <- data.frame(ageBins = c("0~4","5~9","10~14"),
                                 n = 0,
                                 Proportion = 0,
-                                Data_Source = "BTS CHN age")
+                                Data_Source = "BTS Chineses")
 
 ## combine 2 dataframe
 Journal_BTS_CHN_age <- bind_rows(BTS_CHN_age,BTS_CHN_age_3rows,df_CHN_Journal_Age)
@@ -1116,10 +1135,11 @@ Journal_BTS_CHN_age <- Journal_BTS_CHN_age %>%
 
 ## Visualize age data from Chinese journals and census7
 ```{r}
-Fig_Journal_BTS_CHN_age <- ggplot(data= Journal_BTS_CHN_age, aes(x=ageBins, y=ifelse(Data_Source=="BTS CHN age", -Proportion, Proportion),fill = Data_Source)) +
+Fig_Journal_BTS_CHN_age <- ggplot(data= Journal_BTS_CHN_age, aes(x=ageBins, y=ifelse(Data_Source=="BTS Chineses", -Proportion, Proportion),fill = Data_Source)) +
   geom_col(alpha=0.8, width = 1) +
   coord_flip() +
   labs(y="Proportion", x = "Age bins", color=NULL)+
+  scale_fill_manual(values = c("BTS Chineses" = "#619CFF", "Chinese papers" = "#7CAE00")) +
   theme_classic()+
   theme(panel.border =element_rect(fill=NA,color="black"),
         legend.position ="bottom",
@@ -1133,6 +1153,13 @@ Fig_Journal_BTS_CHN_age <- ggplot(data= Journal_BTS_CHN_age, aes(x=ageBins, y=if
 ggsave("Fig_Journal_BTS_CHN_age.pdf", Fig_Journal_BTS_CHN_age, device = "pdf", width=16, height = 9)
 
 Fig_Journal_BTS_CHN_age
+
+H1_Fig_Journal_BTS_CHN <- Fig_Journal_BTS_CHN_gender + Fig_Journal_BTS_CHN_age +
+  plot_annotation(tag_levels = 'A')
+
+ggsave("H1_Fig_Journal_BTS_CHN.pdf", H1_Fig_Journal_BTS_CHN, device = "pdf", width=18, height = 9)
+
+H1_Fig_Journal_BTS_CHN
 ```
 
 
@@ -1300,6 +1327,75 @@ When we divide the age into 10 years,we found strong evidence for the $H_1$ that
 When we divide age into stages of psychological development, we found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r BF_H1_PsyStages_Journal_BTS$BF$LogBF10`.
 
 ## Test the 2st hypothesis
+### Gender
+```{r}
+## extract BTS CHN gender data
+H2_BTS_CHN_gender <- lapply(BTS_gender_list, function(df){
+  
+  df %>% 
+    dplyr::filter(grepl("CHN", ISO3, ignore.case = TRUE)) %>% 
+    dplyr::select(ISO3,Data_Source,Gender) 
+
+})
+
+H2_BTS_CHN_gender <- do.call(rbind, H2_BTS_CHN_gender)
+
+## merge BTS and Chinese papers and calculate gender num and proportion
+H2_Journal_Gender <- df_CHN_Journal_Gender %>% 
+  dplyr::select(6:7) %>% 
+  dplyr::mutate(Data_Source = "Chinese papers")
+
+
+H2_BTS_CHN_gender2 <- H2_BTS_CHN_gender %>% 
+  dplyr::group_by(Gender) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::mutate(Data_Source = "BTS Chinese") %>% 
+  tidyr::pivot_wider(names_from = Gender,values_from = n) %>% 
+  dplyr::rename(Male_Num = 3,Female_Num = 2)
+
+
+H2_BTS_Journal_gender <- rbind(H2_Journal_Gender,H2_BTS_CHN_gender2) %>% 
+  dplyr::summarise(Male_Num = sum(Male_Num),
+                   Female_Num = sum(Female_Num,na.rm = TRUE),
+                   Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
+                   Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100) 
+
+H2_BTS_Journal_gender2 <- data.frame(Gender = c("Male","Female"),
+                                     n = c(247188,286648),
+                                     Proportion = c(46,54),
+                                     Data_Source = "Chinese Subjects pool")
+```
+
+
+#### Visualize age data from Chinese Subjects pool, census7 and CFPS2018
+```{r}
+### merge three source data
+H2_gender <- bind_rows(df_census7_Gender,df_CFPS2018_Gender,H2_BTS_Journal_gender2) %>% 
+  dplyr::mutate(Gender = str_to_title(Gender))
+
+
+## visualization
+H2_fig_gender <- ggplot(H2_gender,aes(Data_Source,Proportion,fill= Gender))+
+  geom_col()+
+  geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
+  labs(y="Proportion")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 20, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))
+
+
+H2_fig_gender
+
+ggsave("H2_fig_gender.pdf", H2_fig_gender, device = "pdf", width=18, height = 9)
+```
+
+
+
 ### Age
 #### Visualize age data from Chinese journals, BTS CHN and census7
 ```{r}
@@ -1720,6 +1816,8 @@ sample_map
 ### Gender
 ####  Process gender data 
 ```{r}
+gc()
+
 BTS_ALL_gender <- lapply(BTS_gender_list, function(df){
   
   df %>% 
@@ -1849,7 +1947,8 @@ BTS_ALL_interval10 <- BTS_age_interval10 %>%
   dplyr::ungroup()
 
 BTS_ALL_interval10_factor <- BTS_ALL_interval10 %>%
-  dplyr::add_row(ISO3 = c("CUB","JAM"),ageBins = "11~20",n = 0, Proportion =0) %>% ##add data to visualization 
+  dplyr::add_row(ISO3 = c("CUB","JAM"),ageBins = "11~20",n = 0, Proportion =0) %>%
+  ##add data to visualization 
   dplyr::filter(ageBins == "11~20") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(ISO3)
@@ -2011,9 +2110,15 @@ BF_H3_all_interval10 <- Journal_BTS_ALL_interval10 %>%
 BF_H3_interval10_Journal_BTS <- BF_H3_all_interval10  %>% 
   dplyr::mutate(Countries = factor(Countries, levels = BF_H3_gender_factor)) %>% 
   tidyr::pivot_wider(names_from = "Countries",values_from = "Proportion") %>%
-  dplyr::mutate(across(2:last_col(), ~ifelse(is.na(.), 0, .))) %>%   
+  dplyr::mutate(across(2:last_col(), ~ifelse(is.na(.), 0, .)))
+
+BF_H3_interval10_Journal_BTS$CHN[7] <- 0.001
+
+BF_H3_interval10_Journal_BTS <- BF_H3_interval10_Journal_BTS %>%
   Func_BFpairs(countries_order = BF_H3_gender_factor,
                prop_name = "ageBins")
+
+#write.csv(BF_H3_interval10_Journal_BTS,"BF_H3_interval10_Journal_BTS.csv")
 
 ```
 
@@ -2257,4 +2362,8 @@ Abstract2_report <- df_stage2_Journal_Code2 %>%
 
 ```
 
+
+```{r}
+table(df_CFPS2018$PROVCD18)
+```
 
