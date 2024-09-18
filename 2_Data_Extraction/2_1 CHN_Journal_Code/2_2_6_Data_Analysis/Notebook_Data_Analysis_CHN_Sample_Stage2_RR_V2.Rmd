@@ -1492,6 +1492,24 @@ df_census7_province$province <- gsub(" ", "", df_census7_province$province)
 ```
 
 
+#### Processing of provincial distribution of population for CFPS2018
+```{r}
+## process CFPS2018 province data
+df_CFPS2018_province <- data.frame(table(df_CFPS2018$PROVCD18)) %>% 
+  dplyr::rename(province = 1,population=2) %>% 
+  dplyr::mutate(province = c("北京","天津","河北","山西","内蒙古","辽宁","吉林",
+                             "黑龙江","上海","江苏","浙江","安徽","福建","江西",
+                             "山东","河南","湖北","湖南","广东","广西","海南",
+                             "重庆","四川","贵州","云南","西藏","陕西","甘肃",
+                             "青海","宁夏","新疆")) %>% 
+  dplyr::mutate(proportion = round((population/sum(population))*100,2),
+                Data_Source = "CFPS 2018",
+                proportion_bins = cut(proportion,
+                                      breaks = c(-Inf,1,5,10,Inf),
+                                      labels = c("<1","1~5","5~10",">=10")))
+```
+
+
 #### Visualize geographic distribution
 ```{r}
 API_pre <-  "http://xzqh.mca.gov.cn/data/"
@@ -1511,7 +1529,8 @@ province <- readxl::read_xlsx("province.xlsx")
 colour <- readxl::read_xlsx("colour.xlsx") %>% 
   dplyr::mutate(QUHUADAIMA = as.character(QUHUADAIMA),
                 colour_CHN_Journal = 0,
-                colour_census7 = 0)
+                colour_census7 = 0,
+                colour_cfps2018 = 0)
 
 colour$QUHUADAIMA[which(colour$province =="重庆")] <- "500000"
 
@@ -1529,23 +1548,34 @@ colour$colour_CHN_Journal[colour$province %in% df_CHN_Journal_Province_count $Su
 colour$colour_CHN_Journal[colour$province %in% df_CHN_Journal_Province_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == "5~10"]] <- 3
 colour$colour_CHN_Journal[colour$province %in% df_CHN_Journal_Province_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == ">=10"]] <- 4
 
+
+colour$colour_cfps2018[colour$province %in% df_CFPS2018_province$province [df_census7_province$proportion_bins == "<1"]] <- 1
+colour$colour_cfps2018[colour$province %in% df_CFPS2018_province$province [df_CFPS2018_province$proportion_bins == "1~5"]] <- 2
+colour$colour_cfps2018[colour$province %in% df_CFPS2018_province$province [df_CFPS2018_province$proportion_bins == "5~10"]] <- 3
+colour$colour_cfps2018[colour$province %in% df_CFPS2018_province$province [df_CFPS2018_province$proportion_bins == ">=10"]] <- 4
+
+
+
 colour <- colour %>%
   dplyr::mutate(colour_CHN_Journal = factor(colour_CHN_Journal, 
                                           levels = c("0","1", "2", "3", "4")),
                 colour_census7 = factor(colour_census7,
+                                         levels = c("0","1", "2", "3", "4")),
+                colour_cfps2018 = factor(colour_cfps2018,
                                          levels = c("0","1", "2", "3", "4")))
 
 China <- dplyr::left_join(China,colour,by= "QUHUADAIMA")
 China$colour_CHN_Journal[which(China$province =="台湾")] <- "0"
 
 
+## Chinese journal papers
 Journal_Area <- ggplot() +
   geom_sf(data = China,aes(fill = factor(colour_CHN_Journal))) +
   scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
   geom_sf(data = gjx) +
-  labs(title = "Subjects recruitment area distribution") +
+  labs(title = "Journal subjects recruitment area distribution") +
   theme(plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
         legend.title = element_blank(),
@@ -1558,6 +1588,27 @@ Journal_Area <- ggplot() +
   annotation_north_arrow(location = 'tl',which_north = 'false',
                          style = north_arrow_orienteering())
 
+## census 7 
+CFPS2018_Area <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(colour_cfps2018))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "CFPS2018 subjects recruitment area distribution") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.position = "none",
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())+
+  annotation_north_arrow(location = 'tl',which_north = 'false',
+                         style = north_arrow_orienteering())
+
+
+## CFPS 2018
 Census7_Area <- ggplot() +
   geom_sf(data = China,aes(fill = factor(colour_census7))) +
   scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
@@ -1576,7 +1627,9 @@ Census7_Area <- ggplot() +
   annotation_north_arrow(location = 'tl',which_north = 'false',
                          style = north_arrow_orienteering())
 
-Journal_region_distribution <- Census7_Area + Journal_Area + plot_layout(guides = "collect")+
+
+
+Journal_region_distribution <- Census7_Area + CFPS2018_Area + Journal_Area + plot_layout(guides = "collect")+
   plot_annotation(tag_levels = 'A', title = "Area distribution",
                   theme = theme(plot.title = element_text(size = 24))) + 
   theme(plot.tag = element_text(size = 20))
@@ -1587,6 +1640,41 @@ Journal_region_distribution
 
 #table(df_stage2_Journal_Code2$Educational_Attainment_N)
 ```
+
+
+#### Bayesian multinomial test for region from journal, census 7 and CFPS
+```{r}
+df_CHN_Journal_Province_count <- df_CHN_Journal_Province_count %>% 
+  dplyr::rename(province = 1, population = 2,
+                proportion = 3,proportion_bins = 4) %>% 
+  dplyr::mutate(Data_Source = "Chinese papers")
+
+df_census7_province <- df_census7_province %>% 
+  dplyr::mutate(Data_Source = "Census 7")
+
+## combine three source data
+H2_province_bayes <- bind_rows(df_CHN_Journal_Province_count,df_census7_province,df_CFPS2018_province) %>% 
+  dplyr::select(1,3,5) %>% 
+  tidyr::pivot_wider(names_from = Data_Source, values_from = proportion) %>% 
+  dplyr::mutate(across(everything(),~ifelse(is.na(.),0,.)))
+
+
+
+
+BF_H2_Journal_Census7_region <- BayesMultiNomial(dataset = H2_province_bayes,
+                                          factor = "province",
+                                          observed = "Chinese papers",
+                                          expected = "Census 7")
+
+
+
+BF_H2_Journal_CFPS2018_region <- BayesMultiNomial(dataset = H2_province_bayes,
+                                          factor = "province",
+                                          observed = "Chinese papers",
+                                          expected = "CFPS 2018")
+
+```
+
 
 
 ### Educational attainment
@@ -1816,7 +1904,7 @@ sample_map
 ### Gender
 ####  Process gender data 
 ```{r}
-gc()
+# gc()
 
 BTS_ALL_gender <- lapply(BTS_gender_list, function(df){
   
@@ -1838,12 +1926,20 @@ BTS_ALL_gender <- BTS_ALL_gender %>%
   dplyr::filter(ISO3 %in% BTS_ALL_gender_tab) %>% 
   dplyr::group_by(ISO3,Gender) %>%
   dplyr::summarise(n = n()) %>%
-  dplyr::mutate(Proportion = round(n/sum(n),2)*100) %>%
   dplyr::ungroup() %>%
   dplyr::mutate(Data_Source = "BTS")
 
+## Add journal gender data
+BTS_ALL_gender <- BTS_ALL_gender %>% 
+  dplyr::mutate(n = ifelse(ISO3 == "CHN" & Gender == "Male", 247188+13811,n),
+                n = ifelse(ISO3 == "CHN" & Gender == "Female", 286648 + 14171,n))
+
+BTS_ALL_gender_pro <- BTS_ALL_gender %>% 
+  dplyr::group_by(ISO3) %>% 
+  dplyr::mutate(Proportion = round(n/sum(n),2)*100) %>%
+  dplyr::ungroup()
 ## Set factor levels according to gender proportion
-BTS_ALL_gender_factor <- BTS_ALL_gender %>% 
+BTS_ALL_gender_factor <- BTS_ALL_gender_pro %>% 
   dplyr::filter(Gender == "Female") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(ISO3)
@@ -1855,7 +1951,7 @@ WEIRD_code_gender <- WEIRD_code %>%
   dplyr::filter(iso3c %in% BTS_ALL_gender_factor)
 
 
-Journal_BTS_ALL_gender <- BTS_ALL_gender %>% 
+Journal_BTS_ALL_gender <- BTS_ALL_gender_pro %>% 
   dplyr::left_join(WEIRD_code_gender,by = c("ISO3" = "iso3c")) %>% 
   dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>% 
   dplyr::mutate(ISO3 = factor(ISO3,levels = BTS_ALL_gender_factor)) %>% 
@@ -2360,10 +2456,5 @@ Abstract2_report <- df_stage2_Journal_Code2 %>%
   dplyr::ungroup() %>% 
   dplyr::mutate(proportion = round(report/sum(report),2))
 
-```
-
-
-```{r}
-table(df_CFPS2018$PROVCD18)
 ```
 
