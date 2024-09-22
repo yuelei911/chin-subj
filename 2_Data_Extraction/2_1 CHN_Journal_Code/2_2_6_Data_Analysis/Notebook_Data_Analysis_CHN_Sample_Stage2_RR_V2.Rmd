@@ -776,6 +776,9 @@ df_stage2_Journal_Code2$SD_age[1052] <- NA
 df_stage2_Journal_Code2$Sample_Type_N[300] <- 3
 df_stage2_Journal_Code2$Age[351:352] <- 0 ## 20182022 Original article age report error, 0 here
 
+## little error
+df_stage2_Journal_Code2$Male_Num[1420] <- "幼儿：154；父亲：310"
+
 
 ## In the following process, we found 3 rows include Mage = 0 and SDage = 0.
 ## 20182182
@@ -813,6 +816,11 @@ df_stage2_Journal_Code_Mage_multiple_group <- data.frame(
                     4,3,3,3,3,3,3,3,3,2,
                     2,1,1,1,1,2,2,4,4,4,
                     4,1,1,1,1,2,2,2,3,4),
+  Sample_Size = c(404,341,760,760,760,1047,1139,821,
+                  748,27,27,27,NA,NA,NA,NA,
+                  NA,NA,169,135,102,116,199,346,
+                  8,9,213,192,62,68,258,258,
+                  201,201,109,109,166,265,174,310,154),
   Age = 1,
   M_age = c(21.12,16.44,9.74,39.15,36.99,41.44,40.23,15.36,16.35,25.44,
             25.56,27.44,3.77,3.85,4.73,4.83,5.68,5.77,4.69,4.79,
@@ -849,6 +857,10 @@ df_stage2_Journal_Code_Mage_semicolon <- data.frame(
                      "父亲","母亲","父亲","母亲"),
   Sample_Type_N =c(3,3,3,3,3,3,2,2,2,2,3,3,
                    1,1,5,5,5,5,5,5,4,4,4,4),
+  Sample_Size = c(30,30,29,30,30,31,
+                  35,30,25,24,26,7,
+                  30,30,15,11,9,17,106,106,
+                  280,280,572,5721),
   Age = 1,
   M_age = c(4.73,4.83,3.77,3.85,5.68,5.77,7.06,11.18,7.24,11.42,5.73,3.28,
             20.4,20.3,20.77,20.69,20.91,20.67,29.62,28.00,36.61,34.24,41.37,38.88) ,
@@ -869,7 +881,7 @@ df_stage2_Journal_Code_Age <- df_stage2_Journal_Code2 %>%
   dplyr::filter(Subjects_Recruitment_Area != 2) %>% 
   dplyr::mutate(M_age = as.numeric(M_age), SD_age = as.numeric(SD_age)) %>% 
   dplyr::mutate(M_age = round(M_age,2), SD_age = round(SD_age,2)) %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Age,M_age,SD_age,Other_age,Remark1,Remark2,Remark3) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Sample_Size,Age,M_age,SD_age,Other_age,Remark1,Remark2,Remark3) %>% 
   dplyr::slice(-c(492,370,856,879,1406,724:726,
                   1413,1288,489,322,1331,1324,407,
                   362,374,495,1419,536:538,509,
@@ -1326,6 +1338,8 @@ When we divide the age into 10 years,we found strong evidence for the $H_1$ that
 
 When we divide age into stages of psychological development, we found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r BF_H1_PsyStages_Journal_BTS$BF$LogBF10`.
 
+
+
 ## Test the 2st hypothesis
 ### Gender
 ```{r}
@@ -1397,6 +1411,63 @@ ggsave("H2_fig_gender.pdf", H2_fig_gender, device = "pdf", width=18, height = 9)
 
 
 ### Age
+Since raw data is not available for papers in Chinese journals, we simulated the raw data using the method used in the Stges 1 of registration report. It is then combined with BTS and compared with census data.
+
+First, I create func to process age data simulation
+```{r}
+Sim_Sens_mult <- function(Mean1, diff_age, SD1, SD2, sampe_N=Sample_Size){
+  
+  # get the mean of difference
+  Mean2 <- Mean1 + diff_age
+
+  # Generate data with N = 1200
+  # 0~17, 18~25, 26~40, 41~60, 61~
+  ageData1 <- round((pnorm(c(18,26,41,61), mean = Mean1, sd =SD1) * sampe_N))
+  ageData2 <- round((pnorm(c(18,26,41,61), mean = Mean2, sd =SD2) * sampe_N))
+  
+    # create a dataframe with ageData1 and ageData2:
+  sim_age_df <- setNames(data.frame(matrix(ncol = 3, nrow = 5)), c("ageBins", "sim1", "sim2"))
+  sim_age_df$ageBins <- c("<=17", "18~25", "26~40", "41~60", ">=61")
+  sim_age_df$sim1[0:4] <- ageData1
+  sim_age_df$sim2[0:4] <- ageData2
+  
+  # # create a dataframe with ageData1 and ageData2:
+  # sim_age_df <- setNames(data.frame(matrix(ncol = 3, nrow = 5)), c("ageBins", "sim1", "sim2"))
+  # sim_age_df$ageBins <- c("<=17", "18~25", "26~40", "41~60", ">=61")
+  # sim_age_df$sim1[0:4] <- ageData1
+  # sim_age_df$sim2[0:4] <- ageData2
+  
+  sim_age_df <- sim_age_df %>%
+    dplyr::mutate(sim1_new = sim1 - lag(sim1),
+                  sim1_new = ifelse(is.na(sim1_new), sim1, sim1_new),
+                  sim2_new = sim2 - lag(sim2),
+                  sim2_new = ifelse(is.na(sim2_new), sim2, sim2_new),
+                  # fill NA and zeros with 1 to avoid the error for Bayesian multinomial test
+                  sim1_new = ifelse((is.na(sim1_new) | sim1_new == 0), 1, sim1_new),
+                  sim2_new = ifelse((is.na(sim2_new) | sim2_new == 0), 1, sim2_new),
+                  ageBins = factor(ageBins, levels = c("<=17", "18~25", "26~40", "41~60", ">=61"))) %>%
+    dplyr::select(ageBins, sim1_new, sim2_new) %>%
+    dplyr::rename(obs = sim1_new,
+                  expected = sim2_new)
+  
+  # tmp_BF <- BayesMultiNomial(sim_age_df, 
+  #                             factor = 'ageBins', 
+  #                             observed = 'obs', 
+  #                             expected = 'expected')
+  
+  # res <- c(tmp_BF$BF$BF10, tmp_BF$LogBF10)
+  return( sim_age_df)
+}
+
+tmp <- Sim_Sens_mult(Mean1=4.5, 
+              diff_age=0, 
+              SD1=0.3, 
+              SD2=0.8, 
+              sampe_N=1200)
+```
+
+Then, I 
+
 #### Visualize age data from Chinese journals, BTS CHN and census7
 ```{r}
 Fig_Journal_BTS_Census_age <- ggplot(data= df_census7_Age, 
@@ -1405,7 +1476,7 @@ Fig_Journal_BTS_Census_age <- ggplot(data= df_census7_Age,
   geom_line(data = Journal_BTS_CHN_age, aes(x=ageBins, 
                 y = Proportion, group = Data_Source,color = Data_Source),size =1)+
   scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
-  scale_color_manual(values=c("CHN Journal age"="red", "BTS CHN age" = c("blue"))) +
+  scale_color_manual(values=c("Chinese papers"="red", "BTS Chinese" = c("blue"))) +
   scale_y_continuous(limits = c(0,40))+
   coord_flip() +
   labs(y="Proportion", x = "Age bins")+
