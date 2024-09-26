@@ -1413,60 +1413,107 @@ ggsave("H2_fig_gender.pdf", H2_fig_gender, device = "pdf", width=18, height = 9)
 ### Age
 Since raw data is not available for papers in Chinese journals, we simulated the raw data using the method used in the Stges 1 of registration report. It is then combined with BTS and compared with census data.
 
-First, I create func to process age data simulation
+First, I create func to process age data simulation in psychological development stages.
 ```{r}
-Sim_Sens_mult <- function(Mean1, diff_age, SD1, SD2, sampe_N=Sample_Size){
+Sim_Sens_mult_PsyStages <- function(Mean1, diff_age, SD1, sample_N=Sample_Size){
   
-  # get the mean of difference
-  Mean2 <- Mean1 + diff_age
 
-  # Generate data with N = 1200
   # 0~17, 18~25, 26~40, 41~60, 61~
-  ageData1 <- round((pnorm(c(18,26,41,61), mean = Mean1, sd =SD1) * sampe_N))
-  ageData2 <- round((pnorm(c(18,26,41,61), mean = Mean2, sd =SD2) * sampe_N))
+  ageData1 <-  c(pnorm(17, mean = Mean1, sd = SD1) * sample_N,  
+                      (pnorm(26, mean = Mean1, sd = SD1) - pnorm(17, mean = Mean1, sd = SD1)) *sample_N,  
+                      (pnorm(41, mean = Mean1, sd = SD1) - pnorm(26, mean = Mean1, sd = SD1)) *sample_N,  
+                      (pnorm(60, mean = Mean1, sd = SD1) - pnorm(41, mean = Mean1, sd = SD1)) *sample_N,  
+                      (1 - pnorm(60, mean = Mean1, sd = SD1)) * sample_N  
+)
   
     # create a dataframe with ageData1 and ageData2:
-  sim_age_df <- setNames(data.frame(matrix(ncol = 3, nrow = 5)), c("ageBins", "sim1", "sim2"))
+  sim_age_df <- setNames(data.frame(matrix(ncol = 2, nrow = 5)), c("ageBins", "sim1"))
   sim_age_df$ageBins <- c("<=17", "18~25", "26~40", "41~60", ">=61")
-  sim_age_df$sim1[0:4] <- ageData1
-  sim_age_df$sim2[0:4] <- ageData2
+  sim_age_df$sim1[1:5] <- ageData1
   
-  # # create a dataframe with ageData1 and ageData2:
-  # sim_age_df <- setNames(data.frame(matrix(ncol = 3, nrow = 5)), c("ageBins", "sim1", "sim2"))
-  # sim_age_df$ageBins <- c("<=17", "18~25", "26~40", "41~60", ">=61")
-  # sim_age_df$sim1[0:4] <- ageData1
-  # sim_age_df$sim2[0:4] <- ageData2
-  
-  sim_age_df <- sim_age_df %>%
-    dplyr::mutate(sim1_new = sim1 - lag(sim1),
-                  sim1_new = ifelse(is.na(sim1_new), sim1, sim1_new),
-                  sim2_new = sim2 - lag(sim2),
-                  sim2_new = ifelse(is.na(sim2_new), sim2, sim2_new),
-                  # fill NA and zeros with 1 to avoid the error for Bayesian multinomial test
-                  sim1_new = ifelse((is.na(sim1_new) | sim1_new == 0), 1, sim1_new),
-                  sim2_new = ifelse((is.na(sim2_new) | sim2_new == 0), 1, sim2_new),
-                  ageBins = factor(ageBins, levels = c("<=17", "18~25", "26~40", "41~60", ">=61"))) %>%
-    dplyr::select(ageBins, sim1_new, sim2_new) %>%
-    dplyr::rename(obs = sim1_new,
-                  expected = sim2_new)
-  
-  # tmp_BF <- BayesMultiNomial(sim_age_df, 
-  #                             factor = 'ageBins', 
-  #                             observed = 'obs', 
-  #                             expected = 'expected')
-  
-  # res <- c(tmp_BF$BF$BF10, tmp_BF$LogBF10)
+
   return( sim_age_df)
 }
 
-tmp <- Sim_Sens_mult(Mean1=4.5, 
-              diff_age=0, 
-              SD1=0.3, 
-              SD2=0.8, 
-              sampe_N=1200)
+
+## Filter non-NA data makes it easier for subsequent simulations.
+Sim_Journal_age <- df_stage2_Journal_Code_Age2 %>% 
+  dplyr::filter(Age != 0) %>% 
+  dplyr::filter(!is.na(M_age) & !is.na(SD_age)) %>% 
+  dplyr::filter(!is.na(Sample_Size)) %>% 
+  dplyr::mutate(Sample_Size =  as.numeric(Sample_Size))
+
+## 
+Sim_Journal_age_metrix <- lapply(1:nrow(Sim_Journal_age),function(i){
+  
+  Sim_Sens_mult_PsyStages(Mean1 = Sim_Journal_age$M_age[i],
+                diff_age = 0,
+                SD1 = Sim_Journal_age$SD_age[i],
+                sample_N = Sim_Journal_age$Sample_Size[i])
+  
+  })
+
+Sim_Journal_age_frame <- do.call(rbind,Sim_Journal_age_metrix)
+
+Sim_Journal_age2 <- Sim_Journal_age_frame %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
+  dplyr::ungroup()
+
+
+sum(Sim_Journal_age$Sample_Size)-sum(Sim_Journal_age2$sim1,na.rm = TRUE)
 ```
 
-Then, I 
+
+
+Meanwhile, I create func to process age data simulation in 10-year-old segment.
+```{r}
+Sim_Sens_mult_interval10 <- function(Mean2, diff_age2, SD2, sample_N2=Sample_Size){
+  
+  # get the mean of difference
+  Mean3 <- Mean2 + diff_age2
+
+  # 0~10, 11~20, 21~30, 31~40, 41~50, 51~60, 61~
+  ageData2 <-  c(pnorm(10, mean = Mean2, sd = SD2) * sample_N2,
+                 (pnorm(21, mean = Mean2, sd = SD2) - pnorm(10, mean = Mean2, sd = SD2)) *sample_N2,
+                 (pnorm(31, mean = Mean2, sd = SD2) - pnorm(21, mean = Mean2, sd = SD2)) *sample_N2,
+                 (pnorm(41, mean = Mean2, sd = SD2) - pnorm(31, mean = Mean2, sd = SD2)) *sample_N2,
+                 (pnorm(51, mean = Mean2, sd = SD2) - pnorm(41, mean = Mean2, sd = SD2)) *sample_N2,
+                 (pnorm(61, mean = Mean2, sd = SD2) - pnorm(51, mean = Mean2, sd = SD2)) *sample_N2,  
+                      (1 - pnorm(61, mean = Mean2, sd = SD2)) * sample_N2  
+)
+  
+    # create a dataframe with ageData1 and ageData2:
+  sim_age2_df <- setNames(data.frame(matrix(ncol = 2, nrow = 7)), c("ageBins", "sim2"))
+  sim_age2_df$ageBins <- c("<=10", "11~20", "21~30", "31~40", "41~50", "51~60", ">=61")
+  sim_age2_df$sim2[1:7] <- ageData2
+  
+  
+  return( sim_age2_df)
+}
+
+
+Sim_Journal_age2_metrix <- lapply(1:nrow(Sim_Journal_age),function(i){
+  
+  Sim_Sens_mult_interval10(Mean2 = Sim_Journal_age$M_age[i],
+                diff_age2 = 0,
+                SD2 = Sim_Journal_age$SD_age[i],
+                sample_N2 = Sim_Journal_age$Sample_Size[i])
+  
+  })
+
+Sim_Journal_age2_frame <- do.call(rbind,Sim_Journal_age2_metrix)
+
+Sim_Journal_age_interval10 <- Sim_Journal_age2_frame %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(sim2 = round(sum(sim2,na.rm = TRUE))) %>% 
+  dplyr::ungroup()
+
+
+sum(Sim_Journal_age$Sample_Size)-sum(Sim_Journal_age_interval10$sim2,na.rm = TRUE)
+```
+
+
 
 #### Visualize age data from Chinese journals, BTS CHN and census7
 ```{r}
@@ -1713,7 +1760,7 @@ Journal_region_distribution
 ```
 
 
-#### Bayesian multinomial test for region from journal, census 7 and CFPS
+#### Bayesian multinomial test for region from journal, census 7 and CFPS2018
 ```{r}
 df_CHN_Journal_Province_count <- df_CHN_Journal_Province_count %>% 
   dplyr::rename(province = 1, population = 2,
@@ -1727,7 +1774,7 @@ df_census7_province <- df_census7_province %>%
 H2_province_bayes <- bind_rows(df_CHN_Journal_Province_count,df_census7_province,df_CFPS2018_province) %>% 
   dplyr::select(1,3,5) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = proportion) %>% 
-  dplyr::mutate(across(everything(),~ifelse(is.na(.),0,.)))
+  dplyr::mutate(across(everything(),~ifelse(is.na(.),1,.)))
 
 
 
@@ -2279,7 +2326,7 @@ BF_H3_interval10_Journal_BTS <- BF_H3_all_interval10  %>%
   tidyr::pivot_wider(names_from = "Countries",values_from = "Proportion") %>%
   dplyr::mutate(across(2:last_col(), ~ifelse(is.na(.), 0, .)))
 
-BF_H3_interval10_Journal_BTS$CHN[7] <- 0.001
+BF_H3_interval10_Journal_BTS$CHN[7] <- 1
 
 BF_H3_interval10_Journal_BTS <- BF_H3_interval10_Journal_BTS %>%
   Func_BFpairs(countries_order = BF_H3_gender_factor,
@@ -2340,7 +2387,7 @@ Fig_BF_interval10 <- ggplot(BF_H3_interval10_Journal_BTS,
                             aes( x = `Log(BF10)_NonInform`, y = Countries)) +
   geom_point() +
   scale_color_grey() +
-  xlim(-190,100) +
+  xlim(-10,100) +
   scale_y_discrete(limits=rev) +
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
              colour = c("red", "tomato", "black", "deepskyblue","blue"), 
