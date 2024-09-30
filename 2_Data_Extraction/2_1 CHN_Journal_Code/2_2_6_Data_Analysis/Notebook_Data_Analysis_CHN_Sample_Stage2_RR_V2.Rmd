@@ -715,7 +715,7 @@ Journal_BTS_CHN_gender <- Journal_BTS_CHN_gender %>%
 
 #### Visualize gender data for Chinese journals and BTS
 ```{r}
-Fig_Journal_BTS_CHN_gender <- ggplot(data = Journal_BTS_CHN_gender,aes(Data_Source,Proportion,fill = Gender))+
+H1_Fig_gender <- ggplot(data = Journal_BTS_CHN_gender,aes(Data_Source,Proportion,fill = Gender))+
   geom_col()+
   geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
   labs(y="Proportion")+
@@ -731,7 +731,7 @@ Fig_Journal_BTS_CHN_gender <- ggplot(data = Journal_BTS_CHN_gender,aes(Data_Sour
 
 # ggsave("Fig_Journal_BTS_CHN_gender.pdf", Fig_Journal_BTS_CHN_gender, device = "pdf", width=18, height = 9)
 
-Fig_Journal_BTS_CHN_gender
+H1_Fig_gender 
 
 # BTS1 <- Journal_BTS_CHN_gender$data
 ```
@@ -1303,7 +1303,7 @@ Journal_BTS_CHN_age <- Journal_BTS_CHN_age %>%
 
 ## Visualize age data from Chinese journals and census7
 ```{r}
-Fig_Journal_BTS_CHN_age <- ggplot(data= Journal_BTS_CHN_age, aes(x=ageBins, y=ifelse(Data_Source=="BTS Chineses", -Proportion, Proportion),fill = Data_Source)) +
+H1_Fig_age <- ggplot(data= Journal_BTS_CHN_age, aes(x=ageBins, y=ifelse(Data_Source=="BTS Chineses", -Proportion, Proportion),fill = Data_Source)) +
   geom_col(alpha=0.8, width = 1) +
   coord_flip() +
   labs(y="Proportion", x = "Age bins", color=NULL)+
@@ -1318,14 +1318,15 @@ Fig_Journal_BTS_CHN_age <- ggplot(data= Journal_BTS_CHN_age, aes(x=ageBins, y=if
         axis.text = element_text(size = 16,family = "serif"))
 
 
-ggsave("Fig_Journal_BTS_CHN_age.pdf", Fig_Journal_BTS_CHN_age, device = "pdf", width=16, height = 9)
-
 Fig_Journal_BTS_CHN_age
 
-H1_Fig_Journal_BTS_CHN <- Fig_Journal_BTS_CHN_gender + Fig_Journal_BTS_CHN_age +
+
+H1_Fig_gender_age <- H1_Fig_gender + H1_Fig_age +
   plot_annotation(tag_levels = 'A')
 
-ggsave("H1_Fig_Journal_BTS_CHN.pdf", H1_Fig_Journal_BTS_CHN, device = "pdf", width=18, height = 9)
+
+ggsave("H1_Fig_gender_age.pdf", H1_Fig_gender_age, device = "pdf", width=18, height = 9)
+
 
 H1_Fig_Journal_BTS_CHN
 ```
@@ -1515,7 +1516,7 @@ H2_gender <- bind_rows(df_census7_Gender,df_CFPS2018_Gender,H2_BTS_Journal_gende
 
 
 ## visualization
-H2_fig_gender <- ggplot(H2_gender,aes(Data_Source,Proportion,fill= Gender))+
+H2_Fig_gender <- ggplot(H2_gender,aes(Data_Source,Proportion,fill= Gender))+
   geom_col()+
   geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
   labs(y="Proportion")+
@@ -1529,11 +1530,10 @@ H2_fig_gender <- ggplot(H2_gender,aes(Data_Source,Proportion,fill= Gender))+
         axis.text = element_text(size = 20,family = "serif"))
 
 
-H2_fig_gender
+H2_Fig_gender
 
-ggsave("H2_fig_gender.pdf", H2_fig_gender, device = "pdf", width=18, height = 9)
+# ggsave("H2_fig_gender.pdf", H2_fig_gender, device = "pdf", width=18, height = 9)
 ```
-
 
 
 ### Age
@@ -1592,16 +1592,29 @@ df_census7_Age <- df_census7_Age %>%
 ```
 
 
+#### Combine Chinese age data of BTS and Chinese papers.
+```{r}
+Journal_BTS_CHN_age2 <- Journal_BTS_CHN_age %>% 
+  dplyr::select(1:2) %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(n = sum(n)) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n)*100),2))
+
+
+# sum(Journal_BTS_CHN_age2$Proportion)
+```
+
+
 #### Visualize age data from Chinese journals, BTS CHN and census7
 ```{r}
-Fig_Journal_BTS_Census_age <- ggplot(data= df_census7_Age, 
+H2_Fig_age <- ggplot(data= df_census7_Age, 
        aes(x=ageBins, y = Proportion, fill="Census 7")) +
   geom_col(alpha=0.5, width = 1) +
-  geom_line(data = Journal_BTS_CHN_age, aes(x=ageBins, 
-                y = Proportion, group = Data_Source,color = Data_Source),size =1)+
+  geom_line(data = Journal_BTS_CHN_age2, aes(x=ageBins, 
+                y = Proportion,group = 1,color = "Chinese Subjects pool"),size =1)+
   scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
-  scale_color_manual(values=c("Chinese papers"="red", "BTS Chineses" = c("blue"))) +
-  scale_y_continuous(limits = c(0,40))+
+  scale_color_manual(values=c("Chinese Subjects pool" = "red")) +
+  scale_y_continuous(limits = c(0,35))+
   coord_flip() +
   labs(y="Proportion", x = "Age bins")+
   theme_classic()+
@@ -1613,9 +1626,18 @@ Fig_Journal_BTS_Census_age <- ggplot(data= df_census7_Age,
         axis.title = element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"))
 
-ggsave("Fig_Journal_BTS_Census_age.pdf", Fig_Journal_BTS_Census_age, device = "pdf", width=18, height = 9)
 
-Fig_Journal_BTS_Census_age
+H2_Fig_age
+
+
+H2_Fig_gender_age <- H2_Fig_gender + H2_Fig_age +
+  plot_annotation(tag_levels = 'A')
+
+
+ggsave("H2_Fig_gender_age.pdf", H2_Fig_gender_age, device = "pdf", width=18, height = 9)
+
+
+H2_Fig_gender_age
 ```
 
 
@@ -1824,14 +1846,17 @@ Census7_Area <- ggplot() +
 
 
 
-Journal_region_distribution <- Census7_Area + CFPS2018_Area + Journal_Area + plot_layout(guides = "collect")+
+H2_Area <- Census7_Area + CFPS2018_Area + Journal_Area + plot_layout(guides = "collect")+
   plot_annotation(tag_levels = 'A', title = "Area distribution",
                   theme = theme(plot.title = element_text(size = 24))) + 
   theme(plot.tag = element_text(size = 20))
 
-ggsave("Journal_region_distribution.pdf", Journal_region_distribution, device = "pdf", width=18, height = 15)
 
-Journal_region_distribution
+ggsave("H2_Area.pdf", H2_Area, device = "pdf", width=18, height = 15)
+
+
+H2_Area
+
 
 #table(df_stage2_Journal_Code2$Educational_Attainment_N)
 ```
@@ -2157,7 +2182,7 @@ Journal_BTS_ALL_gender <- BTS_ALL_gender_pro %>%
 
 #### Visualization gender data
 ```{r}
-Fig_Journal_BTS_ALL_gender <- ggplot(Journal_BTS_ALL_gender, aes(x=Proportion, y=ISO3,fill=Gender)) +
+H3_Fig_gender <- ggplot(Journal_BTS_ALL_gender, aes(x=Proportion, y=ISO3,fill=Gender)) +
   geom_col(alpha = .75)+
   labs(y="Countries") + 
   scale_fill_discrete(label=c("female","male")) +
@@ -2172,21 +2197,41 @@ Fig_Journal_BTS_ALL_gender <- ggplot(Journal_BTS_ALL_gender, aes(x=Proportion, y
   scale_x_continuous(breaks = seq(0, 100, by = 10)) +
   facet_wrap(~ WEIRD, scales = "free")
 
-Fig_Journal_BTS_ALL_gender
 
-ggsave("Fig_Journal_BTS_ALL_gender.pdf", Fig_Journal_BTS_ALL_gender, device = "pdf", width=18, height = 9)
+H3_Fig_gender
+
+# ggsave("Fig_Journal_BTS_ALL_gender.pdf", Fig_Journal_BTS_ALL_gender, device = "pdf", width=18, height = 9)
 ```
 
 #### Process age data (PsyStages)
 ```{r}
 BTS_All_Psystages <- BTS_age_PsyStages %>% 
   dplyr::filter(ISO3 %in% BTS_ALL_gender_tab) %>% 
+  dplyr::filter(ISO3 != "CHN") %>% ## drop Chinese data
   dplyr::group_by(ISO3,ageBins) %>% 
   dplyr::summarise(n=n()) %>% 
   dplyr::mutate(Proportion = round(n/sum(n)*100,2)) %>% 
   dplyr::ungroup()
 
-BTS_All_Psystages_factor <- BTS_All_Psystages %>% 
+
+## Add Chinese data
+Journal_BTS_CHN_PsyStages <- Sim_Journal_age_PsyStages3_prop %>% 
+  dplyr::rename(n = 2) %>% 
+  dplyr::bind_rows(BTS_CHN_age_PsyStages) %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(n=sum(n)) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+                ISO3 = "CHN")
+
+# sum(Journal_BTS_CHN_PsyStages$Proportion)
+  
+
+## Combine data
+H3_PsyStages <- dplyr::bind_rows(BTS_All_Psystages,Journal_BTS_CHN_PsyStages)
+
+
+## Set factor
+H3_PsyStages_factor <- H3_PsyStages %>% 
   dplyr::filter(ageBins == "18~25") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(ISO3)
@@ -2194,10 +2239,12 @@ BTS_All_Psystages_factor <- BTS_All_Psystages %>%
 # dftabage <- data.frame(table(BTS_ALL_age_factor))
 # dftabgender <- data.frame(table(BTS_ALL_age_factor))
 
-Journal_BTS_ALL_PsyStages <- BTS_All_Psystages %>% 
+
+## Process WEIRD
+H3_PsyStages2 <- H3_PsyStages %>% 
   dplyr::left_join(WEIRD_code_gender, by = c("ISO3" = "iso3c")) %>% 
   dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>%
-  dplyr::mutate(ISO3 = factor(ISO3,BTS_All_Psystages_factor )) %>% 
+  dplyr::mutate(ISO3 = factor(ISO3, levels = H3_PsyStages_factor)) %>% 
   dplyr::filter(!is.na(ageBins))
   
   
@@ -2206,7 +2253,7 @@ Journal_BTS_ALL_PsyStages <- BTS_All_Psystages %>%
 
 #### Visualize age data for countries around the world in BTS
 ```{r}
-Fig_Journal_BTS_ALL_age <- ggplot(Journal_BTS_ALL_PsyStages, aes(x=Proportion, y=ISO3, fill=ageBins)) +
+H3_Fig_PsyStages <- ggplot(H3_PsyStages2, aes(x=Proportion, y=ISO3, fill=ageBins)) +
   geom_col(alpha = .75)+
   labs(y="Countries") + 
   scale_fill_discrete(label=c("0~17", "18~25", "26~40", "41~59",">=60" )) +
@@ -2221,9 +2268,9 @@ Fig_Journal_BTS_ALL_age <- ggplot(Journal_BTS_ALL_PsyStages, aes(x=Proportion, y
   scale_x_continuous(breaks = seq(0, 100, by = 10)) +
   facet_wrap(~ WEIRD, scales = "free") 
 
-ggsave("Fig_Journal_BTS_ALL_age.pdf", Fig_Journal_BTS_ALL_age, device = "pdf", width=18, height = 9)
+# ggsave("Fig_Journal_BTS_ALL_age.pdf", Fig_Journal_BTS_ALL_age, device = "pdf", width=18, height = 9)
 
-Fig_Journal_BTS_ALL_age
+H3_Fig_PsyStages
 ```
 
 
@@ -2232,22 +2279,41 @@ Fig_Journal_BTS_ALL_age
 ```{r}
 BTS_ALL_interval10 <- BTS_age_interval10 %>% 
   dplyr::filter(ISO3 %in% BTS_ALL_gender_tab) %>% 
+  dplyr::filter(ISO3 != "CHN") %>%  ## drop Chinese data
   dplyr::group_by(ISO3,ageBins) %>% 
   dplyr::summarise(n=n()) %>% 
   dplyr::mutate(Proportion = round(n/sum(n)*100,2)) %>% 
   dplyr::ungroup()
 
-BTS_ALL_interval10_factor <- BTS_ALL_interval10 %>%
+
+## Add Chinese data
+Journal_BTS_CHN_interval10 <- Sim_Journal_age_interval103_prop %>% 
+  dplyr::rename(n = 2) %>% 
+  bind_rows(BTS_CHN_age_interval10_addrow) %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(n=sum(n)) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+                ISO3 = "CHN")
+
+
+## Combine data
+H3_interval10 <- bind_rows(BTS_ALL_interval10,Journal_BTS_CHN_interval10)
+
+
+## Set factor
+H3_interval10_factor <- BTS_ALL_interval10 %>%
   dplyr::add_row(ISO3 = c("CUB","JAM"),ageBins = "11~20",n = 0, Proportion =0) %>%
   ##add data to visualization 
   dplyr::filter(ageBins == "11~20") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(ISO3)
 
-Journal_BTS_ALL_interval10 <- BTS_ALL_interval10 %>% 
+
+## Process WEIRD
+H3_interval102 <- BTS_ALL_interval10 %>% 
   dplyr::left_join(WEIRD_code_gender, by = c("ISO3" = "iso3c")) %>% 
   dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>%
-  dplyr::mutate(ISO3 = factor(ISO3,BTS_ALL_interval10_factor)) %>% 
+  dplyr::mutate(ISO3 = factor(ISO3, levels = H3_interval10_factor)) %>% 
   dplyr::filter(!is.na(ageBins) & !is.na(ISO3)) 
 
 ```
@@ -2255,7 +2321,7 @@ Journal_BTS_ALL_interval10 <- BTS_ALL_interval10 %>%
 
 #### Visualization age data of all countries
 ```{r}
-Fig_Journal_BTS_ALL_interval10 <- ggplot(Journal_BTS_ALL_interval10, aes(x=Proportion, y=ISO3, fill=ageBins)) +
+H3_Fig_interval10 <- ggplot(H3_interval102, aes(x=Proportion, y=ISO3, fill=ageBins)) +
   geom_col(alpha = .75)+
   labs(y="Countries") + 
   scale_fill_discrete(label=c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61")) +
@@ -2270,9 +2336,9 @@ Fig_Journal_BTS_ALL_interval10 <- ggplot(Journal_BTS_ALL_interval10, aes(x=Propo
   scale_x_continuous(breaks = seq(0, 100, by = 10)) +
   facet_wrap(~ WEIRD, scales = "free") 
 
-ggsave("Fig_Journal_BTS_ALL_interval10.pdf", Fig_Journal_BTS_ALL_interval10, device = "pdf", width=18, height = 9)
+# ggsave("Fig_Journal_BTS_ALL_interval10.pdf", Fig_Journal_BTS_ALL_interval10, device = "pdf", width=18, height = 9)
 
-Fig_Journal_BTS_ALL_interval10 
+H3_Fig_interval10
 ```
 
 
@@ -2338,7 +2404,7 @@ BF_H3_gender_Journal_BTS <- BF_H3_gender  %>%
 
 #### Visualization BF gender
 ```{r warning=FALSE}
-Fig_BF_gender <- ggplot(BF_H3_gender_Journal_BTS, aes( x = `Log(BF10)_NonInform`, y = Countries)) +
+H3_Fig_BF_gender <- ggplot(BF_H3_gender_Journal_BTS, aes( x = `Log(BF10)_NonInform`, y = Countries)) +
   geom_point() +
   scale_color_grey() +
   xlim(-3, 25) +
@@ -2372,9 +2438,9 @@ Fig_BF_gender <- ggplot(BF_H3_gender_Journal_BTS, aes( x = `Log(BF10)_NonInform`
               axis.line.x = element_line(color='black', size = 1),
               axis.line.y = element_line(color='black', size = 1))
 
-ggsave("Fig_BF_gender.pdf", Fig_BF_gender, device = "pdf", width=18, height = 18)
+# ggsave("Fig_BF_gender.pdf", Fig_BF_gender, device = "pdf", width=18, height = 18)
 
-Fig_BF_gender
+H3_Fig_BF_gender
 ```
 
 
