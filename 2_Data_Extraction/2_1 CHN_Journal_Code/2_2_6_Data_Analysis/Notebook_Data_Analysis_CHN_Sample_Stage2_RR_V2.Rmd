@@ -5,8 +5,11 @@ date: "2024-04-20"
 output: html_document
 ---
 
-In "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V1.Rmd"， We prereprocess the journal code data. In this Rmd(V2), we enter the informal process data.
 
+In "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V1.Rmd"， I prereprocess the journal code data. In this Rmd(V2), we enter the informal process data.
+
+
+First, load library.
 # Install and Load packages
 ```{r message=FALSE, warning=FALSE}
 rm(list = ls())
@@ -21,20 +24,21 @@ pacman::p_load("truncnorm","BayesFactor", "gtools", "bruceR")
 ```
 
 
+And then, I load the data. The data includes data from the first Stage 1 of the pre-registration report (primarily Census data and CFPS2018 data), Chinese journal coding data, and data from Big Team Science (BTS).
 # Load data
-The data includes data from the first Stage 1 of the pre-registration report (primarily census data and CFPS2018 data), Chinese journal coding data, and data from Big Team Science (BTS).
-
-
 ## Load the data of stage 1 and Chinese journals coding data
 ```{r}
 load("df_Pre_Stage2_Journal_Code.Rdata")
 
 load("df_chinese_subj_rr_stage1.Rdata")
+
+## Here, I remove some data sets to reduce data set clutter.
+rm(df,df_PSA001,df_stage2_Journal_Code,Group1_bind,Group24567_bind,Group3_bind,df_regionCode,df_census6)
 ```
 
 
 ## Load the data of BTS
-First, we convert some data that is not in .xlsx format.
+Here, we first convert some data that is not in .xlsx format.
 ```{r}
 library(haven)
 
@@ -50,10 +54,14 @@ BTS_Manokara_et_al_2022 <- haven::read_sav("BTS_Manokara_et_al_2022.sav") %>%
 ## save data
 write.csv(BTS_Van_Bavel_et_al_2022, file = "BTS_Van_Bavel_et_al_2022.csv",row.names = FALSE)
 write.csv(BTS_Manokara_et_al_2022, file = "BTS_Manokara_et_al_2022.csv",row.names = FALSE)
+
+
+## Here, I remove some data sets to reduce data set clutter.
+rm(BTS_Manokara_et_al_2022,BTS_Van_Bavel_et_al_2022)
 ```
 
 
-Then, we load all BTS data.
+Next, I load all BTS data and process BTS data.
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 file_list <- list.files(here("D://chin-subj//2_Data_Extraction//2_1 CHN_Journal_Code//2_2_6_Data_Analysis"), ## If you need to learn or repeat the code document, please replace it with your local file address
                         pattern = ".csv",
@@ -74,15 +82,14 @@ BTS_data_list <- BTS_data_list[grepl("BTS_",names(BTS_data_list),ignore.case = T
 BTS_data <- BTS_data_list
 rm(BTS_file)
 
-# BTS1 <- BTS_data[[12]]
-# 
-# memory.limit()
+
+## Here, I remove some data sets to reduce data set clutter.
+rm(file,file_list,BTS_data_list)
 ```
 
 
 ### Process Country code of BTS
-Uniform country codes facilitate subsequent data processing and analysis, especially for batch processing and analysis of data.
-#### Create a unified table of country codes
+Uniform country codes facilitate subsequent data processing and analysis, especially for batch processing and analysis of data. Thus, I create Create a unified table of country codes.
 ```{r}
 if(!require("countrycode")) install.packages("countrycode")
 
@@ -94,9 +101,14 @@ Countrycodelist_iso2_iso3 <- Countrycodelist %>%
 
 Countrycodelist_iso2_iso3$ISO2[Countrycodelist_iso2_iso3$Countryfullname == "Kosovo"] <- "XK"
 Countrycodelist_iso2_iso3$ISO3[Countrycodelist_iso2_iso3$Countryfullname == "Kosovo"] <- "XKX"
+
+
+## Here, I remove some data sets to reduce data set clutter.
+rm(Countrycodelist)
 ```
 
-#### Create dataframe of WEIRD to visuliazation
+
+The third hypothesis requires countries to be divided into WEIRD and non-WEIRD, so I create a data.frame of WEIRD  countries to facilitate subsequent analysis and visualization
 ```{r}
 WEIRD_code <- codelist %>% 
   dplyr::select(3,6,iso2c,iso3c,region,region23) %>% 
@@ -109,11 +121,11 @@ WEIRD_code <- codelist %>%
 ```
 
 
-#### Batch country code of BTS
+In this part, I try to batch country code.
 ```{r}
 ## Handle some more specific encodings
 BTS_data[[5]]$Country <- trimws(sub(".*-(\\s*)", "", BTS_data[[5]]$Country)) 
-BTS_data[[12]]$Country <- trimws(sub(".*-(\\s*)", "", BTS_data[[12]]$Country)) 
+BTS_data[[14]]$Country <- trimws(sub(".*-(\\s*)", "", BTS_data[[14]]$Country)) 
 names(BTS_data[[11]])[names(BTS_data[[11]]) == "Country_now"] <- "Country"
 
 
@@ -255,6 +267,15 @@ BTS_data <- lapply(BTS_data,function(df){
 ```
 
 
+```{r include=FALSE}
+## Here, I remove some data sets to reduce data set clutter.
+rm(BTS_data_na_table,BTS_data_na,Countrycode_merge,BTS_countrycode_check)
+
+gc()
+```
+
+
+Here, I use self-defined function in Stage1 to calculate Bayesian multinomial test
 # Define a Func to calculate Bayesian multinomial test
 ## Algorithm in R
 ```
@@ -265,7 +286,7 @@ LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas)))
 ```
 
 
-Here, `alphas` defined the prior Dirichlet distribution, e.g., noninformative prior is a vector of $1$s, `counts` are the observed frequencies.
+Here, `alphas` defined the prior Dirichlet distribution, e.g., noninformative prior is a vector of $1$ s, `counts` are the observed frequencies.
 
 To use the algorithm in R, we defined a function here:
 ```{r}
@@ -328,9 +349,11 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 ```
 
 
-# Overview of participants
+At this point, I have finished loading the package and data. Next, I analyzed the data and visualized it according to the logic of the written protocal.
 
-## The basic situation of Chinese jourlnals coding data
+I begin by analyzing the basic case of the two data sets (BTS and Chinese journals).
+# Overview of participants
+## The basic situation of Chinese journals coding data
 ```{r}
 ### In order to facilitate the subsequent exclusion of foreign samples, the Subjects_Recruitment_Area information 29 of 20211064 was changed to Chinese character 29
 df_stage2_Journal_Code2$Subjects_Recruitment_Area[447] <- "被试填答IP覆盖了二十九个省、自治区、直辖市"
@@ -340,11 +363,15 @@ df_Articles <- df_stage2_Journal_Code2 %>%
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
   dplyr::filter(!grepl("2",Subjects_Recruitment_Area))
 
-df_articles_num <- df_Articles %>% 
-  dplyr::distinct(Article_IDs)
+df_Articles_num <- df_Articles %>% 
+  dplyr::distinct(Article_IDs) ## A total 962 articles
 
-df_study_num <- df_Articles %>% 
-  dplyr::distinct(Article_IDs,Study_Number)
+df_Study_num <- df_Articles %>% 
+  dplyr::distinct(Article_IDs,Study_Number) ## A total 1216 studies
+
+
+## Here, I remove some data sets to reduce data set clutter.
+rm(df_Articles,df_Articles_num,df_Study_num)
 ```
 
 
@@ -409,7 +436,6 @@ BTS_Overview2_idx <- BTS_Overview2 %>%
 
 
 ## The reported situation of Chinese Journals
-### Process reported situations data of Chinese Journals
 ```{r}
 df_CHN_report <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
@@ -426,8 +452,8 @@ df_CHN_report <- df_stage2_Journal_Code2 %>%
                    Sampling_Method = max(Sampling_Method) > 0,
                    Recruitment_Area = max(Subjects_Recruitment_Area) > 0,
                    Recruitment_Method = max(Subjects_Recruitment_Method_N) > 0,
-                   SES = max(SES_N) > 0) %>% 
-  dplyr::ungroup() %>% 
+                   SES = max(SES_N) > 0,
+                   .groups = "drop") %>% 
   dplyr::select(3:last_col())
 
 report_list <- list()
@@ -455,11 +481,10 @@ Educational_Occupation <- df_stage2_Journal_Code2 %>%
   dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
   dplyr::group_by(Article_IDs,Study_Number) %>% 
   dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
-                Occupation_N = max(Occupation_N) > 0) %>% 
-  dplyr::ungroup()  ### 294 studies
+                Occupation_N = max(Occupation_N) > 0,.groups = "drop")   ### 294 studies
 
-table(Educational_Occupation$Educational_Attainment_N) ## FALSE 162 TRUE 132
-table(Educational_Occupation$Occupation_N)  ## FALSE 193 TRUE 101
+# table(Educational_Occupation$Educational_Attainment_N) ## FALSE 162 TRUE 132
+# table(Educational_Occupation$Occupation_N)  ## FALSE 193 TRUE 101
 
 
 Educational_Occupation_table <- data.frame(Var1 = c("Unreported","Reported","Unreported","Reported"),
@@ -496,6 +521,10 @@ Fig_Journal_report <- ggplot(df_CHN_report,aes(col_names,proportion,fill=Var1))+
 Fig_Journal_report
 
 ggsave("Fig_Journal_report.pdf", Fig_Journal_report, device = "pdf", width=16, height = 9)
+
+
+## Here, I remove some data sets to reduce data set clutter.
+rm(report_list,report_table,i,Educational_Occupation,Educational_Occupation_table)
 ```
 
 
@@ -521,40 +550,19 @@ df_fuzzy_age_report <- df_age_report_detail %>%
 
 df_fuzzy_age_report_study_num <- df_fuzzy_age_report %>% 
   dplyr::distinct(Article_IDs,Study_Number) ## 130-5=125
+
+
+## Here, I remove some data sets to reduce data set clutter.
+rm(df_age_report_detail,df_age_report_detail_study_num,
+   df_fuzzy_age_report,df_fuzzy_age_report_study_num)
 ```
 
 
+In this section, I begin by testing and analyzing three main hypotheses.
 # Test three hypotheses
 ## Test the 1st hypothesis
-
 ### Gender
-#### Process gender data from census
-```{r}
-## Process the gender data of census 7
-df_census7_Gender <- df_census7 %>%
-  dplyr::select(c(6,7)) %>%        
-  dplyr::slice(c(6)) %>%
-  dplyr::rename(male=1, 
-                female=2) %>%
-  dplyr::mutate(Data_Source = "Census 7") %>%
-  tidyr::pivot_longer(c(male, female), 
-                      names_to = "Gender",
-                      values_to = "Proportion") %>%
-  dplyr::mutate(Proportion = round(as.numeric(Proportion), 0))
-
-## Process the gender data of CFPS2018
-df_CFPS2018_Gender <- df_CFPS2018 %>%
-  dplyr::rename(Gender = QA002) %>%
-  dplyr::count(Gender) %>%
-  dplyr::filter(!is.na(Gender)) %>%
-  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
-                Data_Source = "CFPS 2018",
-                Gender= ifelse(Gender == 1, "male", "female")) %>%
-  dplyr::select(Data_Source, Gender, Proportion)
-```
-
-
-#### Process gender data from Chinese sample in Chinese journal
+Process gender data from Chinese journal.
 ```{r warning=FALSE}
 ## Minor revision
 df_stage2_Journal_Code2$Male_Num[1258] <- 0
@@ -602,17 +610,6 @@ df_stage2_Journal_Code_Gender_integer2 <- df_stage2_Journal_Code_Gender_integer 
   rbind(df_stage2_Journal_Code_Gender_integer_add)
 
 
-# df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender_integer %>% 
-#   rbind(df_stage2_Journal_Code_Gender_integer_add) %>% 
-#   dplyr::mutate(Female_Num = ifelse(is.na(Female_Num), 0, Female_Num),
-#                 Sample_Size = as.numeric(Sample_Size)) %>%
-#   dplyr::mutate(Male_Proportion = Male_Num/Sample_Size) %>% 
-#   dplyr::mutate(Male_Proportion = round(Male_Proportion,2)) %>% 
-#   dplyr::mutate(Female_Proportion = 1 - Male_Proportion) %>% 
-#   dplyr::select(-c(6:7))
-  
-## rm(df_stage2_Journal_Code_Gender_integer_add)
-
 ## Process decimal
 df_stage2_Journal_Code_Gender_decimal2 <- df_stage2_Journal_Code_Gender_decimal %>% 
   dplyr::mutate(Sample_Size = as.numeric(Sample_Size),
@@ -643,7 +640,7 @@ df_CHN_Journal_Gender_Total2 <- data.frame(Gender = c("Male","Female"),
 ```
 
 
-#### Process gender data from BTS 
+Process gender data from BTS.
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 BTS_gender_list <- list()
 
@@ -656,11 +653,8 @@ for(i in seq_along(BTS_data)) {
   BTS_gender <- BTS_data[[i]] %>% 
     dplyr::mutate(Gender = str_to_title(Gender)) %>% 
     dplyr::filter(Gender == "Female" | Gender == "Male") %>% 
-    #dplyr::group_by(ISO3,Gender) %>% 
-    #dplyr::summarise(count = n()) %>%
     dplyr::mutate(#Proportion = round(count/sum(count),2),
                   Data_Source =  BTS_data_name)
-    #dplyr::ungroup()
   
   BTS_gender_list[[BTS_data_name]] <- BTS_gender
   
@@ -671,12 +665,10 @@ for(i in seq_along(BTS_data)) {
 
 }
 
-#BTS1 <- BTS_gender_list[[1]] 
-
 ```
 
 
-#### Combine gender data from Chinese Journal and BTS
+Combine gender data from Chinese Journal and BTS
 ```{r}
 ## Extracting China data
 BTS_CHN_gender <- lapply(BTS_gender_list, function(df){
@@ -713,7 +705,7 @@ Journal_BTS_CHN_gender <- Journal_BTS_CHN_gender %>%
 ```
 
 
-#### Visualize gender data for Chinese journals and BTS
+Visualize gender data for Chinese journals and BTS
 ```{r}
 H1_Fig_gender <- ggplot(data = Journal_BTS_CHN_gender,aes(Data_Source,Proportion,fill = Gender))+
   geom_col()+
@@ -737,7 +729,6 @@ H1_Fig_gender
 ```
 
 
-#### Bayesian multinomial test for CHN journal data and BTS
 Here we will test whether the gender proportion distribution from Chinese five journal data are similar to that of the BTS data. We use Bayesian multinomial test (Bayesian goodness-of-fit test) to examine whether the observed (BTS data) fit the expected (Chinese five journal data). 
 
 $H_0$: $\theta = c$, where $c$ is defined by Chinese five journal data;
@@ -748,18 +739,30 @@ Journal_BTS_CHN_gender_bayes <- Journal_BTS_CHN_gender %>%
   dplyr::select(1,3:4) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
 
-BF_H1_Gender_Jouranl_BTS <- BayesMultiNomial(dataset = Journal_BTS_CHN_gender_bayes,
+BF_H1_gender <- BayesMultiNomial(dataset = Journal_BTS_CHN_gender_bayes,
                                              factor = "Gender",
                                              observed = "BTS Chinese",
                                              expected = "Chinese papers") 
+
 ```
 
 
 We found moderate evidence for the $H_1$ that the gender proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r BF_H1_Gender_Jouranl_BTS$BF$LogBF10`.
 
 
+At the end of gender data processing for hypothesis 1, I remove some data sets to reduce data set clutter.
+```{r}
+rm(BTS_CHN_gender,BTS_gender,
+   df_CHN_Journal_Gender_Total,df_CHN_Journal_Gender_Total2,
+   df_stage2_Journal_Code_Gender,df_stage2_Journal_Code_Gender_decimal,
+   df_stage2_Journal_Code_Gender_decimal2,df_stage2_Journal_Code_Gender_integer,
+   df_stage2_Journal_Code_Gender_integer_add,df_stage2_Journal_Code_Gender_integer2,
+   Journal_BTS_CHN_gender_bayes)
+```
+
+
 ### Age
-#### Re-process age data from Chinese sample in Chinese journal
+Reprocess age data from Chinese journal.
 ```{r warning=FALSE}
 ## I found some outliers for M_age, so I processed this part of the data first.
 df_stage2_Journal_Code2$Sample_Type_N[1082] <- 2
@@ -923,93 +926,8 @@ df_stage2_Journal_Code2_SampleType5 <- df_stage2_Journal_Code2 %>%
   dplyr::filter(Sample_Type_N == 5) ## I may need to re-process Sample_Type 5
 rm(df_stage2_Journal_Code2_SampleType5)
 
-
-## Count unreported/reported
-#table(df_stage2_Journal_Code_Age$Age)
-
-
 ```
 
-
-#### Informal process age data from Chinese sample in Chinese journal
-```{r}
-# df_stage2_Journal_Code_MAge <- df_stage2_Journal_Code_Age2 %>% 
-#   dplyr::select(Article_IDs,M_age,Remark1,Remark2) %>% 
-#   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
-#   dplyr::filter(!is.na(M_age)) %>% 
-#   dplyr::mutate(ageBins = cut(M_age,
-#                 breaks = c(-Inf,4.5,9.5,14.5,19.5,24.5,
-#                            29.5,34.5,39.5,44.5,49.5,
-#                            54.5,59.5,64.5,69.5,74.5,
-#                            79.5,84.5,89.5,94.5,Inf),
-#                 labels = c("0~4","5~9","10~14","15~19","20~24",
-#                            "25~29","30~34","35~39","40~44","45~49",
-#                            "50~54","55~59","60~64","65~69","70~74",
-#                            "75~79","80~84","85~89", "90~94",">=95"),
-#                 levels = c("0~4","5~9","10~14","15~19","20~24",
-#                            "25~29","30~34","35~39","40~44","45~49",
-#                            "50~54","55~59","60~64","65~69","70~74",
-#                            "75~79","80~84","85~89", "90~94",">=95"))) %>% 
-#   dplyr::count(ageBins) %>% 
-#   dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
-#   dplyr::mutate(Data_Source = "Chinese papers",n=as.numeric(n))
-# 
-# 
-# ## Add a blank line for age groups without data
-# df_stage2_Journal_Code_MAge_missgroup <- data.frame(
-#   ageBins =c( "75~79","80~84","85~89", "90~94",">=95"),
-#   n=0,
-#   Proportion = 0,
-#   Data_Source = "Chinese papers")
-# 
-# df_CHN_Journal_Age <- rbind(df_stage2_Journal_Code_MAge,df_stage2_Journal_Code_MAge_missgroup)
-# 
-# 
-# ## Split the data by year
-# df_stage2_Journal_Code_MAge_year <- df_stage2_Journal_Code_Age2 %>%
-#   dplyr::select(Article_IDs,M_age,Remark1,Remark2) %>% 
-#   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
-#   dplyr::filter(!is.na(M_age)) %>%
-#   dplyr::mutate( Data_Source= substring(Article_IDs,1,4)) %>% 
-#   dplyr::group_by(Data_Source) %>% 
-#   dplyr::mutate(ageBins = cut(M_age,
-#                 breaks = c(-Inf,4.5,9.5,14.5,19.5,24.5,
-#                            29.5,34.5,39.5,44.5,49.5,
-#                            54.5,59.5,64.5,69.5,74.5,
-#                            79.5,84.5,89.5,94.5,Inf),
-#                 labels = c("0~4","5~9","10~14","15~19","20~24",
-#                            "25~29","30~34","35~39","40~44","45~49",
-#                            "50~54","55~59","60~64","65~69","70~74",
-#                            "75~79","80~84","85~89", "90~94",">=95"),
-#                 levels = c("0~4","5~9","10~14","15~19","20~24",
-#                            "25~29","30~34","35~39","40~44","45~49",
-#                            "50~54","55~59","60~64","65~69","70~74",
-#                            "75~79","80~84","85~89", "90~94",">=95"))) %>% 
-#   dplyr::count(ageBins) %>% 
-#   dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
-#   dplyr::ungroup() %>% 
-#   dplyr::mutate(Data_Source= ifelse( Data_Source == "2008","CHN Journal age 2008", ifelse( Data_Source == "2018", "CHN Journal age 2018","CHN Journal age 2021")))
-# 
-# ## Add a blank line for age groups without data
-# Data_Source_num <- 1:22
-# 
-# df_stage2_Journal_Code_MAge_year_missgroup <- data.frame(
-#   Data_Source= case_when(Data_Source_num %in% 1:10 ~ "CHN Journal age 2008",
-#                         Data_Source_num %in% 11:15 ~ "CHN Journal age 2018",
-#                         TRUE ~ "CHN Journal age 2021"),
-#   ageBins = c("45~49","50~54","55~59","60~64","70~74","75~79","80~84",
-#                 "85~89", "90~94",">=95",
-#                  "75~79","80~84","85~89", "90~94",">=95",
-#                 "55~59","70~74","75~79","80~84","85~89", "90~94",">=95"),
-#   n = 0,
-#   Proportion =0)
-# 
-# df_stage2_Journal_Code_MAge_year <- df_stage2_Journal_Code_MAge_year %>% 
-#   rbind(df_stage2_Journal_Code_MAge_year_missgroup) %>% 
-#   dplyr::arrange(Data_Source,ageBins)
-# 
-# rm(df_stage2_Journal_Code_MAge_year_missgroup,df_stage2_Journal_Code_MAge_missgroup, Data_Source_num)
-```
 
 Since raw data is not available for papers in Chinese journals, we simulated the raw data using the method used in the Stges 1 of registration report. It is then combined with BTS and compared with census data.
 
@@ -1222,7 +1140,7 @@ Sim_Journal_age_interval103_prop <- Sim_Journal_age_interval103 %>%
 ```
 
 
-## Process age data from BTS
+Process age data from BTS.
 ```{r}
 BTS_age_list <- list()
 
@@ -1270,19 +1188,19 @@ BTS_age <-  bind_rows(BTS_age_list)
 ```
 
 
-## Filter CHN age data from BTS, Combine BTS data and CHN journal data
+Filter CHN age data from BTS, Combine BTS CHN data and Chinese journals data.
 ```{r}
 BTS_CHN_age <- BTS_age %>% 
   dplyr::filter(ISO3 == "CHN") %>% 
   dplyr::count(ageBins) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                Data_Source = "BTS Chineses")
+                Data_Source = "BTS Chinese")
 
 ## add 3 rows of ageBins without data
 BTS_CHN_age_3rows <- data.frame(ageBins = c("0~4","5~9","10~14"),
                                 n = 0,
                                 Proportion = 0,
-                                Data_Source = "BTS Chineses")
+                                Data_Source = "BTS Chinese")
 
 ## combine 2 dataframe
 Journal_BTS_CHN_age <- Sim_Journal_age_five3_prop %>% 
@@ -1301,13 +1219,13 @@ Journal_BTS_CHN_age <- Journal_BTS_CHN_age %>%
 ```
 
 
-## Visualize age data from Chinese journals and census7
+Visualize age data from Chinese journals and census7.
 ```{r}
-H1_Fig_age <- ggplot(data= Journal_BTS_CHN_age, aes(x=ageBins, y=ifelse(Data_Source=="BTS Chineses", -Proportion, Proportion),fill = Data_Source)) +
+H1_Fig_age <- ggplot(data= Journal_BTS_CHN_age, aes(x=ageBins, y=ifelse(Data_Source=="BTS Chinese", -Proportion, Proportion),fill = Data_Source)) +
   geom_col(alpha=0.8, width = 1) +
   coord_flip() +
   labs(y="Proportion", x = "Age bins", color=NULL)+
-  scale_fill_manual(values = c("BTS Chineses" = "#619CFF", "Chinese papers" = "#7CAE00")) +
+  scale_fill_manual(values = c("BTS Chinese" = "#619CFF", "Chinese papers" = "#7CAE00")) +
   theme_classic()+
   theme(panel.border =element_rect(fill=NA,color="black"),
         legend.position ="bottom",
@@ -1318,7 +1236,7 @@ H1_Fig_age <- ggplot(data= Journal_BTS_CHN_age, aes(x=ageBins, y=ifelse(Data_Sou
         axis.text = element_text(size = 16,family = "serif"))
 
 
-Fig_Journal_BTS_CHN_age
+H1_Fig_age
 
 
 H1_Fig_gender_age <- H1_Fig_gender + H1_Fig_age +
@@ -1328,12 +1246,11 @@ H1_Fig_gender_age <- H1_Fig_gender + H1_Fig_age +
 ggsave("H1_Fig_gender_age.pdf", H1_Fig_gender_age, device = "pdf", width=18, height = 9)
 
 
-H1_Fig_Journal_BTS_CHN
+H1_Fig_gender_age
 ```
 
 
-## Reprocess age for Bayesian multinomial test
-### Reprocess BTS CHN age in psychological development stages
+Process age for Bayesian multinomial test. First of all, I process BTS CHN age in psychological development stages.
 ```{r}
 BTS_age_list_PsyStages <- list()
 
@@ -1366,7 +1283,7 @@ BTS_age_PsyStages <-  do.call(rbind,BTS_age_list_PsyStages)
 ```
 
 
-### Reprocess BTS CHN age in 10-year-old segment
+Secondly, I process BTS CHN age in 10-year-old segment.
 ```{r}
 BTS_age_list_interval10 <- list()
 
@@ -1399,7 +1316,7 @@ BTS_age_interval10 <-  do.call(rbind,BTS_age_list_interval10)
 ```
 
 
-### Filter BTS CHN data
+And then, I filter BTS CHN data.
 ```{r}
 ## psychological development stages in BTS
 BTS_CHN_age_PsyStages <- BTS_age_PsyStages %>% 
@@ -1407,9 +1324,7 @@ BTS_CHN_age_PsyStages <- BTS_age_PsyStages %>%
   dplyr::select(1,4) %>% 
   dplyr::count(ageBins) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                Data_Source = "BTS CHN age")# %>% 
- # tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion) %>% 
-  #dplyr::select(-2)
+                Data_Source = "BTS CHN age")
 
 
 ## 10-year-old segment in BTS
@@ -1418,14 +1333,12 @@ BTS_CHN_age_interval10 <- BTS_age_interval10 %>%
   dplyr::select(1,4) %>% 
   dplyr::count(ageBins) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                Data_Source = "BTS CHN age") #%>% 
-  #tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion) %>% 
-  #dplyr::select(-2)
+                Data_Source = "BTS CHN age") 
 
 ```
 
 
-### Combine two CHN data to Bayesian multinomial test(PsyStages)
+Next, I Combine two CHN data to Bayesian multinomial test in two different classfications (PsyStages and 10-year-old). One is PsyStages.
 ```{r}
 Journal_BTS_CHN_PsyStages_bayes <- Sim_Journal_age_PsyStages3_prop %>% 
   dplyr::rename(n = 2) %>% 
@@ -1441,7 +1354,7 @@ BF_H1_PsyStages_Journal_BTS <- BayesMultiNomial(dataset = Journal_BTS_CHN_PsySta
 ```
 
 
-### Combine two CHN data to Bayesian multinomial test(interval10)
+The other is interval10.
 ```{r}
 BTS_CHN_age_interval10_addrow <- BTS_CHN_age_interval10 %>% 
   dplyr::add_row(ageBins = "<=10", n = 0, Proportion = 0, Data_Source = "BTS CHN age")
@@ -1469,6 +1382,32 @@ When we divide age into stages of psychological development, we found strong evi
 
 ## Test the 2st hypothesis
 ### Gender
+
+```{r}
+## Process the gender data of census 7
+df_census7_Gender <- df_census7 %>%
+  dplyr::select(c(6,7)) %>%        
+  dplyr::slice(c(6)) %>%
+  dplyr::rename(male=1, 
+                female=2) %>%
+  dplyr::mutate(Data_Source = "Census 7") %>%
+  tidyr::pivot_longer(c(male, female), 
+                      names_to = "Gender",
+                      values_to = "Proportion") %>%
+  dplyr::mutate(Proportion = round(as.numeric(Proportion), 0))
+
+## Process the gender data of CFPS2018
+df_CFPS2018_Gender <- df_CFPS2018 %>%
+  dplyr::rename(Gender = QA002) %>%
+  dplyr::count(Gender) %>%
+  dplyr::filter(!is.na(Gender)) %>%
+  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
+                Data_Source = "CFPS 2018",
+                Gender= ifelse(Gender == 1, "male", "female")) %>%
+  dplyr::select(Data_Source, Gender, Proportion)
+```
+
+
 ```{r}
 ## extract BTS CHN gender data
 H2_BTS_CHN_gender <- lapply(BTS_gender_list, function(df){
@@ -2301,7 +2240,7 @@ H3_interval10 <- bind_rows(BTS_ALL_interval10,Journal_BTS_CHN_interval10)
 
 
 ## Set factor
-H3_interval10_factor <- BTS_ALL_interval10 %>%
+H3_interval10_factor <- H3_interval10 %>%
   dplyr::add_row(ISO3 = c("CUB","JAM"),ageBins = "11~20",n = 0, Proportion =0) %>%
   ##add data to visualization 
   dplyr::filter(ageBins == "11~20") %>% 
@@ -2310,7 +2249,7 @@ H3_interval10_factor <- BTS_ALL_interval10 %>%
 
 
 ## Process WEIRD
-H3_interval102 <- BTS_ALL_interval10 %>% 
+H3_interval102 <- H3_interval10 %>% 
   dplyr::left_join(WEIRD_code_gender, by = c("ISO3" = "iso3c")) %>% 
   dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>%
   dplyr::mutate(ISO3 = factor(ISO3, levels = H3_interval10_factor)) %>% 
@@ -2447,31 +2386,28 @@ H3_Fig_BF_gender
 #### age BF 
 ```{r}
 ## PsyStages
-BF_H3_all_PsyStages <- Journal_BTS_ALL_PsyStages %>% 
+BF_H3_all_PsyStages <- H3_PsyStages2 %>% 
   dplyr::select(ISO3,ageBins,Proportion) %>% 
   dplyr::rename(Countries = 1)
 
 BF_H3_PsyStages_Journal_BTS <- BF_H3_all_PsyStages  %>% 
   dplyr::mutate(Countries = factor(Countries, levels = BF_H3_gender_factor)) %>% 
   tidyr::pivot_wider(names_from = "Countries",values_from = "Proportion") %>%
-  dplyr::mutate(across(2:last_col(), ~ifelse(is.na(.), 0, .))) %>%   
+  dplyr::mutate(across(2:last_col(), ~ifelse(is.na(.), 0, .))) %>%
   Func_BFpairs(countries_order = BF_H3_gender_factor,
                prop_name = "ageBins")
 
 
+# sum(BF_H3_PsyStages_Journal_BTS$AGO,na.rm = TRUE)
 ## interval10
-BF_H3_all_interval10 <- Journal_BTS_ALL_interval10 %>% 
+BF_H3_all_interval10 <- H3_interval102 %>% 
   dplyr::select(ISO3,ageBins,Proportion) %>% 
   dplyr::rename(Countries = 1)
 
 BF_H3_interval10_Journal_BTS <- BF_H3_all_interval10  %>% 
   dplyr::mutate(Countries = factor(Countries, levels = BF_H3_gender_factor)) %>% 
   tidyr::pivot_wider(names_from = "Countries",values_from = "Proportion") %>%
-  dplyr::mutate(across(2:last_col(), ~ifelse(is.na(.), 0, .)))
-
-BF_H3_interval10_Journal_BTS$CHN[7] <- 1
-
-BF_H3_interval10_Journal_BTS <- BF_H3_interval10_Journal_BTS %>%
+  dplyr::mutate(across(2:last_col(), ~ifelse(is.na(.), 1, .))) %>%
   Func_BFpairs(countries_order = BF_H3_gender_factor,
                prop_name = "ageBins")
 
@@ -2485,7 +2421,7 @@ BF_H3_interval10_Journal_BTS <- BF_H3_interval10_Journal_BTS %>%
 Fig_BF_PsyStages <- ggplot(BF_H3_PsyStages_Journal_BTS, aes( x = `Log(BF10)_NonInform`, y = Countries)) +
   geom_point() +
   scale_color_grey() +
-  xlim(-10,80) +
+  xlim(-10,200) +
   scale_y_discrete(limits=rev) +
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
              colour = c("red", "tomato", "black", "deepskyblue","blue"), 
@@ -2517,7 +2453,7 @@ Fig_BF_PsyStages <- ggplot(BF_H3_PsyStages_Journal_BTS, aes( x = `Log(BF10)_NonI
               axis.line.y = element_line(color='black', size = 1))
 
 
-ggsave("Fig_BF_PsyStages.pdf", Fig_BF_PsyStages, device = "pdf", width=18, height = 18)
+# ggsave("Fig_BF_PsyStages.pdf", Fig_BF_PsyStages, device = "pdf", width=18, height = 18)
 
 
 Fig_BF_PsyStages
@@ -2562,10 +2498,37 @@ Fig_BF_interval10 <- ggplot(BF_H3_interval10_Journal_BTS,
               axis.line.y = element_line(color='black', size = 1))
 
 
-ggsave("Fig_BF_interval10.pdf", Fig_BF_interval10, device = "pdf", width=18, height = 18)
+# ggsave("Fig_BF_interval10.pdf", Fig_BF_interval10, device = "pdf", width=18, height = 18)
 
 
 Fig_BF_interval10
+```
+
+
+```{r warning=FALSE}
+H3_Fig_gender_age <- (H3_Fig_BF_gender + Fig_BF_PsyStages) /
+   (H3_Fig_gender + H3_Fig_PsyStages) +
+  plot_annotation(tag_levels = 'A')  & 
+  theme(plot.tag = element_text(size = 18, face = "bold"))
+
+
+ggsave("H3_Fig_gender_age.pdf", H3_Fig_gender_age, device = "pdf", width=18, height = 18)
+
+
+H3_Fig_gender_age
+
+
+
+## suppl
+H3_Fig_gender_age_suppl <- Fig_BF_interval10 + H3_Fig_interval10 +
+   plot_annotation(tag_levels =list(c("S1a","S1b")))  & 
+  theme(plot.tag = element_text(size = 18, face = "bold"))
+
+
+ggsave("H3_Fig_gender_age_suppl .pdf", H3_Fig_gender_age_suppl , device = "pdf", width=18, height = 18)
+
+
+H3_Fig_gender_age_suppl 
 ```
 
 # Exploratory analysis
