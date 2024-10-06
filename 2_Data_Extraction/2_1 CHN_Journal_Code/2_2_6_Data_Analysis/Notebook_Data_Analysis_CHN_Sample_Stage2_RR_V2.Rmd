@@ -783,6 +783,7 @@ df_stage2_Journal_Code2$Age[351:352] <- 0 ## 20182022 Original article age repor
 
 ## little error
 df_stage2_Journal_Code2$Male_Num[1420] <- "幼儿：154；父亲：310"
+df_stage2_Journal_Code2$M_age[1501] <- 31.6
 
 
 ## In the following process, we found 3 rows include Mage = 0 and SDage = 0.
@@ -1383,8 +1384,11 @@ When we divide age into stages of psychological development, we found strong evi
 
 
 ## Test the 2st hypothesis
+For hypothesis 2, I first tried to analyze the data in general. I would then compare certain demographic characteristics of the Chinese subjects in studies (BTS and Chinese journals) with those corresponding to Census data or other representative large general social surveys (e.g., CFPS2018) based on the target population.
+
+Firstly, I analyzed data in general.
 ### Gender
-First of all, I processed gender data of the Census 7th data and the CFPS2018 data.
+In this part, first of all, I processed gender data of the Census 7th data and the CFPS2018 data.
 ```{r}
 ## Process the gender data of census 7
 df_census7_Gender <- df_census7 %>%
@@ -1935,6 +1939,20 @@ Code2_Article_IDs_number <-  df_stage2_Journal_Code2 %>%
 ```
 
 
+After analyzing data at a general level, I analyzed the data based on the target population.
+```{r}
+Target_population4 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
+  dplyr::filter(Target_Population_N != 1)
+
+table(Target_population4$Target_Population_N)
+
+## 可以分析的目前考虑的有性别、地域和学历。后两者其实也很难。
+
+```
+
+
 ## Test the 3st hypothesis
 ### Gender
 As with the first two hypotheses, I dealt with gender data first. 
@@ -2061,7 +2079,7 @@ H3_PsyStages2 <- H3_PsyStages %>%
 ```
 
 
-and I visualized age data (PsyStages) for all countries in BTS.
+And I visualized age data (PsyStages) for all countries in BTS.
 ```{r}
 H3_Fig_PsyStages <- ggplot(H3_PsyStages2, aes(x=Proportion, y=ISO3, fill=ageBins)) +
   geom_col(alpha = .75)+
@@ -2110,7 +2128,7 @@ H3_interval10 <- bind_rows(BTS_ALL_interval10,Journal_BTS_CHN_interval10)
 
 ## Set factor
 H3_interval10_factor <- H3_interval10 %>%
-  dplyr::add_row(ISO3 = c("CUB","JAM"),ageBins = "11~20",n = 0, Proportion =0) %>%
+  dplyr::add_row(ISO3 = "CUB",ageBins = "11~20",n = 0, Proportion =0) %>%
   ##add data to visualization 
   dplyr::filter(ageBins == "11~20") %>% 
   dplyr::arrange(Proportion) %>% 
