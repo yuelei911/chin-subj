@@ -1644,7 +1644,7 @@ Journal_target_general_region <- Journal_region %>%
                 Count_Bins = cut(Proportion,
                                  breaks = c(-Inf,1,5,10,Inf),
                 labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Journal_total_region") %>% 
+                Data_Source = "Journal_general_region") %>% 
   dplyr::rename(Region = 1)
 
 Journal_target_general_region
@@ -1658,7 +1658,7 @@ Journal_target_special_region <- Journal_region %>%
                 Count_Bins = cut(Proportion,
                                  breaks = c(-Inf,1,5,10,Inf),
                 labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Journal_total_region") %>% 
+                Data_Source = "Journal_special_region") %>% 
   dplyr::rename(Region = 1)
 
 Journal_target_special_region
@@ -1709,6 +1709,33 @@ CFPS2018_region <- data.frame(table(df_CFPS2018$PROVCD18)) %>%
 ```
 
 
+Combine all region data and load color data
+```{r}
+## combine region data
+Region_map_data <-  bind_rows(Census7_region,CFPS2018_region,Journal_total_region,
+          Journal_target_general_region,Journal_target_special_region)
+
+## load color data
+Region_map_color <- readxl::read_xlsx("colour.xlsx") %>% 
+  dplyr::mutate(QUHUADAIMA = as.character(QUHUADAIMA)) %>% 
+  dplyr::rename(Region = 1) %>% 
+  dplyr::select(-2)
+
+## combine color data and region data
+Region_data <- dplyr::left_join(Region_map_data,Region_map_color,by = join_by(Region)) %>% 
+  dplyr::mutate(QUHUADAIMA = ifelse(Region == "重庆", "500000", QUHUADAIMA),
+                Color = ifelse(Count_Bins == "<1",1,
+                               ifelse(Count_Bins == "1~5",2,
+                                      ifelse(Count_Bins == "5~10",3,4))),
+                Color = factor(Color, levels = c("1", "2", "3", "4"))) %>% 
+  tidyr::pivot_wider(names_from = Data_Source,values_from = c(Proportion, Count_Bins,n,Color)) %>% 
+  dplyr::mutate(across(3:ncol(.),~ifelse(is.na(.),0,.)))
+
+names(Region_data)
+
+```
+
+
 Finally, I visualized geographic distribution and calculated Bayesian multinomial test for region.
 ```{r}
 API_pre <-  "http://xzqh.mca.gov.cn/data/"
@@ -1723,59 +1750,13 @@ st_crs(China_line) <-  4326
 ## 选择区划代码为国界线的区域
 gjx <- China_line[China_line$QUHUADAIMA == "guojiexian",]
 
-# 读取省份经纬度
-province <- readxl::read_xlsx("province.xlsx")
+China <- dplyr::left_join(China,Region_data,by= "QUHUADAIMA")
 
-Region_map_colour <- readxl::read_xlsx("colour.xlsx") %>% 
-  dplyr::mutate(QUHUADAIMA = as.character(QUHUADAIMA),
-                Journal = 0,
-                Journal_target_general = 0,
-                Journal_target_special = 0,
-                Census7 = 0,
-                CFPS2018 = 0)
-
-colour$QUHUADAIMA[which(colour$province =="重庆")] <- "500000"
-
-
-
-
-colour$colour_census7[colour$province %in% df_census7_province$province [df_census7_province$proportion_bins == "<1"]] <- 1
-colour$colour_census7[colour$province %in% df_census7_province$province [df_census7_province$proportion_bins == "1~5"]] <- 2
-colour$colour_census7[colour$province %in% df_census7_province$province [df_census7_province$proportion_bins == "5~10"]] <- 3
-colour$colour_census7[colour$province %in% df_census7_province$province [df_census7_province$proportion_bins == ">=10"]] <- 4
-
-
-
-colour$colour_CHN_Journal[which(colour$province =="台湾"| colour$province =="澳门")] <- "0"
-
-colour$colour_CHN_Journal[colour$province %in% df_CHN_Journal_Province_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == "<1"]] <- 1
-colour$colour_CHN_Journal[colour$province %in% df_CHN_Journal_Province_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == "1~5"]] <- 2
-colour$colour_CHN_Journal[colour$province %in% df_CHN_Journal_Province_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == "5~10"]] <- 3
-colour$colour_CHN_Journal[colour$province %in% df_CHN_Journal_Province_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == ">=10"]] <- 4
-
-
-colour$colour_cfps2018[colour$province %in% df_CFPS2018_province$province [df_census7_province$proportion_bins == "<1"]] <- 1
-colour$colour_cfps2018[colour$province %in% df_CFPS2018_province$province [df_CFPS2018_province$proportion_bins == "1~5"]] <- 2
-colour$colour_cfps2018[colour$province %in% df_CFPS2018_province$province [df_CFPS2018_province$proportion_bins == "5~10"]] <- 3
-colour$colour_cfps2018[colour$province %in% df_CFPS2018_province$province [df_CFPS2018_province$proportion_bins == ">=10"]] <- 4
-
-
-
-colour <- colour %>%
-  dplyr::mutate(colour_CHN_Journal = factor(colour_CHN_Journal, 
-                                          levels = c("0","1", "2", "3", "4")),
-                colour_census7 = factor(colour_census7,
-                                         levels = c("0","1", "2", "3", "4")),
-                colour_cfps2018 = factor(colour_cfps2018,
-                                         levels = c("0","1", "2", "3", "4")))
-
-China <- dplyr::left_join(China,colour,by= "QUHUADAIMA")
-China$colour_CHN_Journal[which(China$province =="台湾")] <- "0"
 
 
 ## Chinese journal papers
-Journal_Area <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(colour_CHN_Journal))) +
+Journal_Total_Area <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_total_region))) +
   scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
@@ -1793,9 +1774,55 @@ Journal_Area <- ggplot() +
   annotation_north_arrow(location = 'tl',which_north = 'false',
                          style = north_arrow_orienteering())
 
+
+
+## Chinese journal papers
+Journal_general_Area <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_general_region))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "Journal general population area distribution") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.title = element_blank(),
+        legend.position = c(0.2, 0.2),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())+
+  annotation_north_arrow(location = 'tl',which_north = 'false',
+                         style = north_arrow_orienteering())
+
+
+
+
+## Chinese journal papers
+Journal_special_Area <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_special_region))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "Journal sepcial population area distribution") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.title = element_blank(),
+        legend.position = c(0.2, 0.2),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())+
+  annotation_north_arrow(location = 'tl',which_north = 'false',
+                         style = north_arrow_orienteering())
+
+
 ## census 7 
 CFPS2018_Area <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(colour_cfps2018))) +
+  geom_sf(data = China,aes(fill = factor(Color_CFPS2018))) +
   scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
@@ -1815,7 +1842,7 @@ CFPS2018_Area <- ggplot() +
 
 ## CFPS 2018
 Census7_Area <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(colour_census7))) +
+  geom_sf(data = China,aes(fill = factor(Color_Census7))) +
   scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
@@ -1834,7 +1861,9 @@ Census7_Area <- ggplot() +
 
 
 
-H2_Area <- Census7_Area + CFPS2018_Area + Journal_Area + plot_layout(guides = "collect")+
+H2_Area <- Census7_Area + CFPS2018_Area + Journal_Total_Area + 
+  Journal_special_Area + Journal_general_Area +
+  plot_layout(guides = "collect")+
   plot_annotation(tag_levels = 'A', title = "Area distribution",
                   theme = theme(plot.title = element_text(size = 24))) + 
   theme(plot.tag = element_text(size = 20))
