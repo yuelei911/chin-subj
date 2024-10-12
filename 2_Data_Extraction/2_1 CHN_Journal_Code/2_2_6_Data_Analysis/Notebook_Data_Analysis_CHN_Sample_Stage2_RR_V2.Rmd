@@ -8,8 +8,8 @@ output: html_document
 
 In "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V1.Rmd"， I prereprocess the journal code data. In this Rmd(V2), we enter the informal process data.
 
-
 First, load library.
+
 # Install and Load packages
 ```{r message=FALSE, warning=FALSE}
 rm(list = ls())
@@ -25,6 +25,7 @@ pacman::p_load("truncnorm","BayesFactor", "gtools", "bruceR")
 
 
 And then, I loaded the data. The data includes data from the first Stage 1 of the pre-registration report (primarily Census data and CFPS2018 data), Chinese journal coding data, and data from Big Team Science (BTS).
+
 # Load data
 ## Load the data of stage 1 and Chinese journals coding data
 ```{r}
@@ -38,6 +39,7 @@ rm(df,df_PSA001,df_stage2_Journal_Code,Group1_bind,Group24567_bind,Group3_bind,d
 
 
 ## Load the data of BTS
+
 Here, we first converted some data that is not in .xlsx format.
 ```{r}
 library(haven)
@@ -89,6 +91,7 @@ rm(file,file_list,BTS_data_list)
 
 
 ### Process Country code of BTS
+
 Uniform country codes facilitate subsequent data processing and analysis, especially for batch processing and analysis of data. Thus, I created a unified table of country codes.
 ```{r}
 if(!require("countrycode")) install.packages("countrycode")
@@ -108,7 +111,7 @@ rm(Countrycodelist)
 ```
 
 
-The third hypothesis requires countries to be divided into WEIRD and non-WEIRD, so I created a data.frame of WEIRD  countries to facilitate subsequent analysis and visualization
+The third hypothesis requires countries to be divided into WEIRD and non-WEIRD, so I created a data.frame of WEIRD  countries to facilitate subsequent analysis and visualization.
 ```{r}
 WEIRD_code <- codelist %>% 
   dplyr::select(3,6,iso2c,iso3c,region,region23) %>% 
@@ -275,9 +278,12 @@ gc()
 ```
 
 
-Here, I used self-defined function in Stage1 to calculate Bayesian multinomial test
+Here, I used self-defined function in Stage1 to calculate Bayesian multinomial test.
+
 # Define a Func to calculate Bayesian multinomial test
 ## Algorithm in R
+
+
 ```
 lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
 lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
@@ -352,6 +358,7 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 At this point, I have finished loading the package and data. Next, I analyzed the data and visualized it according to the logic of the written protocal.
 
 I began by analyzing the basic case of the two data sets (BTS and Chinese journals).
+
 # Overview of participants
 ## The basic situation of Chinese journals coding data
 ```{r}
@@ -559,9 +566,11 @@ rm(df_age_report_detail,df_age_report_detail_study_num,
 
 
 In this section, I began by testing and analyzing three main hypotheses.
+
 # Test three hypotheses
 ## Test the 1st hypothesis
 ### Gender
+
 Process gender data from Chinese journals.
 ```{r warning=FALSE}
 ## Minor revision
@@ -668,7 +677,7 @@ for(i in seq_along(BTS_data)) {
 ```
 
 
-Combine gender data from Chinese Journal and BTS
+Combine gender data from Chinese Journal and BTS.
 ```{r}
 ## Extracting China data
 BTS_CHN_gender <- lapply(BTS_gender_list, function(df){
@@ -705,7 +714,7 @@ Journal_BTS_CHN_gender <- Journal_BTS_CHN_gender %>%
 ```
 
 
-Visualize gender data for Chinese journals and BTS
+Visualize gender data for Chinese journals and BTS.
 ```{r}
 H1_Fig_gender <- ggplot(data = Journal_BTS_CHN_gender,aes(Data_Source,Proportion,fill = Gender))+
   geom_col()+
@@ -764,6 +773,7 @@ rm(BTS_CHN_gender,BTS_gender,
 
 
 ### Age
+
 Reprocess age data from Chinese journals.
 ```{r warning=FALSE}
 ## I found some outliers for M_age, so I processed this part of the data first.
@@ -1384,10 +1394,13 @@ When we divide age into stages of psychological development, we found strong evi
 
 
 ## Test the 2st hypothesis
+
 For hypothesis 2, I first tried to analyze the data in general. I would then compare certain demographic characteristics of the Chinese subjects in studies (BTS and Chinese journals) with those corresponding to Census data or other representative large general social surveys (e.g., CFPS2018) based on the target population.
 
 Firstly, I analyzed data in general.
+
 ### Gender
+
 In this part, first of all, I processed gender data of the Census 7th data and the CFPS2018 data.
 ```{r}
 ## Process the gender data of census 7
@@ -1483,6 +1496,7 @@ H2_Fig_gender
 
 
 ### Age
+
 Similarly, for age data, I first processed the Census data and the CFPS2018 data.
 ```{r}
 ## Process age data for the census 6
@@ -1588,88 +1602,110 @@ H2_Fig_gender_age
 
 
 ### Region
+
 As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals.
 ```{r}
-df_CHN_Journal_Area <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
-  dplyr::select(Article_IDs,Study_Number_N,Subjects_Group_N,Subjects_Recruitment_Area)
-
-df_CHN_Journal_Area_02 <- df_CHN_Journal_Area %>% 
-  dplyr::filter(Subjects_Recruitment_Area == 0 | Subjects_Recruitment_Area == 2)
-
-df_CHN_Journal_Area_1 <- df_CHN_Journal_Area %>% 
-  dplyr::filter(Subjects_Recruitment_Area != 0 & Subjects_Recruitment_Area != 2)
-
-df_CHN_Journal_Area_1$Subjects_Recruitment_Area <- gsub("[；、,:]", ";", df_CHN_Journal_Area_1$Subjects_Recruitment_Area)
-
-df_CHN_Journal_Area_Separate <- df_CHN_Journal_Area_1 %>% 
+Journal_region <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
+  dplyr::filter(Subjects_Recruitment_Area != 0 & Subjects_Recruitment_Area != 2) %>% 
+  dplyr::select(Article_IDs,Study_Number_N,Subjects_Group_N,
+                Target_Population_N,Sample_Type_N,Subjects_Recruitment_Area) %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = gsub("[；、,:]", ";",Subjects_Recruitment_Area)) %>% 
   tidyr::separate_rows(Subjects_Recruitment_Area,sep = ";") %>% 
-  dplyr::mutate(Subjects_Recruitment_Area = gsub("自治区|回族自治区|维吾尔自治区|壮族自治区","",Subjects_Recruitment_Area))
+  dplyr::mutate(Subjects_Recruitment_Area =
+                  gsub("自治区|回族自治区|维吾尔自治区|壮族自治区","",Subjects_Recruitment_Area)) %>% 
+  dplyr::filter(Subjects_Recruitment_Area %in% c("新疆","西藏","甘肃","青海","内蒙古",
+                                                 "宁夏","四川","重庆","陕西","贵州","云南",
+                                                 "北京","山西","河北","河南","湖北","湖南",
+                                                 "广西","广东","香港","澳门","台湾","海南",
+                                                 "黑龙江","吉林","辽宁","天津","山东","江苏",
+                                                 "安徽","上海","浙江","江西","福建"))
+
+Journal_region
 
 
-Province <- c("新疆","西藏","甘肃","青海","内蒙古",
-              "宁夏","四川","重庆","陕西","贵州","云南",
-              "北京","山西","河北","河南","湖北","湖南",
-              "广西","广东","香港","澳门","台湾","海南",
-              "黑龙江","吉林","辽宁","天津","山东","江苏",
-              "安徽","上海","浙江","江西","福建")
-
-df_CHN_Journal_Area_Province <- df_CHN_Journal_Area_Separate %>% 
-  dplyr::filter(Subjects_Recruitment_Area %in% Province)
-
-df_CHN_Journal_Area_Province_add <- data.frame(
- Article_IDs = 20182261,
- Study_Number_N = 1,
- Subjects_Group_N = "小学生",
- Subjects_Recruitment_Area = c("河南","甘肃"))
-
-df_CHN_Journal_Area_Province <- rbind(df_CHN_Journal_Area_Province,df_CHN_Journal_Area_Province_add)
-
-df_CHN_Journal_Province_count <- df_CHN_Journal_Area_Province %>% 
+Journal_total_region <- Journal_region %>% 
   dplyr::count(Subjects_Recruitment_Area) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
                 Count_Bins = cut(Proportion,
                                  breaks = c(-Inf,1,5,10,Inf),
-                labels = c("<1","1~5","5~10",">=10")))
+                labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "Journal_total_region")%>% 
+  dplyr::rename(Region = 1)
+
+Journal_total_region
+
+
+## Target population is general
+Journal_target_general_region <- Journal_region %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  dplyr::count(Subjects_Recruitment_Area) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+                Count_Bins = cut(Proportion,
+                                 breaks = c(-Inf,1,5,10,Inf),
+                labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "Journal_total_region") %>% 
+  dplyr::rename(Region = 1)
+
+Journal_target_general_region
+
+
+## Target population is special
+Journal_target_special_region <- Journal_region %>% 
+  dplyr::filter(Target_Population_N == 1) %>% 
+  dplyr::count(Subjects_Recruitment_Area) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+                Count_Bins = cut(Proportion,
+                                 breaks = c(-Inf,1,5,10,Inf),
+                labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "Journal_total_region") %>% 
+  dplyr::rename(Region = 1)
+
+Journal_target_special_region
+
 ```
 
 
 The second step, I processed of provincial distribution of population for census7.
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-df_census7_province <- readxl::read_xls("A0101.xls") %>% 
+Census7_region <- readxl::read_xls("A0101.xls") %>% 
   dplyr::select(1,5) %>% 
-  dplyr::rename(province = 1, population = 2) %>% 
-  dplyr::filter(!is.na(province)) %>% 
+  dplyr::rename(Region = 1, n = 2) %>% 
+  dplyr::filter(!is.na(Region)) %>% 
   dplyr::slice(-c(1:2)) %>% 
-  dplyr::mutate(population = as.numeric(population))
+  dplyr::mutate(n = as.numeric(n))
 
-df_census7_3 <- data.frame(province = c("台湾","香港","澳门"),
-                           population =c(23561236,7474200,683218))
-df_census7_province <- rbind(df_census7_province,df_census7_3) %>% 
-  dplyr::mutate(proportion = round((population / sum(population))*100,2)) %>% 
-  dplyr::mutate(proportion_bins = cut(proportion,
+
+Census7_3 <- data.frame(Region = c("台湾","香港","澳门"),n =c(23561236,7474200,683218))
+
+
+Census7_region <- rbind(Census7_region,Census7_3) %>% 
+  dplyr::mutate(Proportion = round((n / sum(n))*100,2)) %>% 
+  dplyr::mutate(Count_Bins = cut(Proportion,
                                       breaks = c(-Inf,1,5,10,Inf),
-                                      labels = c("<1","1~5","5~10",">=10")))
+                                      labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "Census7")
 
-df_census7_province$province <- gsub(" ", "", df_census7_province$province)  
+
+Census7_region$Region <- gsub(" ", "", Census7_region$Region)  
 ```
 
 
 The third step, I processed of provincial distribution of population for CFPS2018.
 ```{r}
 ## process CFPS2018 province data
-df_CFPS2018_province <- data.frame(table(df_CFPS2018$PROVCD18)) %>% 
-  dplyr::rename(province = 1,population=2) %>% 
-  dplyr::mutate(province = c("北京","天津","河北","山西","内蒙古","辽宁","吉林",
+CFPS2018_region <- data.frame(table(df_CFPS2018$PROVCD18)) %>% 
+  dplyr::rename(Region = 1,n=2) %>% 
+  dplyr::mutate(Region = c("北京","天津","河北","山西","内蒙古","辽宁","吉林",
                              "黑龙江","上海","江苏","浙江","安徽","福建","江西",
                              "山东","河南","湖北","湖南","广东","广西","海南",
                              "重庆","四川","贵州","云南","西藏","陕西","甘肃",
                              "青海","宁夏","新疆")) %>% 
-  dplyr::mutate(proportion = round((population/sum(population))*100,2),
-                Data_Source = "CFPS 2018",
-                proportion_bins = cut(proportion,
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+                Count_Bins = cut(Proportion,
                                       breaks = c(-Inf,1,5,10,Inf),
-                                      labels = c("<1","1~5","5~10",">=10")))
+                                      labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "CFPS2018")
 ```
 
 
@@ -1689,13 +1725,19 @@ gjx <- China_line[China_line$QUHUADAIMA == "guojiexian",]
 
 # 读取省份经纬度
 province <- readxl::read_xlsx("province.xlsx")
-colour <- readxl::read_xlsx("colour.xlsx") %>% 
+
+Region_map_colour <- readxl::read_xlsx("colour.xlsx") %>% 
   dplyr::mutate(QUHUADAIMA = as.character(QUHUADAIMA),
-                colour_CHN_Journal = 0,
-                colour_census7 = 0,
-                colour_cfps2018 = 0)
+                Journal = 0,
+                Journal_target_general = 0,
+                Journal_target_special = 0,
+                Census7 = 0,
+                CFPS2018 = 0)
 
 colour$QUHUADAIMA[which(colour$province =="重庆")] <- "500000"
+
+
+
 
 colour$colour_census7[colour$province %in% df_census7_province$province [df_census7_province$proportion_bins == "<1"]] <- 1
 colour$colour_census7[colour$province %in% df_census7_province$province [df_census7_province$proportion_bins == "1~5"]] <- 2
@@ -1843,6 +1885,7 @@ BF_H2_Journal_CFPS2018_region <- BayesMultiNomial(dataset = H2_province_bayes,
 
 
 ### Educational attainment
+
 Try to process educational attainment data from Chinese journal.
 ```{r}
 df_CHN_edu <- df_stage2_Journal_Code2 %>% 
@@ -1855,6 +1898,7 @@ writexl::write_xlsx(df_CHN_edu,"df_CHN_edu.xlsx")
 
 
 ### Ethnicity
+
 Try to analysis ethnicity data from Chinese journal
 ```{r}
 ## In informal code stage, Because our code group haveare multiple coders, in order to reduce coding differences between individuals based on criteria and understanding, our coding for ethnic groups does not include information about native minority languages. For example: Tibetan language. I will now supplement this.
@@ -1940,7 +1984,9 @@ Code2_Article_IDs_number <-  df_stage2_Journal_Code2 %>%
 
 
 After analyzing data at a general level, I analyzed the data based on the target population.
+
 ## Gender
+
 Try to analyze data that the target population is the general population.
 ```{r message=FALSE, warning=FALSE}
 Target_population23 <- df_stage2_Journal_Code2 %>% 
@@ -2123,7 +2169,7 @@ Target_population1_sampletype3_gender <- Target_population1_sampletype3_gender %
 # 
 # general M 45 F 45
 # T23 M 45 F 54
-# T1 S3 M54 F45
+# T1 S3 M 54 F 45
 ```
 
 
@@ -2140,6 +2186,7 @@ rm(Target_population1_sampletype3_gender_remove,
 
 
 ## Age
+
 try to analyze the age data of the general population.
 ```{r}
 Target_population23_articleIDs <- Target_population23 %>% 
@@ -2223,8 +2270,54 @@ H2_Fig_target23_age
 ```
 
 
+## region
+```{r}
+colour <- colour %>% 
+  dplyr::mutate(Journal_target_population23 = 0)
+
+
+colour$Journal_target_population23[colour$province %in% Target_population23_region_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == "<1"]] <- 1
+
+colour$Journal_target_population23[colour$province %in% Target_population23_region_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == "1~5"]] <- 2
+
+colour$Journal_target_population23[colour$province %in% Target_population23_region_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == "5~10"]] <- 3
+
+colour$Journal_target_population23[colour$province %in% Target_population23_region_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == ">=10"]] <- 4
+
+
+
+colour <- colour %>%
+  dplyr::mutate(Journal_target_population23 = factor(Journal_target_population23, 
+                                          levels = c("0","1", "2", "3", "4")))
+
+China <- dplyr::left_join(China,colour,by= "QUHUADAIMA")
+
+
+Journal_Area <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(Journal_target_population23))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "Journal subjects recruitment area distribution") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.title = element_blank(),
+        legend.position = c(0.2, 0.2),
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())+
+  annotation_north_arrow(location = 'tl',which_north = 'false',
+                         style = north_arrow_orienteering())
+
+```
+
+
 ## Test the 3st hypothesis
 ### Gender
+
 As with the first two hypotheses, I dealt with gender data first. 
 ```{r}
 # gc()
@@ -2686,6 +2779,7 @@ H3_Fig_gender_age_suppl
 
 
 ### Region
+
 In this part, I analysed and visualized all countries in our study. Firstly, I processed region data of BTS. 
 ```{r}
 if(!require("maps")) install.packages("maps")
@@ -2821,8 +2915,10 @@ sample_map
 
 
 In addition to the above analysis, I also conducted some exploratory analysis of the data.
+
 # Exploratory analysis
 ## Abstract1 subjects information reported of Chinese journal
+
 Try to process Abstract data.
 ```{r message=FALSE, warning=FALSE}
 ### In our coding, different subject groups will make the same article have multiple rows of data, but there is only one abstract and the multi-rows Abstract1 should be consistent. So, first, I check whether Abstract1 is consistent.
