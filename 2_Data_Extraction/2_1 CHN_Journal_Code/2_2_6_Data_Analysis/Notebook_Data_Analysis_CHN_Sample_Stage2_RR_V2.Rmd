@@ -362,22 +362,19 @@ I began by analyzing the basic case of the two data sets (BTS and Chinese journa
 # Overview of participants
 ## The basic situation of Chinese journals coding data
 ```{r}
-
-
-
-df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+Journal <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
   dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) ## valid 1567 rows
 
-df_Articles_num <- df_stage2_Journal_Code2 %>% 
+Journal_articles_num <- Journal %>% 
   dplyr::distinct(Article_IDs) ## A total 962 articles
 
-df_Study_num <- df_stage2_Journal_Code2 %>% 
-  dplyr::distinct(Article_IDs,Study_Number) ## A total 1216 studies
+Journal_study_num <- Journal %>% 
+  dplyr::distinct(Article_IDs,Study_Number) ## A total 1217 studies
 
 
 ## Here, I remove some data sets to reduce data set clutter.
-rm(df_Articles_num,df_Study_num)
+rm(Journal_articles_num,Journal_study_num,df_stage2_Journal_Code2)
 ```
 
 
@@ -443,7 +440,7 @@ BTS_Overview2_idx <- BTS_Overview2 %>%
 
 ## The reported situation of Chinese Journals
 ```{r}
-df_CHN_report <- df_stage2_Journal_Code2 %>% 
+Journal_report <- Journal %>% 
   dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
                 Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
                 SES_N = ifelse(SES_N == 0, 0, 1),
@@ -462,51 +459,58 @@ df_CHN_report <- df_stage2_Journal_Code2 %>%
 
 report_list <- list()
 
-for (i in names(df_CHN_report)){
+for (i in names(Journal_report)){
   
   
-  report_table <- data.frame(table(df_CHN_report[[i]])) %>% 
-    dplyr::mutate(col_names = names(df_CHN_report[i]),
+  report_table <- data.frame(table(Journal_report[[i]])) %>% 
+    dplyr::mutate(col_names = names(Journal_report[i]),
                   proportion = round(Freq / sum(Freq),2))
   
   report_list[[i]] <- report_table
   
 }
 
-df_CHN_report <- do.call(rbind, report_list) %>% 
+Journal_report <- do.call(rbind, report_list) %>% 
   dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
 
 
 
 ### Calculate reported status of Educational_Attainment and Occupation
-Educational_Occupation <- df_stage2_Journal_Code2 %>% 
+Journal_education_occupation <- Journal %>% 
   dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
   dplyr::group_by(Article_IDs,Study_Number) %>% 
   dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
-                Occupation_N = max(Occupation_N) > 0,.groups = "drop")   ### 294 studies
+                   Occupation_N = max(Occupation_N) > 0,.groups = "drop")   ### 294 studies
 
 # table(Educational_Occupation$Educational_Attainment_N) ## FALSE 162 TRUE 132
 # table(Educational_Occupation$Occupation_N)  ## FALSE 193 TRUE 101
 
 
-Educational_Occupation_table <- data.frame(Var1 = c("Unreported","Reported","Unreported","Reported"),
-                                           Freq = c(162,132,193,101),
-                                           col_names= c("Educational_Attainment","Educational_Attainment","Occupation","Occupation"),
-                                           proportion = c(0.55,0.45,0.66,0.34))
+Journal_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
+                                                            "Unreported","Reported"),
+                                                   Freq = c(162,132,193,101),
+                                                   col_names= c("Educational_Attainment",
+                                                                "Educational_Attainment",
+                                                                "Occupation","Occupation"),
+                                                   proportion = c(0.55,0.45,0.66,0.34))
 
-df_CHN_report <- rbind(df_CHN_report,Educational_Occupation_table) %>% 
+
+Journal_report <- rbind(Journal_report,Journal_education_occupation_table) %>%
   dplyr::mutate(col_names = factor(col_names, 
-                                   labels = c("Gender","Age","Recruitment Method","Recruitment Area","Educational Attainment",
-                                              "Occupation","Sampling Method","SES","Ethnicity","Religious"
-                                             ),
-                                   levels = c("Gender","Age","Recruitment_Method","Recruitment_Area","Educational_Attainment",
-                                              "Occupation","Sampling_Method","SES","Ethnicity","Religious")))
+                                   labels = c("Gender","Age","Recruitment Method",
+                                              "Recruitment Area","Educational Attainment",
+                                              "Occupation","Sampling Method",
+                                              "SES","Ethnicity","Religious"),
+                                   levels = c("Gender","Age","Recruitment_Method",
+                                              "Recruitment_Area","Educational_Attainment",
+                                              "Occupation","Sampling_Method",
+                                              "SES","Ethnicity","Religious")))
 ```
 
 
 ### Visualize subjects information reported  situations in Chinese journals 
 ```{r}
-Fig_Journal_report <- ggplot(df_CHN_report,aes(col_names,proportion,fill=Var1))+
+Fig_Journal_report <- ggplot(Journal_report,aes(col_names,proportion,fill=Var1))+
   geom_col()+
   labs(x="",y="%")+
   theme_classic()+
@@ -526,35 +530,35 @@ ggsave("Fig_Journal_report.pdf", Fig_Journal_report, device = "pdf", width=16, h
 
 
 ## Here, I remove some data sets to reduce data set clutter.
-rm(report_list,report_table,i,Educational_Occupation,Educational_Occupation_table)
+rm(report_list,report_table,i,Journal_education_occupation,Journal_education_occupation_table)
 ```
 
 
 ### Specific reports on some demographic categories
 ```{r}
-df_age_report_detail <- df_stage2_Journal_Code2 %>% 
+Journal_age_report_detail <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Age,M_age,SD_age,Other_age) %>%
   dplyr::filter(Age == 1)
 
 ### Age report studies num
-df_age_report_detail_study_num <- df_age_report_detail %>%
+Journal_age_report_detail_study_num <- Journal_age_report_detail %>%
     dplyr::distinct(Article_IDs,Study_Number) ## 989 studies
   
 
 ### Age fuzzy report studies num
-df_fuzzy_age_report <- df_age_report_detail %>% 
+Journal_age_fuzzy_report <- Journal_age_report_detail %>% 
   dplyr::filter(is.na(M_age)) 
 
 ## 20082227,20083017,20183340,20183097,20214027 Other age include Mage
 ##这里后面还需要重新处理一下部分Otherage包含Mage的情况
 
-df_fuzzy_age_report_study_num <- df_fuzzy_age_report %>% 
+Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>% 
   dplyr::distinct(Article_IDs,Study_Number) ## 130-5=125
 
 
 ## Here, I remove some data sets to reduce data set clutter.
-rm(df_age_report_detail,df_age_report_detail_study_num,
-   df_fuzzy_age_report,df_fuzzy_age_report_study_num)
+rm(Journal_age_report_detail,Journal_age_report_detail_study_num,
+   Journal_age_fuzzy_report,Journal_age_fuzzy_report_study_num)
 ```
 
 
@@ -566,8 +570,19 @@ In this section, I began by testing and analyzing three main hypotheses.
 
 Process gender data from Chinese journals.
 ```{r warning=FALSE}
+
+## 20083011
+Journal$Male_Num[1199] <- 0
+Journal$Female_Num[1199] <- 845
+
+## 20183078
+Journal$Male_Num[350] <- 760
+Journal$Female_Num[350] <- 760
+Journal$Sample_Size[350] <- 760
+
+
 ## Filter for information-rich key variables
-Journal_key_variable <- df_stage2_Journal_Code2 %>% 
+Journal_key_variable <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,
                 Sample_Size,Target_Population_N,Sample_Type_N,
                 Gender,Male_Num,Female_Num,
@@ -588,52 +603,52 @@ Journal_gender_decimal <- Journal_gender %>%
   dplyr::filter(Male_Num < 1 & Female_Num < 1)
 
 Journal_gender_integer <- Journal_gender %>%
-  dplyr::filter(Male_Num > 1 | Female_Num > 1)
+  dplyr::filter(Male_Num > 1 | Female_Num > 1) %>% 
+  dplyr::mutate_at(vars(4:9),as.numeric)
 
 
 ## Multiple groups of data are removed during processing, so re-create the data.frame and then merge them.
+Journal_gender_integer_add <- data.frame(Article_IDs = c("20185082","20213045","20213048","20213048"),
+                                         Study_Number = c("1","1","1","2"),
+                                         Subjects_Group_N = NA,
+                                         Sample_Size = c(33,81,68,59),
+                                         Target_Population_N = c(1,1,3,3),
+                                         Sample_Type_N = c(3,5,5,5),
+                                         Gender = 1,
+                                         Male_Num = c(26,49,31,28),
+                                         Female_Num = c(7,32,37,31))
 
-df_stage2_Journal_Code_Gender_integer_add <- data.frame(
-  Article_IDs = c("20185082","20213045","20213048","20213048"),
-  Study_Number = c(1,1,1,2,1),
-  Subjects_Group_N = NA,
-  Sample_Size = c(33,81,68,59),
-  Target_Population_N = c(1,1,3,3),
-  Sample_Type_N = c(3,5,5,5),
-  Gender = 1,
-  Male_Num = c(26,49,31,28),
-  Female_Num = c(7,32,37,31))
 
-df_stage2_Journal_Code_Gender_integer2 <- df_stage2_Journal_Code_Gender_integer %>% 
-  rbind(df_stage2_Journal_Code_Gender_integer_add)
+Journal_gender_integer2 <- bind_rows(Journal_gender_integer,Journal_gender_integer_add) 
 
 
 ## Process decimal
-df_stage2_Journal_Code_Gender_decimal2 <- df_stage2_Journal_Code_Gender_decimal %>% 
-  dplyr::mutate(Sample_Size = as.numeric(Sample_Size),
-                Male_Num = floor(Sample_Size*Male_Proportion),
-                Female_Num = Sample_Size - Male_Num) %>% 
-  dplyr::select(1:5,8:9)
+Journal_gender_decimal2 <- Journal_gender_decimal %>% 
+  dplyr::mutate_at(vars(4:9),as.numeric) %>%
+  dplyr::mutate(Male_Num = floor(Sample_Size*Male_Num),
+                Female_Num = Sample_Size - Male_Num)
 
 
-## merge all chinese journal gender data
-df_CHN_Journal_Gender <- rbind(df_stage2_Journal_Code_Gender_decimal2,
-                               df_stage2_Journal_Code_Gender_integer2)
+## Combining journal gender data for both categories
+Journal_gender2 <- bind_rows(Journal_gender_integer2,Journal_gender_decimal2)%>% 
+  dplyr::filter(!is.na(Male_Num)) 
+
+### 注意这里昨天有一个类别编码2~10的应该编码为23，需要修改一下
 
 
 ## calculate total gender proportion
-df_CHN_Journal_Gender_Total <- df_CHN_Journal_Gender %>%
-  dplyr::summarise(Male_Num = sum(Male_Num),
-                   Female_Num = sum(Female_Num,na.rm = TRUE),
-                   Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
-                   Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
-                   Data_Source = "Chinese papers") 
-
-
-df_CHN_Journal_Gender_Total2 <- data.frame(Gender = c("Male","Female"),
-                                          n = c(233377,272477),
-                                          Proportion = c(46,54),
-                                          Data_Source = "Chinese papers")
+# df_CHN_Journal_Gender_Total <- df_CHN_Journal_Gender %>%
+#   dplyr::summarise(Male_Num = sum(Male_Num),
+#                    Female_Num = sum(Female_Num,na.rm = TRUE),
+#                    Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
+#                    Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
+#                    Data_Source = "Chinese papers") 
+# 
+# 
+# df_CHN_Journal_Gender_Total2 <- data.frame(Gender = c("Male","Female"),
+#                                           n = c(233377,272477),
+#                                           Proportion = c(46,54),
+#                                           Data_Source = "Chinese papers")
 
 ```
 
