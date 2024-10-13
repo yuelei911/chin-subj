@@ -354,6 +354,82 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 }
 ```
 
+I found some little error, I recode them before informal process data.
+```{little error}
+### In order to facilitate the subsequent exclusion of foreign samples, the Subjects_Recruitment_Area information 29 of 20211064 was changed to Chinese character 29
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[447] <- "被试填答IP覆盖了二十九个省、自治区、直辖市"
+
+## Minor revision
+## 20211015
+df_stage2_Journal_Code2$Female_Num[1634] <- 0.5950
+## 20215075
+df_stage2_Journal_Code2$Sample_Size[1420] <- 310
+df_stage2_Journal_Code2$Male_Num[1420] <- 310
+df_stage2_Journal_Code2$Female_Num[1420] <- 0
+df_stage2_Journal_Code2$M_age[1420] <- 36.11
+df_stage2_Journal_Code2$SD_age[1420] <- 4.91
+df_stage2_Journal_Code2$Sample_Type_N[1420] <- 4
+
+
+## I found some outliers for M_age, so I processed this part of the data first.
+## 20185036
+df_stage2_Journal_Code2$Sample_Type_N[1083] <- 2
+## 20183336
+df_stage2_Journal_Code2$Sample_Type_info_N[184] <-
+  "采用整群抽样的方法从山东省济南市某高校选取大学生为被试"
+
+## 20215065
+df_stage2_Journal_Code2$Sample_Type_N[1191:1192] <- 2
+## 20184083
+df_stage2_Journal_Code2$M_age[408] <- "男性69.14;女性67.16"
+
+## 20084023
+df_stage2_Journal_Code2$Sample_Type_N[301] <- 5
+
+df_stage2_Journal_Code2$Gender[352:353] <- 0 ## 20182022 Original article gender report error, 0 here
+
+## little error 20181223
+df_stage2_Journal_Code2$M_age[1501] <- 31.6
+
+
+## In the following process, we found 3 rows include Mage = 0 and SDage = 0.
+## 20182182
+df_stage2_Journal_Code2$M_age[1040] <- NA
+df_stage2_Journal_Code2$M_age[1042] <- NA
+## 20182203
+df_stage2_Journal_Code2$M_age[1053] <- NA
+
+## 20182182
+df_stage2_Journal_Code2$SD_age[1040] <- NA
+df_stage2_Journal_Code2$SD_age[1042] <- NA
+## 20182203
+df_stage2_Journal_Code2$SD_age[1053] <- NA
+
+
+## In informal code stage, Because our code group have multiple coders, in order to reduce coding differences between individuals based on criteria and understanding, our coding for ethnic groups does not include information about native minority languages. For example: Tibetan language. I will now supplement this.
+## 20181022
+df_stage2_Journal_Code2$Ethnicity_info[769] <- "汉族"
+
+### Article_IDs 20181113 
+df_stage2_Journal_Code2$Ethnicity[1292:1293] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1292:1293] <- "维吾尔族"
+
+### Article_IDs 20211018
+df_stage2_Journal_Code2$Ethnicity[1635:1636] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1635:1636] <- "藏族"
+
+### Article_IDs 20213168
+df_stage2_Journal_Code2$Ethnicity[1604] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1604] <- "汉族;少数民族"
+
+### Article_IDs 20181017
+df_stage2_Journal_Code2$Ethnicity[761:762] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[761:762] <- "蒙古族"
+
+### Article_IDs 20211013
+df_stage2_Journal_Code2$Ethnicity[1588:1589] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1588:1589] <- "锡伯族"
+```
 
 At this point, I have finished loading the package and data. Next, I analyzed the data and visualized it according to the logic of the written protocal.
 
@@ -362,23 +438,22 @@ I began by analyzing the basic case of the two data sets (BTS and Chinese journa
 # Overview of participants
 ## The basic situation of Chinese journals coding data
 ```{r}
-### In order to facilitate the subsequent exclusion of foreign samples, the Subjects_Recruitment_Area information 29 of 20211064 was changed to Chinese character 29
-df_stage2_Journal_Code2$Subjects_Recruitment_Area[447] <- "被试填答IP覆盖了二十九个省、自治区、直辖市"
 
 
-df_Articles <- df_stage2_Journal_Code2 %>% 
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area))
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) ## valid 1567 rows
 
-df_Articles_num <- df_Articles %>% 
+df_Articles_num <- df_stage2_Journal_Code2 %>% 
   dplyr::distinct(Article_IDs) ## A total 962 articles
 
-df_Study_num <- df_Articles %>% 
+df_Study_num <- df_stage2_Journal_Code2 %>% 
   dplyr::distinct(Article_IDs,Study_Number) ## A total 1216 studies
 
 
 ## Here, I remove some data sets to reduce data set clutter.
-rm(df_Articles,df_Articles_num,df_Study_num)
+rm(df_Articles_num,df_Study_num)
 ```
 
 
@@ -445,8 +520,6 @@ BTS_Overview2_idx <- BTS_Overview2 %>%
 ## The reported situation of Chinese Journals
 ```{r}
 df_CHN_report <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
   dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
                 Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
                 SES_N = ifelse(SES_N == 0, 0, 1),
@@ -483,8 +556,6 @@ df_CHN_report <- do.call(rbind, report_list) %>%
 
 ### Calculate reported status of Educational_Attainment and Occupation
 Educational_Occupation <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>%
   dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
   dplyr::group_by(Article_IDs,Study_Number) %>% 
   dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
@@ -538,8 +609,6 @@ rm(report_list,report_table,i,Educational_Occupation,Educational_Occupation_tabl
 ### Specific reports on some demographic categories
 ```{r}
 df_age_report_detail <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Age,M_age,SD_age,Other_age) %>%
   dplyr::filter(Age == 1)
 
@@ -573,47 +642,43 @@ In this section, I began by testing and analyzing three main hypotheses.
 
 Process gender data from Chinese journals.
 ```{r warning=FALSE}
-## Minor revision
-df_stage2_Journal_Code2$Male_Num[1258] <- 0
-df_stage2_Journal_Code2$Female_Num[1634] <- 0.5950
+## Filter for information-rich key variables
+Journal_key_variable <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,
+                Sample_Size,Target_Population_N,Sample_Type_N,
+                Gender,Male_Num,Female_Num,
+                Age,M_age,SD_age,Other_age,
+                Remark1,Remark2,Remark3)
 
+# names(Journal_key_variable)
 
-## Process the gender data of CHN Journal
-df_stage2_Journal_Code_Gender <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
-  dplyr::filter(Subjects_Recruitment_Area !=2) %>% 
-  dplyr::mutate(Male_Num = as.numeric(Male_Num),
-                Female_Num = as.numeric(Female_Num)) %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,Male_Num,Female_Num,Remark1,Remark2,Remark3)
+## Filter gender related variables
+Journal_gender <- Journal_key_variable %>% 
+  dplyr::select(-c(10:16)) %>% 
+  dplyr::filter(Gender == 1)
 
 
 ## Part of the gender data is the proportion recorded, and part is the number of people, so I deal with it separately.
 
-df_stage2_Journal_Code_Gender_decimal <- df_stage2_Journal_Code_Gender %>% 
-  dplyr::filter(Gender == 1) %>% 
-  dplyr::filter(Male_Num < 1 & Female_Num < 1) %>% 
-  dplyr::select(Article_IDs,Sample_Size,Study_Number,Subjects_Group_N,Gender,Male_Num,Female_Num) %>% 
-  # dplyr::mutate(Male_Num = round(Male_Num,2),
-  #               Female_Num = round(Female_Num,2)) %>% 
-  dplyr::rename(Male_Proportion = Male_Num,
-               Female_Proportion =  Female_Num)
+Journal_gender_decimal <- Journal_gender %>% 
+  dplyr::filter(Male_Num < 1 & Female_Num < 1)
 
-df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender %>%
-  dplyr::filter(Gender == 1) %>% 
-  dplyr::filter(Male_Num > 1 | Female_Num > 1) %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,Male_Num,Female_Num)
+Journal_gender_integer <- Journal_gender %>%
+  dplyr::filter(Male_Num > 1 | Female_Num > 1)
 
 
 ## Multiple groups of data are removed during processing, so re-create the data.frame and then merge them.
 
 df_stage2_Journal_Code_Gender_integer_add <- data.frame(
-  Article_IDs = c("20185082","20213045","20213048","20213048","20215075"),
+  Article_IDs = c("20185082","20213045","20213048","20213048"),
   Study_Number = c(1,1,1,2,1),
-  Subjects_Group_N = c(NA,NA,NA,NA,"父亲"),
-  Sample_Size = c(33,81,68,59,310),
+  Subjects_Group_N = NA,
+  Sample_Size = c(33,81,68,59),
+  Target_Population_N = c(1,1,3,3),
+  Sample_Type_N = c(3,5,5,5),
   Gender = 1,
-  Male_Num = c(26,49,31,28,310),
-  Female_Num = c(7,32,37,31,0))
+  Male_Num = c(26,49,31,28),
+  Female_Num = c(7,32,37,31))
 
 df_stage2_Journal_Code_Gender_integer2 <- df_stage2_Journal_Code_Gender_integer %>% 
   rbind(df_stage2_Journal_Code_Gender_integer_add)
@@ -776,36 +841,6 @@ rm(BTS_CHN_gender,BTS_gender,
 
 Reprocess age data from Chinese journals.
 ```{r warning=FALSE}
-## I found some outliers for M_age, so I processed this part of the data first.
-df_stage2_Journal_Code2$Sample_Type_N[1082] <- 2
-df_stage2_Journal_Code2$Sample_Type_N[183] <- 2
-df_stage2_Journal_Code2$Sample_Type_N[1190:1191] <- 2
-df_stage2_Journal_Code2$M_age[1500] <- 31.6
-df_stage2_Journal_Code2$M_age[407] <- "男性69.14;女性67.16"
-df_stage2_Journal_Code2$M_age[1039] <- NA
-df_stage2_Journal_Code2$M_age[1041] <- NA
-df_stage2_Journal_Code2$SD_age[1039] <- NA
-df_stage2_Journal_Code2$SD_age[1041] <- NA
-df_stage2_Journal_Code2$M_age[1052] <- NA
-df_stage2_Journal_Code2$SD_age[1052] <- NA
-df_stage2_Journal_Code2$Sample_Type_N[300] <- 3
-df_stage2_Journal_Code2$Age[351:352] <- 0 ## 20182022 Original article age report error, 0 here
-
-## little error
-df_stage2_Journal_Code2$Male_Num[1420] <- "幼儿：154；父亲：310"
-df_stage2_Journal_Code2$M_age[1501] <- 31.6
-
-
-## In the following process, we found 3 rows include Mage = 0 and SDage = 0.
-## 20182182
-df_stage2_Journal_Code2$M_age[1040] <- NA
-df_stage2_Journal_Code2$M_age[1042] <- NA
-df_stage2_Journal_Code2$M_age[1053] <- NA
-
-df_stage2_Journal_Code2$SD_age[1040] <- NA
-df_stage2_Journal_Code2$SD_age[1042] <- NA
-df_stage2_Journal_Code2$SD_age[1053] <- NA
-
 ## Filter M_age have multiple group data
 df_stage2_Journal_Code_Age_str <- df_stage2_Journal_Code2 %>% 
   dplyr::slice(492,370,856,879,1406,726,725,724,1413,
@@ -894,7 +929,6 @@ df_stage2_Journal_Code_Mage_semicolon$Other_age[21:22] <- c("27-53","26-50")
 
 #The above cases where there are multiple age groups will be recognized as NA in the code run, so they need to be removed.These removed data are the data contained in the data.frame above.
 df_stage2_Journal_Code_Age <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(Subjects_Recruitment_Area != 2) %>% 
   dplyr::mutate(M_age = as.numeric(M_age), SD_age = as.numeric(SD_age)) %>% 
   dplyr::mutate(M_age = round(M_age,2), SD_age = round(SD_age,2)) %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Sample_Size,Age,M_age,SD_age,Other_age,Remark1,Remark2,Remark3) %>% 
@@ -1606,8 +1640,7 @@ H2_Fig_gender_age
 As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals.
 ```{r}
 Journal_region <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
-  dplyr::filter(Subjects_Recruitment_Area != 0 & Subjects_Recruitment_Area != 2) %>% 
+  dplyr::filter(Subjects_Recruitment_Area != 0) %>% 
   dplyr::select(Article_IDs,Study_Number_N,Subjects_Group_N,
                 Target_Population_N,Sample_Type_N,Subjects_Recruitment_Area) %>% 
   dplyr::mutate(Subjects_Recruitment_Area = gsub("[；、,:]", ";",Subjects_Recruitment_Area)) %>% 
@@ -1731,7 +1764,7 @@ Region_data <- dplyr::left_join(Region_map_data,Region_map_color,by = join_by(Re
   tidyr::pivot_wider(names_from = Data_Source,values_from = c(Proportion, Count_Bins,n,Color)) %>% 
   dplyr::mutate(across(3:ncol(.),~ifelse(is.na(.),0,.)))
 
-names(Region_data)
+# names(Region_data)
 
 ```
 
@@ -1861,8 +1894,8 @@ Census7_Area <- ggplot() +
 
 
 
-H2_Area <- Census7_Area + CFPS2018_Area + Journal_Total_Area + 
-  Journal_special_Area + Journal_general_Area +
+H2_Area <- (Census7_Area + CFPS2018_Area)/( 
+  Journal_Total_Area + Journal_special_Area + Journal_general_Area) +
   plot_layout(guides = "collect")+
   plot_annotation(tag_levels = 'A', title = "Area distribution",
                   theme = theme(plot.title = element_text(size = 24))) + 
@@ -1918,7 +1951,6 @@ BF_H2_Journal_CFPS2018_region <- BayesMultiNomial(dataset = H2_province_bayes,
 Try to process educational attainment data from Chinese journal.
 ```{r}
 df_CHN_edu <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2_N)) %>% 
   dplyr::filter(Educational_Attainment_N == 1) %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,M_age,SD_age,Sample_Type_N,Educational_Attainment_N,Educational_Attainment_info_N)
 
@@ -1930,32 +1962,9 @@ writexl::write_xlsx(df_CHN_edu,"df_CHN_edu.xlsx")
 
 Try to analysis ethnicity data from Chinese journal
 ```{r}
-## In informal code stage, Because our code group haveare multiple coders, in order to reduce coding differences between individuals based on criteria and understanding, our coding for ethnic groups does not include information about native minority languages. For example: Tibetan language. I will now supplement this.
 
-df_stage2_Journal_Code2$Ethnicity_info[768] <- "汉族"
-
-### Article_IDs 20181113 
-df_stage2_Journal_Code2$Ethnicity[1291:1292] <- 1
-df_stage2_Journal_Code2$Ethnicity_info[1291:1292] <- c("维吾尔族","维吾尔族")
-
-### Article_IDs 20211018
-df_stage2_Journal_Code2$Ethnicity[1634:1635] <- 1
-df_stage2_Journal_Code2$Ethnicity_info[1634:1635] <- c("藏族","藏族")
-
-### Article_IDs 20213168
-df_stage2_Journal_Code2$Ethnicity[1603] <- 1
-df_stage2_Journal_Code2$Ethnicity_info[1603] <- "汉族;少数民族"
-
-### Article_IDs 20181017
-df_stage2_Journal_Code2$Ethnicity[760:761] <- 1
-df_stage2_Journal_Code2$Ethnicity_info[760:761] <- "蒙古族"
-
-### Article_IDs 20211013
-df_stage2_Journal_Code2$Ethnicity[1587:1588] <- 1
-df_stage2_Journal_Code2$Ethnicity_info[1587:1588] <- "锡伯族"
 
 df_CHN_Ethnicity <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,
                 Ethnicity,Ethnicity_info) %>% 
   dplyr::filter(Ethnicity == 1) %>% 
@@ -2018,9 +2027,13 @@ After analyzing data at a general level, I analyzed the data based on the target
 
 Try to analyze data that the target population is the general population.
 ```{r message=FALSE, warning=FALSE}
+Ta <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Age,M_age)
+  
+
+
+
 Target_population23 <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
   dplyr::filter(Target_Population_N != 1) %>%
   dplyr::mutate(Sample_Size = as.numeric(Sample_Size),
                 Gender = as.numeric(Gender))
@@ -2113,8 +2126,6 @@ rm(Target_population23_gender_twotype,
 try to analyze the data that the target population is specific population. specifically, the target population is infant and young children.  
 ```{r message=FALSE, warning=FALSE}
 Target_population1_sampletype3 <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
   dplyr::filter(Target_Population_N == 1 & Sample_Type_N == 3) %>%
   dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,
                 Male_Num,Female_Num,Remark1,Remark2,Remark3) %>% 
@@ -2295,51 +2306,6 @@ ggsave("H2_Fig_target23_age.pdf", H2_Fig_target23_age, device = "pdf", width=18,
 
 H2_Fig_target23_age
 
-
-```
-
-
-## region
-```{r}
-colour <- colour %>% 
-  dplyr::mutate(Journal_target_population23 = 0)
-
-
-colour$Journal_target_population23[colour$province %in% Target_population23_region_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == "<1"]] <- 1
-
-colour$Journal_target_population23[colour$province %in% Target_population23_region_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == "1~5"]] <- 2
-
-colour$Journal_target_population23[colour$province %in% Target_population23_region_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == "5~10"]] <- 3
-
-colour$Journal_target_population23[colour$province %in% Target_population23_region_count $Subjects_Recruitment_Area[df_CHN_Journal_Province_count$Count_Bins == ">=10"]] <- 4
-
-
-
-colour <- colour %>%
-  dplyr::mutate(Journal_target_population23 = factor(Journal_target_population23, 
-                                          levels = c("0","1", "2", "3", "4")))
-
-China <- dplyr::left_join(China,colour,by= "QUHUADAIMA")
-
-
-Journal_Area <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(Journal_target_population23))) +
-  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
-                    breaks = c("0","1","2", "3", "4"),
-                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
-  geom_sf(data = gjx) +
-  labs(title = "Journal subjects recruitment area distribution") +
-  theme(plot.title = element_text(color = "black",size = 16,
-                                  face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.title = element_blank(),
-        legend.position = c(0.2, 0.2),
-        panel.grid = element_blank(),
-        panel.background = element_blank(),
-        axis.text = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title = element_blank())+
-  annotation_north_arrow(location = 'tl',which_north = 'false',
-                         style = north_arrow_orienteering())
 
 ```
 
@@ -2953,8 +2919,6 @@ Try to process Abstract data.
 ### In our coding, different subject groups will make the same article have multiple rows of data, but there is only one abstract and the multi-rows Abstract1 should be consistent. So, first, I check whether Abstract1 is consistent.
 
 Abstract_subj_info_filter <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Abstract1,Sample_Type_N,Sample_Type_info_N,
                 Abstract2)
 
@@ -2990,8 +2954,6 @@ df_stage2_Journal_Code2$Abstract1[1641:1642] <- 1
 
 ## Then, I check that the encoding of Abstract1 and Abstract2 is exactly the same
 Abstract1_Abstract2 <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Abstract2,Abstract1) %>% 
   dplyr::filter(grepl("1",Sample_Type_N)) %>% 
   dplyr::filter(grepl("1",Abstract1) & Abstract2 != 1)
@@ -3022,8 +2984,6 @@ Abstract1_subj_info_equl <- Abstract1_subj_info_equl %>%
 
 ### Abstract2 (univeristy students report)
 Abstract2_report_NA <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
   dplyr::filter(grepl("1",Sample_Type_N)) %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Abstract2,Abstract1) %>% 
   dplyr::filter(is.na(Abstract2))
@@ -3083,8 +3043,6 @@ Abstract1_demo_info <- Abstract1_subj_info %>%
 
 
 Abstract2_report <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>%
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>% 
   dplyr::filter(grepl("1",Sample_Type_N)) %>% 
   dplyr::group_by(Article_IDs) %>% 
   dplyr::mutate(Same_Abstract2 = n_distinct(Abstract2) == 1) %>%  ## check multiple subjects group Abstract2 whether is consistent.
