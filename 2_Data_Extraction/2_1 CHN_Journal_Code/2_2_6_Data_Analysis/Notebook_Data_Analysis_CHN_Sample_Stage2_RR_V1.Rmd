@@ -25,8 +25,10 @@ if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load("tidyverse","rio","here")
 
+getwd()
+
 file_list <- list.files(
-  here("Stage_2_Code_Data"),
+  here("C:/Users/yuelei/Desktop/Stage_2_Code_Data"),
   pattern = ".xlsx",
   full.names = TRUE, recursive = TRUE)
 
@@ -50,6 +52,7 @@ rm(file_list)
 I only corrected the inconsistencies in the case of letters and spelling errors in the column names. For any other inconsistencies in column names, I made the necessary modifications during the subsequent merging process.
 ```{r}
 ## Check the coding stage col names
+
 
 Coding_Data_Names <- data.frame(Group1_Coding_Names = names(df[[1]]),
                        Group1_Coding_Suppl_Names = names(df[[2]]),
@@ -2371,6 +2374,7 @@ save(df,df_stage2_Journal_Code,df_stage2_Journal_Code2,
 
 ## Load the pre Rdata
 ```{r}
+rm(list = ls())
 load("df_Pre_Stage2_Journal_Code.Rdata")
 ```
 
@@ -3307,6 +3311,83 @@ df_stage2_Journal_Code2$SD_age[993] <- NA
 df_stage2_Journal_Code2$SD_age[995] <- NA
 df_stage2_Journal_Code2$SD_age[1002] <- NA
 ```
+
+
+However, after I informally processed the data, I still found some small details that needed to be improved, and I re-wrote this part in V1 to reduce the code redundancy of V2.
+```{r}
+### In order to facilitate the subsequent exclusion of foreign samples, the Subjects_Recruitment_Area information 29 of 20211064 was changed to Chinese character 29
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[447] <- "被试填答IP覆盖了二十九个省、自治区、直辖市"
+
+## Minor revision
+## 20215075
+df_stage2_Journal_Code2$Sample_Size[1419] <- 310
+df_stage2_Journal_Code2$Male_Num[1419] <- 310
+df_stage2_Journal_Code2$Female_Num[1419] <- 0
+df_stage2_Journal_Code2$M_age[1419] <- 36.11
+df_stage2_Journal_Code2$SD_age[1419] <- 4.91
+df_stage2_Journal_Code2$Sample_Type_N[1419] <- 4
+
+
+## I found some outliers for M_age, so I processed this part of the data first.
+## 20185036
+df_stage2_Journal_Code2$Sample_Type_N[1082] <- 2
+## 20183336
+df_stage2_Journal_Code2$Sample_Type_info_N[184] <-
+  "采用整群抽样的方法从山东省济南市某高校选取大学生为被试"
+
+## 20215065
+df_stage2_Journal_Code2$Sample_Type_N[1190:1191] <- 2
+## 20184083
+df_stage2_Journal_Code2$M_age[407] <- "男性69.14;女性67.16"
+
+## 20084023
+df_stage2_Journal_Code2$Sample_Type_N[300] <- 5
+
+df_stage2_Journal_Code2$Gender[351:352] <- 0 ## 20182022 Original article gender report error, 0 here
+
+## little error 20181223
+df_stage2_Journal_Code2$M_age[1500] <- 31.6
+
+
+## In the following process, we found 3 rows include Mage = 0 and SDage = 0.
+## 20182182
+df_stage2_Journal_Code2$M_age[1039:1041] <- NA
+
+## 20182203
+df_stage2_Journal_Code2$M_age[1052] <- NA
+
+## 20182182
+df_stage2_Journal_Code2$SD_age[1039:1041] <- NA
+
+## 20182203
+df_stage2_Journal_Code2$SD_age[1052] <- NA
+
+
+## In informal code stage, Because our code group have multiple coders, in order to reduce coding differences between individuals based on criteria and understanding, our coding for ethnic groups does not include information about native minority languages. For example: Tibetan language. I will now supplement this.
+## 20181022
+df_stage2_Journal_Code2$Ethnicity_info[768] <- "汉族"
+
+### Article_IDs 20181113 
+df_stage2_Journal_Code2$Ethnicity[1291:1292] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1291:1292] <- "维吾尔族"
+
+### Article_IDs 20211018
+df_stage2_Journal_Code2$Ethnicity[1634:1635] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1634:1635] <- "藏族"
+
+### Article_IDs 20213168
+df_stage2_Journal_Code2$Ethnicity[1603] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1603] <- "汉族;少数民族"
+
+### Article_IDs 20181017
+df_stage2_Journal_Code2$Ethnicity[760:761] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[760:761] <- "蒙古族"
+
+### Article_IDs 20211013
+df_stage2_Journal_Code2$Ethnicity[1587:1588] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1587:1588] <- "锡伯族"
+```
+
 
 ## Save Rdata again
 ```{r}
