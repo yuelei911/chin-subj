@@ -570,17 +570,6 @@ In this section, I began by testing and analyzing three main hypotheses.
 
 Process gender data from Chinese journals.
 ```{r warning=FALSE}
-
-## 20083011
-Journal$Male_Num[1199] <- 0
-Journal$Female_Num[1199] <- 845
-
-## 20183078
-Journal$Male_Num[350] <- 760
-Journal$Female_Num[350] <- 760
-Journal$Sample_Size[350] <- 760
-
-
 ## Filter for information-rich key variables
 Journal_key_variable <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,

@@ -3341,7 +3341,7 @@ df_stage2_Journal_Code2$Sample_Type_N[1190:1191] <- 2
 df_stage2_Journal_Code2$M_age[407] <- "男性69.14;女性67.16"
 
 ## 20084023
-df_stage2_Journal_Code2$Sample_Type_N[300] <- 5
+df_stage2_Journal_Code2$Sample_Type_N[300] <- 23
 
 df_stage2_Journal_Code2$Gender[351:352] <- 0 ## 20182022 Original article gender report error, 0 here
 
@@ -3386,6 +3386,16 @@ df_stage2_Journal_Code2$Ethnicity_info[760:761] <- "蒙古族"
 ### Article_IDs 20211013
 df_stage2_Journal_Code2$Ethnicity[1587:1588] <- 1
 df_stage2_Journal_Code2$Ethnicity_info[1587:1588] <- "锡伯族"
+
+
+## 20083011
+df_stage2_Journal_Code2$Male_Num[1257] <- 0
+df_stage2_Journal_Code2$Female_Num[1257] <- 845
+
+## 20183078
+df_stage2_Journal_Code2$Male_Num[370] <- 760
+df_stage2_Journal_Code2$Female_Num[370] <- 760
+df_stage2_Journal_Code2$Sample_Size[370] <- 760
 ```
 
 
