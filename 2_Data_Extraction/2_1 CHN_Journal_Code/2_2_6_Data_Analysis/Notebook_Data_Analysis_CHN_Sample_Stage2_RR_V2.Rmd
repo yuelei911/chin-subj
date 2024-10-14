@@ -636,19 +636,55 @@ Journal_gender2 <- bind_rows(Journal_gender_integer2,Journal_gender_decimal2)%>%
 ### 注意这里昨天有一个类别编码2~10的应该编码为23，需要修改一下
 
 
-## calculate total gender proportion
-# df_CHN_Journal_Gender_Total <- df_CHN_Journal_Gender %>%
-#   dplyr::summarise(Male_Num = sum(Male_Num),
-#                    Female_Num = sum(Female_Num,na.rm = TRUE),
-#                    Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
-#                    Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
-#                    Data_Source = "Chinese papers") 
-# 
-# 
-# df_CHN_Journal_Gender_Total2 <- data.frame(Gender = c("Male","Female"),
-#                                           n = c(233377,272477),
-#                                           Proportion = c(46,54),
-#                                           Data_Source = "Chinese papers")
+## total
+Target_population_total_gender <- Journal_gender2 %>% 
+  dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
+                   Female_Num = sum(Female_Num,na.rm = TRUE),
+                   Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
+                   Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
+                   Data_Source = "Target_population_total")
+
+
+## general
+Target_population_general_gender <- Journal_gender2 %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
+                   Female_Num = sum(Female_Num,na.rm = TRUE),
+                   Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
+                   Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
+                   Data_Source = "Target_population_general")
+
+
+## special
+Target_population_special_gender <- Journal_gender2 %>% 
+  dplyr::filter(Target_Population_N == 1) %>% 
+  dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
+                   Female_Num = sum(Female_Num,na.rm = TRUE),
+                   Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
+                   Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
+                   Data_Source = "Target_population_special")
+
+## target population is special and sample type is 23. 
+Target_population_special_sampletype23_gender <- Journal_gender2 %>% 
+  dplyr::filter(Target_Population_N == 1) %>%
+  dplyr::filter(grepl("2",Sample_Type_N) | grepl("3",Sample_Type_N)) %>% 
+  dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
+                   Female_Num = sum(Female_Num,na.rm = TRUE),
+                   Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
+                   Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
+                   Data_Source = "Target_population_special")
+
+Journal_gender_different_categories <- bind_rows(Target_population_total_gender,Target_population_general_gender,
+          Target_population_special_gender,Target_population_special_sampletype23_gender) 
+
+# df111 <- Journal_gender_different_categories %>% 
+#   tidyr::pivot_longer(cols = c(Male_Num,Female_Num),
+#                       names_to = "gender",
+#                       values_to = "num") %>% 
+#    tidyr::pivot_longer(cols = c(Male_Proportion,Female_Proportion),
+#                       names_to = "gender2",
+#                       values_to = "proportion")
+  
 
 ```
 
@@ -2062,110 +2098,7 @@ rm(Target_population23_gender_twotype,
 ```
 
 
-try to analyze the data that the target population is specific population. specifically, the target population is infant and young children.  
-```{r message=FALSE, warning=FALSE}
-Target_population1_sampletype3 <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(Target_Population_N == 1 & Sample_Type_N == 3) %>%
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,
-                Male_Num,Female_Num,Remark1,Remark2,Remark3) %>% 
-  dplyr::mutate(Sample_Size = as.numeric(Sample_Size),
-                Gender = as.numeric(Gender))
-
-
-## Filter gender number < 1. 
-Target_population1_sampletype3_gender_decimal <- Target_population1_sampletype3  %>% 
-  dplyr::mutate(Male_Num = as.numeric(Male_Num),
-                Female_Num = as.numeric(Female_Num)) %>% 
-  dplyr::filter(Gender == 1) %>% 
-  dplyr::filter(Male_Num < 1 & Female_Num < 1) %>% 
-  dplyr::select(1:7)
-  
-
-## Filter gender number > 1.  
-Target_population1_sampletype3_gender_integer <- Target_population1_sampletype3  %>% 
-  dplyr::filter(Gender == 1) %>% 
-  dplyr::filter(Male_Num > 1 | Female_Num > 1) %>% 
-  dplyr::mutate(Male_Num = as.numeric(Male_Num),
-                Female_Num = as.numeric(Female_Num))%>% 
-  dplyr::select(1:7)
-
-
-## Check whether data can be matched.
-Target_population1_sampletype3_gender_twotype <-
-  bind_rows(Target_population1_sampletype3_gender_decimal,
-            Target_population1_sampletype3_gender_integer)
-
-Target_population1_sampletype3_gender_remove <- Target_population1_sampletype3 %>% 
-  filter(Gender == 1) %>% 
-   dplyr::mutate(Male_Num = as.numeric(Male_Num),
-                Female_Num = as.numeric(Female_Num))
-
-Target_population1_sampletype3_gender_anti <- anti_join(Target_population1_sampletype3_gender_remove,Target_population1_sampletype3_gender_twotype) 
-  
-
-## Multiple groups of data are removed during processing, so re-create the data.frame and then merge them.
-
-
-Target_population1_sampletype3_gender_add <- data.frame(
-  Article_IDs = c("20185082","20213045","20215075"),
-  Study_Number = c(1,1,1),
-  Subjects_Group_N = c(NA,NA,"父亲"),
-  Sample_Size = c(33,81,310),
-  Gender = 1,
-  Male_Num = c(26,49,310),
-  Female_Num = c(7,32,0)) %>% 
-  dplyr::mutate(Study_Number = as.character(Study_Number))
-
-
-## Process gender number is decimal
-
-Target_population1_sampletype3_gender_decimal2 <- Target_population1_sampletype3_gender_decimal %>%
-  dplyr::rename(Male_Proportion = Male_Num,
-                Female_Proportion =  Female_Num) %>% 
-  dplyr::mutate(Male_Num = floor(Sample_Size*Male_Proportion),
-                Female_Num = Sample_Size - Male_Num) %>% 
-  dplyr::select(1:5,8:9)
-  
-# names(Target_population23_gender_decimal2)
-
-## Combine two type data.
-
-Target_population1_sampletype3_gender <- dplyr::bind_rows(
-  Target_population1_sampletype3_gender_decimal2,
-  Target_population1_sampletype3_gender_integer,
-  Target_population1_sampletype3_gender_add)
-
-
-Target_population1_sampletype3_gender <- Target_population1_sampletype3_gender %>% 
-  dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
-                   Female_Num = sum(Female_Num,na.rm = TRUE),
-                   Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
-                   Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
-                   Data_Source = "Chinese papers")   ## male_p  54 female_p 46
-
-# ## 可以分析的目前考虑的有性别、地域和学历。后两者其实也很难。
-# 
-# 
-# general M 45 F 45
-# T23 M 45 F 54
-# T1 S3 M 54 F 45
-```
-
-
-Here, I remove some data sets to reduce data set clutter.
-```{r}
-rm(Target_population1_sampletype3_gender_remove,
-   Target_population1_sampletype3_gender_twotype,
-   Target_population1_sampletype3_gender_anti,
-   Target_population1_sampletype3_gender_decimal,
-   Target_population1_sampletype3_gender_decimal2,
-   Target_population1_sampletype3_gender_integer,
-   Target_population1_sampletype3_gender_add)
-```
-
-
 ## Age
-
 try to analyze the age data of the general population.
 ```{r}
 Target_population23_articleIDs <- Target_population23 %>% 
