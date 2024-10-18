@@ -567,22 +567,20 @@ In this section, I began by testing and analyzing three main hypotheses.
 # Test three hypotheses
 ## Test the 1st hypothesis
 ### Gender
-
 Process gender data from Chinese journals.
 ```{r warning=FALSE}
 ## Filter for information-rich key variables
 Journal_key_variable <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,
                 Sample_Size,Target_Population_N,Sample_Type_N,
-                Gender,Male_Num,Female_Num,
-                Age,M_age,SD_age,Other_age,
-                Remark1,Remark2,Remark3)
+                Gender,Male_Num,Female_Num,Age,M_age,SD_age,Other_age,
+                Subjects_Recruitment_Area,Remark1,Remark2,Remark3)
 
 # names(Journal_key_variable)
 
 ## Filter gender related variables
 Journal_gender <- Journal_key_variable %>% 
-  dplyr::select(-c(10:16)) %>% 
+  dplyr::select(-c(10:17)) %>% 
   dplyr::filter(Gender == 1)
 
 
@@ -621,8 +619,6 @@ Journal_gender_decimal2 <- Journal_gender_decimal %>%
 ## Combining journal gender data for both categories
 Journal_gender2 <- bind_rows(Journal_gender_integer2,Journal_gender_decimal2)%>% 
   dplyr::filter(!is.na(Male_Num)) 
-
-### 注意这里昨天有一个类别编码2~10的应该编码为23，需要修改一下
 
 
 ## total
@@ -665,16 +661,6 @@ Target_population_special_sampletype23_gender <- Journal_gender2 %>%
 
 Journal_gender_different_categories <- bind_rows(Target_population_total_gender,Target_population_general_gender,
           Target_population_special_gender,Target_population_special_sampletype23_gender) 
-
-# df111 <- Journal_gender_different_categories %>% 
-#   tidyr::pivot_longer(cols = c(Male_Num,Female_Num),
-#                       names_to = "gender",
-#                       values_to = "num") %>% 
-#    tidyr::pivot_longer(cols = c(Male_Proportion,Female_Proportion),
-#                       names_to = "gender2",
-#                       values_to = "proportion")
-  
-
 ```
 
 
@@ -805,138 +791,38 @@ rm(BTS_CHN_gender,BTS_gender,
 
 Reprocess age data from Chinese journals.
 ```{r warning=FALSE}
+Journal_age <- Journal_key_variable %>% 
+  dplyr::select(-c(7:9,14:17)) %>% 
+  dplyr::filter(Age == 1 & !is.na(Sample_Size)) %>% 
+  dplyr::filter(!is.na(M_age) & !is.na(SD_age))
+
+
 ## Filter M_age have multiple group data
-df_stage2_Journal_Code_Age_str <- df_stage2_Journal_Code2 %>% 
-  dplyr::slice(492,370,856,879,1406,726,725,724,1413,
-               1288,489,322,1331,1324,407,362,374,495,
-               1419) %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Age,M_age,SD_age,Other_age,Remark1,Remark2,Remark3)
+Journal_strings_age <- Journal_age %>% 
+  dplyr::filter(grepl(";|:|：|,",M_age)) %>% 
+  dplyr::mutate(M_age = gsub("[;；]",";",M_age),
+                SD_age = gsub("[;；]",";",SD_age)) %>% 
+  tidyr::separate_rows(c(M_age,SD_age),sep = ";") %>% 
+  dplyr::mutate(M_age = str_extract(M_age,"\\d+\\.\\d+|\\d+"),
+                SD_age = str_extract(SD_age,"\\d+\\.\\d+|\\d+")) %>% 
+  dplyr::slice(1:39,46:60) %>% 
+  dplyr::mutate(Sample_Size = c(8,9,201,201,380,380,109,109,258,258,199,346,404,341,
+                                166,265,174,35,30,25,24,30,31,30,30,29,30,15,11,
+                                9,17,30,30,280,280,106,106,572,572,821,748,102,116,
+                                62,68,213,192,14,19,27,27,27,169,135)) %>% 
+  dplyr::mutate_at(vars(4:9),as.numeric)
 
 
+Journal_strings_age$M_age[40:41] <- c(15.36,16.35)
 
-## Rebuild for M_age' multiple group of data
-df_stage2_Journal_Code_Mage_multiple_group <- data.frame(
-  Article_IDs = c(20213254,20213254,20183078,20183078,20183078,20184162,20184162,20212079,
-                  20212079,20213045,20213045,20213045,20082296,20082296,20082296,20082296,
-                  20082296,20082296,20213054,20213054,20181109,20181109,20213244,20213244,
-                  20182003,20182003,20182228,20182228,20182207,20182207,20184083,20184083,
-                  20183060,20183060,20183087,20183087,20215094,20215094,20215094,20215075,20215075),
-  Study_Number = 1,
-  Subjects_Group = c("样本1大学生","样本1高中生","儿童","父亲","母亲","父亲","母亲","高一",
-                     "高二","精分患者","健康同胞","健康对照","小班男","小班女","中班男","中班女",
-                     "大班男","大班女","男生","女生","男生","女生","男生","女生",
-                     "男生","女生","男生","女生","男生","女生","男生","女生",
-                     "男生","女生","男生","女生","四年级","五年级", "六年级","幼儿","父亲"),
-  Sample_Type_N = c(1,2,2,4,4,4,4,2,2,4,4,
-                    4,3,3,3,3,3,3,3,3,2,
-                    2,1,1,1,1,2,2,4,4,4,
-                    4,1,1,1,1,2,2,2,3,4),
-  Sample_Size = c(404,341,760,760,760,1047,1139,821,
-                  748,27,27,27,NA,NA,NA,NA,
-                  NA,NA,169,135,102,116,199,346,
-                  8,9,213,192,62,68,258,258,
-                  201,201,109,109,166,265,174,310,154),
-  Age = 1,
-  M_age = c(21.12,16.44,9.74,39.15,36.99,41.44,40.23,15.36,16.35,25.44,
-            25.56,27.44,3.77,3.85,4.73,4.83,5.68,5.77,4.69,4.79,
-            14.23,14.08,18.71,18.84,21.63,21.89,10.01,9.95,27.90,
-            26.75,69.14,67.16,20.94,21.51,21.10,21.80,10.10,11.07,
-            12.03,5.02,36.11),
-  SD_age = c(1.45,0.73,1.46,3.73,2.95,NA,NA,0.52,0.52,5.92,6.44,7.24,
-             0.3,0.23,0.25,0.29,0.32,0.32,0.58,0.56,0.69,0.58,1.78,1.66,
-             1.32,1.17,1.31,1.38,6.56,5.04,7.40,6.44,2.33,2.31,2.37,1.69,
-             0.31,0.34,0.30,0.93,4.91),
-  Other_age = NA,
-  Remark1 = NA,
-  Remark2 = NA,
-  Remark3 = NA)
+## Filter M_age only have single values data
+Journal_single_age <- Journal_age %>% 
+  dplyr::filter(!grepl(";|:|：|,",M_age)) %>% 
+  dplyr::mutate_at(vars(4:9),as.numeric)
 
 
-## Process Other_age information separately
-df_stage2_Journal_Code_Mage_multiple_group$Other_age[1] <- "17-25"
-df_stage2_Journal_Code_Mage_multiple_group$Other_age[2] <- "15-19"
-
-
-
-## I found that there are some M_age that have multiple groups, but no Chinese character identification, so it is not recognized in the above filter, so it is dealt with separately here
-
-df_stage2_Journal_Code_Mage_semicolon <- data.frame(
-  Article_IDs = c(20084068,20084068,20084068,20084068,20084068,20084068,20082182,20082182,
-                  20082182,20082182,20185082,20185082,20183133,20183133,20182052,20182052,
-                  20182052,20182052,20212031,20212031,20184130,20184130,20215102,20215102),
-  Study_Number = c(1,1,1,1,1,1,1,1,2,2,1,1,
-                   1,1,1,1,2,2,1,1,1,1,1,1),
-  Subjects_Group = c("中班男","中班女","小班男","小班女","大班男","大班女",
-                     "6、7岁","10、11岁","6、7岁","10、11岁","男生","女生",
-                     "男生","女生","男生","女生","男生","女生","男生","女生",
-                     "父亲","母亲","父亲","母亲"),
-  Sample_Type_N =c(3,3,3,3,3,3,2,2,2,2,3,3,
-                   1,1,5,5,5,5,5,5,4,4,4,4),
-  Sample_Size = c(30,30,29,30,30,31,
-                  35,30,25,24,26,7,
-                  30,30,15,11,9,17,106,106,
-                  280,280,572,5721),
-  Age = 1,
-  M_age = c(4.73,4.83,3.77,3.85,5.68,5.77,7.06,11.18,7.24,11.42,5.73,3.28,
-            20.4,20.3,20.77,20.69,20.91,20.67,29.62,28.00,36.61,34.24,41.37,38.88) ,
-  SD_age = c(0.25,0.29,0.3,0.23,0.32,0.32,0.38,0.35,0.39,0.34,0.74,0.56,
-             1.2,1.1,1.8,2.09,2.65,1.31,3.37,2.26,4.06,3.38,4.74,3.87),
-  Other_age = NA,
-  Remark1 = NA,
-  Remark2 = NA,
-  Remark3 = NA)
-
-
-## Process Other_age information separately
-df_stage2_Journal_Code_Mage_semicolon$Other_age[21:22] <- c("27-53","26-50")
-
-
-#The above cases where there are multiple age groups will be recognized as NA in the code run, so they need to be removed.These removed data are the data contained in the data.frame above.
-df_stage2_Journal_Code_Age <- df_stage2_Journal_Code2 %>% 
-  dplyr::mutate(M_age = as.numeric(M_age), SD_age = as.numeric(SD_age)) %>% 
-  dplyr::mutate(M_age = round(M_age,2), SD_age = round(SD_age,2)) %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Sample_Size,Age,M_age,SD_age,Other_age,Remark1,Remark2,Remark3) %>% 
-  dplyr::slice(-c(492,370,856,879,1406,724:726,
-                  1413,1288,489,322,1331,1324,407,
-                  362,374,495,1419,536:538,509,
-                  510,1368,600,567,568,648,630,696))
-
-## Merge data
-df_stage2_Journal_Code_Age2 <- rbind(df_stage2_Journal_Code_Age,df_stage2_Journal_Code_Mage_multiple_group) %>% 
-  rbind(df_stage2_Journal_Code_Mage_semicolon)
-
-# rm(df_stage2_Journal_Code_Mage_multiple_group,df_stage2_Journal_Code_Mage_semicolon,df_stage2_Journal_Code_Age_str)
-
-#Special Note 1: In the process of M_age data, I found some data that may be outlier, so I grouped them based on "Sample_Type_N" and indeed found some abnormal data. In order to ensure that subsequent analysis is affected as little as possible, we will check it based on "df_stage2_Journal_Code2" and put the relevant code at the beginning of this section. This way, subsequent analysis will not be affected by these outlier. I hope the order here will not cause any inconvenience for you.
-
-Summrise_MAge <- df_stage2_Journal_Code_Age2 %>%
-  dplyr::filter(!is.na(M_age)) %>% 
-  dplyr::group_by(Sample_Type_N) %>% 
-  dplyr::summarise(Min_Mage = min(M_age),
-                   Max_Mage  = max(M_age),
-                   Mean_Mage  = mean(M_age))
-rm(Summrise_MAge)
-
-df_stage2_Journal_Code2_SampleType1 <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(Sample_Type_N == 1) ## M_age no outlier was found after sorting
-rm(df_stage2_Journal_Code2_SampleType1)
-
-df_stage2_Journal_Code2_SampleType2 <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(Sample_Type_N == 2) ## M_age no outlier was found after sorting
-rm(df_stage2_Journal_Code2_SampleType2)
-
-df_stage2_Journal_Code2_SampleType3 <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(Sample_Type_N == 3) ## 1 outlier was found after sorting
-rm(df_stage2_Journal_Code2_SampleType3)
-
-df_stage2_Journal_Code2_SampleType4 <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(Sample_Type_N == 4) ## outlier was found after sorting
-rm(df_stage2_Journal_Code2_SampleType4)
-
-df_stage2_Journal_Code2_SampleType5 <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(Sample_Type_N == 5) ## I may need to re-process Sample_Type 5
-rm(df_stage2_Journal_Code2_SampleType5)
-
+## Combining journal age data for both categories 
+Journal_age2 <- bind_rows(Journal_strings_age,Journal_single_age)
 ```
 
 
@@ -982,21 +868,13 @@ Sim_Sens_mult_five <- function(Mean0, diff_age, SD0, sample_N=Sample_Size){
 }
 
 
-## Filter non-NA data makes it easier for subsequent simulations.
-Sim_Journal_age <- df_stage2_Journal_Code_Age2 %>% 
-  dplyr::filter(Age != 0) %>% 
-  dplyr::filter(!is.na(M_age) & !is.na(SD_age)) %>% 
-  dplyr::filter(!is.na(Sample_Size)) %>% 
-  dplyr::mutate(Sample_Size =  as.numeric(Sample_Size))
-
-
 ## Use simulation function to process data.
-Sim_Journal_age_five1 <- lapply(1:nrow(Sim_Journal_age),function(i){
+Sim_Journal_age_five1 <- lapply(1:nrow(Journal_age2),function(i){
   
-  Sim_Sens_mult_five(Mean0 = Sim_Journal_age$M_age[i],
+  Sim_Sens_mult_five(Mean0 = Journal_age2$M_age[i],
                 diff_age = 0,
-                SD0 = Sim_Journal_age$SD_age[i],
-                sample_N = Sim_Journal_age$Sample_Size[i])
+                SD0 = Journal_age2$SD_age[i],
+                sample_N = Journal_age2$Sample_Size[i])
   
   })
 
@@ -1016,7 +894,7 @@ Sim_Journal_age_five3 <- Sim_Journal_age_five2 %>%
 
 
 ## Calculate the sample difference between the coded data and the simulated data
-sum(Sim_Journal_age$Sample_Size)-sum(Sim_Journal_age_five3$sim1,na.rm = TRUE) 
+sum(Journal_age2$Sample_Size)-sum(Sim_Journal_age_five3$sim1,na.rm = TRUE) 
 ```
 
 
@@ -1043,12 +921,12 @@ Sim_Sens_mult_PsyStages <- function(Mean1, diff_age, SD1, sample_N=Sample_Size){
 
 
 ## Use simulation function to process data. 
-Sim_Journal_age_PsyStages1 <- lapply(1:nrow(Sim_Journal_age),function(i){
+Sim_Journal_age_PsyStages1 <- lapply(1:nrow(Journal_age2),function(i){
   
-  Sim_Sens_mult_PsyStages(Mean1 = Sim_Journal_age$M_age[i],
+  Sim_Sens_mult_PsyStages(Mean1 = Journal_age2$M_age[i],
                 diff_age = 0,
-                SD1 = Sim_Journal_age$SD_age[i],
-                sample_N = Sim_Journal_age$Sample_Size[i])
+                SD1 = Journal_age2$SD_age[i],
+                sample_N = Journal_age2$Sample_Size[i])
   
   })
 
@@ -1065,7 +943,7 @@ Sim_Journal_age_PsyStages3 <- Sim_Journal_age_PsyStages2 %>%
 
 
 ## Calculate the sample difference between the coded data and the simulated data
-sum(Sim_Journal_age$Sample_Size)-sum(Sim_Journal_age_PsyStages3$sim1,na.rm = TRUE)
+sum(Journal_age2$Sample_Size)-sum(Sim_Journal_age_PsyStages3$sim1,na.rm = TRUE)
 ```
 
 
@@ -1095,12 +973,12 @@ Sim_Sens_mult_interval10 <- function(Mean2, diff_age2, SD2, sample_N2=Sample_Siz
 }
 
 
-Sim_Journal_age_interval101 <- lapply(1:nrow(Sim_Journal_age),function(i){
+Sim_Journal_age_interval101 <- lapply(1:nrow(Journal_age2),function(i){
   
-  Sim_Sens_mult_interval10(Mean2 = Sim_Journal_age$M_age[i],
+  Sim_Sens_mult_interval10(Mean2 = Journal_age2$M_age[i],
                 diff_age2 = 0,
-                SD2 = Sim_Journal_age$SD_age[i],
-                sample_N2 = Sim_Journal_age$Sample_Size[i])
+                SD2 = Journal_age2$SD_age[i],
+                sample_N2 = Journal_age2$Sample_Size[i])
   
   })
 
@@ -1120,7 +998,192 @@ Sim_Journal_age_interval103 <- Sim_Journal_age_interval102 %>%
 
 
 ## Calculate the sample difference between the coded data and the simulated data
-sum(Sim_Journal_age$Sample_Size)-sum(Sim_Journal_age_interval103$sim1,na.rm = TRUE)
+sum(Journal_age2$Sample_Size)-sum(Sim_Journal_age_interval103$sim1,na.rm = TRUE)
+```
+
+In the following part, I will calculate other age data based on different target population.
+
+The first is general population.
+```{r}
+## general target population
+Target_population_general_age <-  Journal_age2 %>%
+  dplyr::filter(Target_Population_N != 1)
+
+## simulate different categories age data
+### five-year-old
+Sim_Journal_general_age_five1 <- lapply(1:nrow(Target_population_general_age),function(i){
+  
+  Sim_Sens_mult_five(Mean0 = Target_population_general_age$M_age[i],
+                diff_age = 0,
+                SD0 = Target_population_general_age$SD_age[i],
+                sample_N = Target_population_general_age$Sample_Size[i])
+  
+  })
+
+
+Sim_Journal_general_age_five2 <- do.call(rbind,Sim_Journal_general_age_five1)
+
+
+Sim_Journal_general_age_five3 <- Sim_Journal_general_age_five2 %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(ageBins =factor(ageBins,
+                                levels = c("0~4","5~9","10~14","15~19","20~24",
+                                           "25~29","30~34","35~39","40~44","45~49",
+                                           "50~54","55~59","60~64","65~69","70~74",
+                                           "75~79","80~84","85~89", "90~94",">=95")))
+
+
+## Calculate the sample difference between the coded data and the simulated data
+sum(Target_population_general_age$Sample_Size)-sum(Sim_Journal_general_age_five3$sim1,na.rm = TRUE) 
+
+
+## PsyStages
+Sim_Journal_general_age_PsyStages1 <- lapply(1:nrow(Target_population_general_age),function(i){
+  
+  Sim_Sens_mult_PsyStages(Mean1 = Target_population_general_age$M_age[i],
+                diff_age = 0,
+                SD1 = Target_population_general_age$SD_age[i],
+                sample_N = Target_population_general_age$Sample_Size[i])
+  
+  })
+
+
+Sim_Journal_general_age_PsyStages2 <- do.call(rbind,Sim_Journal_general_age_PsyStages1)
+
+
+Sim_Journal_general_age_PsyStages3 <- Sim_Journal_general_age_PsyStages2 %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(ageBins =factor(ageBins,
+                                levels = c("<=17","18~25", "26~40", "41~60", ">=61")))
+
+
+## Calculate the sample difference between the coded data and the simulated data
+sum(Target_population_general_age$Sample_Size)-sum(Sim_Journal_general_age_PsyStages3$sim1,na.rm = TRUE)
+
+
+## ten-years-old
+Sim_Journal_general_age_interval101 <- lapply(1:nrow(Target_population_general_age),function(i){
+  
+  Sim_Sens_mult_interval10(Mean2 = Target_population_general_age$M_age[i],
+                diff_age2 = 0,
+                SD2 = Target_population_general_age$SD_age[i],
+                sample_N2 = Target_population_general_age$Sample_Size[i])
+  
+  })
+
+
+Sim_Journal_general_age_interval102 <- do.call(rbind,Sim_Journal_general_age_interval101)
+
+
+## Use simulation function to process data. 
+Sim_Journal_general_age_interval103 <- Sim_Journal_general_age_interval102 %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(ageBins =factor(ageBins,
+                                levels = c("<=10", "11~20", "21~30", 
+                                           "31~40", "41~50", "51~60", ">=61")))
+  
+
+
+## Calculate the sample difference between the coded data and the simulated data
+sum(Target_population_general_age$Sample_Size)-sum(Sim_Journal_general_age_interval103$sim1,na.rm = TRUE)
+```
+
+
+The others is special target population
+```{r}
+Target_population_special_age <- Journal_age2 %>% 
+  dplyr::filter(Target_Population_N == 1)
+
+
+## simulate different categories age data
+### five-year-old
+Sim_Journal_special_age_five1 <- lapply(1:nrow(Target_population_special_age),function(i){
+  
+  Sim_Sens_mult_five(Mean0 = Target_population_special_age$M_age[i],
+                diff_age = 0,
+                SD0 = Target_population_special_age$SD_age[i],
+                sample_N = Target_population_special_age$Sample_Size[i])
+  
+  })
+
+
+Sim_Journal_special_age_five2 <- do.call(rbind,Sim_Journal_special_age_five1)
+
+
+Sim_Journal_special_age_five3 <- Sim_Journal_special_age_five2 %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(ageBins =factor(ageBins,
+                                levels = c("0~4","5~9","10~14","15~19","20~24",
+                                           "25~29","30~34","35~39","40~44","45~49",
+                                           "50~54","55~59","60~64","65~69","70~74",
+                                           "75~79","80~84","85~89", "90~94",">=95")))
+
+
+## Calculate the sample difference between the coded data and the simulated data
+sum(Target_population_special_age$Sample_Size)-sum(Sim_Journal_special_age_five3$sim1,na.rm = TRUE) 
+
+
+## PsyStages
+Sim_Journal_special_age_PsyStages1 <- lapply(1:nrow(Target_population_special_age),function(i){
+  
+  Sim_Sens_mult_PsyStages(Mean1 = Target_population_special_age$M_age[i],
+                diff_age = 0,
+                SD1 = Target_population_special_age$SD_age[i],
+                sample_N = Target_population_special_age$Sample_Size[i])
+  
+  })
+
+
+Sim_Journal_special_age_PsyStages2 <- do.call(rbind,Sim_Journal_special_age_PsyStages1)
+
+
+Sim_Journal_special_age_PsyStages3 <- Sim_Journal_special_age_PsyStages2 %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(ageBins =factor(ageBins,
+                                levels = c("<=17","18~25", "26~40", "41~60", ">=61")))
+
+
+## Calculate the sample difference between the coded data and the simulated data
+sum(Target_population_special_age$Sample_Size)-sum(Sim_Journal_special_age_PsyStages3$sim1,na.rm = TRUE)
+
+
+## ten-years-old
+Sim_Journal_special_age_interval101 <- lapply(1:nrow(Target_population_special_age),function(i){
+  
+  Sim_Sens_mult_interval10(Mean2 = Target_population_special_age$M_age[i],
+                diff_age2 = 0,
+                SD2 = Target_population_special_age$SD_age[i],
+                sample_N2 = Target_population_special_age$Sample_Size[i])
+  
+  })
+
+
+Sim_Journal_special_age_interval102 <- do.call(rbind,Sim_Journal_special_age_interval101)
+
+
+## Use simulation function to process data. 
+Sim_Journal_special_age_interval103 <- Sim_Journal_special_age_interval102 %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(ageBins =factor(ageBins,
+                                levels = c("<=10", "11~20", "21~30", 
+                                           "31~40", "41~50", "51~60", ">=61")))
+  
+
+
+## Calculate the sample difference between the coded data and the simulated data
+sum(Target_population_special_age$Sample_Size)-sum(Sim_Journal_special_age_interval103$sim1,na.rm = TRUE)
 ```
 
 
@@ -1986,107 +2049,6 @@ Code2_Article_IDs_number <-  df_stage2_Journal_Code2 %>%
 
 
 After analyzing data at a general level, I analyzed the data based on the target population.
-
-## Gender
-
-Try to analyze data that the target population is the general population.
-```{r message=FALSE, warning=FALSE}
-Ta <- df_stage2_Journal_Code2 %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Age,M_age)
-  
-
-
-
-Target_population23 <- df_stage2_Journal_Code2 %>% 
-  dplyr::filter(Target_Population_N != 1) %>%
-  dplyr::mutate(Sample_Size = as.numeric(Sample_Size),
-                Gender = as.numeric(Gender))
-
-
-## Filter gender number < 1. 
-Target_population23_gender_decimal <- Target_population23 %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,
-                Male_Num,Female_Num,Remark1,Remark2,Remark3) %>% 
-  dplyr::mutate(Male_Num = as.numeric(Male_Num),
-                Female_Num = as.numeric(Female_Num)) %>% 
-  dplyr::filter(Gender == 1) %>% 
-  dplyr::filter(Male_Num < 1 & Female_Num < 1) %>% 
-  dplyr::select(1:7)
-  
-
-## Filter gender number > 1.  
-Target_population23_gender_integer <- Target_population23 %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,
-                Male_Num,Female_Num,Remark1,Remark2,Remark3) %>% 
-  dplyr::filter(Gender == 1) %>% 
-  dplyr::filter(Male_Num > 1 | Female_Num > 1) %>% 
-  dplyr::mutate(Male_Num = as.numeric(Male_Num),
-                Female_Num = as.numeric(Female_Num))%>% 
-  dplyr::select(1:7)
-
-
-## Check whether data can be matched.
-Target_population23_gender_twotype <-
-  bind_rows(Target_population23_gender_decimal,Target_population23_gender_integer)
-
-Target_population23_gender_remove <- Target_population23 %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,Sample_Size,Gender,
-                Male_Num,Female_Num,Remark1,Remark2,Remark3) %>% 
-  filter(Gender == 1) %>% 
-   dplyr::mutate(Male_Num = as.numeric(Male_Num),
-                Female_Num = as.numeric(Female_Num))
-
-Target_population23_gender_anti <- anti_join(Target_population23_gender_remove,Target_population23_gender_twotype) 
-  
-
-## In this step, I found that only 20213048 were forced to convert to NA during the conversion of data format.
-Target_population23_gender_add <- data.frame(
-  Article_IDs = c("20213048","20213048"),
-  Study_Number = c(1,2),
-  Subjects_Group_N = c(NA,NA),
-  Sample_Size = c(68,59),
-  Gender = 1,
-  Male_Num = c(31,28),
-  Female_Num = c(37,31)) %>% 
-  dplyr::mutate(Study_Number = as.character(Study_Number))
-
-
-## Process gender number is decimal
-Target_population23_gender_decimal2 <- Target_population23_gender_decimal %>%
-  dplyr::rename(Male_Proportion = Male_Num,
-                Female_Proportion =  Female_Num) %>% 
-  dplyr::mutate(Male_Num = floor(Sample_Size*Male_Proportion),
-                Female_Num = Sample_Size - Male_Num) %>% 
-  dplyr::select(1:5,8:9)
-  
-# names(Target_population23_gender_decimal2)
-
-## Combine two type data.
-Target_population23_gender <- dplyr::bind_rows(Target_population23_gender_decimal2,
-                                               Target_population23_gender_integer,
-                                               Target_population23_gender_add)
-
-Target_population23_gender <- Target_population23_gender %>% 
-  dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
-                   Female_Num = sum(Female_Num,na.rm = TRUE),
-                   Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
-                   Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
-                   Data_Source = "Chinese papers")   ## male_p 45 female_p 55
-```
-
-
-Here, I remove some data sets to reduce data set clutter.
-```{r}
-rm(Target_population23_gender_twotype,
-   Target_population23_gender_remove,
-   Target_population23_gender_anti,
-   Target_population23_gender_decimal,
-   Target_population23_gender_decimal2,
-   Target_population23_gender_integer,
-   Target_population23_gender_add)
-```
-
-
 ## Age
 try to analyze the age data of the general population.
 ```{r}
