@@ -645,21 +645,20 @@ BTS_gender_list <- list()
 
 for(i in seq_along(BTS)) {
   
-  BTS_data_name <- names(BTS)[i] 
+  BTS_name <- names(BTS)[i] 
   
  if ("Gender" %in% names(BTS[[i]])) {  
    
   BTS_gender <- BTS[[i]] %>% 
     dplyr::mutate(Gender = str_to_title(Gender)) %>% 
     dplyr::filter(Gender == "Female" | Gender == "Male") %>% 
-    dplyr::mutate(#Proportion = round(count/sum(count),2),
-                  Data_Source =  BTS_data_name)
+    dplyr::mutate(Data_Source =  BTS_name)
   
-  BTS_gender_list[[BTS_data_name]] <- BTS_gender
+  BTS_gender_list[[BTS_name]] <- BTS_gender
   
 } else {  
  
-    cat(sprintf("Skipping '%s' because it does not contain a 'Gender' column.\n", BTS_data_name))  
+    cat(sprintf("Skipping '%s' because it does not contain a 'Gender' column.\n", BTS_name))  
   } 
 
 }
@@ -738,7 +737,7 @@ H1_BF_gender <- BayesMultiNomial(dataset = H1_gender_bayes,
 ```
 
 
-I found moderate evidence for the $H_1$ that the gender proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r BF_H1_gender$BF$LogBF10`.
+I found moderate evidence for the $H_1$ that the gender proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_gender$BF$LogBF10`.
 
 
 At the end of gender data processing for hypothesis 1, I removed some data sets to reduce data set clutter.
@@ -1376,7 +1375,6 @@ for(i in seq_along(BTS)){
     BTS_age <- BTS[[i]] %>% 
       dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
       dplyr::select(Article_Id,Age,ISO3) %>% 
-      #dplyr::group_by(ISO3) %>% 
       dplyr::mutate(ageBins = cut(Age,
                                 breaks = c(0, 10.5, 20.5, 30.5, 40.5, 50.5, 60.5, Inf),
                                 labels = c("<=10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"),
@@ -1461,13 +1459,13 @@ H1_BF_PsyStages_special <- BayesMultiNomial(dataset = H1_PsyStages_special_bayes
 The other is interval10.
 ```{r}
 # all subjects
-BTS_age_interval10_CHN_addrow <- BTS_age_interval10_CHN %>% 
+BTS_age_interval10_CHN2 <- BTS_age_interval10_CHN %>% 
   dplyr::add_row(ageBins = "<=10", n = 0, Proportion = 0, Data_Source = "BTS CHN age")
 
 
 H1_interval10_bayes <- Sim_Journal_age_interval103_prop %>% 
   dplyr::rename(n = 2) %>% 
-  bind_rows(BTS_age_interval10_CHN_addrow) %>%
+  bind_rows(BTS_age_interval10_CHN2) %>%
   dplyr::select(-2) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
 
@@ -1480,7 +1478,7 @@ H1_BF_interval10 <- BayesMultiNomial(dataset = H1_interval10_bayes,
 ## general population 
 H1_interval10_general_bayes <- Sim_Journal_age_interval103_general_prop %>% 
   dplyr::rename(n = 2) %>% 
-  bind_rows(BTS_age_interval10_CHN_addrow) %>%
+  bind_rows(BTS_age_interval10_CHN2) %>%
   dplyr::select(-2) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
 
@@ -1494,7 +1492,7 @@ H1_BF_interval10_general <- BayesMultiNomial(dataset = H1_interval10_general_bay
 ## general population 
 H1_interval10_special_bayes <- Sim_Journal_age_interval103_special_prop %>% 
   dplyr::rename(n = 2) %>% 
-  bind_rows(BTS_age_interval10_CHN_addrow) %>%
+  bind_rows(BTS_age_interval10_CHN2) %>%
   dplyr::select(-2) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
 
@@ -2007,8 +2005,6 @@ writexl::write_xlsx(Journal_edu,"Journal_edu.xlsx")
 
 Try to analysis ethnicity data from Chinese journal
 ```{r}
-
-
 Journal_ethnicity <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,
                 Ethnicity,Ethnicity_info) %>% 
@@ -2024,7 +2020,7 @@ Journal_ethnicity_tab <- data.frame(table(Journal_ethnicity$Ethnicity_info))
 Journal_ethnicity_add <- c("土家族","回族","蒙古族","畲族","满族","苗族","壮族","黎族","彝族","布依族")
 
 Journal_ethnicity_tab <- Journal_ethnicity_tab %>% 
-  dplyr::mutate(Freq = ifelse(Var1 %in% ethnicity_add, Freq+1, Freq))
+  dplyr::mutate(Freq = ifelse(Var1 %in% Journal_ethnicity_add, Freq+1, Freq))
 
 
 ## sample size and different ethnicity
@@ -2049,19 +2045,15 @@ Journal_ethnicity$Sample_Size[65] <- 1006
 Journal_ethnicity$Sample_Size[72] <- 30
 
 ## ethnicity sample size
-df_CHN_Ethnicity_group <- df_CHN_Ethnicity %>% 
+Journal_ethnicity_group <- Journal_ethnicity %>% 
   dplyr::mutate(Sample_Size =as.numeric(Sample_Size)) %>% 
   dplyr::group_by(Ethnicity_info) %>% 
   dplyr::summarise(Sample = sum(Sample_Size)) %>% 
   dplyr::ungroup()
 
 
-Ethnicity_Article_IDs_number <- df_CHN_Ethnicity %>% 
+Journal_ethnicity_Articles_num <- Journal_ethnicity %>% 
   dplyr::distinct(Article_IDs)
-
-Code2_Article_IDs_number <-  df_stage2_Journal_Code2 %>% 
-  dplyr::distinct(Article_IDs)
-  
 ### 17/997
 ```
 
@@ -2071,67 +2063,66 @@ Code2_Article_IDs_number <-  df_stage2_Journal_Code2 %>%
 
 As with the first two hypotheses, I dealt with gender data first. 
 ```{r}
-# gc()
-
-BTS_ALL_gender <- lapply(BTS_gender_list, function(df){
+BTS_gender_allcountry <- lapply(BTS_gender_list, function(df){
   
   df %>% 
     dplyr::select(ISO3,Data_Source,Gender) 
   
 })
 
-BTS_ALL_gender <- do.call(rbind, BTS_ALL_gender) 
+BTS_gender_allcountry <- do.call(rbind, BTS_gender_allcountry) 
 
 ## Filter n > 30
-BTS_ALL_gender_tab <- BTS_ALL_gender %>%
+BTS_gender_allcountry_tab <- BTS_gender_allcountry %>%
   dplyr::group_by(ISO3) %>%
   dplyr::summarise(n=n(),.groups = "drop") %>% 
   dplyr::filter(n > 30) %>%
   dplyr::pull(ISO3)
 
-BTS_ALL_gender <- BTS_ALL_gender %>% 
-  dplyr::filter(ISO3 %in% BTS_ALL_gender_tab) %>% 
+BTS_gender_allcountry <- BTS_gender_allcountry %>% 
+  dplyr::filter(ISO3 %in% BTS_gender_allcountry_tab) %>% 
   dplyr::group_by(ISO3,Gender) %>%
   dplyr::summarise(n = n()) %>%
   dplyr::ungroup() %>%
   dplyr::mutate(Data_Source = "BTS")
 
 ## Add journal gender data
-BTS_ALL_gender <- BTS_ALL_gender %>% 
+BTS_gender_allcountry <- BTS_gender_allcountry %>% 
   dplyr::mutate(n = ifelse(ISO3 == "CHN" & Gender == "Male", 247188+13811,n),
                 n = ifelse(ISO3 == "CHN" & Gender == "Female", 286648 + 14171,n))
 
-BTS_ALL_gender_pro <- BTS_ALL_gender %>% 
+BTS_gender_allcountry_prop <- BTS_gender_allcountry %>% 
   dplyr::group_by(ISO3) %>% 
   dplyr::mutate(Proportion = round(n/sum(n),2)*100) %>%
   dplyr::ungroup()
+
 ## Set factor levels according to gender proportion
-BTS_ALL_gender_factor <- BTS_ALL_gender_pro %>% 
+BTS_gender_allcountry_factor <- BTS_gender_allcountry_prop %>% 
   dplyr::filter(Gender == "Female") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(ISO3)
 
 
 ## combine WEIRD data to visualization
-WEIRD_code_gender <- WEIRD_code %>% 
+WEIRD_gender <- WEIRD %>% 
   dplyr::filter(!is.na(iso3c)) %>% 
-  dplyr::filter(iso3c %in% BTS_ALL_gender_factor)
+  dplyr::filter(iso3c %in% BTS_gender_allcountry_factor)
 
 
-Journal_BTS_ALL_gender <- BTS_ALL_gender_pro %>% 
-  dplyr::left_join(WEIRD_code_gender,by = c("ISO3" = "iso3c")) %>% 
+H3_gender <- BTS_gender_allcountry_prop %>% 
+  dplyr::left_join(WEIRD_gender,by = c("ISO3" = "iso3c")) %>% 
   dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>% 
-  dplyr::mutate(ISO3 = factor(ISO3,levels = BTS_ALL_gender_factor)) %>% 
+  dplyr::mutate(ISO3 = factor(ISO3,levels = BTS_gender_allcountry_factor)) %>% 
   dplyr::filter(!is.na(ISO3))
 ```
 
 
 and I visualized gender data.
 ```{r}
-H3_Fig_gender <- ggplot(Journal_BTS_ALL_gender, aes(x=Proportion, y=ISO3,fill=Gender)) +
+H3_Fig_gender <- ggplot(H3_gender, aes(x=Proportion, y=ISO3,fill=Gender)) +
   geom_col(alpha = .75)+
   labs(y="Countries") + 
-  scale_fill_discrete(label=c("female","male")) +
+  scale_fill_discrete(label=c("Female","Male")) +
   theme_classic()+
   #guides(y="axis_nested") +
   theme(legend.title = element_text(size = 15,family = "serif"),
@@ -2150,8 +2141,8 @@ H3_Fig_gender
 
 Secondly, I processed age data. Similarity, I processed age data in two classification. The one is PsyStages.
 ```{r}
-BTS_All_Psystages <- BTS_age_PsyStages %>% 
-  dplyr::filter(ISO3 %in% BTS_ALL_gender_tab) %>% 
+BTS_Psystages_allcountry <- BTS_age_PsyStages %>% 
+  dplyr::filter(ISO3 %in% BTS_gender_allcountry_tab) %>% 
   dplyr::filter(ISO3 != "CHN") %>% ## drop Chinese data
   dplyr::group_by(ISO3,ageBins) %>% 
   dplyr::summarise(n=n()) %>% 
@@ -2160,19 +2151,19 @@ BTS_All_Psystages <- BTS_age_PsyStages %>%
 
 
 ## Add Chinese data
-Journal_BTS_CHN_PsyStages <- Sim_Journal_age_PsyStages3_prop %>% 
+Journal_BTS_PsyStages_CHN <- Sim_Journal_age_PsyStages3_prop %>% 
   dplyr::rename(n = 2) %>% 
-  dplyr::bind_rows(BTS_CHN_age_PsyStages) %>% 
+  dplyr::bind_rows(BTS_age_PsyStages_CHN) %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n=sum(n)) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
                 ISO3 = "CHN")
 
-# sum(Journal_BTS_CHN_PsyStages$Proportion)
+# sum(Journal_BTS_PsyStages_CHN$Proportion) # 100
   
 
 ## Combine data
-H3_PsyStages <- dplyr::bind_rows(BTS_All_Psystages,Journal_BTS_CHN_PsyStages)
+H3_PsyStages <- dplyr::bind_rows(BTS_Psystages_allcountry,Journal_BTS_PsyStages_CHN)
 
 
 ## Set factor
@@ -2183,19 +2174,17 @@ H3_PsyStages_factor <- H3_PsyStages %>%
 
 
 ## Process WEIRD
-H3_PsyStages2 <- H3_PsyStages %>% 
-  dplyr::left_join(WEIRD_code_gender, by = c("ISO3" = "iso3c")) %>% 
+H3_PsyStages <- H3_PsyStages %>% 
+  dplyr::left_join(WEIRD_gender, by = c("ISO3" = "iso3c")) %>% 
   dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>%
   dplyr::mutate(ISO3 = factor(ISO3, levels = H3_PsyStages_factor)) %>% 
   dplyr::filter(!is.na(ageBins))
-  
-  
 ```
 
 
 And I visualized age data (PsyStages) for all countries in BTS.
 ```{r}
-H3_Fig_PsyStages <- ggplot(H3_PsyStages2, aes(x=Proportion, y=ISO3, fill=ageBins)) +
+H3_Fig_PsyStages <- ggplot(H3_PsyStages, aes(x=Proportion, y=ISO3, fill=ageBins)) +
   geom_col(alpha = .75)+
   labs(y="Countries") + 
   scale_fill_discrete(label=c("0~17", "18~25", "26~40", "41~59",">=60" )) +
@@ -2217,8 +2206,8 @@ H3_Fig_PsyStages
 
 The other is 10-year-old.
 ```{r}
-BTS_ALL_interval10 <- BTS_age_interval10 %>% 
-  dplyr::filter(ISO3 %in% BTS_ALL_gender_tab) %>% 
+BTS_interval10_allcountry <- BTS_age_interval10 %>% 
+  dplyr::filter(ISO3 %in% BTS_gender_allcountry_tab) %>% 
   dplyr::filter(ISO3 != "CHN") %>%  ## drop Chinese data
   dplyr::group_by(ISO3,ageBins) %>% 
   dplyr::summarise(n=n()) %>% 
@@ -2227,9 +2216,9 @@ BTS_ALL_interval10 <- BTS_age_interval10 %>%
 
 
 ## Add Chinese data
-Journal_BTS_CHN_interval10 <- Sim_Journal_age_interval103_prop %>% 
+Journal_BTS_interval10_CHN <- Sim_Journal_age_interval103_prop %>% 
   dplyr::rename(n = 2) %>% 
-  bind_rows(BTS_CHN_age_interval10_addrow) %>% 
+  bind_rows(BTS_age_interval10_CHN2) %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n=sum(n)) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
@@ -2237,7 +2226,7 @@ Journal_BTS_CHN_interval10 <- Sim_Journal_age_interval103_prop %>%
 
 
 ## Combine data
-H3_interval10 <- bind_rows(BTS_ALL_interval10,Journal_BTS_CHN_interval10)
+H3_interval10 <- bind_rows(BTS_interval10_allcountry,Journal_BTS_interval10_CHN)
 
 
 ## Set factor
@@ -2250,8 +2239,8 @@ H3_interval10_factor <- H3_interval10 %>%
 
 
 ## Process WEIRD
-H3_interval102 <- H3_interval10 %>% 
-  dplyr::left_join(WEIRD_code_gender, by = c("ISO3" = "iso3c")) %>% 
+H3_interval10 <- H3_interval10 %>% 
+  dplyr::left_join(WEIRD_gender, by = c("ISO3" = "iso3c")) %>% 
   dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>%
   dplyr::mutate(ISO3 = factor(ISO3, levels = H3_interval10_factor)) %>% 
   dplyr::filter(!is.na(ageBins) & !is.na(ISO3)) 
@@ -2261,7 +2250,7 @@ H3_interval102 <- H3_interval10 %>%
 
 and I visualized age data (interval10) of all countries in BTS.
 ```{r}
-H3_Fig_interval10 <- ggplot(H3_interval102, aes(x=Proportion, y=ISO3, fill=ageBins)) +
+H3_Fig_interval10 <- ggplot(H3_interval10, aes(x=Proportion, y=ISO3, fill=ageBins)) +
   geom_col(alpha = .75)+
   labs(y="Countries") + 
   scale_fill_discrete(label=c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61")) +
@@ -2321,29 +2310,28 @@ Func_BFpairs <- function(df, countries_order, prop_name){
 
 
 Secondly , I calculated gender BF and visualized gender BF.
-```{r}
-BF_H3_gender <- Journal_BTS_ALL_gender %>% 
+```{r message=FALSE, warning=FALSE}
+H3_BF_gender <- H3_gender %>% 
   dplyr::select(ISO3,Gender,Proportion) %>% 
   dplyr::rename(Countries = 1)
 
 
-BF_H3_gender_factor <- BF_H3_gender %>% 
+H3_BF_gender_factor <- H3_BF_gender %>% 
   dplyr::filter(Gender == "Female") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(Countries)
 
 
-BF_H3_gender_Journal_BTS <- BF_H3_gender  %>% 
-  dplyr::mutate(Countries = factor(Countries, levels = BF_H3_gender_factor)) %>% 
+H3_BF_gender <- H3_BF_gender  %>% 
+  dplyr::mutate(Countries = factor(Countries, levels = H3_BF_gender_factor)) %>% 
   tidyr::pivot_wider(names_from = "Countries",values_from = "Proportion") %>% 
-  Func_BFpairs(countries_order = BF_H3_gender_factor,
+  Func_BFpairs(countries_order = H3_BF_gender_factor,
                prop_name = "Gender")
-
 ```
 
 
 ```{r warning=FALSE}
-H3_Fig_BF_gender <- ggplot(BF_H3_gender_Journal_BTS, aes( x = `Log(BF10)_NonInform`, y = Countries)) +
+H3_Fig_BF_gender <- ggplot(H3_BF_gender, aes( x = `Log(BF10)_NonInform`, y = Countries)) +
   geom_point() +
   scale_color_grey() +
   xlim(-3, 25) +
@@ -2385,39 +2373,32 @@ H3_Fig_BF_gender
 Third, I calculted age BF in two classification. In this part, I calculated BF for this two categories.
 ```{r}
 ## PsyStages
-BF_H3_all_PsyStages <- H3_PsyStages2 %>% 
+H3_BF_PsyStages <- H3_PsyStages %>% 
   dplyr::select(ISO3,ageBins,Proportion) %>% 
-  dplyr::rename(Countries = 1)
-
-BF_H3_PsyStages_Journal_BTS <- BF_H3_all_PsyStages  %>% 
-  dplyr::mutate(Countries = factor(Countries, levels = BF_H3_gender_factor)) %>% 
+  dplyr::rename(Countries = 1) %>% 
+  dplyr::mutate(Countries = factor(Countries, levels = H3_BF_gender_factor)) %>% 
   tidyr::pivot_wider(names_from = "Countries",values_from = "Proportion") %>%
   dplyr::mutate(across(2:last_col(), ~ifelse(is.na(.), 0, .))) %>%
-  Func_BFpairs(countries_order = BF_H3_gender_factor,
+  Func_BFpairs(countries_order = H3_BF_gender_factor,
                prop_name = "ageBins")
 
+# sum(H3_BF_PsyStages$AGO,na.rm = TRUE) ## 0
 
-# sum(BF_H3_PsyStages_Journal_BTS$AGO,na.rm = TRUE)
 ## interval10
-BF_H3_all_interval10 <- H3_interval102 %>% 
+H3_BF_interval10  <- H3_interval10 %>% 
   dplyr::select(ISO3,ageBins,Proportion) %>% 
-  dplyr::rename(Countries = 1)
-
-BF_H3_interval10_Journal_BTS <- BF_H3_all_interval10  %>% 
-  dplyr::mutate(Countries = factor(Countries, levels = BF_H3_gender_factor)) %>% 
+  dplyr::rename(Countries = 1) %>% 
+  dplyr::mutate(Countries = factor(Countries, levels = H3_BF_gender_factor)) %>% 
   tidyr::pivot_wider(names_from = "Countries",values_from = "Proportion") %>%
   dplyr::mutate(across(2:last_col(), ~ifelse(is.na(.), 1, .))) %>%
-  Func_BFpairs(countries_order = BF_H3_gender_factor,
+  Func_BFpairs(countries_order = H3_BF_gender_factor,
                prop_name = "ageBins")
-
-#write.csv(BF_H3_interval10_Journal_BTS,"BF_H3_interval10_Journal_BTS.csv")
-
 ```
 
 
 and I visualized PsyStages BF at first.
 ```{r warning=FALSE}
-Fig_BF_PsyStages <- ggplot(BF_H3_PsyStages_Journal_BTS, aes( x = `Log(BF10)_NonInform`, y = Countries)) +
+H3_Fig_BF_PsyStages <- ggplot(H3_BF_PsyStages, aes( x = `Log(BF10)_NonInform`, y = Countries)) +
   geom_point() +
   scale_color_grey() +
   xlim(-10,200) +
@@ -2451,14 +2432,13 @@ Fig_BF_PsyStages <- ggplot(BF_H3_PsyStages_Journal_BTS, aes( x = `Log(BF10)_NonI
               axis.line.x = element_line(color='black', size = 1),    
               axis.line.y = element_line(color='black', size = 1))
 
-
-Fig_BF_PsyStages
+H3_Fig_BF_PsyStages
 ```
 
 
 Then I visualized another category.
 ```{r warning=FALSE}
-Fig_BF_interval10 <- ggplot(BF_H3_interval10_Journal_BTS, 
+H3_Fig_BF_interval10 <- ggplot(H3_BF_interval10, 
                             aes( x = `Log(BF10)_NonInform`, y = Countries)) +
   geom_point() +
   scale_color_grey() +
@@ -2493,31 +2473,23 @@ Fig_BF_interval10 <- ggplot(BF_H3_interval10_Journal_BTS,
               axis.line.x = element_line(color='black', size = 1),    
               axis.line.y = element_line(color='black', size = 1))
 
-
-# ggsave("Fig_BF_interval10.pdf", Fig_BF_interval10, device = "pdf", width=18, height = 18)
-
-
-Fig_BF_interval10
+H3_Fig_BF_interval10
 ```
 
 
 Finally, I combined the four figure for gender and age, as well as the figure that suppl document.
 ```{r warning=FALSE}
-H3_Fig_gender_age <- (H3_Fig_BF_gender + Fig_BF_PsyStages) /
+H3_Fig_gender_age <- (H3_Fig_BF_gender + H3_Fig_BF_PsyStages) /
    (H3_Fig_gender + H3_Fig_PsyStages) +
   plot_annotation(tag_levels = 'A')  & 
   theme(plot.tag = element_text(size = 18, face = "bold"))
 
-
 ggsave("H3_Fig_gender_age.pdf", H3_Fig_gender_age, device = "pdf", width=18, height = 18)
-
 
 H3_Fig_gender_age
 
-
-
 ## suppl
-H3_Fig_gender_age_suppl <- Fig_BF_interval10 + H3_Fig_interval10 +
+H3_Fig_gender_age_suppl <- H3_Fig_BF_interval10 + H3_Fig_interval10 +
    plot_annotation(tag_levels =list(c("S1a","S1b")))  & 
   theme(plot.tag = element_text(size = 18, face = "bold"))
 
@@ -2533,21 +2505,13 @@ H3_Fig_gender_age_suppl
 
 In this part, I analysed and visualized all countries in our study. Firstly, I processed region data of BTS. 
 ```{r}
-if(!require("maps")) install.packages("maps")
-
-
 ## creat a world map
-world_map <- ggplot2::map_data(map = "world")
-
-
-world_map2 <- world_map %>% 
+world_map <- ggplot2::map_data(map = "world") %>% 
   dplyr::mutate(region = iso.alpha(region),
-                long = ifelse(long >= -180 & long <= -30, 
-                              long + 360, long),
+                long = ifelse(long >= -180 & long <= -30, long + 360, long),
                 region = ifelse(region == "TW","CN",region))  
 
-
-BTS_region <- BTS_Overview2 %>% 
+H3_BTS_region <- BTS_Overview2 %>% 
   dplyr::mutate(Proportion = Proportion * 0.01) %>% 
   dplyr::mutate(Proportion_bins = if_else(Proportion >= 0.16, "0.16-1",
                                           if_else(Proportion < 0.16 & Proportion >= 0.08, "0.08-0.16" ,
@@ -2556,21 +2520,20 @@ BTS_region <- BTS_Overview2 %>%
                                                                   if_else(Proportion < 0.02 & Proportion >= 0.01, "0.01-0.02" , 
                                                                           if_else(Proportion < 0.01 & Proportion >= 0.005, "0.005-0.01" ,         
                                                                                   if_else(Proportion < 0.005 & Proportion >= 0.0025, "0.0025-0.005", "0-0.0025"))))))))
-
 ```
 
 
 And I visualized geographic distribution of BTS.
 ```{r}
-Fig_BTS_region <- ggplot2::ggplot(BTS_region)+
-  geom_map(aes(map_id = ISO2, fill = Proportion_bins), map = world_map2,show.legend = TRUE) +
-  geom_polygon(data = world_map2, 
+H3_Fig_BTS_region <- ggplot(H3_BTS_region)+
+  geom_map(aes(map_id = ISO2, fill = Proportion_bins), map = world_map,show.legend = TRUE) +
+  geom_polygon(data = world_map, 
                aes(x = long, y = lat, group = group), 
                colour = 'black', size=0.1, fill = NA) + 
   theme_void() + 
   xlim(c(-30, 329)) + 
   ylim(c(-60, 90)) +
-  scale_fill_manual(name = "sample proportion",
+  scale_fill_manual(name = "Sample Proportion",
                     values = c("#CCE5FF","#99CCFF", "#66B2FF","#3399FF","#0080FF" ,"#0066CC","#004C99","#003366"),
                     limits = c("0-0.0025", "0.0025-0.005", "0.005-0.01", "0.01-0.02", "0.02-0.04", "0.04-0.08","0.08-0.16", "0.16-1")) +
 ggtitle("Geographical distribution of sample from BTS")+
@@ -2582,8 +2545,7 @@ ggtitle("Geographical distribution of sample from BTS")+
         legend.key.width = unit(15, "pt")  
         )
 
-
-Fig_BTS_region
+H3_Fig_BTS_region
 ```
 
 
@@ -2592,21 +2554,15 @@ Note: this data process and plot code from Liu weibiao and Hu chuanpeng, thanks 
 ```{r}
 wppdata <- read_csv("WPP2022.csv")
 
-
 wppdata1 <- subset(wppdata, select = c("country_map","continent", "pop"))
 
-
 wppdata3 <- dplyr::mutate(.data = wppdata1, percentage_pop = pop/7909295.151) 
-
-
-#wppdata3 <- wppdata2 %>% dplyr::left_join(df_PSA001, by = "country_map")
 
 #Merge data from Taiwan Province with data from mainland China
 sum_of_cn <- sum(wppdata3$percentage_pop[wppdata3$country_map %in% c("CN", "TW")])
 
 wppdata3$percentage_pop[wppdata3$country_map %in% c("CN", "TW")] <- sum_of_cn
 wppdata3$percentage_pop[wppdata3 $country_map == "GL"] <- NA
-
 
 
 wppdata3$n_binned <- 
@@ -2626,17 +2582,16 @@ wppdata3$n_binned <-
 
 wppdata4 <- wppdata3[complete.cases(wppdata3$percentage_pop), ]
 
-
 # map of World people data 
 world_population_map <- ggplot2::ggplot(wppdata4) +
-  ggplot2::geom_map(aes(map_id = country_map, fill = n_binned), map = world_map2,show.legend = TRUE) +
-  ggplot2::geom_polygon(data = world_map2, 
+  ggplot2::geom_map(aes(map_id = country_map, fill = n_binned), map = world_map,show.legend = TRUE) +
+  ggplot2::geom_polygon(data = world_map, 
                aes(x = long, y = lat, group = group), 
                colour = 'black', size=0.1, fill = NA) + 
   theme_void() + 
    xlim(c(-30, 329)) + 
   ylim(c(-60, 90)) + 
-  scale_fill_manual(name = "world people proportion",
+  scale_fill_manual(name = "World People Proportion",
                     values = c("#CCE5FF","#99CCFF", "#66B2FF","#3399FF","#0080FF" ,"#0066CC","#004C99","#003366"),
                     limits = c("0-0.0025", "0.0025-0.005", "0.005-0.01", "0.01-0.02", "0.02-0.04", "0.04-0.08","0.08-0.16", "0.16-1"),
                     drop = FALSE) +
@@ -2649,19 +2604,15 @@ ggtitle("Geographical distribution of world population")+
         legend.key.width = unit(15, "pt")  
         )
 
-
 world_population_map
 
-
-sample_map <- Fig_BTS_region + world_population_map + 
+H3_region <- H3_Fig_BTS_region + world_population_map + 
   plot_layout(ncol = 2, heights = c(4,4))+
   patchwork::plot_annotation(tag_levels = 'A')
 
+ggsave("H3_region.pdf",H3_region, device = "pdf", width=18, height = 9)
 
-ggsave("sample_map.pdf", sample_map, device = "pdf", width=18, height = 9)
-
-
-sample_map 
+H3_region
 ```
 
 
@@ -2671,7 +2622,7 @@ In addition to the above analysis, I also conducted some exploratory analysis of
 ## Abstract1 subjects information reported of Chinese journal
 
 Try to process Abstract data.
-```{r message=FALSE, warning=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 ### In our coding, different subject groups will make the same article have multiple rows of data, but there is only one abstract and the multi-rows Abstract1 should be consistent. So, first, I check whether Abstract1 is consistent.
 
 Abstract_subj_info_filter <- df_stage2_Journal_Code2 %>% 
@@ -2774,7 +2725,7 @@ df_stage2_Journal_Code2$Abstract2[1611:1612] <- 0
 
 
 Specific abstract reporting data.
-```{r message=FALSE, warning=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 Abstract1_subj_info <- Abstract1_subj_info_equl %>% 
   dplyr::mutate(Abstract1_demo_info = ifelse(Abstract1 == 0,0,1),  
                 Abstract1_sample_info = ifelse(grepl("1",Abstract1),1,0)) %>% 
