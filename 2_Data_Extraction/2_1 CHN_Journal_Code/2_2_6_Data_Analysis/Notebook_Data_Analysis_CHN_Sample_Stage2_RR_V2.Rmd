@@ -1277,8 +1277,8 @@ BTS_age_CHN <- BTS_age %>%
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
                 Data_Source = "BTS Chinese")
 
-## add 3 rows of ageBins without data
-BTS_age_CHN_3rows <- data.frame(ageBins = c("0~4","5~9","10~14"),
+## add 2 rows of ageBins without data
+BTS_age_CHN_2rows <- data.frame(ageBins = c("0~4","5~9"),
                                 n = 0,
                                 Proportion = 0,
                                 Data_Source = "BTS Chinese")
@@ -1286,7 +1286,7 @@ BTS_age_CHN_3rows <- data.frame(ageBins = c("0~4","5~9","10~14"),
 ## combine 2 dataframe
 H1_age <- Sim_Journal_age_five3_prop %>% 
   dplyr::rename(n = 2) %>% 
-  dplyr::bind_rows(BTS_age_CHN,BTS_age_CHN_3rows)
+  dplyr::bind_rows(BTS_age_CHN,BTS_age_CHN_2rows)
 
 
 ## set ageBins as factor to plot
@@ -1523,81 +1523,51 @@ Firstly, I analyzed data in general.
 In this part, first of all, I processed gender data of the Census 7th data and the CFPS2018 data.
 ```{r}
 ## Process the gender data of census 7
-df_census7_Gender <- df_census7 %>%
+Census7_gender <- df_census7 %>%
   dplyr::select(c(6,7)) %>%        
   dplyr::slice(c(6)) %>%
-  dplyr::rename(male=1, 
-                female=2) %>%
-  dplyr::mutate(Data_Source = "Census 7") %>%
-  tidyr::pivot_longer(c(male, female), 
+  dplyr::rename(Male=1, 
+                Female=2) %>%
+  dplyr::mutate(Data_Source = "Census7") %>%
+  tidyr::pivot_longer(c(Male, Female), 
                       names_to = "Gender",
                       values_to = "Proportion") %>%
   dplyr::mutate(Proportion = round(as.numeric(Proportion), 0))
 
 ## Process the gender data of CFPS2018
-df_CFPS2018_Gender <- df_CFPS2018 %>%
+CFPS2018_gender <- df_CFPS2018 %>%
   dplyr::rename(Gender = QA002) %>%
   dplyr::count(Gender) %>%
   dplyr::filter(!is.na(Gender)) %>%
   dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
-                Data_Source = "CFPS 2018",
-                Gender= ifelse(Gender == 1, "male", "female")) %>%
+                Data_Source = "CFPS2018",
+                Gender= ifelse(Gender == 1, "Male", "Female")) %>%
   dplyr::select(Data_Source, Gender, Proportion)
 ```
 
 
-Secondly, I extracted Chinese gender of the BTS data and combined Chinese subjects from two data sources.
+Secondly, I converted data format and combined three data sources.
 ```{r}
-## extract BTS CHN gender data
-H2_BTS_CHN_gender <- lapply(BTS_gender_list, function(df){
-  
-  df %>% 
-    dplyr::filter(grepl("CHN", ISO3, ignore.case = TRUE)) %>% 
-    dplyr::select(ISO3,Data_Source,Gender) 
-
-})
-
-H2_BTS_CHN_gender <- do.call(rbind, H2_BTS_CHN_gender)
-
-## merge BTS and Chinese papers and calculate gender num and proportion
-H2_Journal_Gender <- df_CHN_Journal_Gender %>% 
-  dplyr::select(6:7) %>% 
-  dplyr::mutate(Data_Source = "Chinese papers")
-
-
-H2_BTS_CHN_gender2 <- H2_BTS_CHN_gender %>% 
+## Convert H1_gender data format
+H1_gender2 <- H1_gender %>% 
+  dplyr::select(1:2) %>% 
   dplyr::group_by(Gender) %>% 
-  dplyr::summarise(n = n()) %>% 
-  dplyr::mutate(Data_Source = "BTS Chinese") %>% 
-  tidyr::pivot_wider(names_from = Gender,values_from = n) %>% 
-  dplyr::rename(Male_Num = 3,Female_Num = 2)
+  dplyr::summarise(n = sum(n)) %>% 
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
+                Data_Source = "Chinese subjects pool") %>% 
+  dplyr::ungroup()
 
-
-H2_BTS_Journal_gender <- rbind(H2_Journal_Gender,H2_BTS_CHN_gender2) %>% 
-  dplyr::summarise(Male_Num = sum(Male_Num),
-                   Female_Num = sum(Female_Num,na.rm = TRUE),
-                   Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
-                   Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100) 
-
-H2_BTS_Journal_gender2 <- data.frame(Gender = c("Male","Female"),
-                                     n = c(247188,286648),
-                                     Proportion = c(46,54),
-                                     Data_Source = "Chinese Subjects pool")
+## combine the gender data from three data source
+H2_gender <-  bind_rows(Census7_gender,CFPS2018_gender,H1_gender2)
 ```
 
 
 And then, I combined all Chinese gender data and visualized them.
 ```{r}
-### merge three source data
-H2_gender <- bind_rows(df_census7_Gender,df_CFPS2018_Gender,H2_BTS_Journal_gender2) %>% 
-  dplyr::mutate(Gender = str_to_title(Gender))
-
-
-## visualization
 H2_Fig_gender <- ggplot(H2_gender,aes(Data_Source,Proportion,fill= Gender))+
   geom_col()+
   geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
-  labs(y="Proportion")+
+  labs(y="Proportion",x = "Data Source")+
   theme_classic()+
   theme(panel.border =element_rect(fill=NA,color="black"),
         legend.position = "bottom",
@@ -1618,8 +1588,8 @@ H2_Fig_gender
 
 Similarly, for age data, I first processed the Census data and the CFPS2018 data.
 ```{r}
-## Process age data for the census 6
-df_census6_Age <- df_census6 %>% 
+## Process age data of the census 6
+Census6_Age <- df_census6 %>% 
   dplyr::filter(row_number() %% 6 == 0) %>%
   dplyr::select(1,2,5) %>% 
   dplyr::rename(ageBins = 1, Proportion = 3) %>% 
@@ -1628,12 +1598,12 @@ df_census6_Age <- df_census6 %>%
   dplyr::mutate(ageBins = str_replace_all(ageBins, "-", "~")) %>%
   dplyr::slice(-21) 
 
-df_census6_Age$ageBins[20] <- ">=95"
+Census6_Age$ageBins[20] <- ">=95"
 
-df_census6_Age <- df_census6_Age %>% 
+Census6_Age <- Census6_Age %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(Proportion = sum(Proportion)) %>% 
-  dplyr::mutate(Data_Source = "Census 6") %>% 
+  dplyr::mutate(Data_Source = "Census6") %>% 
   dplyr::ungroup() %>% 
   dplyr::arrange(ageBins) %>% 
   dplyr::mutate(ageBins = factor(ageBins, 
@@ -1642,10 +1612,8 @@ df_census6_Age <- df_census6_Age %>%
                                  "50~54","55~59","60~64","65~69","70~74",
                                  "75~79","80~84","85~89", "90~94",">=95" )))
   
-
-
-## Process age data for the census 7 
-df_census7_Age <- df_census7 %>%
+## Process age data OF the census 7 
+Census7_Age <- df_census7 %>%
   dplyr::rename(ageBins = 1,Proportion = 5) %>% 
   dplyr::filter(str_detect(ageBins,"岁")) %>%
   dplyr::select(1,2,5) %>% 
@@ -1654,14 +1622,14 @@ df_census7_Age <- df_census7 %>%
   dplyr::mutate(ageBins = str_replace_all(ageBins, "-", "~")) %>% 
   dplyr::slice(-21)
 
-df_census7_Age$ageBins[20] <- ">=95" 
-df_census7_Age$Proportion[20] <- 0.06+0.01
+Census7_Age$ageBins[20] <- ">=95" 
+Census7_Age$Proportion[20] <- 0.06+0.01
 
 
-df_census7_Age <- df_census7_Age %>% 
+Census7_Age <- Census7_Age %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(Proportion = sum(Proportion)) %>% 
-  dplyr::mutate(Data_Source = "Census 7") %>% 
+  dplyr::mutate(Data_Source = "Census7") %>% 
   dplyr::ungroup() %>% 
   dplyr::mutate(ageBins = factor(ageBins, 
                                  levels =c("0~4","5~9","10~14","15~19","20~24",
@@ -1671,27 +1639,27 @@ df_census7_Age <- df_census7_Age %>%
 ```
 
 
-Then, I combined Chinese age data of BTS and Chinese journals.
+Then, I convert the data format of H1_age.
 ```{r}
-Journal_BTS_CHN_age2 <- Journal_BTS_CHN_age %>% 
+H2_age <- H1_age %>% 
   dplyr::select(1:2) %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n = sum(n)) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n)*100),2))
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2)) %>% 
+  dplyr::ungroup()
 
-
-# sum(Journal_BTS_CHN_age2$Proportion)
+# sum(H2_age$Proportion) ## 99.99
 ```
 
 
 Finally, I visualized all Chinese age data and combined figure of gender and age. 
 ```{r}
-H2_Fig_age <- ggplot(data= df_census7_Age, 
-       aes(x=ageBins, y = Proportion, fill="Census 7")) +
+H2_Fig_age <- ggplot(data= Census7_Age, 
+       aes(x=ageBins, y = Proportion, fill="Census7")) +
   geom_col(alpha=0.5, width = 1) +
-  geom_line(data = Journal_BTS_CHN_age2, aes(x=ageBins, 
+  geom_line(data = H2_age, aes(x=ageBins, 
                 y = Proportion,group = 1,color = "Chinese Subjects pool"),size =1)+
-  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
+  scale_fill_manual(values=c("Census7"="#00BFC4")) +  
   scale_color_manual(values=c("Chinese Subjects pool" = "red")) +
   scale_y_continuous(limits = c(0,35))+
   coord_flip() +
@@ -1724,7 +1692,7 @@ H2_Fig_gender_age
 
 As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals.
 ```{r}
-Journal_region <- df_stage2_Journal_Code2 %>% 
+Journal_region <- Journal %>% 
   dplyr::filter(Subjects_Recruitment_Area != 0) %>% 
   dplyr::select(Article_IDs,Study_Number_N,Subjects_Group_N,
                 Target_Population_N,Sample_Type_N,Subjects_Recruitment_Area) %>% 
@@ -1741,46 +1709,42 @@ Journal_region <- df_stage2_Journal_Code2 %>%
 
 Journal_region
 
-
-Journal_total_region <- Journal_region %>% 
+Journal_region_total <- Journal_region %>% 
   dplyr::count(Subjects_Recruitment_Area) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
                 Count_Bins = cut(Proportion,
                                  breaks = c(-Inf,1,5,10,Inf),
                 labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Journal_total_region")%>% 
+                Data_Source = "Journal_total_population_region")%>% 
   dplyr::rename(Region = 1)
 
-Journal_total_region
-
+Journal_region_total
 
 ## Target population is general
-Journal_target_general_region <- Journal_region %>% 
+Journal_region_general <- Journal_region %>% 
   dplyr::filter(Target_Population_N != 1) %>% 
   dplyr::count(Subjects_Recruitment_Area) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
                 Count_Bins = cut(Proportion,
                                  breaks = c(-Inf,1,5,10,Inf),
                 labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Journal_general_region") %>% 
+                Data_Source = "Journal_general_population_region") %>% 
   dplyr::rename(Region = 1)
 
-Journal_target_general_region
-
+Journal_region_general
 
 ## Target population is special
-Journal_target_special_region <- Journal_region %>% 
+Journal_region_special <- Journal_region %>% 
   dplyr::filter(Target_Population_N == 1) %>% 
   dplyr::count(Subjects_Recruitment_Area) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
                 Count_Bins = cut(Proportion,
                                  breaks = c(-Inf,1,5,10,Inf),
                 labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Journal_special_region") %>% 
+                Data_Source = "Journal_special_population_region") %>% 
   dplyr::rename(Region = 1)
 
-Journal_target_special_region
-
+Journal_region_special
 ```
 
 
@@ -1830,8 +1794,8 @@ CFPS2018_region <- data.frame(table(df_CFPS2018$PROVCD18)) %>%
 Combine all region data and load color data
 ```{r}
 ## combine region data
-Region_map_data <-  bind_rows(Census7_region,CFPS2018_region,Journal_total_region,
-          Journal_target_general_region,Journal_target_special_region)
+Region_map_data <-  bind_rows(Census7_region,CFPS2018_region,Journal_region_total,
+          Journal_region_general,Journal_region_special)
 
 ## load color data
 Region_map_color <- readxl::read_xlsx("colour.xlsx") %>% 
@@ -1848,9 +1812,6 @@ Region_data <- dplyr::left_join(Region_map_data,Region_map_color,by = join_by(Re
                 Color = factor(Color, levels = c("1", "2", "3", "4"))) %>% 
   tidyr::pivot_wider(names_from = Data_Source,values_from = c(Proportion, Count_Bins,n,Color)) %>% 
   dplyr::mutate(across(3:ncol(.),~ifelse(is.na(.),0,.)))
-
-# names(Region_data)
-
 ```
 
 
@@ -1873,8 +1834,8 @@ China <- dplyr::left_join(China,Region_data,by= "QUHUADAIMA")
 
 
 ## Chinese journal papers
-Journal_Total_Area <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(Color_Journal_total_region))) +
+H2_Fig_region_total <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_total_population_region))) +
   scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
@@ -1895,8 +1856,8 @@ Journal_Total_Area <- ggplot() +
 
 
 ## Chinese journal papers
-Journal_general_Area <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(Color_Journal_general_region))) +
+H2_Fig_region_general <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_general_population_region))) +
   scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
@@ -1918,8 +1879,8 @@ Journal_general_Area <- ggplot() +
 
 
 ## Chinese journal papers
-Journal_special_Area <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(Color_Journal_special_region))) +
+H2_Fig_region_special <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_special_population_region))) +
   scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
@@ -1939,7 +1900,7 @@ Journal_special_Area <- ggplot() +
 
 
 ## census 7 
-CFPS2018_Area <- ggplot() +
+H2_Fig_CFPS2018_region <- ggplot() +
   geom_sf(data = China,aes(fill = factor(Color_CFPS2018))) +
   scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
                     breaks = c("0","1","2", "3", "4"),
@@ -1959,7 +1920,7 @@ CFPS2018_Area <- ggplot() +
 
 
 ## CFPS 2018
-Census7_Area <- ggplot() +
+H2_Fig_Census7_region <- ggplot() +
   geom_sf(data = China,aes(fill = factor(Color_Census7))) +
   scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
                     breaks = c("0","1","2", "3", "4"),
@@ -1979,54 +1940,53 @@ Census7_Area <- ggplot() +
 
 
 
-H2_Area <- (Census7_Area + CFPS2018_Area)/( 
-  Journal_Total_Area + Journal_special_Area + Journal_general_Area) +
+H2_region <- (H2_Fig_Census7_region + H2_Fig_CFPS2018_region)/( 
+  H2_Fig_region_total + H2_Fig_region_general + H2_Fig_region_special) +
   plot_layout(guides = "collect")+
   plot_annotation(tag_levels = 'A', title = "Area distribution",
                   theme = theme(plot.title = element_text(size = 24))) + 
   theme(plot.tag = element_text(size = 20))
 
 
-ggsave("H2_Area.pdf", H2_Area, device = "pdf", width=18, height = 15)
+ggsave("H2_region .pdf", H2_region , device = "pdf", width=18, height = 15)
 
-
-H2_Area
-
-
-#table(df_stage2_Journal_Code2$Educational_Attainment_N)
+H2_region 
 ```
 
 
 ```{r}
-df_CHN_Journal_Province_count <- df_CHN_Journal_Province_count %>% 
-  dplyr::rename(province = 1, population = 2,
-                proportion = 3,proportion_bins = 4) %>% 
-  dplyr::mutate(Data_Source = "Chinese papers")
-
-df_census7_province <- df_census7_province %>% 
-  dplyr::mutate(Data_Source = "Census 7")
+Journal_region_total <- Journal_region_total %>% 
+  dplyr::mutate(Data_Source = "Journal")
 
 ## combine three source data
-H2_province_bayes <- bind_rows(df_CHN_Journal_Province_count,df_census7_province,df_CFPS2018_province) %>% 
+H2_region_bayes <- bind_rows(Journal_region_total,Journal_region_general,Journal_region_special,
+                             Census7_region,CFPS2018_region) %>% 
   dplyr::select(1,3,5) %>% 
-  tidyr::pivot_wider(names_from = Data_Source, values_from = proportion) %>% 
+  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion) %>% 
   dplyr::mutate(across(everything(),~ifelse(is.na(.),1,.)))
 
 
+H2_BF_Journal_Census7_region <- BayesMultiNomial(dataset = H2_region_bayes,
+                                          factor = "Region",
+                                          observed = "Journal",
+                                          expected = "Census7")
 
 
-BF_H2_Journal_Census7_region <- BayesMultiNomial(dataset = H2_province_bayes,
-                                          factor = "province",
-                                          observed = "Chinese papers",
-                                          expected = "Census 7")
+H2_BF_Journal_CFPS2018_region <- BayesMultiNomial(dataset = H2_region_bayes,
+                                          factor = "Region",
+                                          observed = "Journal",
+                                          expected = "CFPS2018")
 
+## different target population compared
+H2_BF_Journal_general_Census7_region <- BayesMultiNomial(dataset = H2_region_bayes,
+                                          factor = "Region",
+                                          observed = "Journal_general_population_region",
+                                          expected = "Census7")
 
-
-BF_H2_Journal_CFPS2018_region <- BayesMultiNomial(dataset = H2_province_bayes,
-                                          factor = "province",
-                                          observed = "Chinese papers",
-                                          expected = "CFPS 2018")
-
+H2_BF_Journal_special_Census7_region <- BayesMultiNomial(dataset = H2_region_bayes,
+                                          factor = "Region",
+                                          observed = "Journal_special_population_region",
+                                          expected = "Census7")
 ```
 
 
@@ -2035,11 +1995,11 @@ BF_H2_Journal_CFPS2018_region <- BayesMultiNomial(dataset = H2_province_bayes,
 
 Try to process educational attainment data from Chinese journal.
 ```{r}
-df_CHN_edu <- df_stage2_Journal_Code2 %>% 
+Journal_edu <- Journal %>% 
   dplyr::filter(Educational_Attainment_N == 1) %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,M_age,SD_age,Sample_Type_N,Educational_Attainment_N,Educational_Attainment_info_N)
 
-writexl::write_xlsx(df_CHN_edu,"df_CHN_edu.xlsx")
+writexl::write_xlsx(Journal_edu,"Journal_edu.xlsx")
 ```
 
 
@@ -2049,7 +2009,7 @@ Try to analysis ethnicity data from Chinese journal
 ```{r}
 
 
-df_CHN_Ethnicity <- df_stage2_Journal_Code2 %>% 
+Journal_ethnicity <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,
                 Ethnicity,Ethnicity_info) %>% 
   dplyr::filter(Ethnicity == 1) %>% 
@@ -2059,34 +2019,34 @@ df_CHN_Ethnicity <- df_stage2_Journal_Code2 %>%
 
 #table(df_CHN_Ethnicity$Ethnicity) 1507~0, 63~1
 
-table_ethnicity <- data.frame(table(df_CHN_Ethnicity$Ethnicity_info))
+Journal_ethnicity_tab <- data.frame(table(Journal_ethnicity$Ethnicity_info))
 
-ethnicity_add <- c("土家族","回族","蒙古族","畲族","满族","苗族","壮族","黎族","彝族","布依族")
+Journal_ethnicity_add <- c("土家族","回族","蒙古族","畲族","满族","苗族","壮族","黎族","彝族","布依族")
 
-table_ethnicity <- table_ethnicity %>% 
+Journal_ethnicity_tab <- Journal_ethnicity_tab %>% 
   dplyr::mutate(Freq = ifelse(Var1 %in% ethnicity_add, Freq+1, Freq))
 
 
 ## sample size and different ethnicity
-df_CHN_Ethnicity$Sample_Size[2] <- 251
-df_CHN_Ethnicity$Sample_Size[3] <- 297
-df_CHN_Ethnicity$Sample_Size[4] <- 110
-df_CHN_Ethnicity$Sample_Size[5] <- 61
+Journal_ethnicity$Sample_Size[2] <- 251
+Journal_ethnicity$Sample_Size[3] <- 297
+Journal_ethnicity$Sample_Size[4] <- 110
+Journal_ethnicity$Sample_Size[5] <- 61
 
-df_CHN_Ethnicity$Sample_Size[6:21] <- c(14,16,18,9,20,10,18,12,19,10,
+Journal_ethnicity$Sample_Size[6:21] <- c(14,16,18,9,20,10,18,12,19,10,
                                            19,12,17,15,21,13)
 
-df_CHN_Ethnicity$Sample_Size[32:33] <- c(4,0)
+Journal_ethnicity$Sample_Size[32:33] <- c(4,0)
 
-df_CHN_Ethnicity$Sample_Size[34:62] <- c(139,108,71,51,50,40,38,31,
+Journal_ethnicity$Sample_Size[34:62] <- c(139,108,71,51,50,40,38,31,
                                          27,24,18,16,16,11,9,6,5,4,
                                          3,3,3,2,2,1,1,1,1,1,1)
 
-df_CHN_Ethnicity$Sample_Size[63:64] <- c(30,60)
+Journal_ethnicity$Sample_Size[63:64] <- c(30,60)
 
-df_CHN_Ethnicity$Sample_Size[65] <- 1006
+Journal_ethnicity$Sample_Size[65] <- 1006
 
-df_CHN_Ethnicity$Sample_Size[72] <- 30
+Journal_ethnicity$Sample_Size[72] <- 30
 
 ## ethnicity sample size
 df_CHN_Ethnicity_group <- df_CHN_Ethnicity %>% 
@@ -2103,91 +2063,6 @@ Code2_Article_IDs_number <-  df_stage2_Journal_Code2 %>%
   dplyr::distinct(Article_IDs)
   
 ### 17/997
-```
-
-
-After analyzing data at a general level, I analyzed the data based on the target population.
-## Age
-try to analyze the age data of the general population.
-```{r}
-Target_population23_articleIDs <- Target_population23 %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,Age,M_age,SD_age) %>% 
-  dplyr::filter(Age == 1 & !is.na(M_age) & ! is.na(SD_age) & !is.na(Sample_Size)) %>% 
-  dplyr::distinct(Article_IDs)
-
-
-# Target_population23_age_extract <- df_stage2_Journal_Code2 %>% 
-#   dplyr::filter(Article_IDs %in% Target_population23_articleIDs$Article_IDs) %>% 
-#   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Target_Population_N)
-
-Target_population23_age <- df_stage2_Journal_Code_Age2 %>% 
-  dplyr::filter(Article_IDs %in% Target_population23_articleIDs$Article_IDs) %>% 
-  dplyr::filter(Age == 1 & !is.na(M_age) & ! is.na(SD_age) & !is.na(Sample_Size)) %>% 
-  dplyr::mutate(Sample_Size = as.numeric(Sample_Size))
-
-# str(Target_population23_age)
-
-
-## Use simulation function to process data.
-Sim_Journal_target23_age_five1 <- lapply(1:nrow(Target_population23_age),function(i){
-  
-  Sim_Sens_mult_five(Mean0 = Target_population23_age$M_age[i],
-                diff_age = 0,
-                SD0 = Target_population23_age$SD_age[i],
-                sample_N = Target_population23_age$Sample_Size[i])
-  
-  })
-
-
-Sim_Journal_target23_age_five2 <- do.call(rbind,Sim_Journal_target23_age_five1)
-
-
-Sim_Journal_target23_age_five3 <- Sim_Journal_target23_age_five2 %>% 
-  dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(ageBins =factor(ageBins,
-                                levels = c("0~4","5~9","10~14","15~19","20~24",
-                                           "25~29","30~34","35~39","40~44","45~49",
-                                           "50~54","55~59","60~64","65~69","70~74",
-                                           "75~79","80~84","85~89", "90~94",">=95")))
-
-
-## Calculate the sample difference between the coded data and the simulated data
-sum(Target_population23_age$Sample_Size)-sum(Sim_Journal_target23_age_five3 $sim1,na.rm = TRUE)
-
-
-## calculate prop
-Sim_Journal_target23_age_five3_prop <- Sim_Journal_target23_age_five3 %>% 
-  dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
-                Data_Source = "Chinese papers")
-
-## visualization
-H2_Fig_target23_age <- ggplot(data= df_census7_Age, 
-       aes(x=ageBins, y = Proportion, fill="Census 7")) +
-  geom_col(alpha=0.5, width = 1) +
-  geom_line(data = Sim_Journal_target23_age_five3_prop, aes(x=ageBins, 
-                y = Proportion,group = 1,color = "Chinese papers"),size =1)+
-  scale_fill_manual(values=c("Census 7"="#00BFC4")) +  
-  scale_color_manual(values=c("Chinese papers" = "red")) +
-  scale_y_continuous(limits = c(0,50))+
-  coord_flip() +
-  labs(y="Proportion", x = "Age bins")+
-  theme_classic()+
-  theme(panel.border =element_rect(fill=NA,color="black"),
-        legend.position = "bottom",
-        legend.box.spacing = unit(2,"pt"),
-        legend.text = element_text(size = 16, family = "serif"),
-        legend.title = element_blank(),
-        axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
-
-ggsave("H2_Fig_target23_age.pdf", H2_Fig_target23_age, device = "pdf", width=18, height = 9)
-
-
-H2_Fig_target23_age
-
-
 ```
 
 
