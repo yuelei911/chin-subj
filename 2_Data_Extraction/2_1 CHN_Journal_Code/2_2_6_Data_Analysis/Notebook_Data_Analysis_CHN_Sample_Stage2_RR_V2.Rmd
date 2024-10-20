@@ -57,7 +57,6 @@ BTS_Manokara_et_al_2022 <- haven::read_sav("BTS_Manokara_et_al_2022.sav") %>%
 write.csv(BTS_Van_Bavel_et_al_2022, file = "BTS_Van_Bavel_et_al_2022.csv",row.names = FALSE)
 write.csv(BTS_Manokara_et_al_2022, file = "BTS_Manokara_et_al_2022.csv",row.names = FALSE)
 
-
 ## Here, I remove some data sets to reduce data set clutter.
 rm(BTS_Manokara_et_al_2022,BTS_Van_Bavel_et_al_2022)
 ```
@@ -81,9 +80,8 @@ for (file in file_list) {
 
 BTS_data_list <- BTS_data_list[grepl("BTS_",names(BTS_data_list),ignore.case = TRUE)]
 
-BTS_data <- BTS_data_list
+BTS <- BTS_data_list
 rm(BTS_file)
-
 
 ## Here, I remove some data sets to reduce data set clutter.
 rm(file,file_list,BTS_data_list)
@@ -105,7 +103,6 @@ Countrycodelist_iso2_iso3 <- Countrycodelist %>%
 Countrycodelist_iso2_iso3$ISO2[Countrycodelist_iso2_iso3$Countryfullname == "Kosovo"] <- "XK"
 Countrycodelist_iso2_iso3$ISO3[Countrycodelist_iso2_iso3$Countryfullname == "Kosovo"] <- "XKX"
 
-
 ## Here, I remove some data sets to reduce data set clutter.
 rm(Countrycodelist)
 ```
@@ -113,27 +110,24 @@ rm(Countrycodelist)
 
 The third hypothesis requires countries to be divided into WEIRD and non-WEIRD, so I created a data.frame of WEIRD  countries to facilitate subsequent analysis and visualization.
 ```{r}
-WEIRD_code <- codelist %>% 
+WEIRD <- codelist %>% 
   dplyr::select(3,6,iso2c,iso3c,region,region23) %>% 
   dplyr::mutate(WEIRD = ifelse(continent == "Europe" | region == "North America","WEIRD",NA),
                 WEIRD = ifelse(continent %in% c("Africa","Asia") | region == "Latin America & Caribbean" | region == "East Asia & Pacific", "Non_WEIRD",WEIRD)) %>% 
   dplyr::mutate(WEIRD = ifelse(country.name.en %in% c("Israel","Australia","New Zealand"), "WEIRD",WEIRD),
                 WEIRD = ifelse(is.na(WEIRD),"Non_WEIRD",WEIRD))
-
-#table(WEIRD_code$region)
 ```
 
 
 In this part, I tried to batch country code.
 ```{r}
 ## Handle some more specific encodings
-BTS_data[[5]]$Country <- trimws(sub(".*-(\\s*)", "", BTS_data[[5]]$Country)) 
-BTS_data[[14]]$Country <- trimws(sub(".*-(\\s*)", "", BTS_data[[14]]$Country)) 
-names(BTS_data[[11]])[names(BTS_data[[11]]) == "Country_now"] <- "Country"
-
+BTS[[5]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[5]]$Country)) 
+BTS[[14]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[14]]$Country)) 
+names(BTS[[11]])[names(BTS[[11]]) == "Country_now"] <- "Country"
 
 ## Batch processing of country codes for different data sources
-BTS_data <- lapply(BTS_data,function(df){
+BTS <- lapply(BTS,function(df){
   
   df <- df %>% 
     mutate(#Country = toupper(Country),
@@ -158,9 +152,8 @@ BTS_data <- lapply(BTS_data,function(df){
   
 })
 
-
 ## Check the country code of the BTS data
-BTS_countrycode_check <- lapply(BTS_data, function(df){
+BTS_countrycode_check <- lapply(BTS, function(df){
   
   df <- df %>% 
     dplyr::group_by(Countrycode) %>% 
@@ -173,19 +166,17 @@ BTS_countrycode_check <- lapply(BTS_data, function(df){
 BTS_countrycode_check <- do.call(rbind, BTS_countrycode_check)
 
 ## process abnormal Countrycode
-BTS_data[[4]] <- BTS_data[[4]] %>% 
+BTS[[4]] <- BTS[[4]] %>% 
   dplyr::mutate(Countrycode = ifelse(Country == "USA", "Countryfullname",Countrycode)) ## I found UEA, a non-country code
 
-BTS_data[[5]] <- BTS_data[[5]] %>% 
+BTS[[5]] <- BTS[[5]] %>% 
   dplyr::mutate(Countrycode = ifelse(Country == "Ken, Na", "ISO3",Countrycode),
                 Country = ifelse(Country == "Ken, Na", "KEN",Country))
 
-BTS_data[[6]] <- BTS_data[[6]] %>% 
+BTS[[6]] <- BTS[[6]] %>% 
   dplyr::mutate(Countrycode = ifelse(Country == "Many", NA,Countrycode),
                 Country = ifelse(Country == "Many", NA, Country))
   
-
-
 ## Combine the BTS_data and Countrycodelist_iso2_iso3
 Countrycode_merge <- function(df, Countrycode) {  
   
@@ -208,11 +199,10 @@ Countrycode_merge <- function(df, Countrycode) {
   return(merged_df)  
 }  
   
-BTS_data <- lapply(BTS_data, Countrycode_merge, Countrycode = Countrycodelist_iso2_iso3)  
-
+BTS <- lapply(BTS, Countrycode_merge, Countrycode = Countrycodelist_iso2_iso3)  
 
 ## Change the column name so that each BTS data has "ISO3"
-BTS_data <- lapply(BTS_data,function(df){
+BTS <- lapply(BTS,function(df){
   
   if(!"ISO3" %in% names(df)){
     
@@ -224,9 +214,8 @@ BTS_data <- lapply(BTS_data,function(df){
   
 })
 
-
 ## Change the column name so that each BTS data has "ISO2"
-BTS_data <- lapply(BTS_data,function(df){
+BTS <- lapply(BTS,function(df){
   
   if(!"ISO2" %in% names(df)){
     
@@ -238,9 +227,8 @@ BTS_data <- lapply(BTS_data,function(df){
   
 })
 
-
 ## Because the country code of the countrycode package is the full name, but some of the actual data set is recorded by abbreviation (for example: United States is USA), so this part is not converted properly, and is now found and processed separately.
-BTS_data_na <- lapply(BTS_data, function(df){
+BTS_na <- lapply(BTS, function(df){
   
   df <- df %>% 
     dplyr::filter(is.na(ISO3)) %>% 
@@ -249,13 +237,12 @@ BTS_data_na <- lapply(BTS_data, function(df){
   return(df)
 })
 
-BTS_data_na <- do.call(rbind,BTS_data_na)
+BTS_na <- do.call(rbind,BTS_na)
 
-BTS_data_na_table <- data.frame(table(BTS_data_na$Country)) 
-
+BTS_na_table <- data.frame(table(BTS_na$Country)) 
 
 ## Handle UK and UA separately
-BTS_data <- lapply(BTS_data,function(df){
+BTS <- lapply(BTS,function(df){
   
   df <- df %>% 
     dplyr::mutate(ISO2 = ifelse(Country == "UK" |Country == "UEA","GB",ISO2),
@@ -266,14 +253,12 @@ BTS_data <- lapply(BTS_data,function(df){
   return(df)
   
 })
-
 ```
 
 
 ```{r include=FALSE}
 ## Here, I remove some data sets to reduce data set clutter.
-rm(BTS_data_na_table,BTS_data_na,Countrycode_merge,BTS_countrycode_check)
-
+rm(BTS_na_table,BTS_na,Countrycode_merge,BTS_countrycode_check)
 gc()
 ```
 
@@ -372,7 +357,6 @@ Journal_articles_num <- Journal %>%
 Journal_study_num <- Journal %>% 
   dplyr::distinct(Article_IDs,Study_Number) ## A total 1217 studies
 
-
 ## Here, I remove some data sets to reduce data set clutter.
 rm(Journal_articles_num,Journal_study_num,df_stage2_Journal_Code2)
 ```
@@ -380,7 +364,7 @@ rm(Journal_articles_num,Journal_study_num,df_stage2_Journal_Code2)
 
 ## The basic situation about BTS data
 ```{r}
-BTS_Overview <- lapply(BTS_data,function(df){
+BTS_Overview <- lapply(BTS,function(df){
   
   df <- df %>% 
     dplyr::select(Article_Id,ISO3,ISO2)
@@ -401,12 +385,10 @@ BTS_Overview2 <- BTS_Overview %>%
 
 sum(BTS_Overview2$Proportion)
 
-
 BTS_Overview2_idx <- BTS_Overview2 %>% 
   group_by(Site) %>% 
   summarise(sum = sum(FloorPro)) %>% 
   ungroup()
-
 ```
 
 
@@ -473,8 +455,6 @@ for (i in names(Journal_report)){
 Journal_report <- do.call(rbind, report_list) %>% 
   dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
 
-
-
 ### Calculate reported status of Educational_Attainment and Occupation
 Journal_education_occupation <- Journal %>% 
   dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
@@ -485,7 +465,6 @@ Journal_education_occupation <- Journal %>%
 # table(Educational_Occupation$Educational_Attainment_N) ## FALSE 162 TRUE 132
 # table(Educational_Occupation$Occupation_N)  ## FALSE 193 TRUE 101
 
-
 Journal_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
                                                             "Unreported","Reported"),
                                                    Freq = c(162,132,193,101),
@@ -493,7 +472,6 @@ Journal_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported
                                                                 "Educational_Attainment",
                                                                 "Occupation","Occupation"),
                                                    proportion = c(0.55,0.45,0.66,0.34))
-
 
 Journal_report <- rbind(Journal_report,Journal_education_occupation_table) %>%
   dplyr::mutate(col_names = factor(col_names, 
@@ -528,7 +506,6 @@ Fig_Journal_report
 
 ggsave("Fig_Journal_report.pdf", Fig_Journal_report, device = "pdf", width=16, height = 9)
 
-
 ## Here, I remove some data sets to reduce data set clutter.
 rm(report_list,report_table,i,Journal_education_occupation,Journal_education_occupation_table)
 ```
@@ -544,7 +521,6 @@ Journal_age_report_detail <- Journal %>%
 Journal_age_report_detail_study_num <- Journal_age_report_detail %>%
     dplyr::distinct(Article_IDs,Study_Number) ## 989 studies
   
-
 ### Age fuzzy report studies num
 Journal_age_fuzzy_report <- Journal_age_report_detail %>% 
   dplyr::filter(is.na(M_age)) 
@@ -554,7 +530,6 @@ Journal_age_fuzzy_report <- Journal_age_report_detail %>%
 
 Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>% 
   dplyr::distinct(Article_IDs,Study_Number) ## 130-5=125
-
 
 ## Here, I remove some data sets to reduce data set clutter.
 rm(Journal_age_report_detail,Journal_age_report_detail_study_num,
@@ -583,7 +558,6 @@ Journal_gender <- Journal_key_variable %>%
   dplyr::select(-c(10:17)) %>% 
   dplyr::filter(Gender == 1)
 
-
 ## Part of the gender data is the proportion recorded, and part is the number of people, so I deal with it separately.
 
 Journal_gender_decimal <- Journal_gender %>% 
@@ -592,7 +566,6 @@ Journal_gender_decimal <- Journal_gender %>%
 Journal_gender_integer <- Journal_gender %>%
   dplyr::filter(Male_Num > 1 | Female_Num > 1) %>% 
   dplyr::mutate_at(vars(4:9),as.numeric)
-
 
 ## Multiple groups of data are removed during processing, so re-create the data.frame and then merge them.
 Journal_gender_integer_add <- data.frame(Article_IDs = c("20185082","20213045","20213048","20213048"),
@@ -605,9 +578,7 @@ Journal_gender_integer_add <- data.frame(Article_IDs = c("20185082","20213045","
                                          Male_Num = c(26,49,31,28),
                                          Female_Num = c(7,32,37,31))
 
-
 Journal_gender_integer2 <- bind_rows(Journal_gender_integer,Journal_gender_integer_add) 
-
 
 ## Process decimal
 Journal_gender_decimal2 <- Journal_gender_decimal %>% 
@@ -615,11 +586,9 @@ Journal_gender_decimal2 <- Journal_gender_decimal %>%
   dplyr::mutate(Male_Num = floor(Sample_Size*Male_Num),
                 Female_Num = Sample_Size - Male_Num)
 
-
 ## Combining journal gender data for both categories
 Journal_gender2 <- bind_rows(Journal_gender_integer2,Journal_gender_decimal2)%>% 
   dplyr::filter(!is.na(Male_Num)) 
-
 
 ## total
 Target_population_total_gender <- Journal_gender2 %>% 
@@ -629,7 +598,6 @@ Target_population_total_gender <- Journal_gender2 %>%
                    Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
                    Data_Source = "Target_population_total")
 
-
 ## general
 Target_population_general_gender <- Journal_gender2 %>% 
   dplyr::filter(Target_Population_N != 1) %>% 
@@ -638,7 +606,6 @@ Target_population_general_gender <- Journal_gender2 %>%
                    Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
                    Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
                    Data_Source = "Target_population_general")
-
 
 ## special
 Target_population_special_gender <- Journal_gender2 %>% 
@@ -664,17 +631,25 @@ Journal_gender_different_categories <- bind_rows(Target_population_total_gender,
 ```
 
 
+Here, I remove some data sets to reduce data set clutter.
+```{r}
+rm(Journal_gender_decimal,Journal_gender_decimal2,
+   Journal_gender_integer,Journal_gender_integer2,
+   Journal_gender_integer_add,Journal_gender)
+```
+
+
 Process gender data from BTS.
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 BTS_gender_list <- list()
 
-for(i in seq_along(BTS_data)) {
+for(i in seq_along(BTS)) {
   
-  BTS_data_name <- names(BTS_data)[i] 
+  BTS_data_name <- names(BTS)[i] 
   
- if ("Gender" %in% names(BTS_data[[i]])) {  
+ if ("Gender" %in% names(BTS[[i]])) {  
    
-  BTS_gender <- BTS_data[[i]] %>% 
+  BTS_gender <- BTS[[i]] %>% 
     dplyr::mutate(Gender = str_to_title(Gender)) %>% 
     dplyr::filter(Gender == "Female" | Gender == "Male") %>% 
     dplyr::mutate(#Proportion = round(count/sum(count),2),
@@ -688,14 +663,13 @@ for(i in seq_along(BTS_data)) {
   } 
 
 }
-
 ```
 
 
 Combine gender data from Chinese Journal and BTS.
 ```{r}
-## Extracting China data
-BTS_CHN_gender <- lapply(BTS_gender_list, function(df){
+## Extracting Chinese data
+BTS_gender_CHN <- lapply(BTS_gender_list, function(df){
   
   df %>% 
     dplyr::filter(grepl("CHN", ISO3, ignore.case = TRUE)) %>% 
@@ -703,35 +677,32 @@ BTS_CHN_gender <- lapply(BTS_gender_list, function(df){
 
 })
 
-BTS_CHN_gender <- do.call(rbind, BTS_CHN_gender) %>% 
+BTS_gender_CHN <- do.call(rbind, BTS_gender_CHN) %>% 
   dplyr::group_by(Gender) %>% 
   dplyr::summarise(n = n()) %>% 
   dplyr::mutate(Proportion = round(n/sum(n),2)*100) %>% 
   dplyr::ungroup() %>%
   dplyr::mutate(Data_Source = "BTS Chinese")
   
-  
-
 ## Combine CHN journal data and set factor
+H1_gender <- BTS_gender_CHN %>% 
+  dplyr::add_row(Gender = c("Female","Male"), n = c(273804,234047),
+                 Proportion = c(54,46),Data_Source = "Journal")
 
-Journal_BTS_CHN_gender <- BTS_CHN_gender %>% 
-  bind_rows(df_CHN_Journal_Gender_Total2) %>% 
-  dplyr::mutate(Gender =  stringr::str_to_title(Gender))
-
-Journal_BTS_CHN_gender_factor <- Journal_BTS_CHN_gender %>% 
+H1_gender_factor <- H1_gender %>% 
   dplyr::filter(Gender == "Female") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(Data_Source)
 
-Journal_BTS_CHN_gender <- Journal_BTS_CHN_gender %>% 
+H1_gender <- H1_gender %>% 
   dplyr::mutate(Data_Source = factor(Data_Source,
-                                     levels = Journal_BTS_CHN_gender_factor))
+                                     levels = H1_gender_factor))
 ```
 
 
 Visualize gender data for Chinese journals and BTS.
 ```{r}
-H1_Fig_gender <- ggplot(data = Journal_BTS_CHN_gender,aes(Data_Source,Proportion,fill = Gender))+
+H1_Fig_gender <- ggplot(data = H1_gender,aes(Data_Source,Proportion,fill = Gender))+
   geom_col()+
   geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
   labs(y="Proportion")+
@@ -742,14 +713,9 @@ H1_Fig_gender <- ggplot(data = Journal_BTS_CHN_gender,aes(Data_Source,Proportion
         legend.text = element_text(size = 20, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 20,family = "serif"),
-        axis.text = element_text(size = 20,family = "serif"))#,
-      #  axis.text.x = element_text(angle = 90, hjust = 1))
-
-# ggsave("Fig_Journal_BTS_CHN_gender.pdf", Fig_Journal_BTS_CHN_gender, device = "pdf", width=18, height = 9)
+        axis.text = element_text(size = 20,family = "serif"))
 
 H1_Fig_gender 
-
-# BTS1 <- Journal_BTS_CHN_gender$data
 ```
 
 
@@ -761,15 +727,14 @@ $H_1$: $\theta$ is free to vary.
 
 
 ```{r}
-Journal_BTS_CHN_gender_bayes <- Journal_BTS_CHN_gender %>% 
+H1_gender_bayes <- H1_gender %>% 
   dplyr::select(1,3:4) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
 
-BF_H1_gender <- BayesMultiNomial(dataset = Journal_BTS_CHN_gender_bayes,
+H1_BF_gender <- BayesMultiNomial(dataset = H1_gender_bayes,
                                              factor = "Gender",
                                              observed = "BTS Chinese",
-                                             expected = "Chinese papers") 
-
+                                             expected = "Journal") 
 ```
 
 
@@ -778,12 +743,7 @@ I found moderate evidence for the $H_1$ that the gender proportion from Chinese 
 
 At the end of gender data processing for hypothesis 1, I removed some data sets to reduce data set clutter.
 ```{r}
-rm(BTS_CHN_gender,BTS_gender,
-   df_CHN_Journal_Gender_Total,df_CHN_Journal_Gender_Total2,
-   df_stage2_Journal_Code_Gender,df_stage2_Journal_Code_Gender_decimal,
-   df_stage2_Journal_Code_Gender_decimal2,df_stage2_Journal_Code_Gender_integer,
-   df_stage2_Journal_Code_Gender_integer_add,df_stage2_Journal_Code_Gender_integer2,
-   Journal_BTS_CHN_gender_bayes)
+rm(BTS_gender_CHN,H1_gender_bayes,H1_gender_factor,i,BTS_data_name)
 ```
 
 
@@ -1006,25 +966,25 @@ In the following part, I will calculate other age data based on different target
 The first is general population.
 ```{r}
 ## general target population
-Target_population_general_age <-  Journal_age2 %>%
+Target_general_population_age <-  Journal_age2 %>%
   dplyr::filter(Target_Population_N != 1)
 
 ## simulate different categories age data
 ### five-year-old
-Sim_Journal_general_age_five1 <- lapply(1:nrow(Target_population_general_age),function(i){
+Sim_Journal_age_five1_general <- lapply(1:nrow(Target_general_population_age),function(i){
   
-  Sim_Sens_mult_five(Mean0 = Target_population_general_age$M_age[i],
+  Sim_Sens_mult_five(Mean0 = Target_general_population_age$M_age[i],
                 diff_age = 0,
-                SD0 = Target_population_general_age$SD_age[i],
-                sample_N = Target_population_general_age$Sample_Size[i])
+                SD0 = Target_general_population_age$SD_age[i],
+                sample_N = Target_general_population_age$Sample_Size[i])
   
   })
 
 
-Sim_Journal_general_age_five2 <- do.call(rbind,Sim_Journal_general_age_five1)
+Sim_Journal_age_five2_general <- do.call(rbind,Sim_Journal_age_five1_general)
 
 
-Sim_Journal_general_age_five3 <- Sim_Journal_general_age_five2 %>% 
+Sim_Journal_age_five3_general <- Sim_Journal_age_five2_general %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
   dplyr::ungroup() %>% 
@@ -1036,24 +996,24 @@ Sim_Journal_general_age_five3 <- Sim_Journal_general_age_five2 %>%
 
 
 ## Calculate the sample difference between the coded data and the simulated data
-sum(Target_population_general_age$Sample_Size)-sum(Sim_Journal_general_age_five3$sim1,na.rm = TRUE) 
+sum(Target_general_population_age$Sample_Size)-sum(Sim_Journal_age_five3_general$sim1,na.rm = TRUE) 
 
 
 ## PsyStages
-Sim_Journal_general_age_PsyStages1 <- lapply(1:nrow(Target_population_general_age),function(i){
+Sim_Journal_age_PsyStages1_general <- lapply(1:nrow(Target_general_population_age),function(i){
   
-  Sim_Sens_mult_PsyStages(Mean1 = Target_population_general_age$M_age[i],
+  Sim_Sens_mult_PsyStages(Mean1 = Target_general_population_age$M_age[i],
                 diff_age = 0,
-                SD1 = Target_population_general_age$SD_age[i],
-                sample_N = Target_population_general_age$Sample_Size[i])
+                SD1 = Target_general_population_age$SD_age[i],
+                sample_N = Target_general_population_age$Sample_Size[i])
   
   })
 
 
-Sim_Journal_general_age_PsyStages2 <- do.call(rbind,Sim_Journal_general_age_PsyStages1)
+Sim_Journal_age_PsyStages2_general <- do.call(rbind,Sim_Journal_age_PsyStages1_general)
 
 
-Sim_Journal_general_age_PsyStages3 <- Sim_Journal_general_age_PsyStages2 %>% 
+Sim_Journal_age_PsyStages3_general <- Sim_Journal_age_PsyStages2_general %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
   dplyr::ungroup() %>% 
@@ -1062,25 +1022,25 @@ Sim_Journal_general_age_PsyStages3 <- Sim_Journal_general_age_PsyStages2 %>%
 
 
 ## Calculate the sample difference between the coded data and the simulated data
-sum(Target_population_general_age$Sample_Size)-sum(Sim_Journal_general_age_PsyStages3$sim1,na.rm = TRUE)
+sum(Target_general_population_age$Sample_Size)-sum(Sim_Journal_age_PsyStages3_general$sim1,na.rm = TRUE)
 
 
-## ten-years-old
-Sim_Journal_general_age_interval101 <- lapply(1:nrow(Target_population_general_age),function(i){
+## interval10
+Sim_Journal_age_interval101_general <- lapply(1:nrow(Target_general_population_age),function(i){
   
-  Sim_Sens_mult_interval10(Mean2 = Target_population_general_age$M_age[i],
+  Sim_Sens_mult_interval10(Mean2 = Target_general_population_age$M_age[i],
                 diff_age2 = 0,
-                SD2 = Target_population_general_age$SD_age[i],
-                sample_N2 = Target_population_general_age$Sample_Size[i])
+                SD2 = Target_general_population_age$SD_age[i],
+                sample_N2 = Target_general_population_age$Sample_Size[i])
   
   })
 
 
-Sim_Journal_general_age_interval102 <- do.call(rbind,Sim_Journal_general_age_interval101)
+Sim_Journal_age_interval102_general <- do.call(rbind,Sim_Journal_age_interval101_general)
 
 
 ## Use simulation function to process data. 
-Sim_Journal_general_age_interval103 <- Sim_Journal_general_age_interval102 %>% 
+Sim_Journal_age_interval103_general <- Sim_Journal_age_interval102_general %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
   dplyr::ungroup() %>% 
@@ -1091,32 +1051,32 @@ Sim_Journal_general_age_interval103 <- Sim_Journal_general_age_interval102 %>%
 
 
 ## Calculate the sample difference between the coded data and the simulated data
-sum(Target_population_general_age$Sample_Size)-sum(Sim_Journal_general_age_interval103$sim1,na.rm = TRUE)
+sum(Target_general_population_age$Sample_Size)-sum(Sim_Journal_age_interval103_general$sim1,na.rm = TRUE)
 ```
 
 
 The others is special target population
 ```{r}
-Target_population_special_age <- Journal_age2 %>% 
+Target_special_population_age <- Journal_age2 %>% 
   dplyr::filter(Target_Population_N == 1)
 
 
 ## simulate different categories age data
 ### five-year-old
-Sim_Journal_special_age_five1 <- lapply(1:nrow(Target_population_special_age),function(i){
+Sim_Journal_age_five1_special <- lapply(1:nrow(Target_special_population_age),function(i){
   
-  Sim_Sens_mult_five(Mean0 = Target_population_special_age$M_age[i],
+  Sim_Sens_mult_five(Mean0 = Target_special_population_age$M_age[i],
                 diff_age = 0,
-                SD0 = Target_population_special_age$SD_age[i],
-                sample_N = Target_population_special_age$Sample_Size[i])
+                SD0 = Target_special_population_age$SD_age[i],
+                sample_N = Target_special_population_age$Sample_Size[i])
   
   })
 
 
-Sim_Journal_special_age_five2 <- do.call(rbind,Sim_Journal_special_age_five1)
+Sim_Journal_age_five2_special <- do.call(rbind,Sim_Journal_age_five1_special)
 
 
-Sim_Journal_special_age_five3 <- Sim_Journal_special_age_five2 %>% 
+Sim_Journal_age_five3_special <- Sim_Journal_age_five2_special %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
   dplyr::ungroup() %>% 
@@ -1128,24 +1088,24 @@ Sim_Journal_special_age_five3 <- Sim_Journal_special_age_five2 %>%
 
 
 ## Calculate the sample difference between the coded data and the simulated data
-sum(Target_population_special_age$Sample_Size)-sum(Sim_Journal_special_age_five3$sim1,na.rm = TRUE) 
+sum(Target_special_population_age$Sample_Size)-sum(Sim_Journal_age_five3_special$sim1,na.rm = TRUE) 
 
 
 ## PsyStages
-Sim_Journal_special_age_PsyStages1 <- lapply(1:nrow(Target_population_special_age),function(i){
+Sim_Journal_age_PsyStages1_special <- lapply(1:nrow(Target_special_population_age),function(i){
   
-  Sim_Sens_mult_PsyStages(Mean1 = Target_population_special_age$M_age[i],
+  Sim_Sens_mult_PsyStages(Mean1 = Target_special_population_age$M_age[i],
                 diff_age = 0,
-                SD1 = Target_population_special_age$SD_age[i],
-                sample_N = Target_population_special_age$Sample_Size[i])
+                SD1 = Target_special_population_age$SD_age[i],
+                sample_N = Target_special_population_age$Sample_Size[i])
   
   })
 
 
-Sim_Journal_special_age_PsyStages2 <- do.call(rbind,Sim_Journal_special_age_PsyStages1)
+Sim_Journal_age_PsyStages2_special <- do.call(rbind,Sim_Journal_age_PsyStages1_special)
 
 
-Sim_Journal_special_age_PsyStages3 <- Sim_Journal_special_age_PsyStages2 %>% 
+Sim_Journal_age_PsyStages3_special <- Sim_Journal_age_PsyStages2_special %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
   dplyr::ungroup() %>% 
@@ -1154,25 +1114,25 @@ Sim_Journal_special_age_PsyStages3 <- Sim_Journal_special_age_PsyStages2 %>%
 
 
 ## Calculate the sample difference between the coded data and the simulated data
-sum(Target_population_special_age$Sample_Size)-sum(Sim_Journal_special_age_PsyStages3$sim1,na.rm = TRUE)
+sum(Target_special_population_age$Sample_Size)-sum(Sim_Journal_age_PsyStages3_special$sim1,na.rm = TRUE)
 
 
 ## ten-years-old
-Sim_Journal_special_age_interval101 <- lapply(1:nrow(Target_population_special_age),function(i){
+Sim_Journal_age_interval101_special <- lapply(1:nrow(Target_special_population_age),function(i){
   
-  Sim_Sens_mult_interval10(Mean2 = Target_population_special_age$M_age[i],
+  Sim_Sens_mult_interval10(Mean2 = Target_special_population_age$M_age[i],
                 diff_age2 = 0,
-                SD2 = Target_population_special_age$SD_age[i],
-                sample_N2 = Target_population_special_age$Sample_Size[i])
+                SD2 = Target_special_population_age$SD_age[i],
+                sample_N2 = Target_special_population_age$Sample_Size[i])
   
   })
 
 
-Sim_Journal_special_age_interval102 <- do.call(rbind,Sim_Journal_special_age_interval101)
+Sim_Journal_age_interval102_special <- do.call(rbind,Sim_Journal_age_interval101_special)
 
 
 ## Use simulation function to process data. 
-Sim_Journal_special_age_interval103 <- Sim_Journal_special_age_interval102 %>% 
+Sim_Journal_age_interval103_special <- Sim_Journal_age_interval102_special %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
   dplyr::ungroup() %>% 
@@ -1183,34 +1143,88 @@ Sim_Journal_special_age_interval103 <- Sim_Journal_special_age_interval102 %>%
 
 
 ## Calculate the sample difference between the coded data and the simulated data
-sum(Target_population_special_age$Sample_Size)-sum(Sim_Journal_special_age_interval103$sim1,na.rm = TRUE)
+sum(Target_special_population_age$Sample_Size)-sum(Sim_Journal_age_interval103_special$sim1,na.rm = TRUE)
 ```
 
 
 And I calculated the proportion of age data for different segments to facilitate visualization and Bayesian calculation.
 ```{r}
-## 5-old-year
+## 5-old-years
 Sim_Journal_age_five3_prop <- Sim_Journal_age_five3 %>% 
   dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
-                Data_Source = "Chinese papers")
+                Data_Source = "Journal")
 
-# sum(Sim_Journal_age_five3_prop$Proportion)
-
+## sum(Sim_Journal_age_five3_prop$Proportion) ## 100.02
 
 ## PsyStages
 Sim_Journal_age_PsyStages3_prop <- Sim_Journal_age_PsyStages3 %>% 
     dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
-                Data_Source = "Chinese papers")
+                Data_Source = "Journal")
 
-# sum(Sim_Journal_age_PsyStages3_prop$Proportion)
+## sum(Sim_Journal_age_PsyStages3_prop$Proportion) ## 99.99
 
-
-## 10-old_year
+## interval10
 Sim_Journal_age_interval103_prop <- Sim_Journal_age_interval103 %>% 
     dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
-                Data_Source = "Chinese papers")
+                Data_Source = "Journal")
 
-# sum(Sim_Journal_age_interval103_prop$Proportion)
+## sum(Sim_Journal_age_interval103_prop$Proportion) ## 100
+
+## general population 5-old-years
+Sim_Journal_age_five3_general_prop <- Sim_Journal_age_five3_general %>% 
+  dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
+                Data_Source = "Journal")
+
+## sum(Sim_Journal_age_five3_general_prop$Proportion) ## 99.98
+
+## general population PsyStages
+Sim_Journal_age_PsyStages3_general_prop <- Sim_Journal_age_PsyStages3_general %>% 
+    dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
+                Data_Source = "Journal")
+
+# sum(Sim_Journal_age_PsyStages3_general_prop$Proportion) ## 99.99
+
+## general population interval10
+Sim_Journal_age_interval103_general_prop <- Sim_Journal_age_interval103_general %>% 
+    dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
+                Data_Source = "Journal")
+
+## sum(Sim_Journal_age_interval103_general_prop$Proportion) ## 99.99
+
+## special population 5-old-years
+Sim_Journal_age_five3_special_prop <- Sim_Journal_age_five3_special %>% 
+  dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
+                Data_Source = "Journal")
+
+## sum(Sim_Journal_age_five3_special_prop$Proportion) ## 100.03
+
+## special population PsyStages
+Sim_Journal_age_PsyStages3_special_prop <- Sim_Journal_age_PsyStages3_special %>% 
+    dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
+                Data_Source = "Journal")
+
+## sum(Sim_Journal_age_PsyStages3_special_prop$Proportion) ## 100
+
+## special population interval10
+Sim_Journal_age_interval103_special_prop <- Sim_Journal_age_interval103_special %>% 
+    dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
+                Data_Source = "Journal")
+
+## sum(Sim_Journal_age_interval103_special_prop$Proportion) ## 99.99
+```
+
+
+To reduce data set clutter, I removed some data sets during processing Journal age above.
+```{r}
+rm(Sim_Journal_age_five1,Sim_Journal_age_five2,Sim_Journal_age_five3,
+   Sim_Journal_age_interval101,Sim_Journal_age_interval102,Sim_Journal_age_interval103,
+   Sim_Journal_age_PsyStages1,Sim_Journal_age_PsyStages2,Sim_Journal_age_PsyStages3,
+   Sim_Journal_age_five1_general,Sim_Journal_age_five2_general,Sim_Journal_age_five3_general,
+   Sim_Journal_age_interval101_general,Sim_Journal_age_interval102_general,Sim_Journal_age_interval103_general,
+   Sim_Journal_age_PsyStages1_general,Sim_Journal_age_PsyStages2_general,Sim_Journal_age_PsyStages3_general,
+   Sim_Journal_age_five1_special,Sim_Journal_age_five2_special,Sim_Journal_age_five3_special,
+   Sim_Journal_age_interval101_special,Sim_Journal_age_interval102_special,Sim_Journal_age_interval103_special,
+   Sim_Journal_age_PsyStages1_special,Sim_Journal_age_PsyStages2_special,Sim_Journal_age_PsyStages3_special)
 ```
 
 
@@ -1218,13 +1232,13 @@ Process age data from BTS.
 ```{r}
 BTS_age_list <- list()
 
-for(i in seq_along(BTS_data)){
+for(i in seq_along(BTS)){
   
-  BTS_data_name <- names(BTS_data)[i]
+  BTS_name <- names(BTS)[i]
   
-  if("Age" %in% names(BTS_data[[i]])){
+  if("Age" %in% names(BTS[[i]])){
     
-    BTS_age <- BTS_data[[i]] %>% 
+    BTS_age <- BTS[[i]] %>% 
       dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
       dplyr::select(Article_Id,Age,ISO3) %>% 
       #dplyr::group_by(ISO3) %>% 
@@ -1240,22 +1254,15 @@ for(i in seq_along(BTS_data)){
                                 levels = c("0~4","5~9","10~14","15~19","20~24",
                                  "25~29","30~34","35~39","40~44","45~49",
                                  "50~54","55~59","60~64","65~69","70~74",
-                                 "75~79","80~84","85~89", "90~94",">=95" ))) #%>% 
-    #dplyr::count(ageBins) %>% 
-    #dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-     #             BTS_data_source = BTS_data_name)
+                                 "75~79","80~84","85~89", "90~94",">=95" )))
   
-
- 
-  
-BTS_age_list[[BTS_data_name]] <- BTS_age
+BTS_age_list[[BTS_name]] <- BTS_age
   
 } else {  
  
-    cat(sprintf("Skipping '%s' because it does not contain a 'Age' column.\n", BTS_data_name))  
+    cat(sprintf("Skipping '%s' because it does not contain a 'Age' column.\n", BTS_name))  
   } 
 }
-
 
 ## merge data.frame in list
 BTS_age <-  bind_rows(BTS_age_list)
@@ -1264,42 +1271,41 @@ BTS_age <-  bind_rows(BTS_age_list)
 
 Filter CHN age data from BTS, Combine BTS CHN data and Chinese journals data.
 ```{r}
-BTS_CHN_age <- BTS_age %>% 
+BTS_age_CHN <- BTS_age %>% 
   dplyr::filter(ISO3 == "CHN") %>% 
   dplyr::count(ageBins) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
                 Data_Source = "BTS Chinese")
 
 ## add 3 rows of ageBins without data
-BTS_CHN_age_3rows <- data.frame(ageBins = c("0~4","5~9","10~14"),
+BTS_age_CHN_3rows <- data.frame(ageBins = c("0~4","5~9","10~14"),
                                 n = 0,
                                 Proportion = 0,
                                 Data_Source = "BTS Chinese")
 
 ## combine 2 dataframe
-Journal_BTS_CHN_age <- Sim_Journal_age_five3_prop %>% 
+H1_age <- Sim_Journal_age_five3_prop %>% 
   dplyr::rename(n = 2) %>% 
-  dplyr::bind_rows(BTS_CHN_age,BTS_CHN_age_3rows)
+  dplyr::bind_rows(BTS_age_CHN,BTS_age_CHN_3rows)
 
 
 ## set ageBins as factor to plot
-Journal_BTS_CHN_age <- Journal_BTS_CHN_age %>% 
+H1_age <- H1_age %>% 
   dplyr::mutate(ageBins = factor(ageBins,
                                  levels = c("0~4","5~9","10~14","15~19","20~24",
                                  "25~29","30~34","35~39","40~44","45~49",
                                  "50~54","55~59","60~64","65~69","70~74",
                                  "75~79","80~84","85~89", "90~94",">=95" )))
-
 ```
 
 
 Visualize age data from Chinese journals and census7.
 ```{r}
-H1_Fig_age <- ggplot(data= Journal_BTS_CHN_age, aes(x=ageBins, y=ifelse(Data_Source=="BTS Chinese", -Proportion, Proportion),fill = Data_Source)) +
+H1_Fig_age <- ggplot(data= H1_age, aes(x=ageBins, y=ifelse(Data_Source=="BTS Chinese", -Proportion, Proportion),fill = Data_Source)) +
   geom_col(alpha=0.8, width = 1) +
   coord_flip() +
   labs(y="Proportion", x = "Age bins", color=NULL)+
-  scale_fill_manual(values = c("BTS Chinese" = "#619CFF", "Chinese papers" = "#7CAE00")) +
+  scale_fill_manual(values = c("BTS Chinese" = "#619CFF", "Journal" = "#7CAE00")) +
   theme_classic()+
   theme(panel.border =element_rect(fill=NA,color="black"),
         legend.position ="bottom",
@@ -1326,15 +1332,15 @@ H1_Fig_gender_age
 
 Process age for Bayesian multinomial test. First of all, I processed BTS CHN age in psychological development stages.
 ```{r}
-BTS_age_list_PsyStages <- list()
+BTS_age_PsyStages_list <- list()
 
-for(i in seq_along(BTS_data)){
+for(i in seq_along(BTS)){
   
-  BTS_data_name <- names(BTS_data)[i]
+  BTS_name <- names(BTS)[i]
   
-  if("Age" %in% names(BTS_data[[i]])){
+  if("Age" %in% names(BTS[[i]])){
     
-    BTS_age <- BTS_data[[i]] %>% 
+    BTS_age <- BTS[[i]] %>% 
       dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
       dplyr::select(Article_Id,Age,ISO3) %>% 
       #dplyr::group_by(ISO3) %>% 
@@ -1343,31 +1349,31 @@ for(i in seq_along(BTS_data)){
                                 labels = c("<=17","18~25","26~40", "41~60", ">=61"),
                                 levels = c("<=17","18~25","26~40", "41~60", ">=61")))
   
-BTS_age_list_PsyStages[[BTS_data_name]] <- BTS_age
+BTS_age_PsyStages_list[[BTS_name]] <- BTS_age
   
 } else {  
  
-    cat(sprintf("Skipping '%s' because it does not contain a 'Age' column.\n", BTS_data_name))  
+    cat(sprintf("Skipping '%s' because it does not contain a 'Age' column.\n", BTS_name))  
   } 
 }
 
 
 ## merge data.frame in list
-BTS_age_PsyStages <-  do.call(rbind,BTS_age_list_PsyStages)
+BTS_age_PsyStages <-  do.call(rbind,BTS_age_PsyStages_list)
 ```
 
 
 Secondly, I processed BTS CHN age in 10-year-old segment.
 ```{r}
-BTS_age_list_interval10 <- list()
+BTS_age_interval10_list <- list()
 
-for(i in seq_along(BTS_data)){
+for(i in seq_along(BTS)){
   
-  BTS_data_name <- names(BTS_data)[i]
+  BTS_name <- names(BTS)[i]
   
-  if("Age" %in% names(BTS_data[[i]])){
+  if("Age" %in% names(BTS[[i]])){
     
-    BTS_age <- BTS_data[[i]] %>% 
+    BTS_age <- BTS[[i]] %>% 
       dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
       dplyr::select(Article_Id,Age,ISO3) %>% 
       #dplyr::group_by(ISO3) %>% 
@@ -1376,24 +1382,24 @@ for(i in seq_along(BTS_data)){
                                 labels = c("<=10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"),
                                 levels = c("<=10","11~20","21~30", "31~40", "41~50", "51~60", ">=61")))
   
-BTS_age_list_interval10[[BTS_data_name]] <- BTS_age
+BTS_age_interval10_list[[BTS_name]] <- BTS_age
   
 } else {  
  
-    cat(sprintf("Skipping '%s' because it does not contain a 'Age' column.\n", BTS_data_name))  
+    cat(sprintf("Skipping '%s' because it does not contain a 'Age' column.\n", BTS_name))  
   } 
 }
 
 
 ## merge data.frame in list
-BTS_age_interval10 <-  do.call(rbind,BTS_age_list_interval10)
+BTS_age_interval10 <-  do.call(rbind,BTS_age_interval10_list)
 ```
 
 
 And then, I filtered BTS CHN data.
 ```{r}
 ## psychological development stages in BTS
-BTS_CHN_age_PsyStages <- BTS_age_PsyStages %>% 
+BTS_age_PsyStages_CHN <- BTS_age_PsyStages %>% 
   dplyr::filter(ISO3 == "CHN") %>% 
   dplyr::select(1,4) %>% 
   dplyr::count(ageBins) %>% 
@@ -1402,55 +1408,107 @@ BTS_CHN_age_PsyStages <- BTS_age_PsyStages %>%
 
 
 ## 10-year-old segment in BTS
-BTS_CHN_age_interval10 <- BTS_age_interval10 %>% 
+BTS_age_interval10_CHN <- BTS_age_interval10 %>% 
   dplyr::filter(ISO3 == "CHN") %>% 
   dplyr::select(1,4) %>% 
   dplyr::count(ageBins) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
                 Data_Source = "BTS CHN age") 
-
 ```
 
 
 Next, I Combined two CHN data to Bayesian multinomial test in two different classifications (PsyStages and 10-year-old). One is PsyStages.
 ```{r}
-Journal_BTS_CHN_PsyStages_bayes <- Sim_Journal_age_PsyStages3_prop %>% 
+## all subjects
+H1_PsyStages_bayes <- Sim_Journal_age_PsyStages3_prop %>% 
   dplyr::rename(n = 2) %>% 
-  bind_rows(BTS_CHN_age_PsyStages) %>% 
+  bind_rows(BTS_age_PsyStages_CHN) %>% 
   dplyr::select(-2) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
 
   
-BF_H1_PsyStages_Journal_BTS <- BayesMultiNomial(dataset = Journal_BTS_CHN_PsyStages_bayes,
+H1_BF_PsyStages <- BayesMultiNomial(dataset = H1_PsyStages_bayes,
                                           factor = "ageBins",
                                           observed = "BTS CHN age",
-                                          expected = "Chinese papers")
+                                          expected = "Journal")
+
+## general population 
+H1_PsyStages_general_bayes <- Sim_Journal_age_PsyStages3_general_prop %>% 
+  dplyr::rename(n = 2) %>% 
+  bind_rows(BTS_age_PsyStages_CHN) %>% 
+  dplyr::select(-2) %>% 
+  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
+
+H1_BF_PsyStages_general <- BayesMultiNomial(dataset = H1_PsyStages_general_bayes ,
+                                          factor = "ageBins",
+                                          observed = "BTS CHN age",
+                                          expected = "Journal")
+
+## special population
+H1_PsyStages_special_bayes <- Sim_Journal_age_PsyStages3_special_prop %>% 
+  dplyr::rename(n = 2) %>% 
+  bind_rows(BTS_age_PsyStages_CHN) %>% 
+  dplyr::select(-2) %>% 
+  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
+
+H1_BF_PsyStages_special <- BayesMultiNomial(dataset = H1_PsyStages_special_bayes ,
+                                          factor = "ageBins",
+                                          observed = "BTS CHN age",
+                                          expected = "Journal")
 ```
 
 
 The other is interval10.
 ```{r}
-BTS_CHN_age_interval10_addrow <- BTS_CHN_age_interval10 %>% 
+# all subjects
+BTS_age_interval10_CHN_addrow <- BTS_age_interval10_CHN %>% 
   dplyr::add_row(ageBins = "<=10", n = 0, Proportion = 0, Data_Source = "BTS CHN age")
 
 
-Journal_BTS_CHN_interval10_bayes <- Sim_Journal_age_interval103_prop %>% 
+H1_interval10_bayes <- Sim_Journal_age_interval103_prop %>% 
   dplyr::rename(n = 2) %>% 
-  bind_rows(BTS_CHN_age_interval10_addrow) %>%
+  bind_rows(BTS_age_interval10_CHN_addrow) %>%
   dplyr::select(-2) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
 
 
-BF_H1_interval10_Journal_BTS <- BayesMultiNomial(dataset = Journal_BTS_CHN_interval10_bayes,
+H1_BF_interval10 <- BayesMultiNomial(dataset = H1_interval10_bayes,
                                           factor = "ageBins",
                                           observed = "BTS CHN age",
-                                          expected = "Chinese papers")
+                                          expected = "Journal")
+
+## general population 
+H1_interval10_general_bayes <- Sim_Journal_age_interval103_general_prop %>% 
+  dplyr::rename(n = 2) %>% 
+  bind_rows(BTS_age_interval10_CHN_addrow) %>%
+  dplyr::select(-2) %>% 
+  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
+
+
+H1_BF_interval10_general <- BayesMultiNomial(dataset = H1_interval10_general_bayes,
+                                          factor = "ageBins",
+                                          observed = "BTS CHN age",
+                                          expected = "Journal")
+
+## special
+## general population 
+H1_interval10_special_bayes <- Sim_Journal_age_interval103_special_prop %>% 
+  dplyr::rename(n = 2) %>% 
+  bind_rows(BTS_age_interval10_CHN_addrow) %>%
+  dplyr::select(-2) %>% 
+  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
+
+
+H1_BF_interval10_special <- BayesMultiNomial(dataset = H1_interval10_special_bayes,
+                                          factor = "ageBins",
+                                          observed = "BTS CHN age",
+                                          expected = "Journal")
 ```
 
 
-When we divide the age into 10 years,we found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r BF_H1_interval10_Journal_BTS$BF$LogBF10`.
+When we divide the age into 10 years,we found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r H1_BF_interval10$BF$LogBF10`.
 
-When we divide age into stages of psychological development, we found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r BF_H1_PsyStages_Journal_BTS$BF$LogBF10`.
+When we divide age into stages of psychological development, we found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r H1_BF_PsyStages$BF$LogBF10`.
 
 
 
