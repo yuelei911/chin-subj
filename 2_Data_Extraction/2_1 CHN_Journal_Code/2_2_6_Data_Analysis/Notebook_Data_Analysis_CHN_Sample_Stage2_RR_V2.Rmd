@@ -2,12 +2,38 @@
 title: "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2"
 author: "Lei Yue"
 date: "2024-04-20"
-output: html_document
+output:
+  prettydoc::html_pretty:
+  theme: cayman
+  highlight: github
 ---
+
 
 In "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V1.Rmd"， I preprocess the journal code data. In this Rmd(V2), we enter the informal process data.
 
-First, load library.
+
+**Special Note:** To enhance the readability and accessibility of this document, we have provided a concise explanation for the naming convention of data
+
+Journal_: This prefix signifies data that has been coded and extracted from five mainstream Chinese journals.
+
+BTS_: This indicates data sourced from large-scale international collaborations.
+
+H1_: This indicates data use to test hypothesis 1.
+
+H2_: This indicates data use to test hypothesis 2.
+
+H3_: This indicates data use to test hypothesis 3.
+
+Census_: This prefix represents Census data published by the National Bureau of Statistics of China.
+
+CFPS2018_: This signifies data from the 2018 Chinese Family Panel Study.
+
+The majority of data adhere to these naming conventions, with the prefixes typically followed by descriptive and comprehensible demographic variable names or other relevant terms to clarify the data content.
+
+Furthermore, if "Fig" appears in the data name, it signifies that the content represents a data visualization result. Similarly, the presence of "bayes" indicates that the data or result pertains to the calculation of the Bayes factor.
+
+
+Now, I start to analysis data. and the first thing is load library.
 
 # Install and Load packages
 
@@ -2615,9 +2641,7 @@ In addition to the above analysis, I also conducted some exploratory analysis of
 
 ## Abstract1 subjects information reported of Chinese journal
 
-Specific abstract reporting data.
-
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE}
 Journal_abstract1_report <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,
                 Target_Population_N,Sample_Type_N,Abstract1) %>% 
@@ -2648,4 +2672,9 @@ Journal_abstract2_report <- Journal %>%
   dplyr::mutate(proportion = round(report/sum(report),2),
                 Abstract2 = ifelse(Abstract2 == 0 ,"Unreported","Reported")) %>% 
   dplyr::rename(n = 2)
+```
+
+## Bibliometrics Analysis
+
+```{r eval=FALSE, include=FALSE}
 ```
