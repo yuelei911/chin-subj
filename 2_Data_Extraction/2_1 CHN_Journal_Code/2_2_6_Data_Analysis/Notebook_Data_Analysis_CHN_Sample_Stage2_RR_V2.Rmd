@@ -2618,38 +2618,34 @@ In addition to the above analysis, I also conducted some exploratory analysis of
 Specific abstract reporting data.
 
 ```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
-Abstract1_subj_info <- Abstract1_subj_info_equl %>% 
-  dplyr::mutate(Abstract1_demo_info = ifelse(Abstract1 == 0,0,1),  
-                Abstract1_sample_info = ifelse(grepl("1",Abstract1),1,0)) %>% 
-  dplyr::select(Article_IDs,Abstract1_demo_info,Abstract1_sample_info,Sample_type3) %>% 
+Journal_abstract1_report <- Journal %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
+                Target_Population_N,Sample_Type_N,Abstract1) %>% 
+  dplyr::filter(Sample_Type_N != 5) %>%
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::mutate(Study_Type = ifelse(all(Sample_Type_N == 1),"Only college students",ifelse(any(grepl("1",Sample_Type_N)) & any(Sample_Type_N !=1),"College students & other populations","Only sample outside colleges"))) %>% 
+  dplyr::ungroup() %>% 
   dplyr::group_by(Article_IDs) %>% 
   dplyr::slice(1) %>% 
-  dplyr::ungroup() ### Abstract1_demo_info means demographic information report, Abstract2_sample_info means sample type report  
-
-### the demographic report of different sample type in Abstract1
-Abstract1_demo_info <- Abstract1_subj_info %>% 
-  dplyr::group_by(Sample_type3,Abstract1_demo_info) %>% 
-  dplyr::summarise(report = n()) %>% 
   dplyr::ungroup() %>% 
-  dplyr::mutate(proportion = round(report/sum(report),2))
-  
-### the sample information report of different sample type in Abstract1
-#Abstract1_sample_info <- Abstract1_subj_info %>% 
- # dplyr::group_by(Sample_type3,Abstract1_sample_info) %>% 
-  #dplyr::summarise(report = n()) %>% 
-  #dplyr::ungroup() %>% 
-  #dplyr::mutate(proportion = round(report/sum(report),2))
+  dplyr::mutate(Sample_Mentioned = ifelse(Abstract1 == "0" ,"Samples mentioned", "Sample not mentioned")) %>% 
+  dplyr::group_by(Sample_Mentioned,Study_Type) %>% 
+  dplyr::count() %>% 
+  dplyr::ungroup() %>% 
+  tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
 
 
-Abstract2_report <- df_stage2_Journal_Code2 %>% 
+## university students reported in abstract when smaple type is 1
+Journal_abstract2_report <- Journal %>% 
   dplyr::filter(grepl("1",Sample_Type_N)) %>% 
   dplyr::group_by(Article_IDs) %>% 
-  dplyr::mutate(Same_Abstract2 = n_distinct(Abstract2) == 1) %>%  ## check multiple subjects group Abstract2 whether is consistent.
-  dplyr::slice(1) %>% 
+  dplyr::mutate(Abstract2_same = n_distinct(Abstract2) == 1) %>%  ## check multiple subjects group Abstract2 whether is consistent.
+  dplyr::slice(1) %>% ## for one articles have multiple rows, only save the first row
   dplyr::ungroup() %>% 
   dplyr::group_by(Abstract2) %>% 
   dplyr::summarise(report = n()) %>% 
   dplyr::ungroup() %>% 
-  dplyr::mutate(proportion = round(report/sum(report),2))
-
+  dplyr::mutate(proportion = round(report/sum(report),2),
+                Abstract2 = ifelse(Abstract2 == 0 ,"Unreported","Reported")) %>% 
+  dplyr::rename(n = 2)
 ```
