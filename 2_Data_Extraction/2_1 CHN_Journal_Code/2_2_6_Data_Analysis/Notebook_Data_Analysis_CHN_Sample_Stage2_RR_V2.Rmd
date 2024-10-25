@@ -759,9 +759,28 @@ H1_BF_gender <- BayesMultiNomial(dataset = H1_gender_bayes,
                                              factor = "Gender",
                                              observed = "BTS Chinese",
                                              expected = "Journal") 
+
+## Meanwhile, I calculate bayes factor based on target population
+H1_gender_general_bayes <- H1_gender %>% 
+  dplyr::add_row(Gender = c("Female","Male"),
+                n = c(55366,45480),
+                Proportion = c(55,45),
+                Data_Source = "Journal general Population") %>% 
+  dplyr::select(-2) %>% 
+  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
+
+
+H1_BF_gender_general <- BayesMultiNomial(dataset = H1_gender_general_bayes,
+                                         factor = "Gender",
+                                         observed = "BTS Chinese",
+                                         expected = "Journal general Population")
+
 ```
 
 I found moderate evidence for the $H_1$ that the gender proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_gender$BF$LogBF10`.
+
+However, I found there no different between BTS data and the general population of Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_general$BF$LogBF10`.
+
 
 At the end of gender data processing for hypothesis 1, I removed some data sets to reduce data set clutter.
 
@@ -1528,9 +1547,13 @@ H1_BF_interval10_special <- BayesMultiNomial(dataset = H1_interval10_special_bay
                                           expected = "Journal")
 ```
 
-When we divide the age into 10 years,we found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r H1_BF_interval10$BF$LogBF10`.
+When I divide the age into 10 years,we found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r H1_BF_interval10$BF$LogBF10`.
 
-When we divide age into stages of psychological development, we found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r H1_BF_PsyStages$BF$LogBF10`.
+When I divide age into stages of psychological development, I found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r H1_BF_PsyStages$BF$LogBF10`.
+
+For different target population, I compared general population for them firstly, I found strong evidence for $H_1$ that the age distribution from the Chinese subjects data of BTS data is different form the Chinese jouranls data, the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_PsyStages_general$BF$LogBF10`.
+
+Meanwhile, I found strong evidence support $H_1$ for another age category,the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_interval10_general$BF$LogBF10`. 
 
 ## Test the 2st hypothesis
 
@@ -1603,6 +1626,29 @@ H2_Fig_gender
 
 # ggsave("H2_fig_gender.pdf", H2_fig_gender, device = "pdf", width=18, height = 9)
 ```
+
+Finally, I calculated the bayes factor for gender.
+```{r}
+H2_gender_bayes <- H2_gender %>% 
+  dplyr::select(2,3,1) %>% 
+  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
+
+## total
+H2_BF_gender_Census7 <- BayesMultiNomial(dataset = H2_gender_bayes,
+                                          factor = "Gender",
+                                          observed = "Chinese subjects pool",
+                                          expected = "Census7")
+
+
+H2_BF_gender_CFPS2018 <- BayesMultiNomial(dataset = H2_gender_bayes,
+                                          factor = "Gender",
+                                          observed = "Chinese subjects pool",
+                                          expected = "CFPS2018")
+## general population
+## 这里还继续处理，后续可以等BTS的编码后完善，类似的涉及到目标人群的BTS数据时都应如此。
+```
+
+The calculation results show that there is no significant difference between the data in Chinese subjects pool and Census7 and CFPS2018, and the calculation results are $Log(BF_{10})$ = `r H2_BF_gender_Census7$BF$LogBF10` and $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018$BF$LogBF10` respectively.
 
 ### Age
 
@@ -2659,7 +2705,7 @@ Journal_abstract1_report <- Journal %>%
   tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
 
 
-## university students reported in abstract when smaple type is 1
+## university students reported in abstract when sample type is 1
 Journal_abstract2_report <- Journal %>% 
   dplyr::filter(grepl("1",Sample_Type_N)) %>% 
   dplyr::group_by(Article_IDs) %>% 
@@ -2678,3 +2724,54 @@ Journal_abstract2_report <- Journal %>%
 
 ```{r eval=FALSE, include=FALSE}
 ```
+
+
+## Target population explore
+```{r}
+# table(Journal$Sample_Type_N)
+
+Target_population_tab <-  Journal %>%
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
+                Target_Population_N,Sample_Type_N) %>% 
+  dplyr::group_by(Article_IDs) %>% 
+ dplyr::mutate(  
+    unique_sample_types = n_distinct(Sample_Type_N),  # Check if Sample_Type_N is unique
+    Study_Type = if_else(  
+      unique_sample_types == 1,  
+      as.character(Sample_Type_N[1]),  
+      toString(sort(unique(Sample_Type_N))) %>% str_replace_all(", ", " & ")  
+    )  # If unique, Study_Type is the value of the Sample_Type_N (here we convert to character type for later processing)
+# If not unique, create a string representing all Sample_Type_N
+# Take the first value as the representative (because they are the same)
+# Merge all unique Sample_Type_N values with toString, separated by "&"
+  ) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(Target_Population_N,Study_Type) %>% 
+  dplyr::count() %>% 
+  dplyr::ungroup() %>% 
+  tidyr::pivot_wider(names_from = Target_Population_N,values_from = n) %>% 
+  dplyr::rename(stated_specific_population = 2, stated_general_population = 3, inferred_general_population = 4)
+
+# table(Target_population_tab$Study_Type)
+
+
+Target_population_check <- Journal %>% 
+  dplyr::select(Article_IDs,Target_Population_N,Coding_Basis_N) %>% 
+  dplyr::filter(Target_Population_N == 1) %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::slice(1)
+
+
+writexl::write_xlsx(Target_population_check,"Target_population_check.xlsx")
+
+
+Journal_institution <-  Journal %>% 
+  dplyr::select(Article_IDs,Article_Title) %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::mutate(institution = NA)
+
+writexl::write_xlsx(Journal_institution,"Journal_institution.xlsx")
+```
+
