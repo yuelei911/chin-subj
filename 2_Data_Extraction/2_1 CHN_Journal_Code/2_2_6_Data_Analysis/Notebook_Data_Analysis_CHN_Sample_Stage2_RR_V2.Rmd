@@ -1656,7 +1656,7 @@ Similarly, for age data, I first processed the Census data and the CFPS2018 data
 
 ```{r}
 ## Process age data of the census 6
-Census6_Age <- df_census6 %>% 
+Census6_age_five5 <- df_census6 %>% 
   dplyr::filter(row_number() %% 6 == 0) %>%
   dplyr::select(1,2,5) %>% 
   dplyr::rename(ageBins = 1, Proportion = 3) %>% 
@@ -1665,9 +1665,9 @@ Census6_Age <- df_census6 %>%
   dplyr::mutate(ageBins = str_replace_all(ageBins, "-", "~")) %>%
   dplyr::slice(-21) 
 
-Census6_Age$ageBins[20] <- ">=95"
+Census6_age_five5$ageBins[20] <- ">=95"
 
-Census6_Age <- Census6_Age %>% 
+Census6_age_five5 <- Census6_Age %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(Proportion = sum(Proportion)) %>% 
   dplyr::mutate(Data_Source = "Census6") %>% 
@@ -1679,8 +1679,8 @@ Census6_Age <- Census6_Age %>%
                                  "50~54","55~59","60~64","65~69","70~74",
                                  "75~79","80~84","85~89", "90~94",">=95" )))
   
-## Process age data OF the census 7 
-Census7_Age <- df_census7 %>%
+## Process age data of the census 7 
+Census7_age_five5 <- df_census7 %>%
   dplyr::rename(ageBins = 1,Proportion = 5) %>% 
   dplyr::filter(str_detect(ageBins,"岁")) %>%
   dplyr::select(1,2,5) %>% 
@@ -1689,11 +1689,11 @@ Census7_Age <- df_census7 %>%
   dplyr::mutate(ageBins = str_replace_all(ageBins, "-", "~")) %>% 
   dplyr::slice(-21)
 
-Census7_Age$ageBins[20] <- ">=95" 
-Census7_Age$Proportion[20] <- 0.06+0.01
+Census7_age_five5$ageBins[20] <- ">=95" 
+Census7_age_five5$Proportion[20] <- 0.06+0.01
 
 
-Census7_Age <- Census7_Age %>% 
+Census7_age_five5 <- Census7_Age %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(Proportion = sum(Proportion)) %>% 
   dplyr::mutate(Data_Source = "Census7") %>% 
@@ -1704,6 +1704,7 @@ Census7_Age <- Census7_Age %>%
                                  "50~54","55~59","60~64","65~69","70~74",
                                  "75~79","80~84","85~89", "90~94",">=95" )))
 ```
+
 
 Then, I convert the data format of H1_age.
 
@@ -1721,7 +1722,7 @@ H2_age <- H1_age %>%
 Finally, I visualized all Chinese age data and combined figure of gender and age.
 
 ```{r}
-H2_Fig_age <- ggplot(data= Census7_Age, 
+H2_Fig_age <- ggplot(data= Census7_age_five5, 
        aes(x=ageBins, y = Proportion, fill="Census7")) +
   geom_col(alpha=0.5, width = 1) +
   geom_line(data = H2_age, aes(x=ageBins, 
@@ -1753,6 +1754,104 @@ ggsave("H2_Fig_gender_age.pdf", H2_Fig_gender_age, device = "pdf", width=18, hei
 
 H2_Fig_gender_age
 ```
+
+In addition, I calculated the bayes factor.
+```{r}
+H2_age_bayes <- H2_age %>% 
+  dplyr::select(-2) %>% 
+  dplyr::mutate(Data_Source = "Chinese subjects pool") %>% 
+  dplyr::bind_rows(Census7_Age) %>% 
+  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
+
+H2_BF_age <- BayesMultiNomial(dataset = H2_age_bayes,
+                              factor = "ageBins",
+                              observed = "Chinese subjects pool",
+                              expected = "Census7")
+
+
+## For target population, I need combine two source data firstly.
+
+## process census data.
+Census7_age <- df_census7 %>%
+  dplyr::rename(ageBins = 1, n = 2, Proportion = 5) %>% 
+  dplyr::slice(9:145) %>% 
+  dplyr::filter(ageBins != "" & !grepl("岁",ageBins)) %>% 
+  dplyr::select(1:2,5) %>% 
+  dplyr::mutate_at(vars(1:3),as.numeric)
+
+## PsyStages
+Census7_age_PsyStages <- Census7_age %>% 
+  dplyr::mutate(ageBins = cut(ageBins,
+                                breaks = c(-Inf, 17.5, 25.5, 40.5, 60.5, Inf),
+                                labels = c("<=17","18~25","26~40", "41~60", ">=61"),
+                                levels = c("<=17","18~25","26~40", "41~60", ">=61"))) %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(n = sum(n),Proportion = sum(Proportion)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(n = ifelse(ageBins == ">61", n+118866,n),
+                Proportion = ifelse(ageBins == ">61", Proportion + 0.01,Proportion),
+                Data_Source = "Census7")
+
+# sum(Census7_age_PsyStages$Proportion) #100.02
+
+## interval10
+Census7_age_interval10 <- Census7_age %>% 
+  dplyr::mutate(ageBins = cut(ageBins,
+                              breaks = c(-Inf, 10.5, 20.5, 30.5, 40.5, 50.5, 60.5, Inf),
+                              labels = c("<=10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"),
+                              levels = c("<=10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"))) %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(n = sum(n),Proportion = sum(Proportion)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(n = ifelse(ageBins == ">61", n+118866,n),
+                Proportion = ifelse(ageBins == ">61", Proportion + 0.01,Proportion),
+                Data_Source = "Census7")
+
+## combine data
+## PsySatges
+Sim_Journal_age_PsyStages3_general_prop <- Sim_Journal_age_PsyStages3_general_prop %>% 
+  dplyr::rename(n =2)
+
+
+H2_age_Psystages_general_bayes <- bind_rows(BTS_age_PsyStages_CHN,Sim_Journal_age_PsyStages3_general_prop) %>% 
+  dplyr::select(1:2) %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(n = sum(n)) %>% 
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
+                Data_Source = "Chinese subjects pool") %>% # sum(H2_age_general_bayes$Proportion) ## 100.01
+  dplyr::add_row(Census7_age_PsyStages) %>% 
+  dplyr::select(-2) %>% 
+  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
+  
+## interval10
+Sim_Journal_age_interval103_general_prop <-  Sim_Journal_age_interval103_general_prop %>% 
+  dplyr::rename(n = 2)
+
+H2_age_inteval10_general_bayes <- bind_rows(BTS_age_interval10_CHN2,Sim_Journal_age_interval103_general_prop) %>% 
+  dplyr::select(1:2) %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(n = sum(n)) %>% 
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
+                Data_Source = "Chinese subjects pool") %>% # sum(H2_age_general_bayes$Proportion) ## 100.01
+  dplyr::add_row(Census7_age_interval10) %>% 
+  dplyr::select(-2) %>% 
+  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
+
+## calculate bayes factor
+H2_BF_age_Psystages_general <- BayesMultiNomial(dataset = H2_age_Psystages_general_bayes,
+                              factor = "ageBins",
+                              observed = "Chinese subjects pool",
+                              expected = "Census7")
+
+
+H2_BF_age_interval10_general <- BayesMultiNomial(dataset = H2_age_inteval10_general_bayes,
+                              factor = "ageBins",
+                              observed = "Chinese subjects pool",
+                              expected = "Census7")
+
+```
+
+
 
 ### Region
 
