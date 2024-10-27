@@ -8,30 +8,27 @@ output:
   highlight: github
 ---
 
-
 In "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V1.Rmd"， I preprocess the journal code data. In this Rmd(V2), we enter the informal process data.
-
 
 **Special Note:** To enhance the readability and accessibility of this document, we have provided a concise explanation for the naming convention of data
 
-Journal_: This prefix signifies data that has been coded and extracted from five mainstream Chinese journals.
+Journal\_: This prefix signifies data that has been coded and extracted from five mainstream Chinese journals.
 
-BTS_: This indicates data sourced from large-scale international collaborations.
+BTS\_: This indicates data sourced from large-scale international collaborations.
 
-H1_: This indicates data use to test hypothesis 1.
+H1\_: This indicates data use to test hypothesis 1.
 
-H2_: This indicates data use to test hypothesis 2.
+H2\_: This indicates data use to test hypothesis 2.
 
-H3_: This indicates data use to test hypothesis 3.
+H3\_: This indicates data use to test hypothesis 3.
 
-Census_: This prefix represents Census data published by the National Bureau of Statistics of China.
+Census\_: This prefix represents Census data published by the National Bureau of Statistics of China.
 
-CFPS2018_: This signifies data from the 2018 Chinese Family Panel Study.
+CFPS2018\_: This signifies data from the 2018 Chinese Family Panel Study.
 
 The majority of data adhere to these naming conventions, with the prefixes typically followed by descriptive and comprehensible demographic variable names or other relevant terms to clarify the data content.
 
 Furthermore, if "Fig" appears in the data name, it signifies that the content represents a data visualization result. Similarly, the presence of "bayes" indicates that the data or result pertains to the calculation of the Bayes factor.
-
 
 Now, I start to analysis data. and the first thing is load library.
 
@@ -382,6 +379,12 @@ Journal_articles_num <- Journal %>%
 
 Journal_study_num <- Journal %>% 
   dplyr::distinct(Article_IDs,Study_Number) ## A total 1217 studies
+
+Journal_sample_size <- Journal %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size) %>% 
+  dplyr::mutate(Sample_Size = as.numeric(Sample_Size),
+                Sample_Size = ifelse(Article_IDs == "20185082",33,Sample_Size))
+# sum(Journal_sample_size$Sample_Size,na.rm = TRUE)  ## 538552
 
 ## Here, I remove some data sets to reduce data set clutter.
 rm(Journal_articles_num,Journal_study_num,df_stage2_Journal_Code2)
@@ -780,7 +783,6 @@ H1_BF_gender_general <- BayesMultiNomial(dataset = H1_gender_general_bayes,
 I found moderate evidence for the $H_1$ that the gender proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_gender$BF$LogBF10`.
 
 However, I found there no different between BTS data and the general population of Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_general$BF$LogBF10`.
-
 
 At the end of gender data processing for hypothesis 1, I removed some data sets to reduce data set clutter.
 
@@ -1551,9 +1553,9 @@ When I divide the age into 10 years,we found strong evidence for the $H_1$ that 
 
 When I divide age into stages of psychological development, I found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r H1_BF_PsyStages$BF$LogBF10`.
 
-For different target population, I compared general population for them firstly, I found strong evidence for $H_1$ that the age distribution from the Chinese subjects data of BTS data is different form the Chinese jouranls data, the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_PsyStages_general$BF$LogBF10`.
+For different target population, I compared general population for them firstly, I found strong evidence for $H_1$ that the age distribution from the Chinese subjects data of BTS data is different form the Chinese journals data, the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_PsyStages_general$BF$LogBF10`.
 
-Meanwhile, I found strong evidence support $H_1$ for another age category,the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_interval10_general$BF$LogBF10`. 
+Meanwhile, I found strong evidence support $H_1$ for another age category,the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_interval10_general$BF$LogBF10`.
 
 ## Test the 2st hypothesis
 
@@ -1628,6 +1630,7 @@ H2_Fig_gender
 ```
 
 Finally, I calculated the bayes factor for gender.
+
 ```{r}
 H2_gender_bayes <- H2_gender %>% 
   dplyr::select(2,3,1) %>% 
@@ -1667,7 +1670,7 @@ Census6_age_five5 <- df_census6 %>%
 
 Census6_age_five5$ageBins[20] <- ">=95"
 
-Census6_age_five5 <- Census6_Age %>% 
+Census6_age_five5 <- Census6_age_five5 %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(Proportion = sum(Proportion)) %>% 
   dplyr::mutate(Data_Source = "Census6") %>% 
@@ -1693,7 +1696,7 @@ Census7_age_five5$ageBins[20] <- ">=95"
 Census7_age_five5$Proportion[20] <- 0.06+0.01
 
 
-Census7_age_five5 <- Census7_Age %>% 
+Census7_age_five5 <- Census7_age_five5 %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(Proportion = sum(Proportion)) %>% 
   dplyr::mutate(Data_Source = "Census7") %>% 
@@ -1704,7 +1707,6 @@ Census7_age_five5 <- Census7_Age %>%
                                  "50~54","55~59","60~64","65~69","70~74",
                                  "75~79","80~84","85~89", "90~94",">=95" )))
 ```
-
 
 Then, I convert the data format of H1_age.
 
@@ -1756,21 +1758,10 @@ H2_Fig_gender_age
 ```
 
 In addition, I calculated the bayes factor.
+
 ```{r}
-H2_age_bayes <- H2_age %>% 
-  dplyr::select(-2) %>% 
-  dplyr::mutate(Data_Source = "Chinese subjects pool") %>% 
-  dplyr::bind_rows(Census7_Age) %>% 
-  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
-
-H2_BF_age <- BayesMultiNomial(dataset = H2_age_bayes,
-                              factor = "ageBins",
-                              observed = "Chinese subjects pool",
-                              expected = "Census7")
-
-
-## For target population, I need combine two source data firstly.
-
+##凡是BTS数据完善后涉及到合并Journal和BTS的都需要重新替换数据。切记切记！！！！！
+# Firstly, I process Census data for the following analysis.
 ## process census data.
 Census7_age <- df_census7 %>%
   dplyr::rename(ageBins = 1, n = 2, Proportion = 5) %>% 
@@ -1807,7 +1798,31 @@ Census7_age_interval10 <- Census7_age %>%
                 Proportion = ifelse(ageBins == ">61", Proportion + 0.01,Proportion),
                 Data_Source = "Census7")
 
-## combine data
+# Then, I calculate bayes factor, for a start, I calculate it in total.
+## PsyStages
+H2_age_PsyStages_bayes <- bind_rows(Census7_age_PsyStages,Sim_Journal_age_PsyStages3_prop) %>% 
+  dplyr::select(1,3:4) %>% 
+  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion) %>% 
+  dplyr::rename('Chinese subjects pool' = 3)
+
+H2_BF_age_PsyStages <- BayesMultiNomial(dataset = H2_age_PsyStages_bayes,
+                                        factor = "ageBins",
+                                        observed = "Chinese subjects pool",
+                                        expected = "Census7")
+
+## interval10
+H2_age_interval10_bayes <- bind_rows(Census7_age_interval10,Sim_Journal_age_interval103_prop) %>% 
+  dplyr::select(1,3:4) %>% 
+  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion) %>% 
+  dplyr::rename('Chinese subjects pool' = 3)
+
+H2_BF_age_interval10 <- BayesMultiNomial(dataset = H2_age_interval10_bayes,
+                                        factor = "ageBins",
+                                        observed = "Chinese subjects pool",
+                                        expected = "Census7")
+  
+
+## Next, For target population, I need combine two source data firstly.
 ## PsySatges
 Sim_Journal_age_PsyStages3_general_prop <- Sim_Journal_age_PsyStages3_general_prop %>% 
   dplyr::rename(n =2)
@@ -1848,10 +1863,11 @@ H2_BF_age_interval10_general <- BayesMultiNomial(dataset = H2_age_inteval10_gene
                               factor = "ageBins",
                               observed = "Chinese subjects pool",
                               expected = "Census7")
-
 ```
 
+For age of H2, firstly, in total, I found two age categories both have strong evidence for $H_1$ that the age distribution of Chinese subjects pool are different from Census7. The Bayesian multinomial test are PsyStages: $Log(BF_{10})$ = `r H2_BF_age_PsyStages$BF$LogBF10` and interval10: $Log(BF_{10})$ = `r H2_BF_age_interval10$BF$LogBF10` respectively.
 
+Then, I also found the Bayesian multinomial test shows strong evidence for comparing them in general population. PsyStages and interval10 are $Log(BF_{10})$ = `r H2_BF_age_Psystages_general$BF$LogBF10` and interval10: $Log(BF_{10})$ = `r H2_BF_age_interval10_general$BF$LogBF10` respectively.
 
 ### Region
 
@@ -2118,6 +2134,7 @@ ggsave("H2_region .pdf", H2_region , device = "pdf", width=18, height = 15)
 
 H2_region 
 ```
+
 
 ```{r}
 Journal_region_total <- Journal_region_total %>% 
@@ -2677,7 +2694,7 @@ world_map <- ggplot2::map_data(map = "world") %>%
                 long = ifelse(long >= -180 & long <= -30, long + 360, long),
                 region = ifelse(region == "TW","CN",region))  
 
-H3_BTS_region <- BTS_Overview2 %>% 
+H3_sample_region <- BTS_Overview2 %>%  ## 按照scheme,这里应该是BTS + Jounal，但是这可能歪曲数据
   dplyr::mutate(Proportion = Proportion * 0.01) %>% 
   dplyr::mutate(Proportion_bins = if_else(Proportion >= 0.16, "0.16-1",
                                           if_else(Proportion < 0.16 & Proportion >= 0.08, "0.08-0.16" ,
@@ -2691,7 +2708,7 @@ H3_BTS_region <- BTS_Overview2 %>%
 And I visualized geographic distribution of BTS.
 
 ```{r}
-H3_Fig_BTS_region <- ggplot(H3_BTS_region)+
+H3_Fig_sample_region <- ggplot(H3_sample_region)+
   geom_map(aes(map_id = ISO2, fill = Proportion_bins), map = world_map,show.legend = TRUE) +
   geom_polygon(data = world_map, 
                aes(x = long, y = lat, group = group), 
@@ -2702,7 +2719,7 @@ H3_Fig_BTS_region <- ggplot(H3_BTS_region)+
   scale_fill_manual(name = "Sample Proportion",
                     values = c("#CCE5FF","#99CCFF", "#66B2FF","#3399FF","#0080FF" ,"#0066CC","#004C99","#003366"),
                     limits = c("0-0.0025", "0.0025-0.005", "0.005-0.01", "0.01-0.02", "0.02-0.04", "0.04-0.08","0.08-0.16", "0.16-1")) +
-ggtitle("Geographical distribution of sample from BTS")+
+ggtitle("Geographical distribution of sample")+
   theme(plot.title = element_text(hjust = 0.5, size = 15),
         legend.text = element_text(size = 10),  
         legend.title = element_text(size = 12),  
@@ -2711,7 +2728,7 @@ ggtitle("Geographical distribution of sample from BTS")+
         legend.key.width = unit(15, "pt")  
         )
 
-H3_Fig_BTS_region
+H3_Fig_sample_region
 ```
 
 Secondly, I processed and visualized geographic distribution of world population. Note: this data process and plot code from Liu weibiao and Hu chuanpeng, thanks them.
@@ -2771,7 +2788,7 @@ ggtitle("Geographical distribution of world population")+
 
 world_population_map
 
-H3_region <- H3_Fig_BTS_region + world_population_map + 
+H3_region <- H3_Fig_sample_region + world_population_map + 
   plot_layout(ncol = 2, heights = c(4,4))+
   patchwork::plot_annotation(tag_levels = 'A')
 
@@ -2779,6 +2796,7 @@ ggsave("H3_region.pdf",H3_region, device = "pdf", width=18, height = 9)
 
 H3_region
 ```
+
 
 In addition to the above analysis, I also conducted some exploratory analysis of the data.
 
@@ -2824,8 +2842,8 @@ Journal_abstract2_report <- Journal %>%
 ```{r eval=FALSE, include=FALSE}
 ```
 
-
 ## Target population explore
+
 ```{r}
 # table(Journal$Sample_Type_N)
 
@@ -2873,4 +2891,3 @@ Journal_institution <-  Journal %>%
 
 writexl::write_xlsx(Journal_institution,"Journal_institution.xlsx")
 ```
-
