@@ -369,7 +369,7 @@ I began by analyzing the basic case of the two data sets (BTS and Chinese journa
 
 ## The basic situation of Chinese journals coding data
 
-```{r}
+```{r warning=FALSE}
 Journal <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
   dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) ## valid 1567 rows
@@ -2850,9 +2850,16 @@ Journal_abstract2_report <- Journal %>%
 Target_population_tab <-  Journal %>%
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,
                 Target_Population_N,Sample_Type_N) %>% 
-  dplyr::group_by(Article_IDs) %>% 
- dplyr::mutate(  
-    unique_sample_types = n_distinct(Sample_Type_N),  # Check if Sample_Type_N is unique
+  dplyr::mutate(Sample_Type_N = ifelse(Sample_Type_N == 1,"University students",
+                                       ifelse(Sample_Type_N == 2, "Students but not university students",
+                                              ifelse(Sample_Type_N == 3 ,"Infants or preschool children",
+                                                     ifelse(Sample_Type_N == 4 ,"Adults who are not students",
+                                                            ifelse(Sample_Type_N == 5 ,"Others",
+                                                                   ifelse(Sample_Type_N == 12 ,"University and primary school students", 
+                                                                          ifelse(Sample_Type_N == 14,"University students and audlts and primary and secondary students",
+                                                                                 ifelse(Sample_Type_N == 23,"Children and primary and secondary students", Sample_Type_N))))))))) %>%
+  dplyr::group_by(Article_IDs) %>%
+  dplyr::mutate(unique_sample_types = n_distinct(Sample_Type_N),  # Check if Sample_Type_N is unique
     Study_Type = if_else(  
       unique_sample_types == 1,  
       as.character(Sample_Type_N[1]),  
@@ -2860,7 +2867,7 @@ Target_population_tab <-  Journal %>%
     )  # If unique, Study_Type is the value of the Sample_Type_N (here we convert to character type for later processing)
 # If not unique, create a string representing all Sample_Type_N
 # Take the first value as the representative (because they are the same)
-# Merge all unique Sample_Type_N values with toString, separated by "&"
+# Merge all unique Sample_Type_N values with to String, separated by "&"
   ) %>% 
   dplyr::slice(1) %>% 
   dplyr::ungroup() %>% 
@@ -2870,11 +2877,13 @@ Target_population_tab <-  Journal %>%
   tidyr::pivot_wider(names_from = Target_Population_N,values_from = n) %>% 
   dplyr::rename(stated_specific_population = 2, stated_general_population = 3, inferred_general_population = 4)
 
+
+table(Journal$Sample_Type_N)
 # table(Target_population_tab$Study_Type)
 
 
 Target_population_check <- Journal %>% 
-  dplyr::select(Article_IDs,Target_Population_N,Coding_Basis_N) %>% 
+  dplyr::select(Article_IDs,Article_Title,Target_Population_N,Coding_Basis_N,Sample_Type_N) %>% 
   dplyr::filter(Target_Population_N == 1) %>% 
   dplyr::group_by(Article_IDs) %>% 
   dplyr::slice(1)
