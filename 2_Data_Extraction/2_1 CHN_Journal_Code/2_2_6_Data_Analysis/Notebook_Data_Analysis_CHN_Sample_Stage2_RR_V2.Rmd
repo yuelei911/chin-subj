@@ -2178,9 +2178,31 @@ Try to process educational attainment data from Chinese journal.
 ```{r}
 Journal_edu <- Journal %>% 
   dplyr::filter(Educational_Attainment_N == 1) %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,M_age,SD_age,Sample_Type_N,Educational_Attainment_N,Educational_Attainment_info_N)
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,M_age,SD_age,
+                Educational_Attainment_info_N) %>% 
+  dplyr::mutate(Higher_edu_above = NA,
+                Below_higher_edu = NA,
+                Compulsory_edu_above = NA,
+                Compulsory_edu = NA ,
+                M_edu_year = NA,
+                SD_edu_year = NA)
 
 writexl::write_xlsx(Journal_edu,"Journal_edu.xlsx")
+
+Journal_edu2 <- readxl::read_xlsx("Journal_edu.xlsx")
+
+
+Journal_edu2_tab <- Journal_edu2 %>% 
+  dplyr::summarise(tab10 = sum(is.na(Higher_edu_above)),
+                   tab11 = sum(is.na(Below_higher_edu)),
+                   tab12 = sum(is.na(Compulsory_edu_above)),
+                   tab13 = sum(is.na(Compulsory_edu)),
+                   tab14 = sum(is.na(M_edu_year)),
+                   tab15 = sum(is.na(SD_edu_year))) %>% 
+  dplyr::select(1,3,5) %>% 
+  dplyr::rename(Class_higher_edu = 1, ## 90/185
+                Class_compulsory_edu = 2, ## 104/185
+                Class_edu_year = 3)  ## 152/185
 ```
 
 ### Ethnicity
