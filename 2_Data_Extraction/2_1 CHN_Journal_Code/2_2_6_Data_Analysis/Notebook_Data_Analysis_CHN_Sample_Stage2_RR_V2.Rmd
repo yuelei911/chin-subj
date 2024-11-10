@@ -2175,25 +2175,25 @@ H2_BF_Journal_special_Census7_region <- BayesMultiNomial(dataset = H2_region_bay
 
 Try to process educational attainment data from Chinese journal.
 
-```{r}
-Journal_edu <- Journal %>% 
-  dplyr::filter(Educational_Attainment_N == 1) %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,M_age,SD_age,
-                Educational_Attainment_info_N) %>% 
-  dplyr::mutate(Higher_edu_above = NA,
-                Below_higher_edu = NA,
-                Compulsory_edu_above = NA,
-                Compulsory_edu = NA ,
-                M_edu_year = NA,
-                SD_edu_year = NA)
-
-writexl::write_xlsx(Journal_edu,"Journal_edu.xlsx")
+```{r eval=FALSE, include=FALSE}
+# Journal_edu <- Journal %>% 
+#   dplyr::filter(Educational_Attainment_N == 1) %>% 
+#   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,M_age,SD_age,
+#                 Educational_Attainment_info_N) %>% 
+#   dplyr::mutate(Higher_edu = NA,
+#                 Below_higher_edu = NA,
+#                 Compulsory_edu_above = NA,
+#                 Compulsory_edu = NA ,
+#                 M_edu_year = NA,
+#                 SD_edu_year = NA)
+# 
+# writexl::write_xlsx(Journal_edu,"Journal_edu.xlsx")
 
 Journal_edu2 <- readxl::read_xlsx("Journal_edu.xlsx")
 
 
 Journal_edu2_tab <- Journal_edu2 %>% 
-  dplyr::summarise(tab10 = sum(is.na(Higher_edu_above)),
+  dplyr::summarise(tab10 = sum(is.na(Higher_edu)),
                    tab11 = sum(is.na(Below_higher_edu)),
                    tab12 = sum(is.na(Compulsory_edu_above)),
                    tab13 = sum(is.na(Compulsory_edu)),
@@ -2203,6 +2203,140 @@ Journal_edu2_tab <- Journal_edu2 %>%
   dplyr::rename(Class_higher_edu = 1, ## 90/185
                 Class_compulsory_edu = 2, ## 104/185
                 Class_edu_year = 3)  ## 152/185
+# names(Journal_edu2)
+
+## the first class, higher_edu
+Journal_higher_edu <- Journal_edu2 %>% 
+  dplyr::select(-c(5:9,12:15)) %>% 
+  dplyr::filter(!is.na(Higher_edu) & !is.na(Below_higher_edu))
+
+##  both > 1
+Journal_higher_edu_integer <- Journal_higher_edu  %>%
+  dplyr::filter(Higher_edu > 1 & Below_higher_edu > 1) %>%
+  dplyr::summarise(Higher_edu = sum(Higher_edu),
+                   Below_higher_edu = sum(Below_higher_edu))
+  
+
+## both < 1
+Journal_higher_edu_decimal<- Journal_higher_edu  %>%
+  dplyr::filter(Higher_edu <= 1 & Below_higher_edu <= 1) %>% 
+  dplyr::mutate(Total_higher_edu = Higher_edu + Below_higher_edu) %>% 
+  dplyr::mutate(Higher_edu_tab = floor(Sample_Size * Higher_edu),
+                Below_higher_edu_tab = ifelse(Total_higher_edu == 1, Sample_Size - Higher_edu_tab, floor(Sample_Size * Below_higher_edu))) %>% 
+  dplyr::mutate(tab = Higher_edu_tab + Below_higher_edu_tab) %>% 
+  dplyr::summarise(Higher_edu = sum(Higher_edu_tab),
+                   Below_higher_edu = sum(Below_higher_edu_tab))
+
+## combine both class
+Journal_higher_edu <-  bind_rows(Journal_higher_edu_decimal, Journal_higher_edu_integer) %>% 
+  dplyr::summarise(Higher_edu = sum(Higher_edu),
+                   Below_higher_edu = sum(Below_higher_edu)) %>% 
+  tidyr::pivot_longer(cols = c(Higher_edu,Below_higher_edu),
+                      names_to = "Educational_Attainment",
+                      values_to = "Num") %>% 
+  dplyr::mutate(Proportion = round(Num/sum(Num),2)*100)
+
+Journal_higher_edu
+
+
+## The second class, Compulsory_edu
+Journal_compulsory_edu <- Journal_edu2 %>% 
+  dplyr::select(4,12:13) %>% 
+  dplyr::filter(!is.na(Compulsory_edu_above) & !is.na(Compulsory_edu))
+# names(Journal_edu2)
+
+##  both > 1
+Journal_compulsory_edu_integer <- Journal_compulsory_edu  %>%
+  dplyr::filter(Compulsory_edu_above > 1 & Compulsory_edu > 1) %>%
+  dplyr::summarise(Compulsory_edu_above = sum(Compulsory_edu_above),
+                   Compulsory_edu = sum(Compulsory_edu))
+  
+
+## both < 1
+Journal_compulsory_edu_decimal<- Journal_edu2_compulsory_edu  %>%
+  dplyr::filter(Compulsory_edu_above <= 1 & Compulsory_edu <= 1) %>% 
+  dplyr::mutate(Total_Compulsory_edu = Compulsory_edu_above + Compulsory_edu) %>% 
+  dplyr::mutate(Compulsory_edu_above_tab = floor(Sample_Size * Compulsory_edu_above),
+                Compulsory_edu_tab = ifelse(Total_Compulsory_edu == 1, Sample_Size - Compulsory_edu_above_tab, floor(Sample_Size * Compulsory_edu))) %>% 
+  dplyr::mutate(tab = Compulsory_edu_above_tab + Compulsory_edu_tab) %>% 
+  dplyr::summarise(Compulsory_edu_above = sum(Compulsory_edu_above_tab),
+                   Compulsory_edu = sum(Compulsory_edu_tab))
+
+## combine both class
+Journal_compulsory_edu <-  bind_rows(Journal_compulsory_edu_integer, Journal_compulsory_edu_decimal) %>% 
+  dplyr::summarise(Compulsory_edu_above = sum(Compulsory_edu_above),
+                   Compulsory_edu = sum(Compulsory_edu)) %>% 
+  tidyr::pivot_longer(cols = c(Compulsory_edu_above,Compulsory_edu),
+                      names_to = "Educational_Attainment",
+                      values_to = "Num") %>% 
+  dplyr::mutate(Proportion = round(Num/sum(Num),2)*100)
+
+Journal_compulsory_edu
+
+
+## The third class, edu_year
+Journal_edu2_year <- Journal_edu2 %>% 
+  dplyr::select(1,4,14:15) %>%
+  dplyr::filter(!is.na(M_edu_year))
+
+```
+
+
+And visualization
+```{r}
+## higher edu
+H2_Fig_higher_edu <- ggplot(data = Journal_higher_edu,aes(Educational_Attainment,Proportion,fill = Educational_Attainment,Proportion))+
+  geom_col()+
+  theme_classic()+
+  theme(legend.position = "none",    
+        axis.title= element_text(size = 15,family = "serif"),
+        axis.text = element_text(size = 10,family = "serif"),
+        strip.text = element_text(size = 15,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black"))
+
+H2_Fig_higher_edu
+
+
+## compulsory edu
+H2_Fig_compulsory_edu <- ggplot(data = Journal_compulsory_edu,aes(Educational_Attainment,Proportion,fill = Educational_Attainment,Proportion))+
+  geom_col()+
+  theme_classic()+
+  theme(legend.position = "none",    
+        axis.title= element_text(size = 15,family = "serif"),
+        axis.text = element_text(size = 10,family = "serif"),
+        strip.text = element_text(size = 15,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black"))
+
+H2_Fig_compulsory_edu
+
+
+## edu year
+H2_Fig_edu_year <- ggplot(data = Journal_edu2_year,aes(Article_IDs,M_edu_year,size = Sample_Size))+
+  geom_point(color = "#00BFC4")+
+  ylab("The number of years of education")+
+  coord_flip()+
+  theme_classic()+
+  theme(legend.position = "none",    
+        axis.title= element_text(size = 15,family = "serif"),
+        axis.text = element_text(size = 10,family = "serif"),
+        strip.text = element_text(size = 15,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black"))
+
+H2_Fig_edu_year
+
+
+H2_Fig_edu <- H2_Fig_higher_edu + H2_Fig_compulsory_edu + H2_Fig_edu_year +
+   plot_annotation(tag_levels = "A")  & 
+  theme(plot.tag = element_text(size = 18, face = "bold"))
+
+
+ggsave("H2_Fig_edu.pdf", H2_Fig_edu, device = "pdf", width=18, height = 9)
+
+
+H2_Fig_edu
 ```
 
 ### Ethnicity
