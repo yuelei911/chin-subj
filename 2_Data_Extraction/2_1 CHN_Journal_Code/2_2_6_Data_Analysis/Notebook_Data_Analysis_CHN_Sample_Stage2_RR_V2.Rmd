@@ -2253,7 +2253,7 @@ Journal_compulsory_edu_integer <- Journal_compulsory_edu  %>%
   
 
 ## both < 1
-Journal_compulsory_edu_decimal<- Journal_edu2_compulsory_edu  %>%
+Journal_compulsory_edu_decimal<- Journal_compulsory_edu  %>%
   dplyr::filter(Compulsory_edu_above <= 1 & Compulsory_edu <= 1) %>% 
   dplyr::mutate(Total_Compulsory_edu = Compulsory_edu_above + Compulsory_edu) %>% 
   dplyr::mutate(Compulsory_edu_above_tab = floor(Sample_Size * Compulsory_edu_above),
@@ -2277,7 +2277,23 @@ Journal_compulsory_edu
 ## The third class, edu_year
 Journal_edu2_year <- Journal_edu2 %>% 
   dplyr::select(1,4,14:15) %>%
-  dplyr::filter(!is.na(M_edu_year))
+  dplyr::filter(!is.na(M_edu_year)) %>% 
+  dplyr::mutate(M_edu_year = as.numeric(M_edu_year),
+                Edu_year_cate = ifelse(M_edu_year <= 6, "Elementary School",
+                                       ifelse(M_edu_year <= 9, "Middle School",
+                                              ifelse(M_edu_year <= 12, "High School","University")))) %>% 
+  dplyr::group_by(Edu_year_cate) %>% 
+  dplyr::summarise(Sample_Size = sum(Sample_Size)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Proportion = round((Sample_Size/sum(Sample_Size)),2)*100) %>%
+  # dplyr::add_row(Edu_year_cate = "Elementary School",
+  #                Sample_Size = 0,
+  #                Proportion = 0) %>% 
+  dplyr::mutate(Edu_year_cate = factor(Edu_year_cate,
+                                       levels = c("Middle School",
+                                                   "High School","University")))
+
+# sum(Journal_edu2_year$Sample_Size) # 5045
 
 ```
 
@@ -2288,6 +2304,7 @@ And visualization
 H2_Fig_higher_edu <- ggplot(data = Journal_higher_edu,aes(Educational_Attainment,Proportion,fill = Educational_Attainment,Proportion))+
   geom_col()+
   theme_classic()+
+  xlab("Educational attainment (21,407 subjects)")+
   theme(legend.position = "none",    
         axis.title= element_text(size = 15,family = "serif"),
         axis.text = element_text(size = 10,family = "serif"),
@@ -2302,6 +2319,8 @@ H2_Fig_higher_edu
 H2_Fig_compulsory_edu <- ggplot(data = Journal_compulsory_edu,aes(Educational_Attainment,Proportion,fill = Educational_Attainment,Proportion))+
   geom_col()+
   theme_classic()+
+  xlab("Educational attainment (13,991 subjects)")+
+  ylab("")+
   theme(legend.position = "none",    
         axis.title= element_text(size = 15,family = "serif"),
         axis.text = element_text(size = 10,family = "serif"),
@@ -2313,16 +2332,17 @@ H2_Fig_compulsory_edu
 
 
 ## edu year
-H2_Fig_edu_year <- ggplot(data = Journal_edu2_year,aes(Article_IDs,M_edu_year,size = Sample_Size))+
-  geom_point(color = "#00BFC4")+
-  ylab("The number of years of education")+
-  coord_flip()+
+
+
+H2_Fig_edu_year <- ggplot(data = Journal_edu2_year,aes(Edu_year_cate,Proportion,fill = Edu_year_cate))+
+  geom_col()+
+  xlab("Educational attainment (5,045 subjects)")+
+  ylab("")+
   theme_classic()+
+  scale_fill_manual(values =  c("#F8766D","#00BFC4","#619CFF"))+
   theme(legend.position = "none",    
         axis.title= element_text(size = 15,family = "serif"),
         axis.text = element_text(size = 10,family = "serif"),
-        strip.text = element_text(size = 15,family = "serif"),
-        strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black"))
 
 H2_Fig_edu_year
