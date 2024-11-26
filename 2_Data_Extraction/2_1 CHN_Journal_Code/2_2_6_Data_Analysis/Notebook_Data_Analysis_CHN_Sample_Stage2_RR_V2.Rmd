@@ -1972,12 +1972,89 @@ CFPS2018_region <- data.frame(table(df_CFPS2018$PROVCD18)) %>%
                 Data_Source = "CFPS2018")
 ```
 
+
+## new region
+```{r warning=FALSE}
+Journal_region_single <- Journal %>% 
+  dplyr::select(3,5,7,37,40,16,30) %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = gsub("[;；、，,]",";",Subjects_Recruitment_Area),
+                Sample_Size = as.numeric(Sample_Size)) %>% 
+  dplyr::filter(Subjects_Recruitment_Area != "0" & !grepl(";",Subjects_Recruitment_Area)) 
+
+
+# sum(Journal_region_single$Sample_Size,na.rm = TRUE)+33
+# 
+# table(Journal_region_single$Subjects_Recruitment_Area)
+
+
+Journal_region_single_tab <- Journal_region_single %>% 
+  dplyr::select(Article_IDs,Target_Population_N,Sample_Size,Subjects_Recruitment_Area) %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == "内蒙古自治区", "内蒙古",Subjects_Recruitment_Area),
+                Sample_Size = ifelse(Article_IDs == "20185082",33,Sample_Size)) %>% 
+  dplyr::group_by(Subjects_Recruitment_Area) %>% 
+  dplyr::summarise(n = sum(Sample_Size)) %>% 
+  dplyr::filter(Subjects_Recruitment_Area %in% c("新疆","西藏","甘肃","青海","内蒙古",
+                                                 "宁夏","四川","重庆","陕西","贵州","云南",
+                                                 "北京","山西","河北","河南","湖北","湖南",
+                                                 "广西","广东","香港","澳门","台湾","海南",
+                                                 "黑龙江","吉林","辽宁","天津","山东","江苏",
+                                                 "安徽","上海","浙江","江西","福建"))
+  
+
+
+Journal_region_multiple <- Journal %>% 
+  dplyr::select(3,5,7,37,40,16,30) %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = gsub("[;；、，,]",";",Subjects_Recruitment_Area)) %>% 
+  dplyr::filter(Subjects_Recruitment_Area != "0" & grepl(";",Subjects_Recruitment_Area)) 
+
+# writexl::write_xlsx(Journal_region_multiple,"Journal_region_multiple.xlsx")
+
+## re-input data and load dataa
+Journal_region_multiple <- readxl::read_xlsx("Journal_region_multiple.xlsx") %>% 
+  dplyr::filter(True_Value != "No specific value") 
+
+Journal_region_multiple_tab <-  Journal_region_multiple %>% 
+  dplyr::select(Article_IDs, Target_Population_N,True_Value) %>% 
+  tidyr::separate_rows(True_Value,sep = ";") %>% 
+  tidyr::separate(True_Value,c("Subjects_Recruitment_Area","Sample_Size"),sep = ":") %>% 
+   dplyr::filter(Subjects_Recruitment_Area %in% c("新疆","西藏","甘肃","青海","内蒙古",
+                                                 "宁夏","四川","重庆","陕西","贵州","云南",
+                                                 "北京","山西","河北","河南","湖北","湖南",
+                                                 "广西","广东","香港","澳门","台湾","海南",
+                                                 "黑龙江","吉林","辽宁","天津","山东","江苏",
+                                                 "安徽","上海","浙江","江西","福建")) %>% 
+  dplyr::mutate(Sample_Size  = as.numeric(Sample_Size),
+                Sample_Size = ifelse(Article_IDs == "20213104",ceiling(Sample_Size*2500),Sample_Size)) %>% 
+  dplyr::select(Sample_Size,Subjects_Recruitment_Area) %>% 
+  dplyr::rename(n = Sample_Size)
+
+
+## combine data
+Journal_region_tab <-bind_rows(Journal_region_single_tab,Journal_region_multiple_tab) %>% 
+  dplyr::group_by(Subjects_Recruitment_Area) %>% 
+  dplyr::summarise(n = sum(n),.groups = "drop") %>% 
+  dplyr::mutate(Proportion = (round(n/sum(n),2))*100)
+
+
+# sum(Journal_region_tab$Proportion) ## 1.01
+
+# names(Journal)
+
+Journal_region_tab2 <- Journal_region_tab %>% 
+  dplyr::mutate(Count_Bins = cut(Proportion,
+                                 breaks = c(-Inf,1,5,10,Inf),
+                labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "Journal_region_new")%>% 
+  dplyr::rename(Region = 1)
+```
+
+
 Combine all region data and load color data
 
 ```{r}
 ## combine region data
 Region_map_data <-  bind_rows(Census7_region,CFPS2018_region,Journal_region_total,
-          Journal_region_general,Journal_region_special)
+          Journal_region_general,Journal_region_special,Journal_region_tab2)
 
 ## load color data
 Region_map_color <- readxl::read_xlsx("colour.xlsx") %>% 
@@ -2136,6 +2213,42 @@ H2_region
 ```
 
 
+## Visulize new region
+```{r}
+H2_Fig_Journal_region_new <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_region_new))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "Journal actual subjects area distribution") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.position = "none",
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())+
+  annotation_north_arrow(location = 'tl',which_north = 'false',
+                         style = north_arrow_orienteering())
+
+H2_Fig_Journal_region_new
+
+
+H2_region2 <- H2_Fig_Census7_region + H2_Fig_CFPS2018_region + H2_Fig_Journal_region_new +
+  plot_layout(guides = "collect")+
+  plot_annotation(tag_levels = 'A', title = "Area distribution",
+                  theme = theme(plot.title = element_text(size = 24))) + 
+  theme(plot.tag = element_text(size = 20))
+
+
+ggsave("H2_region2.pdf", H2_region2, device = "pdf", width=18, height = 15)
+
+H2_region 
+```
+
+
 ```{r}
 Journal_region_total <- Journal_region_total %>% 
   dplyr::mutate(Data_Source = "Journal")
@@ -2170,6 +2283,7 @@ H2_BF_Journal_special_Census7_region <- BayesMultiNomial(dataset = H2_region_bay
                                           observed = "Journal_special_population_region",
                                           expected = "Census7")
 ```
+
 
 ### Educational attainment
 
