@@ -1871,110 +1871,12 @@ Then, I also found the Bayesian multinomial test shows strong evidence for compa
 
 ### Region
 
-As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals.
+As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals. 
+
+All the data containing the region is processed.
 
 ```{r}
-Journal_region <- Journal %>% 
-  dplyr::filter(Subjects_Recruitment_Area != 0) %>% 
-  dplyr::select(Article_IDs,Study_Number_N,Subjects_Group_N,
-                Target_Population_N,Sample_Type_N,Subjects_Recruitment_Area) %>% 
-  dplyr::mutate(Subjects_Recruitment_Area = gsub("[；、,:]", ";",Subjects_Recruitment_Area)) %>% 
-  tidyr::separate_rows(Subjects_Recruitment_Area,sep = ";") %>% 
-  dplyr::mutate(Subjects_Recruitment_Area =
-                  gsub("自治区|回族自治区|维吾尔自治区|壮族自治区","",Subjects_Recruitment_Area)) %>% 
-  dplyr::filter(Subjects_Recruitment_Area %in% c("新疆","西藏","甘肃","青海","内蒙古",
-                                                 "宁夏","四川","重庆","陕西","贵州","云南",
-                                                 "北京","山西","河北","河南","湖北","湖南",
-                                                 "广西","广东","香港","澳门","台湾","海南",
-                                                 "黑龙江","吉林","辽宁","天津","山东","江苏",
-                                                 "安徽","上海","浙江","江西","福建"))
-
-Journal_region
-
-Journal_region_total <- Journal_region %>% 
-  dplyr::count(Subjects_Recruitment_Area) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                Count_Bins = cut(Proportion,
-                                 breaks = c(-Inf,1,5,10,Inf),
-                labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Journal_total_population_region")%>% 
-  dplyr::rename(Region = 1)
-
-Journal_region_total
-
-## Target population is general
-Journal_region_general <- Journal_region %>% 
-  dplyr::filter(Target_Population_N != 1) %>% 
-  dplyr::count(Subjects_Recruitment_Area) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                Count_Bins = cut(Proportion,
-                                 breaks = c(-Inf,1,5,10,Inf),
-                labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Journal_general_population_region") %>% 
-  dplyr::rename(Region = 1)
-
-Journal_region_general
-
-## Target population is special
-Journal_region_special <- Journal_region %>% 
-  dplyr::filter(Target_Population_N == 1) %>% 
-  dplyr::count(Subjects_Recruitment_Area) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                Count_Bins = cut(Proportion,
-                                 breaks = c(-Inf,1,5,10,Inf),
-                labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Journal_special_population_region") %>% 
-  dplyr::rename(Region = 1)
-
-Journal_region_special
-```
-
-The second step, I processed of provincial distribution of population for census7.
-
-```{r message=FALSE, warning=FALSE, include=FALSE}
-Census7_region <- readxl::read_xls("A0101.xls") %>% 
-  dplyr::select(1,5) %>% 
-  dplyr::rename(Region = 1, n = 2) %>% 
-  dplyr::filter(!is.na(Region)) %>% 
-  dplyr::slice(-c(1:2)) %>% 
-  dplyr::mutate(n = as.numeric(n))
-
-
-Census7_3 <- data.frame(Region = c("台湾","香港","澳门"),n =c(23561236,7474200,683218))
-
-
-Census7_region <- rbind(Census7_region,Census7_3) %>% 
-  dplyr::mutate(Proportion = round((n / sum(n))*100,2)) %>% 
-  dplyr::mutate(Count_Bins = cut(Proportion,
-                                      breaks = c(-Inf,1,5,10,Inf),
-                                      labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Census7")
-
-
-Census7_region$Region <- gsub(" ", "", Census7_region$Region)  
-```
-
-The third step, I processed of provincial distribution of population for CFPS2018.
-
-```{r}
-## process CFPS2018 province data
-CFPS2018_region <- data.frame(table(df_CFPS2018$PROVCD18)) %>% 
-  dplyr::rename(Region = 1,n=2) %>% 
-  dplyr::mutate(Region = c("北京","天津","河北","山西","内蒙古","辽宁","吉林",
-                             "黑龙江","上海","江苏","浙江","安徽","福建","江西",
-                             "山东","河南","湖北","湖南","广东","广西","海南",
-                             "重庆","四川","贵州","云南","西藏","陕西","甘肃",
-                             "青海","宁夏","新疆")) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                Count_Bins = cut(Proportion,
-                                      breaks = c(-Inf,1,5,10,Inf),
-                                      labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "CFPS2018")
-```
-
-
-## new region
-```{r warning=FALSE}
+## single region
 Journal_region_single <- Journal %>% 
   dplyr::select(3,5,7,37,40,16,30) %>% 
   dplyr::mutate(Subjects_Recruitment_Area = gsub("[;；、，,]",";",Subjects_Recruitment_Area),
@@ -2001,7 +1903,7 @@ Journal_region_single_tab <- Journal_region_single %>%
                                                  "安徽","上海","浙江","江西","福建"))
   
 
-
+## multiple regions
 Journal_region_multiple <- Journal %>% 
   dplyr::select(3,5,7,37,40,16,30) %>% 
   dplyr::mutate(Subjects_Recruitment_Area = gsub("[;；、，,]",";",Subjects_Recruitment_Area)) %>% 
@@ -2044,10 +1946,116 @@ Journal_region_tab2 <- Journal_region_tab %>%
   dplyr::mutate(Count_Bins = cut(Proportion,
                                  breaks = c(-Inf,1,5,10,Inf),
                 labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Journal_region_new")%>% 
+                Data_Source = "Journal_region_total")%>% 
   dplyr::rename(Region = 1)
 
 # sum(Journal_region_tab2$n) 290,585
+```
+
+
+The data is processed when the target population is the general population.
+```{r}
+## single region
+Journal_region_single_general <- Journal_region_single %>% 
+  dplyr::filter(Target_Population_N != 1)
+
+Journal_region_single_general_tab <- Journal_region_single_general %>% 
+  dplyr::select(Article_IDs,Target_Population_N,Sample_Size,Subjects_Recruitment_Area) %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == "内蒙古自治区", "内蒙古",Subjects_Recruitment_Area)) %>% 
+  dplyr::group_by(Subjects_Recruitment_Area) %>% 
+  dplyr::summarise(n = sum(Sample_Size)) %>% 
+  dplyr::filter(Subjects_Recruitment_Area %in% c("新疆","西藏","甘肃","青海","内蒙古",
+                                                 "宁夏","四川","重庆","陕西","贵州","云南",
+                                                 "北京","山西","河北","河南","湖北","湖南",
+                                                 "广西","广东","香港","澳门","台湾","海南",
+                                                 "黑龙江","吉林","辽宁","天津","山东","江苏",
+                                                 "安徽","上海","浙江","江西","福建"))
+
+## multiple regions
+Journal_region_multiple_general <- Journal_region_multiple %>% 
+  dplyr::filter(Target_Population_N != 1)
+
+
+Journal_region_multiple_general_tab <-  Journal_region_multiple_general %>% 
+  dplyr::select(Article_IDs, Target_Population_N,True_Value) %>% 
+  tidyr::separate_rows(True_Value,sep = ";") %>% 
+  tidyr::separate(True_Value,c("Subjects_Recruitment_Area","Sample_Size"),sep = ":") %>% 
+   dplyr::filter(Subjects_Recruitment_Area %in% c("新疆","西藏","甘肃","青海","内蒙古",
+                                                 "宁夏","四川","重庆","陕西","贵州","云南",
+                                                 "北京","山西","河北","河南","湖北","湖南",
+                                                 "广西","广东","香港","澳门","台湾","海南",
+                                                 "黑龙江","吉林","辽宁","天津","山东","江苏",
+                                                 "安徽","上海","浙江","江西","福建")) %>% 
+  dplyr::mutate(Sample_Size  = as.numeric(Sample_Size),
+                Sample_Size = ifelse(Article_IDs == "20213104",ceiling(Sample_Size*2500),Sample_Size)) %>% 
+  dplyr::select(Sample_Size,Subjects_Recruitment_Area) %>% 
+  dplyr::rename(n = Sample_Size)
+
+## combine two data
+Journal_region_general_tab <-bind_rows(Journal_region_single_general_tab,Journal_region_multiple_general_tab) %>% 
+  dplyr::group_by(Subjects_Recruitment_Area) %>% 
+  dplyr::summarise(n = sum(n),.groups = "drop") %>% 
+  dplyr::mutate(Proportion = (round(n/sum(n),2))*100)
+
+# sum(Journal_region_general_tab$Proportion) ## 100
+
+
+Journal_region_general_tab2 <- Journal_region_general_tab %>% 
+  dplyr::mutate(Count_Bins = cut(Proportion,
+                                 breaks = c(-Inf,1,5,10,Inf),
+                labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "Journal_region_general_population")%>% 
+  dplyr::rename(Region = 1)
+
+# sum(Journal_region_general_tab2$n) 42,890
+```
+
+
+The second step, I processed of provincial distribution of population for census7.
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+Census7_region <- readxl::read_xls("A0101.xls") %>% 
+  dplyr::select(1,5) %>% 
+  dplyr::rename(Region = 1, n = 2) %>% 
+  dplyr::filter(!is.na(Region)) %>% 
+  dplyr::slice(-c(1:2)) %>% 
+  dplyr::mutate(n = as.numeric(n))
+
+
+Census7_3 <- data.frame(Region = c("台湾","香港","澳门"),n =c(23561236,7474200,683218))
+
+
+Census7_region <- rbind(Census7_region,Census7_3) %>% 
+  dplyr::mutate(Proportion = round((n / sum(n))*100,2)) %>% 
+  dplyr::mutate(Count_Bins = cut(Proportion,
+                                      breaks = c(-Inf,1,5,10,Inf),
+                                      labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "Census7")
+
+
+Census7_region$Region <- gsub(" ", "", Census7_region$Region)  
+
+# sum(Census7_region$n) 1,441,497,378
+```
+
+The third step, I processed of provincial distribution of population for CFPS2018.
+
+```{r}
+## process CFPS2018 province data
+CFPS2018_region <- data.frame(table(df_CFPS2018$PROVCD18)) %>% 
+  dplyr::rename(Region = 1,n=2) %>% 
+  dplyr::mutate(Region = c("北京","天津","河北","山西","内蒙古","辽宁","吉林",
+                             "黑龙江","上海","江苏","浙江","安徽","福建","江西",
+                             "山东","河南","湖北","湖南","广东","广西","海南",
+                             "重庆","四川","贵州","云南","西藏","陕西","甘肃",
+                             "青海","宁夏","新疆")) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+                Count_Bins = cut(Proportion,
+                                      breaks = c(-Inf,1,5,10,Inf),
+                                      labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "CFPS2018")
+
+# sum(CFPS2018_region$n) 37,104
 ```
 
 
@@ -2055,8 +2063,8 @@ Combine all region data and load color data
 
 ```{r}
 ## combine region data
-Region_map_data <-  bind_rows(Census7_region,CFPS2018_region,Journal_region_total,
-          Journal_region_general,Journal_region_special,Journal_region_tab2)
+Region_map_data <-  bind_rows(Census7_region,CFPS2018_region,
+                              Journal_region_tab2,Journal_region_general_tab2)
 
 ## load color data
 Region_map_color <- readxl::read_xlsx("colour.xlsx") %>% 
@@ -2094,14 +2102,14 @@ China <- dplyr::left_join(China,Region_data,by= "QUHUADAIMA")
 
 
 
-## Chinese journal papers
+## Chinese journal papers in total
 H2_Fig_region_total <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(Color_Journal_total_population_region))) +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_region_total))) +
   scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
   geom_sf(data = gjx) +
-  labs(title = "Journal subjects recruitment area distribution") +
+  labs(title = "Journal subjects recruitment region distribution (290,585 subjects)") +
   theme(plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
         legend.title = element_blank(),
@@ -2116,14 +2124,14 @@ H2_Fig_region_total <- ggplot() +
 
 
 
-## Chinese journal papers
+## Chinese journal papers in general population
 H2_Fig_region_general <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(Color_Journal_general_population_region))) +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_region_general_population))) +
   scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
   geom_sf(data = gjx) +
-  labs(title = "Journal general population area distribution") +
+  labs(title = "Journal general population region distribution (42,890 subjects)") +
   theme(plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
         legend.title = element_blank(),
@@ -2135,30 +2143,6 @@ H2_Fig_region_general <- ggplot() +
         axis.title = element_blank())+
   annotation_north_arrow(location = 'tl',which_north = 'false',
                          style = north_arrow_orienteering())
-
-
-
-
-## Chinese journal papers
-H2_Fig_region_special <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(Color_Journal_special_population_region))) +
-  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
-                    breaks = c("0","1","2", "3", "4"),
-                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
-  geom_sf(data = gjx) +
-  labs(title = "Journal sepcial population area distribution") +
-  theme(plot.title = element_text(color = "black",size = 16,
-                                  face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.title = element_blank(),
-        legend.position = c(0.2, 0.2),
-        panel.grid = element_blank(),
-        panel.background = element_blank(),
-        axis.text = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title = element_blank())+
-  annotation_north_arrow(location = 'tl',which_north = 'false',
-                         style = north_arrow_orienteering())
-
 
 ## census 7 
 H2_Fig_CFPS2018_region <- ggplot() +
@@ -2167,7 +2151,7 @@ H2_Fig_CFPS2018_region <- ggplot() +
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
   geom_sf(data = gjx) +
-  labs(title = "CFPS2018 subjects recruitment area distribution") +
+  labs(title = "CFPS2018 subjects recruitment region distribution (37,104 subjects)") +
   theme(plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
         legend.position = "none",
@@ -2187,7 +2171,7 @@ H2_Fig_Census7_region <- ggplot() +
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
   geom_sf(data = gjx) +
-  labs(title = "Census7 population area distribution") +
+  labs(title = "Census7 population region distribution (1,441,497,378 people)") +
   theme(plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
         legend.position = "none",
@@ -2202,7 +2186,7 @@ H2_Fig_Census7_region <- ggplot() +
 
 
 H2_region <- (H2_Fig_Census7_region + H2_Fig_CFPS2018_region)/( 
-  H2_Fig_region_total + H2_Fig_region_general + H2_Fig_region_special) +
+  H2_Fig_region_total + H2_Fig_region_general) +
   plot_layout(guides = "collect")+
   plot_annotation(tag_levels = 'A', title = "Area distribution",
                   theme = theme(plot.title = element_text(size = 24))) + 
