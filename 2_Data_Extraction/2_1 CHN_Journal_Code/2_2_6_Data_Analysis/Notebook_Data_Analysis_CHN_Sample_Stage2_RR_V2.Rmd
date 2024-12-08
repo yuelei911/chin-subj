@@ -279,6 +279,7 @@ BTS <- lapply(BTS,function(df){
 })
 ```
 
+
 ```{r include=FALSE}
 ## Here, I remove some data sets to reduce data set clutter.
 rm(BTS_na_table,BTS_na,Countrycode_merge,BTS_countrycode_check)
@@ -384,7 +385,7 @@ Journal_sample_size <- Journal %>%
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size) %>% 
   dplyr::mutate(Sample_Size = as.numeric(Sample_Size),
                 Sample_Size = ifelse(Article_IDs == "20185082",33,Sample_Size))
-# sum(Journal_sample_size$Sample_Size,na.rm = TRUE)  ## 538552
+# sum(Journal_sample_size$Sample_Size,na.rm = TRUE)  ## 538,552
 
 ## Here, I remove some data sets to reduce data set clutter.
 rm(Journal_articles_num,Journal_study_num,df_stage2_Journal_Code2)
@@ -451,6 +452,19 @@ BTS_Overview2_idx <- BTS_Overview2 %>%
 ## The reported situation of Chinese Journals
 
 ```{r}
+## calculate region data
+# Journal_region_detail_tab <- Journal %>% 
+#   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Subjects_Recruitment_Area) %>% 
+#   dplyr::filter(Subjects_Recruitment_Area != 0)
+# 
+# ## studies
+# Journal_region_detail_study_num <- Journal_region_detail_tab %>% 
+#   dplyr::distinct(Article_IDs,Study_Number) ## 680 studies
+# 
+# ## papers
+# Journal_region_detail_papers_num <- Journal_region_detail_tab %>% 
+#   dplyr::distinct(Article_IDs) ## 601 papers
+
 Journal_report <- Journal %>% 
   dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
                 Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
@@ -549,6 +563,10 @@ Journal_age_report_detail <- Journal %>%
 ### Age report studies num
 Journal_age_report_detail_study_num <- Journal_age_report_detail %>%
     dplyr::distinct(Article_IDs,Study_Number) ## 989 studies
+
+### Age report papers num
+Journal_age_report_detail_papers_num <- Journal_age_report_detail_study_num %>% 
+  dplyr::distinct(Article_IDs) ## 792 articles
   
 ### Age fuzzy report studies num
 Journal_age_fuzzy_report <- Journal_age_report_detail %>% 
@@ -562,7 +580,7 @@ Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>%
 
 ## Here, I remove some data sets to reduce data set clutter.
 rm(Journal_age_report_detail,Journal_age_report_detail_study_num,
-   Journal_age_fuzzy_report,Journal_age_fuzzy_report_study_num)
+   Journal_age_fuzzy_report,Journal_age_fuzzy_report_study_num, Journal_age_report_detail_study_num)
 ```
 
 In this section, I began by testing and analyzing three main hypotheses.
@@ -1341,6 +1359,12 @@ H1_age <- H1_age %>%
                                  "25~29","30~34","35~39","40~44","45~49",
                                  "50~54","55~59","60~64","65~69","70~74",
                                  "75~79","80~84","85~89", "90~94",">=95" )))
+
+## calculate difference between of two data
+H1_age_twosource_difference <- H1_age %>% 
+  tidyr::pivot_wider(names_from = Data_Source,
+                     values_from = c(Proportion,n)) %>% 
+  dplyr::mutate(Differences = round(`Proportion_BTS Chinese`/ Proportion_Journal,2))
 ```
 
 Visualize age data from Chinese journals and census7.
@@ -1889,6 +1913,16 @@ Journal_region_single <- Journal %>%
 # table(Journal_region_single$Subjects_Recruitment_Area)
 
 
+## calculate the number of articles and studies that include provincial administrative regions 
+## studies
+# Journal_region_single_studies_num <- Journal_region_single %>% 
+#   dplyr::distinct(Article_IDs,Study_Number)  ## single 592 studies + multiple 10
+# 
+# ## papers
+# Journal_region_single_papers_num <- Journal_region_single %>% 
+#   dplyr::distinct(Article_IDs) ## single 519 papers + multiple 10
+
+
 Journal_region_single_tab <- Journal_region_single %>% 
   dplyr::select(Article_IDs,Target_Population_N,Sample_Size,Subjects_Recruitment_Area) %>% 
   dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == "内蒙古自治区", "内蒙古",Subjects_Recruitment_Area),
@@ -2198,51 +2232,12 @@ ggsave("H2_region .pdf", H2_region , device = "pdf", width=18, height = 15)
 H2_region 
 ```
 
-
-## Visulize new region
 ```{r}
-H2_Fig_Journal_region_new <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(Color_Journal_region_new))) +
-  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
-                    breaks = c("0","1","2", "3", "4"),
-                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
-  geom_sf(data = gjx) +
-  labs(title = "Journal actual subjects area distribution") +
-  theme(plot.title = element_text(color = "black",size = 16,
-                                  face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.position = "none",
-        panel.grid = element_blank(),
-        panel.background = element_blank(),
-        axis.text = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title = element_blank())+
-  annotation_north_arrow(location = 'tl',which_north = 'false',
-                         style = north_arrow_orienteering())
-
-H2_Fig_Journal_region_new
-
-
-H2_region2 <- H2_Fig_Census7_region + H2_Fig_CFPS2018_region + H2_Fig_Journal_region_new +
-  plot_layout(guides = "collect")+
-  plot_annotation(tag_levels = 'A', title = "Area distribution",
-                  theme = theme(plot.title = element_text(size = 24))) + 
-  theme(plot.tag = element_text(size = 20))
-
-
-ggsave("H2_region2.pdf", H2_region2, device = "pdf", width=18, height = 15)
-
-H2_region2 
-```
-
-
-```{r}
-Journal_region_total <- Journal_region_total %>% 
-  dplyr::mutate(Data_Source = "Journal")
-
 ## combine three source data
-H2_region_bayes <- bind_rows(Journal_region_total,Journal_region_general,Journal_region_special,
+H2_region_bayes <- bind_rows(Journal_region_general_tab2,Journal_region_tab2,
                              Census7_region,CFPS2018_region) %>% 
   dplyr::select(1,3,5) %>% 
+  dplyr::mutate(Data_Source = ifelse(Data_Source == "Journal_region_total","Journal",Data_Source)) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion) %>% 
   dplyr::mutate(across(everything(),~ifelse(is.na(.),1,.)))
 
@@ -2261,13 +2256,13 @@ H2_BF_Journal_CFPS2018_region <- BayesMultiNomial(dataset = H2_region_bayes,
 ## different target population compared
 H2_BF_Journal_general_Census7_region <- BayesMultiNomial(dataset = H2_region_bayes,
                                           factor = "Region",
-                                          observed = "Journal_general_population_region",
+                                          observed = "Journal_region_general_population",
                                           expected = "Census7")
 
-H2_BF_Journal_special_Census7_region <- BayesMultiNomial(dataset = H2_region_bayes,
+H2_BF_Journal_general_CFPS2018_region <- BayesMultiNomial(dataset = H2_region_bayes,
                                           factor = "Region",
-                                          observed = "Journal_special_population_region",
-                                          expected = "Census7")
+                                          observed = "Journal_region_general_population",
+                                          expected = "CFPS2018")
 ```
 
 
