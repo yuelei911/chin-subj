@@ -2816,6 +2816,7 @@ H3_BF_gender <- H3_BF_gender  %>%
                prop_name = "Gender")
 ```
 
+
 ```{r warning=FALSE}
 H3_Fig_BF_gender <- ggplot(H3_BF_gender, aes( x = `Log(BF10)_NonInform`, y = Countries)) +
   geom_point() +
@@ -2841,10 +2842,10 @@ H3_Fig_BF_gender <- ggplot(H3_BF_gender, aes( x = `Log(BF10)_NonInform`, y = Cou
               panel.background = element_blank(),
               panel.border = element_blank(),
               text = element_text(family='Times'),
-              axis.text.x = element_text (size = 12, color = 'black',  hjust = 1),
-              axis.text.y = element_text (size = 12, color = 'black'),
+              axis.text.x = element_text (size = 6, color = 'black',  hjust = 1),
+              axis.text.y = element_text (size = 6, color = 'black'),
               plot.title = element_text(lineheight=.8, face="bold", size = 18, margin=margin(0,0,20,0)),
-              axis.text = element_text (size = 16, color = 'black'),
+              axis.text = element_text (size = 6, color = 'black'),
               axis.title = element_text (size = 16),
               axis.title.x = element_text (size = 16),
               axis.title.y = element_text( size = 16),
@@ -2908,10 +2909,10 @@ H3_Fig_BF_PsyStages <- ggplot(H3_BF_PsyStages, aes( x = `Log(BF10)_NonInform`, y
               panel.background = element_blank(),
               panel.border = element_blank(),
               text = element_text(family='Times'),
-              axis.text.x = element_text (size = 12, color = 'black',  hjust = 1),
-              axis.text.y = element_text (size = 12, color = 'black'),
-              plot.title = element_text(lineheight=.8, face="bold", size = 18, margin=margin(0,0,20,0)),
-              axis.text = element_text (size = 16, color = 'black'),
+              axis.text.x = element_text (size = 6, color = 'black',  hjust = 1),
+              axis.text.y = element_text (size = 6, color = 'black'),
+              plot.title = element_text(lineheight=.6, face="bold", size = 18, margin=margin(0,0,20,0)),
+              axis.text = element_text (size = 10, color = 'black'),
               axis.title = element_text (size = 16),
               axis.title.x = element_text (size = 16),
               axis.title.y = element_text( size = 16),
@@ -2949,10 +2950,10 @@ H3_Fig_BF_interval10 <- ggplot(H3_BF_interval10,
               panel.background = element_blank(),
               panel.border = element_blank(),
               text = element_text(family='Times'),
-              axis.text.x = element_text (size = 12, color = 'black',  hjust = 1),
-              axis.text.y = element_text (size = 12, color = 'black'),
+              axis.text.x = element_text (size = 6, color = 'black',  hjust = 1),
+              axis.text.y = element_text (size = 6, color = 'black'),
               plot.title = element_text(lineheight=.8, face="bold", size = 18, margin=margin(0,0,20,0)),
-              axis.text = element_text (size = 16, color = 'black'),
+              axis.text = element_text (size = 6, color = 'black'),
               axis.title = element_text (size = 16),
               axis.title.x = element_text (size = 16),
               axis.title.y = element_text( size = 16),
