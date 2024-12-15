@@ -109,7 +109,7 @@ rm(Proofreading_Data_Names,row_equalities2,check_row_equality2)
 ```
 
 
-### Combining the two stages' data (Group2,3,4,5,6, and 7)
+### Combining the two stages' data (Group2,4,5,6, and 7)
 ```{r}
 Group24567_1 <- dplyr::bind_rows(df[[3]],df[[6]],df[[7]],df[[8]],df[[9]]) %>% 
   dplyr::filter(Coder == "final") %>% 
@@ -234,7 +234,7 @@ Group1_bind$Study_Number[173] <- Group1_bind$Study_Number_N[173]
 
 ## run Group1_bind_equal again and find this data.frame is not data available, thus we rm this data frame
 
-rm(Group1_bind_equal,Group1_1,Group1_2,Group1_suppl)
+# rm(Group1_bind_equal,Group1_1,Group1_2,Group1_suppl)
 ``` 
 
 
