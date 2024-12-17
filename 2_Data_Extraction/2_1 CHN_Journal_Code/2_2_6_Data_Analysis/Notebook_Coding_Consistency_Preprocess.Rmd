@@ -1797,6 +1797,58 @@ results <- rbind(results, data.frame(Article_IDs_N = Article_IDs_N,
 results <- results %>% 
   dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
   dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
+
+## 20081061
+Coding_consistency_preprocess_data1$SD_age[3] <- 1
+
+## 20081124
+Coding_consistency_preprocess_data1$SD_age[c(69,72,75,78)] <- 1
+
+## 20083052
+Coding_consistency_preprocess_data1$SD_age[132] <- 1
+
+## 20083058
+Coding_consistency_preprocess_data1$SD_age[141] <- 1
+
+## 20181143
+Coding_consistency_preprocess_data1$SD_age[252] <- 1
+
+## 20182267
+Coding_consistency_preprocess_data1$SD_age[c(414,417)] <- 1
+
+## 20182268
+Coding_consistency_preprocess_data1$SD_age[444] <- 1
+
+## 20183336
+Coding_consistency_preprocess_data1$SD_age[552] <- 3
+
+## 20213296
+Coding_consistency_preprocess_data1$SD_age[2043] <- 1
+
+## 20085044
+Coding_consistency_preprocess_data1$SD_age[c(2262,2265,2268)] <- 1
+
+## 20181002
+Coding_consistency_preprocess_data1$SD_age[2280] <- 1
+
+## 20181007
+Coding_consistency_preprocess_data1$SD_age[c(2301,2304,2307)] <- 1
+
+## 20183182
+Coding_consistency_preprocess_data1$SD_age[2616] <- 1
+
+## 20185001
+Coding_consistency_preprocess_data1$SD_age[c(2688,2691,2694)] <- 3
+
+## 20214070
+Coding_consistency_preprocess_data1$SD_age[2931] <- 3
+
+## 20214073
+Coding_consistency_preprocess_data1$SD_age[2937] <- 3
+
+## 20181207
+Coding_consistency_preprocess_data1$SD_age[4578] <- 1
+
 ```
 
 
@@ -1856,5 +1908,11 @@ results <- rbind(results, data.frame(Article_IDs_N = Article_IDs_N,
 results <- results %>% 
   dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
   dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
+
+## 20081026
+Coding_consistency_preprocess_data1$Other_age[c(3762,3765)] <- 1
+
+## 20182183
+Coding_consistency_preprocess_data1$SD_age[3252] <- 1
 ```
 
