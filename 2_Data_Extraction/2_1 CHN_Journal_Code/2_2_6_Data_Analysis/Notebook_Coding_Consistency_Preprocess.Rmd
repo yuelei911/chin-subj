@@ -198,11 +198,14 @@ Coding_consistency_preprocess_data1 <- Coding_consistency_preprocess_data %>%
   dplyr::select(49,1:48) %>% 
   dplyr::filter(Coder != "final")
 
+
+# names(Coding_consistency_preprocess_data1)
+
 # writexl::write_xlsx(Coding_consistency_preprocess_data1,"Coding_consistency_preprocess_data1.xlsx")
 ```
 
 
-## Article_IDs
+## Article_IDs N
 ```{r}
 ## first, I process NA value or NULL value
 
@@ -2157,7 +2160,8 @@ results <- results %>%
 Coding_consistency_preprocess_data1$Religious[c(288,291)] <- 1
 ```
 
-## 
+
+## Religious_info
 ```{r}
 ## first, I process NA value or NULL value
 
@@ -2560,6 +2564,70 @@ results <- rbind(results, data.frame(Article_IDs_N = Article_IDs_N,
 results <- results %>% 
   dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
   dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
+
+## 20181152
+Coding_consistency_preprocess_data1$Sampling_Method[c(288,291)] <- 1
+
+## 20181176
+Coding_consistency_preprocess_data1$Sampling_Method[324] <- 1
+
+## 20181187
+Coding_consistency_preprocess_data1$Sampling_Method[369] <- 1
+
+## 20182248
+Coding_consistency_preprocess_data1$Sampling_Method[c(375,378,381)] <- 1
+
+## 20182268
+Coding_consistency_preprocess_data1$Sampling_Method[444] <- 3
+
+## 20182297
+Coding_consistency_preprocess_data1$Sampling_Method[477] <- 1
+
+## 20183321
+Coding_consistency_preprocess_data1$Sampling_Method[c(498,501,504,507)] <- 1
+
+## 20185166
+Coding_consistency_preprocess_data1$Sampling_Method[624] <- 1
+
+## 20082112
+Coding_consistency_preprocess_data1$Sampling_Method[816] <- 1
+
+## 20082296
+Coding_consistency_preprocess_data1$Sampling_Method[c(2211,2214,2217)] <- 1
+
+## 20082298
+Coding_consistency_preprocess_data1$Sampling_Method[2220] <- 1
+
+## 20182138
+Coding_consistency_preprocess_data1$Sampling_Method[c(2520,2523)] <- 1
+
+## 20183149
+Coding_consistency_preprocess_data1$Sampling_Method[2571] <- 1
+
+## 20183167
+Coding_consistency_preprocess_data1$Sampling_Method[c(2598,2601)] <- 1
+
+## 20183188
+Coding_consistency_preprocess_data1$Sampling_Method[2625] <- 1
+
+## 20185007
+Coding_consistency_preprocess_data1$Sampling_Method[c(2706,2709,2712,2715)] <- 1
+
+## 20214053
+Coding_consistency_preprocess_data1$Sampling_Method[2901] <- 1
+
+## 20182180
+Coding_consistency_preprocess_data1$Sampling_Method[3240] <- 1
+
+## 20183229
+Coding_consistency_preprocess_data1$Sampling_Method[3333] <- 1
+Coding_consistency_preprocess_data1$Sampling_Method[3336] <- 3
+
+## 20081026
+Coding_consistency_preprocess_data1$Sampling_Method[3762] <- 1
+
+## 20181083
+Coding_consistency_preprocess_data1$Sampling_Method[3939] <- 1
 ```
 
 
@@ -2659,7 +2727,7 @@ Coding_consistency_preprocess_data1$Target_Population_N[4497] <- 1
 ```
 
 
-## 
+## Sample_Type_N
 ```{r}
 ## first, I process NA value or NULL value
 
@@ -2715,5 +2783,783 @@ results <- rbind(results, data.frame(Article_IDs_N = Article_IDs_N,
 results <- results %>% 
   dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
   dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
+
+## 20182268
+Coding_consistency_preprocess_data1$Sample_Type_N[444] <- 1
+
+## 20183326
+Coding_consistency_preprocess_data1$Sample_Type_N[c(528,531,534)] <- 1
+
+## 20183344
+Coding_consistency_preprocess_data1$Sample_Type_N[c(561,564)] <- 1
+
+## 20084057
+Coding_consistency_preprocess_data1$Sample_Type_N[1596] <- 1
+
+## 20182247
+Coding_consistency_preprocess_data1$Sample_Type_N[4158] <- 1
+
+## 20083109
+Coding_consistency_preprocess_data1$Sample_Type_N[4494] <- 1
+
+## 20083110
+Coding_consistency_preprocess_data1$Sample_Type_N[4497] <- 1
+
+## 20083170
+Coding_consistency_preprocess_data1$Sample_Type_N[4548] <- 1
+
+## 20181208
+Coding_consistency_preprocess_data1$Sample_Type_N[c(4581,4584,4587,4590)] <- 1
+
+## 20181212
+Coding_consistency_preprocess_data1$Sample_Type_N[c(4608,4611)] <- 1
+
+## 20181213
+Coding_consistency_preprocess_data1$Sample_Type_N[c(4614,4617)] <- 1
+
+## 20181223
+Coding_consistency_preprocess_data1$Sample_Type_N[c(4626,4629)] <- 1
+
+## 20181231
+Coding_consistency_preprocess_data1$Sample_Type_N[4641] <- 1
+
+## 20181236
+Coding_consistency_preprocess_data1$Sample_Type_N[c(4647,4650)] <- 1
+
+## 20183001
+Coding_consistency_preprocess_data1$Sample_Type_N[c(4665,4668,4671)] <- 1
+
+## 20183013
+Coding_consistency_preprocess_data1$Sample_Type_N[4683] <- 1
+
+```
+
+
+## Sample_Type_info_N
+```{r}
+## first, I process NA value or NULL value
+
+Coding_consistency_preprocess_data1 <- Coding_consistency_preprocess_data1 %>% 
+  dplyr::mutate(Sample_Type_info_N = ifelse(Sample_Type_info_N == "　",NA,Sample_Type_info_N),
+                Sample_Type_info_N = ifelse(Sample_Type_info_N == "check" & is.na(Sample_Type_info_N ),"Chin_Subj",Sample_Type_info_N))
+
+# table(Coding_consistency_preprocess_data1$Sample_Type_info_N)
+
+rm(results)
+
+
+results <- data.frame(Article_Title= character(),
+                      Sample_Type_info_N_coder1 = as.character(),
+                      Sample_Type_info_N_coder2 = as.character(),
+                      calculated_score = numeric(), 
+                      stored_score = character(), 
+                      stringsAsFactors = FALSE)
+
+
+for (i in seq(1, nrow(Coding_consistency_preprocess_data1), by = 3))  {
+  
+  Article_IDs_N <- Coding_consistency_preprocess_data1$Article_IDs_N[i]
+  coder1_code <- Coding_consistency_preprocess_data1$Sample_Type_info_N[i]
+  coder2_code <- Coding_consistency_preprocess_data1$Sample_Type_info_N[i+1]
+  stored_score <- Coding_consistency_preprocess_data1$Sample_Type_info_N[i+2]
+  
+   if (is.na(coder1_code) & is.na(coder2_code)) {
+    calculated_score <- 3
+    Coding_consistency_preprocess_data1$Sample_Type_info_N[i+2] <- 3
+    
+   } else if (is.na(coder1_code) || is.na(coder2_code)){
+     calculated_score <- 1
+     
+   } else if (coder1_code == coder2_code) {
+      calculated_score <- 3
+      
+    } else if (grepl(coder1_code, coder2_code,fixed = TRUE)) {
+    calculated_score <- 2
+    
+    } else {
+    calculated_score <- 1
+    }
+
+results <- rbind(results, data.frame(Article_IDs_N = Article_IDs_N,
+                                     Sample_Type_info_N_coder1 = coder1_code,
+                                     Sample_Type_info_N_coder2 = coder2_code,
+                                     calculated_score = calculated_score, 
+                                     stored_score = as.character(stored_score)))
+}
+
+
+results <- results %>% 
+  dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
+  dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
+
+
+## 20081073
+Coding_consistency_preprocess_data1$Sample_Type_info_N[30] <- 1
+
+## 20081099
+Coding_consistency_preprocess_data1$Sample_Type_info_N[48] <- 1
+
+## 20081127
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(81,84)] <- 1
+
+## 20081135
+Coding_consistency_preprocess_data1$Sample_Type_info_N[102] <- 1
+
+## 20083038
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(114,117)] <- 1
+
+## 20182279
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(459,462)] <- 1
+
+## 20213079
+Coding_consistency_preprocess_data1$Sample_Type_info_N[666] <- 2
+
+## 20213104
+Coding_consistency_preprocess_data1$Sample_Type_info_N[690] <- 2
+
+## 20082054
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(735,738)] <- 1
+
+## 20082107
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(804,807)] <- 2
+
+## 20082112
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(813,816)] <- 2
+
+## 20083198
+Coding_consistency_preprocess_data1$Sample_Type_info_N[846] <- 1
+
+## 还没弄完
+```
+
+
+## Educational_Attainment_N
+```{r}
+## first, I process NA value or NULL value
+
+Coding_consistency_preprocess_data1 <- Coding_consistency_preprocess_data1 %>% 
+  dplyr::mutate(Educational_Attainment_N = ifelse(Educational_Attainment_N == "　",NA,Educational_Attainment_N),
+                Educational_Attainment_N = ifelse(Educational_Attainment_N == "check" & is.na(Educational_Attainment_N ),"Chin_Subj",Educational_Attainment_N))
+
+# table(Coding_consistency_preprocess_data1$Educational_Attainment_N)
+
+rm(results)
+
+
+results <- data.frame(Article_Title= character(),
+                      Educational_Attainment_N_coder1 = as.character(),
+                      Educational_Attainment_N_coder2 = as.character(),
+                      calculated_score = numeric(), 
+                      stored_score = character(), 
+                      stringsAsFactors = FALSE)
+
+
+for (i in seq(1, nrow(Coding_consistency_preprocess_data1), by = 3))  {
+  
+  Article_IDs_N <- Coding_consistency_preprocess_data1$Article_IDs_N[i]
+  coder1_code <- Coding_consistency_preprocess_data1$Educational_Attainment_N[i]
+  coder2_code <- Coding_consistency_preprocess_data1$Educational_Attainment_N[i+1]
+  stored_score <- Coding_consistency_preprocess_data1$Educational_Attainment_N[i+2]
+  
+   if (is.na(coder1_code) & is.na(coder2_code)) {
+    calculated_score <- 3
+    Coding_consistency_preprocess_data1$Educational_Attainment_N[i+2] <- 3
+    
+   } else if (is.na(coder1_code) || is.na(coder2_code)){
+     calculated_score <- 1
+     
+   } else if (coder1_code == coder2_code) {
+      calculated_score <- 3
+      
+    } else if (grepl(coder1_code, coder2_code) || grepl(coder2_code, coder1_code)) {
+    calculated_score <- 2
+    
+    } else {
+    calculated_score <- 1
+    }
+
+results <- rbind(results, data.frame(Article_IDs_N = Article_IDs_N,
+                                     Educational_Attainment_N_coder1 = coder1_code,
+                                     Educational_Attainment_N_coder2 = coder2_code,
+                                     calculated_score = calculated_score, 
+                                     stored_score = as.character(stored_score)))
+}
+
+
+results <- results %>% 
+  dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
+  dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
+
+
+## 20183229
+Coding_consistency_preprocess_data1$Educational_Attainment_N[3333] <- 1
+
+## 20181209
+Coding_consistency_preprocess_data1$Educational_Attainment_N[c(4593,4596)] <- 1
+
+## 20181212
+Coding_consistency_preprocess_data1$Educational_Attainment_N[c(4608,4611)] <- 1
+
+## 20183001
+Coding_consistency_preprocess_data1$Educational_Attainment_N[c(4668,4671)] <- 1
+
+## 20183023
+Coding_consistency_preprocess_data1$Educational_Attainment_N[c(4692,4695)] <- 1
+```
+
+
+## Educational_Attainment_info_N
+```{r}
+## first, I process NA value or NULL value
+
+Coding_consistency_preprocess_data1 <- Coding_consistency_preprocess_data1 %>% 
+  dplyr::mutate(Educational_Attainment_info_N = ifelse(Educational_Attainment_info_N == "　",NA,Educational_Attainment_info_N),
+                Educational_Attainment_info_N = ifelse(Educational_Attainment_info_N == "check" & is.na(Educational_Attainment_info_N),"Chin_Subj",Educational_Attainment_info_N))
+
+# table(Coding_consistency_preprocess_data1$Educational_Attainment_info_N)
+
+rm(results)
+
+
+results <- data.frame(Article_Title= character(),
+                      Educational_Attainment_info_N_coder1 = as.character(),
+                      Educational_Attainment_info_N_coder2 = as.character(),
+                      calculated_score = numeric(), 
+                      stored_score = character(), 
+                      stringsAsFactors = FALSE)
+
+
+for (i in seq(1, nrow(Coding_consistency_preprocess_data1), by = 3))  {
+  
+  Article_IDs_N <- Coding_consistency_preprocess_data1$Article_IDs_N[i]
+  coder1_code <- Coding_consistency_preprocess_data1$Educational_Attainment_info_N[i]
+  coder2_code <- Coding_consistency_preprocess_data1$Educational_Attainment_info_N[i+1]
+  stored_score <- Coding_consistency_preprocess_data1$Educational_Attainment_info_N[i+2]
+  
+   if (is.na(coder1_code) & is.na(coder2_code)) {
+    calculated_score <- 3
+    Coding_consistency_preprocess_data1$Educational_Attainment_info_N[i+2] <- 3
+    
+   } else if (is.na(coder1_code) || is.na(coder2_code)){
+     calculated_score <- 1
+     
+   } else if (coder1_code == coder2_code) {
+      calculated_score <- 3
+      
+    } else if (grepl(coder1_code, coder2_code,fixed = TRUE)) {
+    calculated_score <- 2
+    
+    } else {
+    calculated_score <- 1
+    }
+
+results <- rbind(results, data.frame(Article_IDs_N = Article_IDs_N,
+                                     Educational_Attainment_info_N_coder1 = coder1_code,
+                                     Educational_Attainment_info_N_coder2 = coder2_code,
+                                     calculated_score = calculated_score, 
+                                     stored_score = as.character(stored_score)))
+}
+
+
+results <- results %>% 
+  dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
+  dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
+
+## 20183137
+Coding_consistency_preprocess_data1$Educational_Attainment_info_N[1827] <- 1
+
+## 20183229
+Coding_consistency_preprocess_data1$Educational_Attainment_info_N[3333] <- 1
+```
+
+
+## Occupation_N
+```{r}
+## first, I process NA value or NULL value
+
+Coding_consistency_preprocess_data1 <- Coding_consistency_preprocess_data1 %>% 
+  dplyr::mutate(Occupation_N = ifelse(Occupation_N == "　",NA,Occupation_N),
+                Occupation_N = ifelse(Occupation_N == "check" & is.na(Occupation_N ),"Chin_Subj",Occupation_N))
+
+# table(Coding_consistency_preprocess_data1$Occupation_N)
+
+rm(results)
+
+
+results <- data.frame(Article_Title= character(),
+                      Occupation_N_coder1 = as.character(),
+                      Occupation_N_coder2 = as.character(),
+                      calculated_score = numeric(), 
+                      stored_score = character(), 
+                      stringsAsFactors = FALSE)
+
+
+for (i in seq(1, nrow(Coding_consistency_preprocess_data1), by = 3))  {
+  
+  Article_IDs_N <- Coding_consistency_preprocess_data1$Article_IDs_N[i]
+  coder1_code <- Coding_consistency_preprocess_data1$Occupation_N[i]
+  coder2_code <- Coding_consistency_preprocess_data1$Occupation_N[i+1]
+  stored_score <- Coding_consistency_preprocess_data1$Occupation_N[i+2]
+  
+   if (is.na(coder1_code) & is.na(coder2_code)) {
+    calculated_score <- 3
+    Coding_consistency_preprocess_data1$Occupation_N[i+2] <- 3
+    
+   } else if (is.na(coder1_code) || is.na(coder2_code)){
+     calculated_score <- 1
+     
+   } else if (coder1_code == coder2_code) {
+      calculated_score <- 3
+      
+    } else if (grepl(coder1_code, coder2_code) || grepl(coder2_code, coder1_code)) {
+    calculated_score <- 2
+    
+    } else {
+    calculated_score <- 1
+    }
+
+results <- rbind(results, data.frame(Article_IDs_N = Article_IDs_N,
+                                     Occupation_N_coder1 = coder1_code,
+                                     Occupation_N_coder2 = coder2_code,
+                                     calculated_score = calculated_score, 
+                                     stored_score = as.character(stored_score)))
+}
+
+
+results <- results %>% 
+  dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
+  dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
+
+## 20083107
+Coding_consistency_preprocess_data1$Occupation_N[201] <- 1
+
+## 20213067
+Coding_consistency_preprocess_data1$Occupation_N[4380] <- 1
+
+## 20083128
+Coding_consistency_preprocess_data1$Occupation_N[c(4518,4521)] <- 1
+
+## 20181213
+Coding_consistency_preprocess_data1$Occupation_N[c(4614,4617)] <- 1
+
+## 20181225
+Coding_consistency_preprocess_data1$Occupation_N[c(4632,4635)] <- 1
+
+## 20181228
+Coding_consistency_preprocess_data1$Occupation_N[4638] <- 1
+
+## 20181235
+Coding_consistency_preprocess_data1$Occupation_N[4644] <- 1
+```
+
+
+## SES_N
+```{r}
+## first, I process NA value or NULL value
+
+Coding_consistency_preprocess_data1 <- Coding_consistency_preprocess_data1 %>% 
+  dplyr::mutate(SES_N = ifelse(SES_N == "　",NA,SES_N),
+                SES_N = ifelse(SES_N == "check" & is.na(SES_N),"Chin_Subj",SES_N))
+
+# table(Coding_consistency_preprocess_data1$SES_N)
+
+rm(results)
+
+
+results <- data.frame(Article_Title= character(),
+                      SES_N_coder1 = as.character(),
+                      SES_N_coder2 = as.character(),
+                      calculated_score = numeric(), 
+                      stored_score = character(), 
+                      stringsAsFactors = FALSE)
+
+
+for (i in seq(1, nrow(Coding_consistency_preprocess_data1), by = 3))  {
+  
+  Article_IDs_N <- Coding_consistency_preprocess_data1$Article_IDs_N[i]
+  coder1_code <- Coding_consistency_preprocess_data1$SES_N[i]
+  coder2_code <- Coding_consistency_preprocess_data1$SES_N[i+1]
+  stored_score <- Coding_consistency_preprocess_data1$SES_N[i+2]
+  
+   if (is.na(coder1_code) & is.na(coder2_code)) {
+    calculated_score <- 3
+    Coding_consistency_preprocess_data1$SES_N[i+2] <- 3
+    
+   } else if (is.na(coder1_code) || is.na(coder2_code)){
+     calculated_score <- 1
+     
+   } else if (coder1_code == coder2_code) {
+      calculated_score <- 3
+      
+    } else if (grepl(coder1_code, coder2_code) || grepl(coder2_code, coder1_code)) {
+    calculated_score <- 2
+    
+    } else {
+    calculated_score <- 1
+    }
+
+results <- rbind(results, data.frame(Article_IDs_N = Article_IDs_N,
+                                     SES_N_coder1 = coder1_code,
+                                     SES_N_coder2 = coder2_code,
+                                     calculated_score = calculated_score, 
+                                     stored_score = as.character(stored_score)))
+}
+
+
+results <- results %>% 
+  dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
+  dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
+
+
+## 20181140
+Coding_consistency_preprocess_data1$SES_N[204] <- 3
+
+## 20185167
+Coding_consistency_preprocess_data1$SES_N[627] <- 3
+
+## 20183158
+Coding_consistency_preprocess_data1$SES_N[2586] <- 1
+
+## 20185126
+Coding_consistency_preprocess_data1$SES_N[c(4287,4290)] <- 1
+
+## 20185128
+Coding_consistency_preprocess_data1$SES_N[4293] <- 1
+
+## 20215073
+Coding_consistency_preprocess_data1$SES_N[4383] <- 1
+
+## 20215076
+Coding_consistency_preprocess_data1$SES_N[4389] <- 1
+
+## 20083110
+Coding_consistency_preprocess_data1$SES_N[4497] <- 1
+
+## 20083116
+Coding_consistency_preprocess_data1$SES_N[c(4509,4512)] <- 1
+
+## 20083128
+Coding_consistency_preprocess_data1$SES_N[c(4518,4521)] <- 1
+
+## 20181202
+Coding_consistency_preprocess_data1$SES_N[c(4563,4569)] <- 1
+
+## 20181206
+Coding_consistency_preprocess_data1$SES_N[4575] <- 1
+
+## 20181209
+Coding_consistency_preprocess_data1$SES_N[c(4593,4596)] <- 1
+
+## 20181212
+Coding_consistency_preprocess_data1$SES_N[c(4608,4611)] <- 1
+
+## 20181231
+Coding_consistency_preprocess_data1$SES_N[4641] <- 1
+
+## 20183001
+Coding_consistency_preprocess_data1$SES_N[c(4668,4671)] <- 1
+
+## 20183023
+Coding_consistency_preprocess_data1$SES_N[c(4692,4695)] <- 1
+
+## 20181136
+Coding_consistency_preprocess_data1$SES_N[c(4080,4083)] <- 2
+```
+
+
+## SES_info_N
+```{r}
+## first, I process NA value or NULL value
+
+Coding_consistency_preprocess_data1 <- Coding_consistency_preprocess_data1 %>% 
+  dplyr::mutate(SES_info_N = ifelse(SES_info_N  == "　",NA,SES_info_N),
+                SES_info_N = ifelse(SES_info_N == "check" & is.na(SES_info_N),"Chin_Subj",SES_info_N))
+
+# table(Coding_consistency_preprocess_data1$SES_info_N)
+
+rm(results)
+
+
+results <- data.frame(Article_Title= character(),
+                      SES_info_N_coder1 = as.character(),
+                      SES_info_N_coder2 = as.character(),
+                      calculated_score = numeric(), 
+                      stored_score = character(), 
+                      stringsAsFactors = FALSE)
+
+
+for (i in seq(1, nrow(Coding_consistency_preprocess_data1), by = 3))  {
+  
+  Article_IDs_N <- Coding_consistency_preprocess_data1$Article_IDs_N[i]
+  coder1_code <- Coding_consistency_preprocess_data1$SES_info_N[i]
+  coder2_code <- Coding_consistency_preprocess_data1$SES_info_N[i+1]
+  stored_score <- Coding_consistency_preprocess_data1$SES_info_N[i+2]
+  
+   if (is.na(coder1_code) & is.na(coder2_code)) {
+    calculated_score <- 3
+    Coding_consistency_preprocess_data1$SES_info_N[i+2] <- 3
+    
+   } else if (is.na(coder1_code) || is.na(coder2_code)){
+     calculated_score <- 1
+     
+   } else if (coder1_code == coder2_code) {
+      calculated_score <- 3
+      
+    } else if (grepl(coder1_code, coder2_code) || grepl(coder2_code, coder1_code)) {
+    calculated_score <- 2
+    
+    } else {
+    calculated_score <- 1
+    }
+
+results <- rbind(results, data.frame(Article_IDs_N = Article_IDs_N,
+                                     SES_info_N_coder1 = coder1_code,
+                                     SES_info_N_coder2 = coder2_code,
+                                     calculated_score = calculated_score, 
+                                     stored_score = as.character(stored_score)))
+}
+
+
+results <- results %>% 
+  dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
+  dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
+
+## 20182180
+Coding_consistency_preprocess_data1$SES_info_N[3240] <- 1
+
+## 20212151
+Coding_consistency_preprocess_data1$SES_info_N[3501] <- 1
+
+## 20215042
+Coding_consistency_preprocess_data1$SES_info_N[c(3666,3669,3672)] <- 1
+
+## 20183236
+Coding_consistency_preprocess_data1$SES_info_N[c(3342)] <- 1
+```
+
+
+## Subjects_Recruitment_Method_N
+```{r}
+## first, I process NA value or NULL value
+
+Coding_consistency_preprocess_data1 <- Coding_consistency_preprocess_data1 %>% 
+  dplyr::mutate(Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N  == "　",NA,Subjects_Recruitment_Method_N),
+                SES_info_N = ifelse(Subjects_Recruitment_Method_N == "check" & is.na(Subjects_Recruitment_Method_N),"Chin_Subj",Subjects_Recruitment_Method_N))
+
+# table(Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N)
+
+rm(results)
+
+
+results <- data.frame(Article_Title= character(),
+                      Subjects_Recruitment_Method_N_coder1 = as.character(),
+                      Subjects_Recruitment_Method_N_coder2 = as.character(),
+                      calculated_score = numeric(), 
+                      stored_score = character(), 
+                      stringsAsFactors = FALSE)
+
+
+for (i in seq(1, nrow(Coding_consistency_preprocess_data1), by = 3))  {
+  
+  Article_IDs_N <- Coding_consistency_preprocess_data1$Article_IDs_N[i]
+  coder1_code <- Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[i]
+  coder2_code <- Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[i+1]
+  stored_score <- Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[i+2]
+  
+   if (is.na(coder1_code) & is.na(coder2_code)) {
+    calculated_score <- 3
+    Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[i+2] <- 3
+    
+   } else if (is.na(coder1_code) || is.na(coder2_code)){
+     calculated_score <- 1
+     
+   } else if (coder1_code == coder2_code) {
+      calculated_score <- 3
+      
+    } else if (grepl(coder1_code, coder2_code) || grepl(coder2_code, coder1_code)) {
+    calculated_score <- 2
+    
+    } else {
+    calculated_score <- 1
+    }
+
+results <- rbind(results, data.frame(Article_IDs_N = Article_IDs_N,
+                                     Subjects_Recruitment_Method_N_coder1 = coder1_code,
+                                     Subjects_Recruitment_Method_N_coder2 = coder2_code,
+                                     calculated_score = calculated_score, 
+                                     stored_score = as.character(stored_score)))
+}
+
+
+results <- results %>% 
+  dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
+  dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
+
+
+## 20182255
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[387] <- 1
+
+## 20185191
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[654] <- 1
+
+## 20213104
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[687] <- 2
+
+## 20213120
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[711] <- 1
+
+## 20183138
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[1830] <- 1
+
+## 20214066
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[2919] <- 1
+
+## 20214068
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[c(2925,2928)] <- 1
+
+## 20214070
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[2931] <- 1
+
+## 20182231
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[4131] <- 1
+
+## 20182239
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[c(4140,4143)] <- 1
+
+## 20183264
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[c(4170,4173,4176)] <- 1
+
+## 20183285
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[4197] <- 1
+
+## 20183296
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[4292] <- 1
+
+## 20185082
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[4233] <- 1
+
+## 20185083
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[4236] <- 1
+
+## 20185087
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[c(4242,4245,4248,4251)] <- 1
+
+## 20185114
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[4272] <- 1
+
+## 20185124
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[4284] <- 1
+
+## 20213024
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[4326] <- 1
+
+## 20213055
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[4371] <- 1
+
+## 20213056
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[4374] <- 1
+
+## 20083110
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[4497] <- 1
+
+## 20083128
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[c(4518,4521)] <- 1
+
+## 20181208
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[c(4581,4584)] <- 1
+
+## 20181213
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[c(4614,4617)] <- 1
+
+## 20184035
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[4818] <- 3
+
+## 20211015
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[5031] <- 1
+```
+
+
+
+## Subjects_Recruitment_Method_info_N
+```{r}
+## first, I process NA value or NULL value
+
+Coding_consistency_preprocess_data1 <- Coding_consistency_preprocess_data1 %>% 
+  dplyr::mutate(Subjects_Recruitment_Method_info_N = ifelse(Subjects_Recruitment_Method_info_N  == "　",NA,Subjects_Recruitment_Method_info_N),
+                SES_info_N = ifelse(Subjects_Recruitment_Method_info_N == "check" & is.na(Subjects_Recruitment_Method_info_N),"Chin_Subj",Subjects_Recruitment_Method_info_N))
+
+# table(Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N)
+
+rm(results)
+
+
+results <- data.frame(Article_Title= character(),
+                      Subjects_Recruitment_Method_info_N_coder1 = as.character(),
+                      Subjects_Recruitment_Method_info_N_coder2 = as.character(),
+                      calculated_score = numeric(), 
+                      stored_score = character(), 
+                      stringsAsFactors = FALSE)
+
+
+for (i in seq(1, nrow(Coding_consistency_preprocess_data1), by = 3))  {
+  
+  Article_IDs_N <- Coding_consistency_preprocess_data1$Article_IDs_N[i]
+  coder1_code <- Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[i]
+  coder2_code <- Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[i+1]
+  stored_score <- Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[i+2]
+  
+   if (is.na(coder1_code) & is.na(coder2_code)) {
+    calculated_score <- 3
+    Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[i+2] <- 3
+    
+   } else if (is.na(coder1_code) || is.na(coder2_code)){
+     calculated_score <- 1
+     
+   } else if (coder1_code == coder2_code) {
+      calculated_score <- 3
+      
+    } else if (grepl(coder1_code, coder2_code) || grepl(coder2_code, coder1_code)) {
+    calculated_score <- 2
+    
+    } else {
+    calculated_score <- 1
+    }
+
+results <- rbind(results, data.frame(Article_IDs_N = Article_IDs_N,
+                                     Subjects_Recruitment_Method_info_N_coder1 = coder1_code,
+                                     Subjects_Recruitment_Method_info_N_coder2 = coder2_code,
+                                     calculated_score = calculated_score, 
+                                     stored_score = as.character(stored_score)))
+}
+
+
+results <- results %>% 
+  dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
+  dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
+
+## 20213104
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[687] <- 2
+
+## 20082069
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[c(759,762)] <- 1
+
+## 20082118
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[822] <- 1
+
+## 20184050
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[1188] <- 1
+
+## 20082004
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[4407] <- 1
+
+## 20181212
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[4611] <- 1
+
+## 20211015
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[5031] <- 1
+
+## 20082046
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[732] <- 3
+
 ```
 
