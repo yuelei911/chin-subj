@@ -392,6 +392,7 @@ for (i in seq(1, nrow(Coding_consistency_preprocess_data1), by = 3))  {
   
    if (is.na(coder1_code) & is.na(coder2_code)) {
     calculated_score <- 3
+    Coding_consistency_preprocess_data1$Subjects_Group_N[i+2] <- 3
     
    } else if (is.na(coder1_code) || is.na(coder2_code)){
      calculated_score <- 1
@@ -418,8 +419,66 @@ results <- results %>%
   dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
   dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
 
+## 20083067
+Coding_consistency_preprocess_data1$Subjects_Group_N[153] <- 3
 
-## revise check
+## 20083093
+Coding_consistency_preprocess_data1$Subjects_Group_N[189] <- 1
+
+## 20181187
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(363,366)] <- 3
+
+## 20182268
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(420,423,426,429,432,435,438,441,444)] <- 3
+
+## 20082210
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(2103,2106,2109)] <- 3
+
+## 20082258
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(2154,2157,2160,2163,2166,2169,2172,2175)] <- 3
+
+## 20181005
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(2283,2286)] <- 1
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(2289,2292,2295,2298)] <- 3
+
+## 20181017
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(2325,2328,2331,2334)] <- 3
+
+## 20181023
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(2370,2373,2376,2379)] <- 1
+
+## 20182101
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(2397,2400,2403,2406,2409,2412,2415,2418)] <- 3
+
+## 20182103
+Coding_consistency_preprocess_data1$Subjects_Group_N[2430] <- 3
+
+## 20182117
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(2451,2454,2457,2460)] <- 3
+
+## 20182125
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(2481,2484)] <- 3
+
+## 20182126
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(2496,2499)] <- 3
+
+## 20182131
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(2502,2505)] <- 3
+
+## 20183150
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(2574,2577)] <- 3
+
+## 20183192
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(2634,2637)] <- 1
+
+## 20183198
+Coding_consistency_preprocess_data1$Subjects_Group_N[c(2640,2643,2646)] <- 3
+
+## 20181091
+Coding_consistency_preprocess_data1$Subjects_Group_N[3948] <- 3
+
+## 20182239
+Coding_consistency_preprocess_data1$Subjects_Group_N[4143] <- 3
 ```
 
 
@@ -1212,9 +1271,56 @@ results <- results %>%
   dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
   dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
 
-# 
-# results %>% 
-#   distinct(Article_IDs_N)
+## 20083058
+Coding_consistency_preprocess_data1$Sample_Size[141] <- 1
+
+## 20181152
+Coding_consistency_preprocess_data1$Sample_Size[c(288,291)] <- 1
+
+## 20183312
+Coding_consistency_preprocess_data1$Sample_Size[486] <- 1
+
+## 20183321
+Coding_consistency_preprocess_data1$Sample_Size[c(498,501,504,507)] <- 1
+
+## 20082061
+Coding_consistency_preprocess_data1$Sample_Size[744] <- 1
+
+## 20082262
+Coding_consistency_preprocess_data1$Sample_Size[2178] <- 1
+
+## 20082283
+Coding_consistency_preprocess_data1$Sample_Size[2202] <- 1
+
+## 20085044
+Coding_consistency_preprocess_data1$Sample_Size[2265] <- 1
+
+## 20181023
+Coding_consistency_preprocess_data1$Sample_Size[c(2370,2373)] <- 1
+
+## 20182101
+Coding_consistency_preprocess_data1$Sample_Size[2409] <- 1
+
+## 20182103
+Coding_consistency_preprocess_data1$Sample_Size[c(2427,2430,2433,2436,2439,2442)] <- 1
+
+## 20183178
+Coding_consistency_preprocess_data1$Sample_Size[2613] <- 1
+
+## 20183192
+Coding_consistency_preprocess_data1$Sample_Size[c(2634,2637)] <- 1
+
+## 20081026
+Coding_consistency_preprocess_data1$Sample_Size[c(3762)] <- 1
+
+## 20215075
+Coding_consistency_preprocess_data1$Sample_Size[4386] <- 1
+
+## 20082023
+Coding_consistency_preprocess_data1$Sample_Size[4446] <- 1
+
+## 20083114
+Coding_consistency_preprocess_data1$Sample_Size[4506] <- 1
 ```
 
 
