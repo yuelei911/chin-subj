@@ -3688,28 +3688,600 @@ Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[732] <- 3
 
 # Check Again
 ```{r}
+# names(Coding_consistency_preprocess_data1)
+
+
 Check_data <- Coding_consistency_preprocess_data1 %>% 
   dplyr::filter(Coder_N == "check") %>% 
-  select(-c(Remark1,Remark2,Remark3,Remark3_N,
-            Coding_Basis_N,Article_IDs,Subjects_Group,
-            Study_Number,Coder2_N,Coder))
-
-na_cols <- colnames(Check_data)[colSums(is.na(Check_data)) > 0]
- 
-# 保留这些列和包含NA的行
-result_Check_data <- Check_data %>%
-  select(all_of(na_cols)) %>%
-  filter(rowSums(is.na(.[, na_cols])) > 0)
-
-na_counts <- colSums(is.na(result_Check_data))
+  dplyr::select(-c(Coder,Coder2_N,Article_IDs,Study_Number,Subjects_Group,
+                   Remark1,Remark2,Remark3,Remark3_N,Coding_Basis_N))
 
 
+## calculate the categroires of check value
+check_list <- list()
 
-result <- Coding_consistency_preprocess_data1 %>%
-  mutate(Group = cumsum(Coder_N == "check")) %>%  # 创建一个组标识符
-  group_by(Group) %>%  # 按组进行分组
-  filter(any(Coder_N == "check" & is.na(Sample_Type_info_N))) %>%  # 保留那些check为NA的组
-  ungroup() %>%  # 取消分组
-  select(-Group) 
+for (i in names(Check_data)){
+  
+  
+  check_table <- data.frame(table(Check_data[[i]])) %>% 
+    dplyr::mutate(col_names = names(Check_data[i]))
+  
+  check_list[[i]] <- check_table
+  
+}
+
+check_table <- do.call(rbind, check_list)
+
+check_table <- check_table %>% 
+  dplyr::filter(col_names != "Sequence_IDs")  ## no found outliers
+```
+
+
+In fact, I found some check still is NA, so I will reprocess them
+## Article_IDs_N
+```{r}
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Article_IDs_N) %>% 
+  dplyr::filter(is.na(Article_IDs_N))
+
+## no found
+```
+
+
+## Study_Number_N
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Study_Number_N) %>% 
+  dplyr::filter(is.na(Study_Number_N))
+
+## no found
+```
+
+## Subjects_Group_N
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Subjects_Group_N) %>% 
+  dplyr::filter(is.na(Subjects_Group_N))
+
+## no found
+```
+
+
+## Article_Title
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Article_Title) %>% 
+  dplyr::filter(is.na(Article_Title))
+
+## no found
+```
+
+
+## First_Author
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,First_Author) %>% 
+  dplyr::filter(is.na(First_Author))
+
+## no found
+```
+
+
+## Journal
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Journal) %>% 
+  dplyr::filter(is.na(Journal))
+
+## no found
+```
+
+
+## Abstract1
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Abstract1) %>% 
+  dplyr::filter(is.na(Abstract1))
+
+## no found
+```
+
+
+## Abstract2
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Abstract2) %>% 
+  dplyr::filter(is.na(Abstract2))
+
+## no found
+```
+
+
+## Study_Type
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Study_Type) %>% 
+  dplyr::filter(is.na(Study_Type))
+
+## no found
+```
+
+
+## Sample_Size
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Sample_Size) %>% 
+  dplyr::filter(is.na(Sample_Size))
+
+## no found
+```
+
+
+## Gender
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Gender) %>% 
+  dplyr::filter(is.na(Gender))
+
+## no found
+```
+
+
+## Female_Num
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Female_Num) %>% 
+  dplyr::filter(is.na(Female_Num))
+
+## no found
+```
+
+
+## Male_Num
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Male_Num) %>% 
+  dplyr::filter(is.na(Male_Num))
+
+## no found
+```
+
+
+## Age
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Age) %>% 
+  dplyr::filter(is.na(Age))
+
+## no found
+```
+
+
+## M_age
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,M_age) %>% 
+  dplyr::filter(is.na(M_age))
+
+## no found
+```
+
+
+## SD_age
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,SD_age) %>% 
+  dplyr::filter(is.na(SD_age))
+
+## no found
+```
+
+
+## Other_age
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Other_age) %>% 
+  dplyr::filter(is.na(Other_age))
+
+## 1110_3 
+Coding_consistency_preprocess_data1$Other_age[3330] <- 1
+```
+
+
+## Ethnicity
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Ethnicity) %>% 
+  dplyr::filter(is.na(Ethnicity))
+
+## no found
+```
+
+
+## Ethnicity_info
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Ethnicity_info) %>% 
+  dplyr::filter(is.na(Ethnicity_info))
+
+## no found
+```
+
+## Religious
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Religious) %>% 
+  dplyr::filter(is.na(Religious))
+
+## 1087_3
+Coding_consistency_preprocess_data1$Religious[3261] <- 3
+```
+
+
+## Religious_info
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Religious_info) %>% 
+  dplyr::filter(is.na(Religious_info))
+
+## 1071_3 ~ 1088_3
+start_index <- 3213
+end_index <- 3264
+
+indices <- seq(start_index, end_index, by = 3)
+
+Coding_consistency_preprocess_data1$Religious_info[indices] <- 1
+
+## 1091_3 ~ 1110_3
+start_index <- 3273
+end_index <- 3330
+indices <- seq(start_index, end_index, by = 3)
+
+Coding_consistency_preprocess_data1$Religious_info[indices] <- 1
+
+After_NA <- Coding_consistency_preprocess_data1 %>% 
+  dplyr::filter(Coder_N == "check" & is.na(Religious_info))
+```
+
+
+## Subjects_Area
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Subjects_Area) %>% 
+  dplyr::filter(is.na(Subjects_Area))
+
+## no found
+```
+
+
+## Subjects_Area_info
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Subjects_Area_info) %>% 
+  dplyr::filter(is.na(Subjects_Area_info))
+
+## 1219_3
+Coding_consistency_preprocess_data1$Subjects_Area_info[3657] <- 1
+```
+
+
+## Subjects_Recruitment_Area
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Subjects_Recruitment_Area) %>% 
+  dplyr::filter(is.na(Subjects_Recruitment_Area))
+
+## no found
+```
+
+
+## Sampling_Method
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Sampling_Method) %>% 
+  dplyr::filter(is.na(Sampling_Method))
+
+## 1081_3 ~ 1088_3
+start_index <- 3243
+end_index <- 3264
+indices <- seq(start_index, end_index, by = 3)
+
+Coding_consistency_preprocess_data1$Sampling_Method[indices] <- 1
+# Coding_consistency_preprocess_data1$Sampling_Method[3241:3264]
+
+After_NA <- Coding_consistency_preprocess_data1 %>% 
+  dplyr::filter(Coder_N == "check" & is.na(Sampling_Method))
+```
+
+
+## Remark1_N
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Remark1_N) %>% 
+  dplyr::filter(is.na(Remark1_N))
+
+## no found
+```
+
+
+## Remark2_N
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Remark2_N) %>% 
+  dplyr::filter(is.na(Remark2_N))
+
+## 0448_3
+Coding_consistency_preprocess_data1$Remark2_N[1344] <- 1
+
+## 0474_3
+Coding_consistency_preprocess_data1$Remark2_N[1422] <- 1
+```
+
+
+## Target_Population_N
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Target_Population_N) %>% 
+  dplyr::filter(is.na(Target_Population_N))
+
+## 1084_3 ~ 1085_3
+Coding_consistency_preprocess_data1$Target_Population_N[c(3252,3255)] <- 1
+```
+
+
+## Sample_Type_N
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Sample_Type_N) %>% 
+  dplyr::filter(is.na(Sample_Type_N))
+
+## 1081_3 ~ 1083_3
+Coding_consistency_preprocess_data1$Sample_Type_N[c(3243,3246,3249)] <- 1
+```
+
+
+## Sample_Type_info_N
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Sample_Type_info_N) %>% 
+  dplyr::filter(is.na(Sample_Type_info_N))
+
+## 0414_3 ~ 0428_3
+
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(1242,1245,1248,1251,1254,1257,1260,1263)] <- 3
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(1266,1269)] <- 2
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(1272,1275,1278,1281,1284)] <- 1
+
+## 0441_3 ~ 0446_3
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(1323,1326,1329,1332,1335,1338)] <- 3
+
+## 0453_3 ~ 0454_3
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(1359,1362)] <- 2
+
+## 0457_3 ~ 0476_3
+# Coding_consistency_preprocess_data1$Sample_Type_info_N[1369:1428]
+start_index <- 1371
+end_index <- 1428
+indices <- seq(start_index, end_index, by = 3)
+
+Coding_consistency_preprocess_data1$Sample_Type_info_N[indices] <- 3
+
+## 0481_3 ~ 0497_3
+# Coding_consistency_preprocess_data1$Sample_Type_info_N[1441:1491]
+start_index <- 1443
+end_index <- 1491
+indices <- seq(start_index, end_index, by = 3)
+
+Coding_consistency_preprocess_data1$Sample_Type_info_N[indices] <- 3
+
+## 1098_3 ~ 1137_3 ## It does not contain 1126_3, but after looking at the data again, it check is 3, so the consecutive assignment does not affect the result.
+# Coding_consistency_preprocess_data1$Sample_Type_info_N[3292:3411]
+
+start_index <- 3294
+end_index <- 3411
+indices <- seq(start_index, end_index, by = 3)
+
+Coding_consistency_preprocess_data1$Sample_Type_info_N[indices] <- 3
+
+## 1179_3 ~ 1180_3
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(3537,3540)] <- 3
+
+After_NA <- Coding_consistency_preprocess_data1 %>% 
+  dplyr::filter(Coder_N == "check" & is.na(Sample_Type_info_N))
+```
+
+
+## Educational_Attainment_N
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Educational_Attainment_N) %>% 
+  dplyr::filter(is.na(Educational_Attainment_N))
+
+## 0491_3
+Coding_consistency_preprocess_data1$Educational_Attainment_N[1473] <- 1
+```
+
+
+## Educational_Attainment_info_N
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Educational_Attainment_info_N) %>% 
+  dplyr::filter(is.na(Educational_Attainment_info_N))
+
+## 0422_3 ~ 0423_3
+Coding_consistency_preprocess_data1$Educational_Attainment_info_N[c(1266,1269)] <- 3
+
+## 0447_3 ~ 0452_3
+Coding_consistency_preprocess_data1$Educational_Attainment_info_N[c(1341,1344,1347,1353,1356)] <- 3
+Coding_consistency_preprocess_data1$Educational_Attainment_info_N[1350] <- 1
+
+## 0470_3  0477_3  0479_3  0487_3  
+Coding_consistency_preprocess_data1$Educational_Attainment_info_N[c(1410,1431,1437,1461)] <- 3
+
+## 0491_3 ~ 0494_3
+# Coding_consistency_preprocess_data1$Educational_Attainment_info_N[1471:1482]
+Coding_consistency_preprocess_data1$Educational_Attainment_info_N[1476] <- 1
+Coding_consistency_preprocess_data1$Educational_Attainment_info_N[c(1473,1479,1482)] <- 3
+
+## 1104_3
+Coding_consistency_preprocess_data1$Educational_Attainment_info_N[3312] <- 1
+
+## 1114_3
+Coding_consistency_preprocess_data1$Educational_Attainment_info_N[3342] <- 3
+
+## 1168_3 1169_3
+Coding_consistency_preprocess_data1$Educational_Attainment_info_N[c(3504,3507)] <- 1
+```
+
+
+## Occupation_N
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Occupation_N) %>% 
+  dplyr::filter(is.na(Occupation_N))
+
+## no found
+```
+
+
+## SES_N
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,SES_N) %>% 
+  dplyr::filter(is.na(SES_N))
+
+## no found
+```
+
+
+## SES_info_N
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,SES_info_N) %>% 
+  dplyr::filter(is.na(SES_info_N))
+
+## no found
+```
+
+
+## Subjects_Recruitment_Method_N
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Subjects_Recruitment_Method_N) %>% 
+  dplyr::filter(is.na(Subjects_Recruitment_Method_N))
+
+## 1117_3
+Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_N[3351] <- 1
+```
+
+
+## Subjects_Recruitment_Method_info_N
+```{r}
+rm(Check_NA)
+
+Check_NA <- Check_data %>% 
+  dplyr::select(Sequence_IDs,Subjects_Recruitment_Method_info_N) %>% 
+  dplyr::filter(is.na(Subjects_Recruitment_Method_info_N))
+
+## no found
+```
+
+
+## find NA again
+```{r}
+rm(Check_NA)
+
+NA_table <- Coding_consistency_preprocess_data1 %>% 
+  dplyr::filter(Coder_N == "check")
+
+NA_table2 <- data.frame(sapply(NA_table, function(x) sum(is.na(x))))
+
+
+## no found
+```
+
+
+## Save Rdata
+```{r}
+Chin_Subj_check_data <- Coding_consistency_preprocess_data1 %>% 
+  dplyr::filter(Coder_N == "check") %>% 
+  dplyr::select(-c(Coder,Coder2_N,Remark1,Remark2,Remark3,Remark3_N,
+                   Study_Number,Subjects_Group,Article_IDs,Coding_Basis_N))
+
+# names(check)
+# 
+save(Chin_Subj_check_data,
+      file = "Chin_Subj_check_data.Rdata")
+# load("Chin_Subj_check_data.Rdata")
 ```
 
