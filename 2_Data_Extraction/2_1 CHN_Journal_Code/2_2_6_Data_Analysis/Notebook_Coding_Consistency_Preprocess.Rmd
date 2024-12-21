@@ -198,7 +198,6 @@ Coding_consistency_preprocess_data1 <- Coding_consistency_preprocess_data %>%
   dplyr::select(49,1:48) %>% 
   dplyr::filter(Coder != "final")
 
-
 # names(Coding_consistency_preprocess_data1)
 
 # writexl::write_xlsx(Coding_consistency_preprocess_data1,"Coding_consistency_preprocess_data1.xlsx")
@@ -2998,44 +2997,61 @@ results <- results %>%
   dplyr::mutate(Equal = ifelse(calculated_score == stored_score,"TRUE","FALSE")) %>%
   dplyr::filter(Equal == "FALSE" | calculated_score == 2 | calculated_score == "2" | stored_score == 2 | stored_score == "2")
 
+## 20182267
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(414)] <- 3
 
-## 20081073
-Coding_consistency_preprocess_data1$Sample_Type_info_N[30] <- 1
+## 20183312
+Coding_consistency_preprocess_data1$Sample_Type_info_N[486] <- 3
 
-## 20081099
-Coding_consistency_preprocess_data1$Sample_Type_info_N[48] <- 1
-
-## 20081127
-Coding_consistency_preprocess_data1$Sample_Type_info_N[c(81,84)] <- 1
-
-## 20081135
-Coding_consistency_preprocess_data1$Sample_Type_info_N[102] <- 1
-
-## 20083038
-Coding_consistency_preprocess_data1$Sample_Type_info_N[c(114,117)] <- 1
-
-## 20182279
-Coding_consistency_preprocess_data1$Sample_Type_info_N[c(459,462)] <- 1
+## 20183344
+Coding_consistency_preprocess_data1$Sample_Type_info_N[564] <- 3
 
 ## 20213079
-Coding_consistency_preprocess_data1$Sample_Type_info_N[666] <- 2
+Coding_consistency_preprocess_data1$Sample_Type_info_N[666] <- 3
 
 ## 20213104
-Coding_consistency_preprocess_data1$Sample_Type_info_N[690] <- 2
-
-## 20082054
-Coding_consistency_preprocess_data1$Sample_Type_info_N[c(735,738)] <- 1
+Coding_consistency_preprocess_data1$Sample_Type_info_N[687] <- 1
+Coding_consistency_preprocess_data1$Sample_Type_info_N[690] <- 3
 
 ## 20082107
-Coding_consistency_preprocess_data1$Sample_Type_info_N[c(804,807)] <- 2
+Coding_consistency_preprocess_data1$Sample_Type_info_N[804] <- 3
+Coding_consistency_preprocess_data1$Sample_Type_info_N[807] <- 1
 
 ## 20082112
-Coding_consistency_preprocess_data1$Sample_Type_info_N[c(813,816)] <- 2
+Coding_consistency_preprocess_data1$Sample_Type_info_N[813] <- 3
+Coding_consistency_preprocess_data1$Sample_Type_info_N[816] <- 1
 
-## 20083198
-Coding_consistency_preprocess_data1$Sample_Type_info_N[846] <- 1
+## 20211045
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(1287,1290)] <- 3
 
-## 还没弄完
+## 20211046
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(1293,1296)] <- 3
+
+## 20211047
+Coding_consistency_preprocess_data1$Sample_Type_info_N[1299] <- 3
+
+## 20211052
+Coding_consistency_preprocess_data1$Sample_Type_info_N[1302] <- 3
+
+## 20211059
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(1305,1308)] <- 3
+
+## 20211061
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(1311,1317)] <- 2
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(1314,1320)] <- 3
+
+## 20211064
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(1341,1344,1347,1350,1353,1356)] <- 3
+
+## 20211071
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(1365,1368)] <- 3
+
+## 20213223
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(1431,1437)] <- 3
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(1434,1440)] <- 2
+
+## 20183326
+Coding_consistency_preprocess_data1$Sample_Type_info_N[c(528)] <- 3
 ```
 
 
@@ -3667,5 +3683,33 @@ Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[5031] <- 
 ## 20082046
 Coding_consistency_preprocess_data1$Subjects_Recruitment_Method_info_N[732] <- 3
 
+```
+
+
+# Check Again
+```{r}
+Check_data <- Coding_consistency_preprocess_data1 %>% 
+  dplyr::filter(Coder_N == "check") %>% 
+  select(-c(Remark1,Remark2,Remark3,Remark3_N,
+            Coding_Basis_N,Article_IDs,Subjects_Group,
+            Study_Number,Coder2_N,Coder))
+
+na_cols <- colnames(Check_data)[colSums(is.na(Check_data)) > 0]
+ 
+# 保留这些列和包含NA的行
+result_Check_data <- Check_data %>%
+  select(all_of(na_cols)) %>%
+  filter(rowSums(is.na(.[, na_cols])) > 0)
+
+na_counts <- colSums(is.na(result_Check_data))
+
+
+
+result <- Coding_consistency_preprocess_data1 %>%
+  mutate(Group = cumsum(Coder_N == "check")) %>%  # 创建一个组标识符
+  group_by(Group) %>%  # 按组进行分组
+  filter(any(Coder_N == "check" & is.na(Sample_Type_info_N))) %>%  # 保留那些check为NA的组
+  ungroup() %>%  # 取消分组
+  select(-Group) 
 ```
 
