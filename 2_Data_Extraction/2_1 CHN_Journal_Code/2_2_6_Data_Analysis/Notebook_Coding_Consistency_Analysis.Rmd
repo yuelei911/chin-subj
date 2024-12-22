@@ -1,0 +1,36 @@
+---
+title: "Notebook_Coding_Consistency_Analysis"
+author: "Lei Yue"
+date: "2024-12-22"
+output: html_document
+---
+
+
+# install packages
+```{r}
+rm(list = ls())
+
+if (!require("pacman")) install.packages("pacman")
+
+p_load("tidyverse")
+```
+
+
+# load data
+```{r}
+load("Chin_Subj_check_data.Rdata")
+```
+
+
+# Analysis
+```{r}
+str(Chin_Subj_check_data)
+
+CE_list <- lapply(Chin_Subj_check_data, function(x) mean(x, na.rm = TRUE))
+
+CE_mean <- tibble::tibble(Column = names(column_means),
+                           Mean = round(unlist(column_means),2))
+
+```
+
+
