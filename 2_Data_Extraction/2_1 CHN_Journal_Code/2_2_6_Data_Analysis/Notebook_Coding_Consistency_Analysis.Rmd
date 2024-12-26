@@ -24,13 +24,15 @@ load("Chin_Subj_check_data.Rdata")
 
 # Analysis
 ```{r}
-str(Chin_Subj_check_data)
+# str(Chin_Subj_check_data)
 
-CE_list <- lapply(Chin_Subj_check_data, function(x) mean(x, na.rm = TRUE))
-
-CE_mean <- tibble::tibble(Column = names(column_means),
-                           Mean = round(unlist(column_means),2))
-
+CE_score <- Chin_Subj_check_data %>% 
+  dplyr::select(-c(1:2)) %>% 
+  dplyr::mutate(across(everything(), ~as.numeric(as.character(.)))) %>% 
+  dplyr::summarise(across(everything(), ~mean(., na.rm = TRUE))) %>% 
+  tidyr::pivot_longer(cols = everything(), names_to = "Column_name", values_to = "Mean") %>%
+  mutate(Column_name = as.character(Column_name),
+         Mean = round(Mean,4))
 ```
 
 
