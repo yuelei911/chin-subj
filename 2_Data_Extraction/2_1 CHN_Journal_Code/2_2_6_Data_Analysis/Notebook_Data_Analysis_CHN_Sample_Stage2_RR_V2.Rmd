@@ -142,13 +142,41 @@ WEIRD <- codelist %>%
                 WEIRD = ifelse(is.na(WEIRD),"Non_WEIRD",WEIRD))
 ```
 
+
+As the data for the large-scale international collaboration project is constantly updated, recording the names and order of data frames in the list here will facilitate the subsequent improvement of the code.
+```{r}
+names(BTS)
+
+#[1] "BTS_Arechar_et_al_2023"           "BTS_Azevedo_et_al_2022_mainland" 
+#[3] "BTS_Azevedo_et_al_2022_taiwan"    "BTS_Bosson_et_al_2021"           
+#[5] "BTS_Buchanan_et_al_2023"          "BTS_Dorison_et_al_2020"          
+#[7] "BTS_Fernandez-Velasco_et_al_2023" "BTS_Hoogeveen_et_al_2022"        
+#[9] "BTS_Hu_et_al_2019"                "BTS_Klein_et_al_2018_Slate1"     
+#[11] "BTS_Klein_et_al_2018_Slate2"      "BTS_Kowal_et_al_2022"            
+#[13] "BTS_Manokara_et_al_2022"          "BTS_Van_Bavel_et_al_2022"        
+#[15] "BTS_Wang_et_al_2021" 
+```
+
+
 In this part, I tried to batch country code.
 
 ```{r}
+df1 <- BTS[[15]]
+table(df1$Country)
+# df2 <- BTS[[11]]
+# df4 <- BTS[[10]]
+
 ## Handle some more specific encodings
-BTS[[5]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[5]]$Country)) 
-BTS[[14]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[14]]$Country)) 
+names(BTS[[10]])[names(BTS[[10]]) == "Country_now"] <- "Country"
+
 names(BTS[[11]])[names(BTS[[11]]) == "Country_now"] <- "Country"
+
+names(BTS[[12]])[names(BTS[[12]]) == "Country_now"] <- "Country"
+
+names(BTS[[15]])[names(BTS[[15]]) == "Country_now"] <- "Country"
+
+BTS[[5]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[5]]$Country)) 
+BTS[[15]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[15]]$Country))
 
 ## Batch processing of country codes for different data sources
 BTS <- lapply(BTS,function(df){
@@ -193,13 +221,48 @@ BTS_countrycode_check <- do.call(rbind, BTS_countrycode_check)
 BTS[[4]] <- BTS[[4]] %>% 
   dplyr::mutate(Countrycode = ifelse(Country == "USA", "Countryfullname",Countrycode)) ## I found UEA, a non-country code
 
+
+## check code example
+# df4 <- BTS[[4]] %>% 
+#   dplyr::filter(Countrycode == "ISO3")
+# table(df4$Country)
+
+
+# df5 <- BTS[[5]] %>% 
+#    dplyr::filter(nchar(Country) > 3) ## I found "Ken, Na" is ISO3
+
 BTS[[5]] <- BTS[[5]] %>% 
   dplyr::mutate(Countrycode = ifelse(Country == "Ken, Na", "ISO3",Countrycode),
                 Country = ifelse(Country == "Ken, Na", "KEN",Country))
 
+
+# df6 <- BTS[[6]] %>% 
+#   dplyr::filter(Countrycode == "Countryfullname") ## I found "Many" what this?
+
 BTS[[6]] <- BTS[[6]] %>% 
   dplyr::mutate(Countrycode = ifelse(Country == "Many", NA,Countrycode),
                 Country = ifelse(Country == "Many", NA, Country))
+
+
+# df8 <- BTS[[8]] %>% 
+#   dplyr::filter(Countrycode == "ISO2") ## I found 'US" and "UA"
+# table(df8$Country)
+
+# BTS[[8]] <- BTS[[8]] %>% 
+#   dplyr::mutate(Countrycode = ifelse(Country == "UK"| Country == "US", "Countryfullname",Countrycode))
+# 
+# 
+# df10 <- BTS[[10]] %>% 
+#   dplyr::filter(Countrycode == "ISO3" | Countrycode == "ISO2")
+# table(df10$Country)
+# 
+# df11 <- BTS[[11]] %>% 
+#   dplyr::filter(Countrycode == "ISO3" | Countrycode == "ISO2")
+# table(df11$Country)
+# 
+# df12 <- BTS[[12]] %>% 
+#   dplyr::filter(Countrycode == "ISO3" | Countrycode == "ISO2")
+# table(df12$Country)
   
 ## Combine the BTS_data and Countrycodelist_iso2_iso3
 Countrycode_merge <- function(df, Countrycode) {  
@@ -277,6 +340,9 @@ BTS <- lapply(BTS,function(df){
   return(df)
   
 })
+
+# df15 <- BTS[[15]]
+
 ```
 
 
