@@ -33,6 +33,8 @@ CE_score <- Chin_Subj_check_data %>%
   tidyr::pivot_longer(cols = everything(), names_to = "Column_name", values_to = "Mean") %>%
   mutate(Column_name = as.character(Column_name),
          Mean = round(Mean,4))
+
+writexl::write_xlsx(Chin_Subj_check_data,"Chin_Subj_check_data.xlsx")
 ```
 
 
