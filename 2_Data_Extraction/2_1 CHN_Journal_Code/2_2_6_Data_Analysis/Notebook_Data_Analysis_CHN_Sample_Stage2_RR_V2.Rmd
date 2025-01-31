@@ -147,36 +147,86 @@ As the data for the large-scale international collaboration project is constantl
 ```{r}
 names(BTS)
 
-#[1] "BTS_Arechar_et_al_2023"           "BTS_Azevedo_et_al_2022_mainland" 
-#[3] "BTS_Azevedo_et_al_2022_taiwan"    "BTS_Bosson_et_al_2021"           
-#[5] "BTS_Buchanan_et_al_2023"          "BTS_Dorison_et_al_2020"          
-#[7] "BTS_Fernandez-Velasco_et_al_2023" "BTS_Hoogeveen_et_al_2022"        
-#[9] "BTS_Hu_et_al_2019"                "BTS_Klein_et_al_2018_Slate1"     
-#[11] "BTS_Klein_et_al_2018_Slate2"      "BTS_Kowal_et_al_2022"            
-#[13] "BTS_Manokara_et_al_2022"          "BTS_Van_Bavel_et_al_2022"        
-#[15] "BTS_Wang_et_al_2021" 
+#  [1] "BTS_Anllo_et_al_2023"                                                              
+#  [2] "BTS_Arechar_et_al_2023"                                                            
+#  [3] "BTS_Awad_et_al_2018"                                                               
+#  [4] "BTS_Azevedo_et_al_2022_mainland"                                                   
+#  [5] "BTS_Azevedo_et_al_2022_taiwan"                                                     
+#  [6] "BTS_Bago_et_al_2022"                                                               
+#  [7] "BTS_Bertolo_et_al_2023"                                                            
+#  [8] "BTS_Bosson_et_al_2021"                                                             
+#  [9] "BTS_Buchanan_et_al_2023"                                                           
+# [10] "BTS_Dorison_et_al_2020"                                                            
+# [11] "BTS_Eriksson_et_al_2021"                                                           
+# [12] "BTS_Everett_et_al_2021"                                                            
+# [13] "BTS_Fernandez_Velasco_et_al_2023"                                                  
+# [14] "BTS_Greenberg_et_al_2022"                                                          
+# [15] "BTS_Hoogeveen_et_al_2022"                                                          
+# [16] "BTS_Hu_et_al_2019"                                                                 
+# [17] "BTS_Jones_et_al_2021"                                                              
+# [18] "BTS_Kelsey_et_al_2024"                                                             
+# [19] "BTS_Kirkland_et_al_2022"                                                           
+# [20] "BTS_Klein_et_al_2018_Slate1"                                                       
+# [21] "BTS_Klein_et_al_2018_Slate2"                                                       
+# [22] "BTS_Kowal_et_al_2022"                                                              
+# [23] "BTS_Manokara_et_al_2022"                                                           
+# [24] "BTS_Pizzol_et_al_2023"                                                             
+# [25] "BTS_Psychological_Science_Accelerator_Self_Determination_Theory_Collaboration_2022"
+# [26] "BTS_Ruggeri_et_al_2020"                                                            
+# [27] "BTS_Ruggeri_et_al_2022"                                                            
+# [28] "BTS_Sorokowski_et_al_2023"                                                         
+# [29] "BTS_Tybur_et_al_2016"                                                              
+# [30] "BTS_Van_Bavel_et_al_2022"                                                          
+# [31] "BTS_Vlasceanu_et_al_2023"                                                          
+# [32] "BTS_Wang_et_al_2021" 
+
+## save each data.frame colnames
+colname_list <- list()
+
+# 遍历列表中的每个数据框
+for (name in names(BTS)) {
+  
+  df <- BTS[[name]]
+  col_names <- colnames(df)
+  
+  temp_df <- data.frame(
+    data_source = name,
+    column_name = col_names
+  )
+  colname_list[[name]] <- temp_df
+}
+
+# 将结果列表合并为一个数据框
+BTS_colnames <- do.call(rbind, colname_list)
+rm(colname_list,temp_df,col_names,name,df)
+
 ```
 
 
 In this part, I tried to batch country code.
 
 ```{r}
-df1 <- BTS[[15]]
-table(df1$Country)
-# df2 <- BTS[[11]]
-# df4 <- BTS[[10]]
+str(BTS)
 
 ## Handle some more specific encodings
-names(BTS[[10]])[names(BTS[[10]]) == "Country_now"] <- "Country"
+names(BTS[[20]])[names(BTS[[20]]) == "Country_now"] <- "Country"  ## BTS_Klein 2018 Slate1
 
-names(BTS[[11]])[names(BTS[[11]]) == "Country_now"] <- "Country"
+names(BTS[[21]])[names(BTS[[21]]) == "Country_now"] <- "Country"  ## BTS_Klein 2018 Slate2
 
-names(BTS[[12]])[names(BTS[[12]]) == "Country_now"] <- "Country"
+names(BTS[[22]])[names(BTS[[22]]) == "Country_now"] <- "Country"  ## BTS_Kowal 2018 Slate1
 
-names(BTS[[15]])[names(BTS[[15]]) == "Country_now"] <- "Country"
+names(BTS[[32]])[names(BTS[[32]]) == "Country_now"] <- "Country"  ## BTS_Wang 2021
 
-BTS[[5]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[5]]$Country)) 
-BTS[[15]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[15]]$Country))
+BTS[[9]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[9]]$Country))    ## BTS_Buchanan 2023
+BTS[[32]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[32]]$Country))  ## BTS_Wang 2021
+
+
+
+
+BTS <- BTS[-c(6,14,18,19,29)] ## remove data.frame with the country code as num (Bago et al 2022、Greenberg et al 2022、Kirkland et al 2022、Tybur et al 2016)
+## remove data.frame with incorrect country name (Kelsey et al 2024)
+
+
 
 ## Batch processing of country codes for different data sources
 BTS <- lapply(BTS,function(df){
