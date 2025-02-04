@@ -104,7 +104,9 @@ for (file in file_list) {
 
 BTS_data_list <- BTS_data_list[grepl("BTS_",names(BTS_data_list),ignore.case = TRUE)]
 
-BTS <- BTS_data_list
+BTS0 <- BTS_data_list
+BTS <- BTS0
+
 rm(BTS_file)
 
 ## Here, I remove some data sets to reduce data set clutter.
@@ -206,7 +208,7 @@ rm(colname_list,temp_df,col_names,name,df)
 In this part, I tried to batch country code.
 
 ```{r}
-str(BTS)
+# str(BTS)
 
 ## Handle some more specific encodings
 names(BTS[[20]])[names(BTS[[20]]) == "Country_now"] <- "Country"  ## BTS_Klein 2018 Slate1
@@ -254,6 +256,8 @@ BTS <- lapply(BTS,function(df){
   
 })
 
+
+
 ## Check the country code of the BTS data
 BTS_countrycode_check <- lapply(BTS, function(df){
   
@@ -267,52 +271,72 @@ BTS_countrycode_check <- lapply(BTS, function(df){
 
 BTS_countrycode_check <- do.call(rbind, BTS_countrycode_check)
 
+
+
+# bts1 <- BTS[[22]]
+
+
 ## process abnormal Countrycode
-BTS[[4]] <- BTS[[4]] %>% 
-  dplyr::mutate(Countrycode = ifelse(Country == "USA", "Countryfullname",Countrycode)) ## I found UEA, a non-country code
+
+## BTS_Anllo_et_al_2023
+BTS[[1]] <- BTS[[1]] %>% 
+  dplyr::mutate(Country = ifelse(Country == "USA", "United States",Country),
+                Countrycode = ifelse(Country == "United States", "Countryfullname",Countrycode))
 
 
-## check code example
-# df4 <- BTS[[4]] %>% 
-#   dplyr::filter(Countrycode == "ISO3")
-# table(df4$Country)
+## BTS_Bosson_et_al_2021
+BTS[[7]] <- BTS[[7]] %>% 
+  dplyr::mutate(Country = ifelse(Country == "USA", "United States",Country),
+                Country = ifelse(Country == "CHN", "China",Country),
+                Countrycode = ifelse(Country == "United States" | Country == "China", "Countryfullname",Countrycode))
 
 
-# df5 <- BTS[[5]] %>% 
-#    dplyr::filter(nchar(Country) > 3) ## I found "Ken, Na" is ISO3
+## BTS_Buchanan_et_al_2023
+BTS[[8]] <- BTS[[8]] %>% 
+  dplyr::mutate(Country = ifelse(Country == "Ken, Na", "KEN",Country),
+                Countrycode = ifelse(Country == "KEN", "ISO3",Countrycode))
+  
 
-BTS[[5]] <- BTS[[5]] %>% 
-  dplyr::mutate(Countrycode = ifelse(Country == "Ken, Na", "ISO3",Countrycode),
-                Country = ifelse(Country == "Ken, Na", "KEN",Country))
+## BTS_Klein_et_al_2018 Slate1
+BTS[[16]] <- BTS[[16]] %>% 
+  dplyr::mutate(Country = ifelse(Country == "UK", "United Kingdom",Country),
+                Country = ifelse(Country == "USA", "United States",Country),
+                Countrycode = ifelse(Country == "United Kingdom" | Country == "United States", "Countryfullname",Countrycode))
+
+## BTS_Klein_et_al_2018 Slate2
+BTS[[17]] <- BTS[[17]] %>% 
+  dplyr::mutate(Country = ifelse(Country == "UK", "United Kingdom",Country),
+                Country = ifelse(Country == "USA", "United States",Country),
+                Countrycode = ifelse(Country == "United Kingdom" | Country == "United States", "Countryfullname",Countrycode))
 
 
-# df6 <- BTS[[6]] %>% 
-#   dplyr::filter(Countrycode == "Countryfullname") ## I found "Many" what this?
+## BTS_Kowal_et_al_2022
+BTS[[18]] <- BTS[[18]] %>% 
+  dplyr::mutate(Country = ifelse(Country == "UK", "United Kingdom",Country),
+                Country = ifelse(Country == "USA", "United States",Country),
+                Countrycode = ifelse(Country == "United Kingdom" | Country == "United States", "Countryfullname",Countrycode))
 
-BTS[[6]] <- BTS[[6]] %>% 
-  dplyr::mutate(Countrycode = ifelse(Country == "Many", NA,Countrycode),
-                Country = ifelse(Country == "Many", NA, Country))
+
+## BTS_Psychological_Science_Accelerator_Self_Determination_Theory_Collaboration_2022
+BTS[[21]] <- BTS[[21]] %>% 
+  dplyr::mutate(Country = ifelse(Country == "Iran", "IRN",Country),
+                Countrycode = ifelse(Country == "IRN", "ISO3",Countrycode))
 
 
-# df8 <- BTS[[8]] %>% 
-#   dplyr::filter(Countrycode == "ISO2") ## I found 'US" and "UA"
-# table(df8$Country)
+## BTS_Ruggeri_et_al_2020
+BTS[[22]] <- BTS[[22]] %>% 
+  dplyr::mutate(Country = ifelse(Country == "UK", "United Kingdom",Country),
+                Country = ifelse(Country == "USA", "United States",Country),
+                Country = ifelse(Country == "Mainland China", "China",Country),
+                Countrycode = ifelse(Country == "United Kingdom" | Country == "United States", "Countryfullname",Countrycode))
 
-# BTS[[8]] <- BTS[[8]] %>% 
-#   dplyr::mutate(Countrycode = ifelse(Country == "UK"| Country == "US", "Countryfullname",Countrycode))
-# 
-# 
-# df10 <- BTS[[10]] %>% 
-#   dplyr::filter(Countrycode == "ISO3" | Countrycode == "ISO2")
-# table(df10$Country)
-# 
-# df11 <- BTS[[11]] %>% 
-#   dplyr::filter(Countrycode == "ISO3" | Countrycode == "ISO2")
-# table(df11$Country)
-# 
-# df12 <- BTS[[12]] %>% 
-#   dplyr::filter(Countrycode == "ISO3" | Countrycode == "ISO2")
-# table(df12$Country)
+
+## BTS_Vlasceanu_et_al_2023
+BTS[[26]] <- BTS[[26]] %>% 
+  dplyr::mutate(Country = ifelse(Country == "UK", "United Kingdom",Country),
+                Country = ifelse(Country == "USA", "United States",Country),
+                Countrycode = ifelse(Country == "United Kingdom" | Country == "United States", "Countryfullname",Countrycode))
+
   
 ## Combine the BTS_data and Countrycodelist_iso2_iso3
 Countrycode_merge <- function(df, Countrycode) {  
