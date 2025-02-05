@@ -420,6 +420,53 @@ BTS <- lapply(BTS,function(df){
 ```
 
 
+process gender data of BTS
+```{r}
+## Batch processing of gender for different data sources
+BTS <- lapply(BTS,function(df){
+  
+  df <- df %>% 
+    dplyr::mutate(Gender = case_when(Gender %in% c("f","F") ~ "Female",
+                              Gender %in% c("m","M") ~ "Male",
+                              TRUE ~ Gender),
+           Gender = str_to_title(Gender))
+  
+  return(df)
+  
+})
+
+
+## Check the gender of the BTS data
+BTS_gender_check <- lapply(BTS, function(df){
+  
+  df <- df %>% 
+    dplyr::group_by(Gender) %>% 
+    dplyr::summarise(n=n()) %>% 
+    dplyr::ungroup()
+  
+  return(df)
+})
+
+BTS_gender_check <- do.call(rbind, BTS_gender_check)
+
+# BTS_gender_check %>% 
+#   dplyr::filter(Gender %in% c("Female","Male")) %>% 
+#   dplyr::summarise(n=sum(n))
+
+# write.csv(BTS_gender_check,"BTS_gender_check.csv")
+```
+
+
+process age data of BTS
+```{r}
+bts1 <- BTS[[32]]
+
+table(bts1$Education)
+
+```
+
+
+
 ```{r include=FALSE}
 ## Here, I remove some data sets to reduce data set clutter.
 rm(BTS_na_table,BTS_na,Countrycode_merge,BTS_countrycode_check)
