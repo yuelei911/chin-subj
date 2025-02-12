@@ -537,6 +537,6 @@ gc()
 
 # Save Rdata
 ```{r}
-save(BTS0, BTS, file = "BTS.Rdata")
+save(BTS0, BTS, WEIRD, Countrycodelist_iso2_iso3,file = "BTS.Rdata")
 ```
 

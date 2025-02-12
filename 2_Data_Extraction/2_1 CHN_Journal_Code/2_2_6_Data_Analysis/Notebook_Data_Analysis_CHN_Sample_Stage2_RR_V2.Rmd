@@ -57,6 +57,8 @@ load("df_Pre_Stage2_Journal_Code.Rdata")
 
 load("df_chinese_subj_rr_stage1.Rdata")
 
+load("BTS.Rdata")
+
 ## Here, I remove some data sets to reduce data set clutter.
 rm(df,df_PSA001,df_stage2_Journal_Code,Group1_bind,Group24567_bind,Group3_bind,df_regionCode)
 ```
@@ -1069,15 +1071,18 @@ rm(Sim_Journal_age_five1,Sim_Journal_age_five2,Sim_Journal_age_five3,
 Process age data from BTS.
 
 ```{r}
+BTS1 <- BTS[-c(3,16,17,8)]
+# str(BTS1)## 使用BTS1是因为部分数据年龄有问题，所以筛选，后续有多处是这样，数据再次清洗后请注意更换
+
 BTS_age_list <- list()
 
-for(i in seq_along(BTS)){
+for(i in seq_along(BTS1)){
   
-  BTS_name <- names(BTS)[i]
+  BTS_name <- names(BTS1)[i]
   
   if("Age" %in% names(BTS[[i]])){
     
-    BTS_age <- BTS[[i]] %>% 
+    BTS_age <- BTS1[[i]] %>% 
       dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
       dplyr::select(Article_Id,Age,ISO3) %>% 
       #dplyr::group_by(ISO3) %>% 
@@ -1117,15 +1122,15 @@ BTS_age_CHN <- BTS_age %>%
                 Data_Source = "BTS Chinese")
 
 ## add 2 rows of ageBins without data
-BTS_age_CHN_2rows <- data.frame(ageBins = c("0~4","5~9"),
-                                n = 0,
-                                Proportion = 0,
-                                Data_Source = "BTS Chinese")
+# BTS_age_CHN_2rows <- data.frame(ageBins = c("0~4","5~9"),
+#                                 n = 0,
+#                                 Proportion = 0,
+#                                 Data_Source = "BTS Chinese")
 
 ## combine 2 dataframe
-H1_age <- Sim_Journal_age_five3_prop %>% 
-  dplyr::rename(n = 2) %>% 
-  dplyr::bind_rows(BTS_age_CHN,BTS_age_CHN_2rows)
+H1_age <- Sim_Journal_age_five3_prop %>%
+  dplyr::rename(n = 2) %>%
+  dplyr::bind_rows(BTS_age_CHN)
 
 
 ## set ageBins as factor to plot
@@ -1179,13 +1184,13 @@ Process age for Bayesian multinomial test. First of all, I processed BTS CHN age
 ```{r}
 BTS_age_PsyStages_list <- list()
 
-for(i in seq_along(BTS)){
+for(i in seq_along(BTS1)){
   
-  BTS_name <- names(BTS)[i]
+  BTS_name <- names(BTS1)[i]
   
-  if("Age" %in% names(BTS[[i]])){
+  if("Age" %in% names(BTS1[[i]])){
     
-    BTS_age <- BTS[[i]] %>% 
+    BTS_age <- BTS1[[i]] %>% 
       dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
       dplyr::select(Article_Id,Age,ISO3) %>% 
       #dplyr::group_by(ISO3) %>% 
@@ -1212,13 +1217,13 @@ Secondly, I processed BTS CHN age in 10-year-old segment.
 ```{r}
 BTS_age_interval10_list <- list()
 
-for(i in seq_along(BTS)){
+for(i in seq_along(BTS1)){
   
-  BTS_name <- names(BTS)[i]
+  BTS_name <- names(BTS1)[i]
   
-  if("Age" %in% names(BTS[[i]])){
+  if("Age" %in% names(BTS1[[i]])){
     
-    BTS_age <- BTS[[i]] %>% 
+    BTS_age <- BTS1[[i]] %>% 
       dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
       dplyr::select(Article_Id,Age,ISO3) %>% 
       dplyr::mutate(ageBins = cut(Age,
@@ -2202,7 +2207,8 @@ Journal_college2 <- Journal_edu2_year_simul_sum %>%
   tidyr::pivot_longer(cols = c(College_and_above,Below_college),
                       names_to = "Educational_Attainment",
                       values_to = "Num") %>% 
-  dplyr::mutate(Proportion = round(Num/sum(Num),2)*100)
+  dplyr::mutate(Proportion = round(Num/sum(Num),2)*100,
+                Data_source = "Journal")
 
 
 ## combine high school data
@@ -2214,18 +2220,95 @@ Journal_high_school2  <- Journal_edu2_year_simul_sum %>%
   tidyr::pivot_longer(cols = c(High_school_and_above,Below_high_school),
                       names_to = "Educational_Attainment",
                       values_to = "Num") %>% 
-  dplyr::mutate(Proportion = round(Num/sum(Num),2)*100)
+  dplyr::mutate(Proportion = round(Num/sum(Num),2)*100,
+                Data_source = "Journal")  ## 注意，计算round时*100的位置前后有所不同，后需要确认更改
+```
+
+
+Load and process the edu data of census 7th
+```{r}
+Census7_edu <- readxl::read_xls("A0401.xls")
+
+Census7_edu_adults <- Census7_edu %>% 
+  dplyr::slice(c(3,4,29,30,32,39,46,53,60,67,74,81,88,95,102,109,116,123)) %>% 
+  dplyr::select(1,2,5,8,11,14,17,20,23,26,29) %>% 
+  dplyr::rename(Age = 1,Three_years_old_above = 2, Never_attended_school = 3,
+                Preschool_education = 4,Primary_school = 5,Middle_school = 6,
+                High_school = 7, Junior_college = 8, Undergraduate_education = 9,
+                Postgraduate_student = 10,Doctoral_student = 11) %>% 
+  dplyr::slice(-c(1:2)) %>% 
+  dplyr::mutate(across(-1,as.numeric)) 
+
+
+Census7_college <- Census7_edu_adults %>% 
+  dplyr::summarise(Below_college = sum(across(3:7)),
+                   College_and_above = sum(across(8:11))) %>% 
+  tidyr::pivot_longer(cols = c(1,2),
+                      names_to = "Educational_Attainment",
+                      values_to = "Num") %>% 
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+                Data_source = "Census7")
+
+Census7_high_school <- Census7_edu_adults %>% 
+  dplyr::summarise(Below_high_school = sum(across(3:6)),
+                   High_school_and_above = sum(across(7:11))) %>% 
+  tidyr::pivot_longer(cols = c(1,2),
+                      names_to = "Educational_Attainment",
+                      values_to = "Num") %>% 
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+                Data_source = "Census7")
+```
+
+
+receive edu data of CFPS2018
+```{r}
+CFPS2018_edu <- df_CFPS2018 %>% 
+  dplyr::filter(W01 > -1) %>% 
+  dplyr::group_by(W01) %>% 
+  dplyr::summarise(Num = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(W01 = as.character(W01)) %>% 
+  dplyr::mutate(W01 = case_when(W01 == 0 ~ "Illiterate/Semi - illiterate",
+                                W01 == 3 ~ "Primary school",
+                                W01 == 4 ~ "high school",
+                                W01 == 5 ~ "Senior high school/Secondary vocational school/Technical school/Vocational high school",
+                                W01 == 6 ~ "Junior college",
+                                W01 == 7 ~ "Undergraduate_education",
+                                W01 == 8 ~ "Postgraduate_student",
+                                W01 == 9 ~ "Doctoral_student",
+                                W01 == 10 ~ "Never attended school",
+                                TRUE ~ W01))
+
+
+CFPS2018_edu_college <- data.frame(Educational_Attainment = c("Below_college","College_and_above"),
+                                   Num = c(2846+756+3598+5273,3058+1648+1335+112+7)) %>% 
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+                Data_source = "CFPS2018")
+
+CFPS2018_edu_high_school <- data.frame(Educational_Attainment = c("Below_high_school","High_school_and_above"),
+                                   Num = c(2846+756+3598+5273+3058,1648+1335+112+7)) %>% 
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+                Data_source = "CFPS2018")
+```
+
+
+Combine multiple edu data
+```{r}
+H2_edu_college <- bind_rows(Journal_college2,Census7_college,CFPS2018_edu_college)
+
+H2_edu_high_school <- bind_rows(Journal_high_school2,Census7_high_school,CFPS2018_edu_high_school) %>% 
+  dplyr::mutate(Data_source = factor(Data_source,
+                                     levels = c("CFPS2018","Census7","Journal")))
 ```
 
 
 And visualization
 ```{r}
 ## college
-H2_Fig_college <- ggplot(data = Journal_college2,aes(Educational_Attainment,Proportion,fill = Educational_Attainment,Proportion))+
+H2_Fig_college <- ggplot(data = H2_edu_college,aes(Data_source,Proportion,fill = Educational_Attainment))+
   geom_col()+
-  theme_classic()+
-  xlab("Educational attainment (26,069 subjects)")+ ## 4662+12092+9315
-  theme(legend.position = "none",    
+  theme_classic()+ ## Journal num 4662+12092+9315
+  theme(legend.position = "bottom",    
         axis.title= element_text(size = 15,family = "serif"),
         axis.text = element_text(size = 10,family = "serif"),
         strip.text = element_text(size = 15,family = "serif"),
@@ -2236,12 +2319,11 @@ H2_Fig_college
 
 
 ## high school
-H2_Fig_high_school <- ggplot(data = Journal_high_school2,aes(Educational_Attainment,Proportion,fill = Educational_Attainment,Proportion))+
+H2_Fig_high_school <- ggplot(data = H2_edu_high_school,aes(Data_source,Proportion,fill = Educational_Attainment))+
   geom_col()+
-  theme_classic()+
-  xlab("Educational attainment (18,653 subjects)")+ ## 4662+9306+4685
+  theme_classic()+  ## Journal Num 4662+9306+4685
   ylab("")+
-  theme(legend.position = "none",    
+  theme(legend.position = "bottom",    
         axis.title= element_text(size = 15,family = "serif"),
         axis.text = element_text(size = 10,family = "serif"),
         strip.text = element_text(size = 15,family = "serif"),
@@ -2329,7 +2411,7 @@ As with the first two hypotheses, I dealt with gender data first.
 BTS_gender_allcountry <- lapply(BTS_gender_list, function(df){
   
   df %>% 
-    dplyr::select(ISO3,Data_Source,Gender) 
+    dplyr::select(ISO3,Data_Source,Gender) ## 这里应该增加Article_ID方便查找异常数据
   
 })
 
@@ -2399,6 +2481,12 @@ H3_Fig_gender <- ggplot(H3_gender, aes(x=Proportion, y=ISO3,fill=Gender)) +
 
 
 H3_Fig_gender
+
+
+# SLO From Psychological_Science_Accelerator_Self_Determination_Theory_Collaboration_2022
+# BRG  and SRP from Ruggeri_et_al_2022
+
+# bts1 <- BTS[[23]]
 ```
 
 Secondly, I processed age data. Similarity, I processed age data in two classification. The one is PsyStages.
