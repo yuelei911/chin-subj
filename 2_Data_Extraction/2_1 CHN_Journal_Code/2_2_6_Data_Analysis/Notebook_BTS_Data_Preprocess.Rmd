@@ -521,9 +521,9 @@ BTS_gender_check <- do.call(rbind, BTS_gender_check)
 
 process age data of BTS
 ```{r}
-bts1 <- BTS[[32]]
-
-table(bts1$Education)
+# bts1 <- BTS[[32]]
+# 
+# table(bts1$Education)
 
 ```
 
@@ -537,6 +537,6 @@ gc()
 
 # Save Rdata
 ```{r}
-save(BTS, file = "BTS.Rdata")
+save(BTS0, BTS, file = "BTS.Rdata")
 ```
 
