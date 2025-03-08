@@ -64,6 +64,31 @@ rm(df,df_PSA001,df_stage2_Journal_Code,Group1_bind,Group24567_bind,Group3_bind,d
 ```
 
 
+## read the coding of BTS
+```{r}
+BTS_coding <- readxl::read_xlsx("Chin_Subj_BTS_Coding_CE.xlsx") %>% 
+  dplyr::filter(Coder == "final")
+```
+
+
+## combine raw data and coding data of BTS
+```{r}
+for (i in seq_along(BTS)) {
+  
+  current_df <- BTS[[i]]
+  
+  merged_df <- merge(current_df, BTS_coding, by = "Article_Id", all.x = TRUE) 
+  BTS[[i]] <- merged_df
+  
+}
+
+## VIEW 
+BTS1 <- BTS[[4]]
+table(BTS1$Target_Population)
+
+```
+
+
 Here, I used self-defined function in Stage1 to calculate Bayesian multinomial test.
 
 # Define a Func to calculate Bayesian multinomial test
@@ -127,7 +152,7 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   if (any(rowSums(cbind(thetas, counts)) == 0)) {
     LogBF10 <- (lbeta.xa-lbeta.a)
   } else {
-    LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+     LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
   }
 
   BF <- data.frame(LogBF10 = LogBF10,
@@ -139,6 +164,7 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   
 }
 ```
+
 
 At this point, I have finished loading the package and data. Next, I analyzed the data and visualized it according to the logic of the written protocal.
 
@@ -452,7 +478,7 @@ Target_population_special_sampletype23_gender <- Journal_gender2 %>%
                    Female_Num = sum(Female_Num,na.rm = TRUE),
                    Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
                    Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
-                   Data_Source = "Target_population_special")
+                   Data_Source = "Target_population_special23")
 
 Journal_gender_different_categories <- bind_rows(Target_population_total_gender,Target_population_general_gender,
           Target_population_special_gender,Target_population_special_sampletype23_gender) 
@@ -500,11 +526,38 @@ BTS_gender_CHN <- lapply(BTS_gender_list, function(df){
   
   df %>% 
     dplyr::filter(grepl("CHN", ISO3, ignore.case = TRUE)) %>% 
-    dplyr::select(ISO3,Data_Source,Gender) 
+    dplyr::select(ISO3,Data_Source,Gender,Target_Population) 
 
 })
 
-BTS_gender_CHN <- do.call(rbind, BTS_gender_CHN) %>% 
+BTS_gender_CHN <- do.call(rbind,BTS_gender_CHN)
+
+
+## total population
+BTS_gender_total_CHN <- BTS_gender_CHN %>%
+  dplyr::group_by(Gender) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::mutate(Proportion = round(n/sum(n),2)*100) %>% 
+  dplyr::ungroup() %>%
+  dplyr::mutate(Data_Source = "BTS Chinese")
+
+H1_gender_total <- BTS_gender_total_CHN %>% 
+  dplyr::add_row(Gender = c("Female","Male"), n = c(273804,234047),
+                 Proportion = c(50,50),Data_Source = "Journal")   ## Here, enter data manually.
+
+H1_gender_total_factor <- H1_gender_total %>% 
+  dplyr::filter(Gender == "Female") %>% 
+  dplyr::arrange(Proportion) %>% 
+  dplyr::pull(Data_Source)
+
+H1_gender_total <- H1_gender_total %>% 
+  dplyr::mutate(Data_Source = factor(Data_Source,
+                                     levels = H1_gender_total_factor))
+
+
+## General population
+BTS_gender_general_CHN <- BTS_gender_CHN %>%
+  dplyr::filter(Target_Population != 1) %>% 
   dplyr::group_by(Gender) %>% 
   dplyr::summarise(n = n()) %>% 
   dplyr::mutate(Proportion = round(n/sum(n),2)*100) %>% 
@@ -512,24 +565,25 @@ BTS_gender_CHN <- do.call(rbind, BTS_gender_CHN) %>%
   dplyr::mutate(Data_Source = "BTS Chinese")
   
 ## Combine CHN journal data and set factor
-H1_gender <- BTS_gender_CHN %>% 
+H1_gender_general <- BTS_gender_general_CHN %>% 
   dplyr::add_row(Gender = c("Female","Male"), n = c(273804,234047),
-                 Proportion = c(54,46),Data_Source = "Journal")
+                 Proportion = c(54,46),Data_Source = "Journal")   ## Here, enter data manually.
 
-H1_gender_factor <- H1_gender %>% 
+H1_gender_general_factor <- H1_gender_general %>% 
   dplyr::filter(Gender == "Female") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(Data_Source)
 
-H1_gender <- H1_gender %>% 
+H1_gender_general <- H1_gender_general %>% 
   dplyr::mutate(Data_Source = factor(Data_Source,
-                                     levels = H1_gender_factor))
+                                     levels = H1_gender_general_factor))
 ```
 
 Visualize gender data for Chinese journals and BTS.
 
+Total population
 ```{r}
-H1_Fig_gender <- ggplot(data = H1_gender,aes(Data_Source,Proportion,fill = Gender))+
+H1_Fig_gender_total <- ggplot(data = H1_gender_total,aes(Data_Source,Proportion,fill = Gender))+
   geom_col()+
   geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
   labs(y="Proportion")+
@@ -542,48 +596,64 @@ H1_Fig_gender <- ggplot(data = H1_gender,aes(Data_Source,Proportion,fill = Gende
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))
 
-H1_Fig_gender 
+H1_Fig_gender_total 
+```
+
+
+General population
+```{r}
+H1_Fig_gender_general <- ggplot(data = H1_gender_general,aes(Data_Source,Proportion,fill = Gender))+
+  geom_col()+
+  geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
+  labs(y="Proportion")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 20, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))
+
+H1_Fig_gender_general 
 ```
 
 Here I tested whether the gender proportion distribution from Chinese five journal data are similar to that of the BTS data. I used Bayesian multinomial test (Bayesian goodness-of-fit test) to examine whether the observed (BTS data) fit the expected (Chinese five journal data).
 
 $H_0$: $\theta = c$, where $c$ is defined by Chinese five journal data; $H_1$: $\theta$ is free to vary.
 
+First, I calculate total population.
 ```{r}
-H1_gender_bayes <- H1_gender %>% 
+H1_gender_total_bayes <- H1_gender_total %>% 
   dplyr::select(1,3:4) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
 
-H1_BF_gender <- BayesMultiNomial(dataset = H1_gender_bayes,
+H1_BF_gender_total <- BayesMultiNomial(dataset = H1_gender_total_bayes,
                                              factor = "Gender",
                                              observed = "BTS Chinese",
-                                             expected = "Journal") 
-
-## Meanwhile, I calculate bayes factor based on target population
-H1_gender_general_bayes <- H1_gender %>% 
-  dplyr::add_row(Gender = c("Female","Male"),
-                n = c(55366,45480),
-                Proportion = c(55,45),
-                Data_Source = "Journal general Population") %>% 
-  dplyr::select(-2) %>% 
-  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
-
-
-H1_BF_gender_general <- BayesMultiNomial(dataset = H1_gender_general_bayes,
-                                         factor = "Gender",
-                                         observed = "BTS Chinese",
-                                         expected = "Journal general Population")
-
+                                             expected = "Journal")
 ```
 
-I found moderate evidence for the $H_1$ that the gender proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_gender$BF$LogBF10`.
+I found moderate evidence for the $H_1$ that the gender proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_gender_total$BF$LogBF10`.
+
+and then, I compared the general population between the two.
+```{r}
+H1_gender_general_bayes <- H1_gender_general %>% 
+  dplyr::select(1,3:4) %>% 
+  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
+
+H1_BF_gender_general <- BayesMultiNomial(dataset = H1_gender_general_bayes,
+                                             factor = "Gender",
+                                             observed = "BTS Chinese",
+                                             expected = "Journal")
+```
 
 However, I found there no different between BTS data and the general population of Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_general$BF$LogBF10`.
 
 At the end of gender data processing for hypothesis 1, I removed some data sets to reduce data set clutter.
 
 ```{r}
-rm(BTS_gender_CHN,H1_gender_bayes,H1_gender_factor,i,BTS_data_name)
+rm(H1_gender_total_bayes,H1_gender_total_factor,H1_gender_general_factor,i,BTS_name)
 ```
 
 ### Age
