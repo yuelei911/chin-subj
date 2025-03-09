@@ -384,7 +384,7 @@ Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>%
 
 ## Here, I remove some data sets to reduce data set clutter.
 rm(Journal_age_report_detail,Journal_age_report_detail_study_num,
-   Journal_age_fuzzy_report,Journal_age_fuzzy_report_study_num, Journal_age_report_detail_study_num)
+   Journal_age_fuzzy_report,Journal_age_fuzzy_report_study_num)
 ```
 
 In this section, I began by testing and analyzing three main hypotheses.
@@ -907,7 +907,7 @@ Sim_Journal_age_five3_general <- Sim_Journal_age_five2_general %>%
 
 
 ## Calculate the sample difference between the coded data and the simulated data
-sum(Journal_age_general$Sample_Size)-sum(Sim_Journal_age_interval103_general$sim1,na.rm = TRUE) 
+sum(Journal_age_general$Sample_Size)-sum(Sim_Journal_age_five3_general$sim1,na.rm = TRUE) 
 
 
 ## PsyStages
@@ -1523,8 +1523,9 @@ CFPS2018_gender <- df_CFPS2018 %>%
 Secondly, I converted data format and combined three data sources.
 
 ```{r}
+# all data
 ## Convert H1_gender data format
-H1_gender2 <- H1_gender %>% 
+H1_gender_total2 <- H1_gender_total %>% 
   dplyr::select(1:2) %>% 
   dplyr::group_by(Gender) %>% 
   dplyr::summarise(n = sum(n)) %>% 
@@ -1533,13 +1534,26 @@ H1_gender2 <- H1_gender %>%
   dplyr::ungroup()
 
 ## combine the gender data from three data source
-H2_gender <-  bind_rows(Census7_gender,CFPS2018_gender,H1_gender2)
+H2_gender_total <-  bind_rows(Census7_gender,CFPS2018_gender,H1_gender_total2)
+
+
+## general
+H1_gender_general2 <- H1_gender_general %>% 
+  dplyr::select(1:2) %>% 
+  dplyr::group_by(Gender) %>% 
+  dplyr::summarise(n = sum(n)) %>% 
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
+                Data_Source = "Chinese subjects pool") %>% 
+  dplyr::ungroup()
+
+H2_gender_general <- bind_rows(Census7_gender,CFPS2018_gender,H1_gender_general2)
 ```
 
 And then, I combined all Chinese gender data and visualized them.
 
+total
 ```{r}
-H2_Fig_gender <- ggplot(H2_gender,aes(Data_Source,Proportion,fill= Gender))+
+H2_Fig_gender_total <- ggplot(H2_gender_total,aes(Data_Source,Proportion,fill= Gender))+
   geom_col()+
   geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
   labs(y="Proportion",x = "Data Source")+
@@ -1553,34 +1567,76 @@ H2_Fig_gender <- ggplot(H2_gender,aes(Data_Source,Proportion,fill= Gender))+
         axis.text = element_text(size = 20,family = "serif"))
 
 
-H2_Fig_gender
+H2_Fig_gender_total
 
 # ggsave("H2_fig_gender.pdf", H2_fig_gender, device = "pdf", width=18, height = 9)
 ```
 
+general
+```{r}
+H2_Fig_gender_general <- ggplot(H2_gender_general,aes(Data_Source,Proportion,fill= Gender))+
+  geom_col()+
+  geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
+  labs(y="Proportion",x = "Data Source")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 20, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))
+
+
+H2_Fig_gender_general
+```
+
+
+
 Finally, I calculated the bayes factor for gender.
 
 ```{r}
-H2_gender_bayes <- H2_gender %>% 
+## total
+H2_gender_bayes_total <- H2_gender_total %>% 
   dplyr::select(2,3,1) %>% 
   tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
 
-## total
-H2_BF_gender_Census7 <- BayesMultiNomial(dataset = H2_gender_bayes,
+
+H2_BF_gender_Census7_total <- BayesMultiNomial(dataset = H2_gender_bayes_total,
                                           factor = "Gender",
                                           observed = "Chinese subjects pool",
                                           expected = "Census7")
 
 
-H2_BF_gender_CFPS2018 <- BayesMultiNomial(dataset = H2_gender_bayes,
+H2_BF_gender_CFPS2018_total <- BayesMultiNomial(dataset = H2_gender_bayes_total,
                                           factor = "Gender",
                                           observed = "Chinese subjects pool",
                                           expected = "CFPS2018")
+
+## general population
+H2_gender_bayes_general <- H2_gender_general %>% 
+  dplyr::select(2,3,1) %>% 
+  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
+
+
+H2_BF_gender_Census7_general <- BayesMultiNomial(dataset = H2_gender_bayes_general,
+                                          factor = "Gender",
+                                          observed = "Chinese subjects pool",
+                                          expected = "Census7")
+
+
+H2_BF_gender_CFPS2018_general <- BayesMultiNomial(dataset = H2_gender_bayes_general,
+                                          factor = "Gender",
+                                          observed = "Chinese subjects pool",
+                                          expected = "CFPS2018")
+
 ## general population
 ## 这里还继续处理，后续可以等BTS的编码后完善，类似的涉及到目标人群的BTS数据时都应如此。
 ```
 
-The calculation results show that there is no significant difference between the data in Chinese subjects pool and Census7 and CFPS2018, and the calculation results are $Log(BF_{10})$ = `r H2_BF_gender_Census7$BF$LogBF10` and $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018$BF$LogBF10` respectively.
+The calculation results show that there is no significant difference between the data in Chinese subjects pool and Census7 and CFPS2018, and the calculation results are $Log(BF_{10})$ = `r H2_BF_gender_Census7_total$BF$LogBF10` and $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_total$BF$LogBF10` respectively.
+
+for general population, I also found similar results. Census7: $Log(BF_{10})$ = `r H2_BF_gender_Census7_general$BF$LogBF10` , CFPS2018: $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_general$BF$LogBF10`
 
 ### Age
 
@@ -1640,7 +1696,8 @@ Census7_age_five5 <- Census7_age_five5 %>%
 
 Then, I convert the data format of H1_age.
 ```{r}
-H2_age <- H1_age %>% 
+## total
+H2_age_total <- H1_age_total %>% 
   dplyr::select(1:2) %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n = sum(n)) %>% 
@@ -1648,15 +1705,24 @@ H2_age <- H1_age %>%
   dplyr::ungroup()
 
 # sum(H2_age$Proportion) ## 99.99
+
+## general
+H2_age_general <- H1_age_general %>%
+  dplyr::select(1:2) %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(n = sum(n)) %>% 
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2)) %>% 
+  dplyr::ungroup()
 ```
 
 Finally, I visualized all Chinese age data and combined figure of gender and age.
 
+total
 ```{r}
-H2_Fig_age <- ggplot(data= Census7_age_five5, 
+H2_Fig_age_total <- ggplot(data= Census7_age_five5, 
        aes(x=ageBins, y = Proportion, fill="Census7")) +
   geom_col(alpha=0.5, width = 1) +
-  geom_line(data = H2_age, aes(x=ageBins, 
+  geom_line(data = H2_age_total, aes(x=ageBins, 
                 y = Proportion,group = 1,color = "Chinese Subjects pool"),size =1)+
   scale_fill_manual(values=c("Census7"="#00BFC4")) +  
   scale_color_manual(values=c("Chinese Subjects pool" = "red")) +
@@ -1673,23 +1739,59 @@ H2_Fig_age <- ggplot(data= Census7_age_five5,
         axis.text = element_text(size = 16,family = "serif"))
 
 
-H2_Fig_age
+H2_Fig_age_total
 
 
-H2_Fig_gender_age <- H2_Fig_gender + H2_Fig_age +
+H2_Fig_gender_age_total <- H2_Fig_gender_total + H2_Fig_age_total +
   plot_annotation(tag_levels = 'A')
 
 
-ggsave("H2_Fig_gender_age.pdf", H2_Fig_gender_age, device = "pdf", width=18, height = 9)
+ggsave("H2_Fig_gender_age_total.pdf", H2_Fig_gender_age_total, device = "pdf", width=18, height = 9)
 
 
-H2_Fig_gender_age
+H2_Fig_gender_age_total
 ```
+general population
+```{r}
+H2_Fig_age_general <- ggplot(data= Census7_age_five5, 
+       aes(x=ageBins, y = Proportion, fill="Census7")) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = H2_age_general, aes(x=ageBins, 
+                y = Proportion,group = 1,color = "Chinese Subjects pool"),size =1)+
+  scale_fill_manual(values=c("Census7"="#00BFC4")) +  
+  scale_color_manual(values=c("Chinese Subjects pool" = "red")) +
+  scale_y_continuous(limits = c(0,45))+
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+
+
+H2_Fig_age_general
+
+
+H2_Fig_gender_age_general <- H2_Fig_gender_general + H2_Fig_age_general +
+  plot_annotation(tag_levels = 'A')
+
+
+ggsave("H2_Fig_gender_age_general.pdf", H2_Fig_gender_age_general, device = "pdf", width=18, height = 9)
+
+
+H2_Fig_gender_age_general
+```
+
+
 
 In addition, I calculated the bayes factor.
 
 ```{r}
-##凡是BTS数据完善后涉及到合并Journal和BTS的都需要重新替换数据。切记切记！！！！！
+##凡是BTS数据完善后涉及到合并Journal和BTS的都需要重新替换数据。切记切记！！！！！请注意本段并未比较CFPS
 # Firstly, I process Census data for the following analysis.
 ## process census data.
 Census7_age <- df_census7 %>%
@@ -1728,28 +1830,50 @@ Census7_age_interval10 <- Census7_age %>%
                 Data_Source = "Census7")
 
 # Then, I calculate bayes factor, for a start, I calculate it in total.
-## PsyStages
-H2_age_PsyStages_bayes <- bind_rows(Census7_age_PsyStages,Sim_Journal_age_PsyStages3_prop) %>% 
-  dplyr::select(1,3:4) %>% 
-  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion) %>% 
-  dplyr::rename('Chinese subjects pool' = 3)
+## PsyStages Total
+Sim_Journal_age_PsyStages3_prop <- Sim_Journal_age_PsyStages3_prop %>% 
+  dplyr::rename(n =2)
 
-H2_BF_age_PsyStages <- BayesMultiNomial(dataset = H2_age_PsyStages_bayes,
-                                        factor = "ageBins",
-                                        observed = "Chinese subjects pool",
-                                        expected = "Census7")
+BTS_age_PsyStages_CHN_total <- BTS_age_PsyStages_CHN_total %>% 
+  dplyr::mutate(n = as.numeric(n))
+
+H2_age_PsyStages_bayes_total<- bind_rows(BTS_age_PsyStages_CHN_total,Sim_Journal_age_PsyStages3_prop) %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(n = sum(n)) %>% 
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
+                Data_Source = "Chinese subjects pool") %>% # sum(H2_age_general_bayes$Proportion) ## 100.01
+  dplyr::add_row(Census7_age_PsyStages) %>% 
+  dplyr::select(-2) %>% 
+  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
+
 
 ## interval10
-H2_age_interval10_bayes <- bind_rows(Census7_age_interval10,Sim_Journal_age_interval103_prop) %>% 
-  dplyr::select(1,3:4) %>% 
-  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion) %>% 
-  dplyr::rename('Chinese subjects pool' = 3)
+Sim_Journal_age_interval103_total_prop <-  Sim_Journal_age_interval103_prop %>% 
+  dplyr::rename(n = 2)
 
-H2_BF_age_interval10 <- BayesMultiNomial(dataset = H2_age_interval10_bayes,
+H2_age_inteval10_bayes_total <- bind_rows(BTS_age_interval10_CHN_total,Sim_Journal_age_interval103_total_prop) %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(n = sum(n)) %>% 
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
+                Data_Source = "Chinese subjects pool") %>% # sum(H2_age_general_bayes$Proportion) ## 100.01
+  dplyr::add_row(Census7_age_interval10) %>% 
+  dplyr::select(-2) %>% 
+  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
+
+
+## calculate BF
+# PsyStages
+H2_BF_age_PsyStages_total <- BayesMultiNomial(dataset = H2_age_PsyStages_bayes_total,
                                         factor = "ageBins",
                                         observed = "Chinese subjects pool",
                                         expected = "Census7")
-  
+
+
+## interval 10
+H2_BF_age_interval10_total <- BayesMultiNomial(dataset = H2_age_interval10_bayes_total,
+                                        factor = "ageBins",
+                                        observed = "Chinese subjects pool",
+                                        expected = "Census7")
 
 ## Next, For target population, I need combine two source data firstly.
 ## PsySatges
@@ -1757,7 +1881,7 @@ Sim_Journal_age_PsyStages3_general_prop <- Sim_Journal_age_PsyStages3_general_pr
   dplyr::rename(n =2)
 
 
-H2_age_Psystages_general_bayes <- bind_rows(BTS_age_PsyStages_CHN,Sim_Journal_age_PsyStages3_general_prop) %>% 
+H2_age_Psystages_bayes_general <- bind_rows(BTS_age_PsyStages_CHN_general,Sim_Journal_age_PsyStages3_general_prop) %>% 
   dplyr::select(1:2) %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n = sum(n)) %>% 
@@ -1771,7 +1895,7 @@ H2_age_Psystages_general_bayes <- bind_rows(BTS_age_PsyStages_CHN,Sim_Journal_ag
 Sim_Journal_age_interval103_general_prop <-  Sim_Journal_age_interval103_general_prop %>% 
   dplyr::rename(n = 2)
 
-H2_age_inteval10_general_bayes <- bind_rows(BTS_age_interval10_CHN2,Sim_Journal_age_interval103_general_prop) %>% 
+H2_age_inteval10_bayes_general <- bind_rows(BTS_age_interval10_CHN_general,Sim_Journal_age_interval103_general_prop) %>% 
   dplyr::select(1:2) %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n = sum(n)) %>% 
@@ -1782,19 +1906,19 @@ H2_age_inteval10_general_bayes <- bind_rows(BTS_age_interval10_CHN2,Sim_Journal_
   tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
 
 ## calculate bayes factor
-H2_BF_age_Psystages_general <- BayesMultiNomial(dataset = H2_age_Psystages_general_bayes,
+H2_BF_age_Psystages_general <- BayesMultiNomial(dataset = H2_age_Psystages_bayes_general,
                               factor = "ageBins",
                               observed = "Chinese subjects pool",
                               expected = "Census7")
 
 
-H2_BF_age_interval10_general <- BayesMultiNomial(dataset = H2_age_inteval10_general_bayes,
+H2_BF_age_interval10_general <- BayesMultiNomial(dataset = H2_age_inteval10_bayes_general,
                               factor = "ageBins",
                               observed = "Chinese subjects pool",
                               expected = "Census7")
 ```
 
-For age of H2, firstly, in total, I found two age categories both have strong evidence for $H_1$ that the age distribution of Chinese subjects pool are different from Census7. The Bayesian multinomial test are PsyStages: $Log(BF_{10})$ = `r H2_BF_age_PsyStages$BF$LogBF10` and interval10: $Log(BF_{10})$ = `r H2_BF_age_interval10$BF$LogBF10` respectively.
+For age of H2, firstly, in total, I found two age categories both have strong evidence for $H_1$ that the age distribution of Chinese subjects pool are different from Census7. The Bayesian multinomial test are PsyStages: $Log(BF_{10})$ = `r H2_BF_age_PsyStages_total$BF$LogBF10` and interval10: $Log(BF_{10})$ = `r H2_BF_age_interval10_total$BF$LogBF10` respectively.
 
 Then, I also found the Bayesian multinomial test shows strong evidence for comparing them in general population. PsyStages and interval10 are $Log(BF_{10})$ = `r H2_BF_age_Psystages_general$BF$LogBF10` and interval10: $Log(BF_{10})$ = `r H2_BF_age_interval10_general$BF$LogBF10` respectively.
 
@@ -1889,6 +2013,8 @@ Journal_region_tab2 <- Journal_region_tab %>%
   dplyr::rename(Region = 1)
 
 # sum(Journal_region_tab2$n) 290,585
+
+sum(Journal_region_tab2$Proportion)
 ```
 
 
@@ -2048,7 +2174,7 @@ H2_Fig_region_total <- ggplot() +
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
   geom_sf(data = gjx) +
-  labs(title = "Journal subjects recruitment region distribution (290,585 subjects)") +
+  labs(title = "Journal all subjects recruitment region distribution (290,585 subjects)") +
   theme(plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
         legend.title = element_blank(),
@@ -2147,24 +2273,24 @@ H2_region_bayes <- bind_rows(Journal_region_general_tab2,Journal_region_tab2,
   dplyr::mutate(across(everything(),~ifelse(is.na(.),1,.)))
 
 
-H2_BF_Journal_Census7_region <- BayesMultiNomial(dataset = H2_region_bayes,
+H2_BF_Journal_Census7_region_total <- BayesMultiNomial(dataset = H2_region_bayes,
                                           factor = "Region",
                                           observed = "Journal",
                                           expected = "Census7")
 
 
-H2_BF_Journal_CFPS2018_region <- BayesMultiNomial(dataset = H2_region_bayes,
+H2_BF_Journal_CFPS2018_region_total <- BayesMultiNomial(dataset = H2_region_bayes,
                                           factor = "Region",
                                           observed = "Journal",
                                           expected = "CFPS2018")
 
 ## different target population compared
-H2_BF_Journal_general_Census7_region <- BayesMultiNomial(dataset = H2_region_bayes,
+H2_BF_Journal_Census7_region_general <- BayesMultiNomial(dataset = H2_region_bayes,
                                           factor = "Region",
                                           observed = "Journal_region_general_population",
                                           expected = "Census7")
 
-H2_BF_Journal_general_CFPS2018_region <- BayesMultiNomial(dataset = H2_region_bayes,
+H2_BF_Journal_CFPS2018_region_general <- BayesMultiNomial(dataset = H2_region_bayes,
                                           factor = "Region",
                                           observed = "Journal_region_general_population",
                                           expected = "CFPS2018")
