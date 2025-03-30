@@ -123,11 +123,11 @@ names(BTS)
 # [15] "BTS_Hoogeveen_et_al_2022"                                                          
 # [16] "BTS_Hu_et_al_2019"                                                                 
 # [17] "BTS_Jones_et_al_2021"                                                              
-# [18] "BTS_Kelsey_et_al_2024"                                                             
-# [19] "BTS_Kirkland_et_al_2022"                                                           
-# [20] "BTS_Klein_et_al_2018_Slate1"                                                       
-# [21] "BTS_Klein_et_al_2018_Slate2"                                                       
-# [22] "BTS_Kowal_et_al_2022"                                                              
+# [18] "BTS_Kirkland_et_al_2022"                                                           
+# [19] "BTS_Klein_et_al_2018_Slate1"                                                       
+# [20] "BTS_Klein_et_al_2018_Slate2"                                                       
+# [21] "BTS_Kowal_et_al_2022"                                                              
+# [22] "BTS_Lucca_et_al_2024"                                                              
 # [23] "BTS_Manokara_et_al_2022"                                                           
 # [24] "BTS_Pizzol_et_al_2023"                                                             
 # [25] "BTS_Psychological_Science_Accelerator_Self_Determination_Theory_Collaboration_2022"
@@ -168,22 +168,100 @@ In this part, I tried to batch country code.
 # str(BTS)
 
 ## Handle some more specific encodings
-names(BTS[[20]])[names(BTS[[20]]) == "Country_now"] <- "Country"  ## BTS_Klein 2018 Slate1
+names(BTS[[19]])[names(BTS[[19]]) == "Country_now"] <- "Country"  ## BTS_Klein 2018 Slate1
 
-names(BTS[[21]])[names(BTS[[21]]) == "Country_now"] <- "Country"  ## BTS_Klein 2018 Slate2
+names(BTS[[20]])[names(BTS[[20]]) == "Country_now"] <- "Country"  ## BTS_Klein 2018 Slate2
 
-names(BTS[[22]])[names(BTS[[22]]) == "Country_now"] <- "Country"  ## BTS_Kowal 2018 Slate1
+names(BTS[[21]])[names(BTS[[21]]) == "Country_now"] <- "Country"  ## BTS_Kowal 2018
 
 names(BTS[[32]])[names(BTS[[32]]) == "Country_now"] <- "Country"  ## BTS_Wang 2021
+
+names(BTS[[29]])[names(BTS[[29]]) == "Country_ID"]  <-  "Country" ## BTS_Tybur 2016
 
 BTS[[9]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[9]]$Country))    ## BTS_Buchanan 2023
 BTS[[32]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[32]]$Country))  ## BTS_Wang 2021
 
 
+## Process the country code use num format
+# BTS_Lucca_et_al_2024
+BTS[[22]] <- BTS[[22]] %>% 
+  dplyr::rename(Country = 1) %>% 
+  dplyr::mutate(Country = case_when(Country == "babylabamsterdam" ~ "Netherlands",
+                                    Country == "babylablmu" ~ "Germany",
+                                    Country == "babylabmpib" ~ "Germany",
+                                    Country == "babylabosaka" ~ "Japan",
+                                    Country == "babylabtrento" ~ "Italy",
+                                    Country == "babylabulb" ~ "Belgium",
+                                    Country == "babylabuva" ~ "United States",
+                                    Country == "babylabvuw" ~ "New Zealand",
+                                    Country == "beinghumanwroclaw" ~ "Poland",
+                                    Country == "biccbabylab" ~ "Italy",
+                                    Country == "bllumanitoba" ~ "Canada",
+                                    Country == "cbplabumn" ~ "United States",
+                                    Country == "childstudiesucsb"~ "United States",
+                                    Country == "cogcienmat_univalle" ~ "Colombia",
+                                    Country == "cogdevlabhku"  ~ "China", ## this data is China Hongkong
+                                    Country == "corbitlab" ~ "Canada",
+                                    Country == "cutelabunak" ~ "Iceland",
+                                    Country == "devlabmta" ~ "New Zealand",
+                                    Country == "emlasu" ~ "United States",
+                                    Country == "epsyrub" ~ "Germany",
+                                    Country == "gaugGottingen" ~ "Germany",
+                                    Country == "ikidstutsc" ~ "Canada",
+                                    Country == "infantcog_ubc" ~ "Canada",
+                                    Country == "irlconcordia" ~ "Canada",
+                                    Country == "kidsdevuniofnewcastle" ~ "Australia",
+                                    Country == "kikoceu" ~ "Hungary",
+                                    Country == "langdevhaifa" ~ "Israel",
+                                    Country == "lmumunich" ~ "Germany",
+                                    Country == "mecdmpihcbs" ~ "Germany",
+                                    Country == "pkusu" ~ "China",
+                                    Country == "socallabucsd" ~ "United States",
+                                    Country == "uiwcarl" ~ "United States",
+                                    Country == "weltentdeckerzurich" ~ "Switzerland",
+                                    Country == "wsumarcs" ~ "Australia",
+                                    Country == "yonseichild" ~ "South Korea",
+                                    TRUE ~ Country))
 
 
-BTS <- BTS[-c(6,14,18,19,29)] ## remove data.frame with the country code as num (Bago et al 2022、Greenberg et al 2022、Kirkland et al 2022、Tybur et al 2016)
-## remove data.frame with incorrect country name (Kelsey et al 2024)
+# BTS_Tybur_et_al_2016 
+BTS[[29]] <- BTS[[29]] %>% 
+  dplyr::mutate(Country = as.character(Country),
+                Country = case_when(Country == "1" ~ "IL",
+                                    Country == "2" ~ "SG",
+                                    Country == "3" ~ "BE",
+                                    Country == "4" ~ "RS",
+                                    Country == "5" ~ "ES",
+                                    Country == "6" ~ "AU",
+                                    Country == "7" ~ "SK",
+                                    Country == "8" ~ "FR",
+                                    Country == "9" ~ "NZ",
+                                    Country == "10" ~ "DK",
+                                    Country == "11" ~ "IN",
+                                    Country == "12" ~ "JP",
+                                    Country == "13" ~ "DE",
+                                    Country == "14" ~ "HR",
+                                    Country == "15" ~ "PL",
+                                    Country == "16" ~ "TR",
+                                    Country == "17" ~ "US",
+                                    Country == "18" ~ "CA",
+                                    Country == "19" ~ "GR",
+                                    Country == "20" ~ "IE",
+                                    Country == "21" ~ "NL",
+                                    Country == "22" ~ "BA",
+                                    Country == "23" ~ "UK",
+                                    Country == "24" ~ "CL",
+                                    Country == "25" ~ "KR",
+                                    Country == "26" ~ "SE",
+                                    Country == "27" ~ "FI",
+                                    Country == "28" ~ "BR",
+                                    Country == "29" ~ "AR",
+                                    Country == "30" ~ "CN",
+                                    TRUE ~ Country))
+
+
+
+BTS <- BTS[-c(6,14,18)] ## remove data.frame with the country code as num (Bago et al 2022, Greenberg et al 2022, Kirkland et al 2022)
 
 
 
@@ -274,7 +352,8 @@ BTS[[6]] <- BTS[[6]] %>%
 BTS[[7]] <- BTS[[7]] %>% 
   dplyr::mutate(Country = ifelse(Country == "USA", "United States",Country),
                 Country = ifelse(Country == "CHN", "China",Country),
-                Country = ifelse(Country == "UEA", "United Kingdom",Country),
+                Country = ifelse(Country == "UEA" | Country == "UAE", "United Arab Emirates
+",Country),
                 Countrycode = ifelse(Country == "United States" | Country == "China" | Country == "United Kingdom", "Countryfullname",Countrycode))
 
 
@@ -288,14 +367,14 @@ BTS[[8]] <- BTS[[8]] %>%
 ## BTS_Dorison_et_al_2020
 BTS[[9]] <- BTS[[9]] %>% 
   dplyr::mutate(Country = ifelse(Country == "Many", NA,Country),
-                Countrycode = ifelse(Countrycode == "CountryfullnameN", NA,Countrycode)) 
+                Countrycode = ifelse(Countrycode == "Countryfullname", NA,Countrycode)) 
 
 
 ## BTS_Eriksson_et_al_2021
 BTS[[10]] <- BTS[[10]] %>% 
   dplyr::mutate(Country = case_when(Country == "Ivory Coast" ~  "Côte d’Ivoire",
                                     Country == "Trinidad And Tobago" ~ "Trinidad & Tobago",
-                                    Country == "UAE" ~ "United Kingdom",
+                                    Country == "UEA" | Country == "UAE" ~ "United Arab Emirates",
                                     TRUE ~ Country))
 
 
@@ -344,7 +423,7 @@ BTS[[18]] <- BTS[[18]] %>%
 
 
 ## BTS_Pizzol_et_al_2023
-BTS[[20]] <- BTS[[20]] %>% 
+BTS[[21]] <- BTS[[21]] %>% 
   dplyr::mutate(Country = case_when(Country == "Korea, Rep." ~  "South Korea",
                                     Country == "Russian Federation" ~ "Russia",
                                     Country == "Slovak Republic" ~ "Slovakia",
@@ -354,27 +433,33 @@ BTS[[20]] <- BTS[[20]] %>%
 
 
 ## BTS_Psychological_Science_Accelerator_Self_Determination_Theory_Collaboration_2022
-BTS[[21]] <- BTS[[21]] %>% 
-  dplyr::mutate(Country = ifelse(Country == "Iran", "IRN",Country),
+BTS[[22]] <- BTS[[22]] %>% 
+  dplyr::mutate(Country = ifelse(Country == "Iran", "IRN", Country),
+                Country = ifelse(Country == "SLO", NA, Country),
                 Countrycode = ifelse(Country == "IRN", "ISO3",Countrycode))
 
 
 ## BTS_Ruggeri_et_al_2020
-BTS[[22]] <- BTS[[22]] %>% 
+BTS[[23]] <- BTS[[23]] %>% 
   dplyr::mutate(Country = ifelse(Country == "UK", "United Kingdom",Country),
                 Country = ifelse(Country == "USA", "United States",Country),
                 Country = ifelse(Country == "Mainland China", "China",Country),
                 Countrycode = ifelse(Country == "United Kingdom" | Country == "United States", "Countryfullname",Countrycode))
 
 
+## BTS_Ruggeri_et_al_2022
+BTS[[23]] <- BTS[[23]] %>% 
+  dplyr::mutate(Country = ifelse(Country == "BRG", "BGR",Country),
+                Country = ifelse(Country == "SRP", "SGP",Country))
+
 
 ## BTS_Sorokowski_et_al_2023
-BTS[[24]] <- BTS[[24]] %>% 
+BTS[[25]] <- BTS[[25]] %>% 
   dplyr::mutate(Country = ifelse(Country == "The Netherlands", "Netherlands",Country))
 
 
 ## BTS_Vlasceanu_et_al_2023
-BTS[[26]] <- BTS[[26]] %>% 
+BTS[[27]] <- BTS[[27]] %>% 
   dplyr::mutate(Country = ifelse(Country == "UK", "United Kingdom",Country),
                 Country = ifelse(Country == "USA", "United States",Country),
                 Countrycode = ifelse(Country == "United Kingdom" | Country == "United States", "Countryfullname",Countrycode),
@@ -389,7 +474,7 @@ BTS[[26]] <- BTS[[26]] %>%
 
 
 ## BTS_Wang_et_al_2021
-BTS[[27]] <- BTS[[27]] %>% 
+BTS[[29]] <- BTS[[29]] %>% 
   dplyr::mutate(Country = ifelse(Country == "China", "CHN",Country),
                 Countrycode = ifelse(Country == "CHN", "ISO3",Countrycode))
 
@@ -521,10 +606,22 @@ BTS_gender_check <- do.call(rbind, BTS_gender_check)
 
 process age data of BTS
 ```{r}
-# bts1 <- BTS[[32]]
-# 
-# table(bts1$Education)
+## Lucca et al. 2024'Age use age days record subjects' age, therefore I will transform
+## Lucca et al. 2024
+BTS[[19]] <- BTS[[19]] %>% 
+  dplyr::mutate(Age = round((Age_days/365),2))
 
+```
+
+
+process attainment education of BTS
+```{r}
+## BTS_Eriksson_et_al_2021
+bts1 <- BTS[[22]]
+table(bts1$Education)
+
+bts1 <- BTS[[11]] %>% 
+  dplyr::mutate()
 ```
 
 
