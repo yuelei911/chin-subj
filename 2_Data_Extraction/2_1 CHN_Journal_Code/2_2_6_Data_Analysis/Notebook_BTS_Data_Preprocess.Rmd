@@ -617,11 +617,11 @@ BTS[[19]] <- BTS[[19]] %>%
 process attainment education of BTS
 ```{r}
 ## BTS_Eriksson_et_al_2021
-bts1 <- BTS[[22]]
-table(bts1$Education)
-
-bts1 <- BTS[[11]] %>% 
-  dplyr::mutate()
+# bts1 <- BTS[[6]]
+# table(bts1$Education)
+# 
+# bts1 <- BTS[[13]] %>% 
+#   dplyr::mutate(Education = case_when(Education == ""))
 ```
 
 
