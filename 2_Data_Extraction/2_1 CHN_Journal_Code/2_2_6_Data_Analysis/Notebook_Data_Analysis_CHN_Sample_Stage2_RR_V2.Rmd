@@ -1271,15 +1271,15 @@ H1_Fig_age_total <- ggplot(data= H1_age_total, aes(x=ageBins, y=ifelse(Data_Sour
 
 H1_Fig_age_total
 
-
-H1_Fig_gender_age_total <- H1_Fig_gender_total + H1_Fig_age_total +
-  plot_annotation(tag_levels = 'A')
-
-
-ggsave("H1_Fig_gender_age_total.pdf", H1_Fig_gender_age_total, device = "pdf", width=18, height = 9)
-
-
-H1_Fig_gender_age_total
+# 
+# H1_Fig_gender_age_total <- H1_Fig_gender_total + H1_Fig_age_total +
+#   plot_annotation(tag_levels = 'A')
+# 
+# 
+# ggsave("H1_Fig_gender_age_total.pdf", H1_Fig_gender_age_total, device = "pdf", width=18, height = 9)
+# 
+# 
+# H1_Fig_gender_age_total
 ```
 general
 ```{r}
@@ -1301,12 +1301,12 @@ H1_Fig_age_general <- ggplot(data= H1_age_general, aes(x=ageBins, y=ifelse(Data_
 H1_Fig_age_general
 
 
-H1_Fig_gender_age_general <- H1_Fig_gender_general + H1_Fig_age_general +
-  plot_annotation(tag_levels = 'A')
-
-H1_Fig_gender_age_general 
-
-ggsave("H1_Fig_gender_age_general.pdf", H1_Fig_gender_age_general, device = "pdf", width=18, height = 9)
+# H1_Fig_gender_age_general <- H1_Fig_gender_general + H1_Fig_age_general +
+#   plot_annotation(tag_levels = 'A')
+# 
+# H1_Fig_gender_age_general 
+# 
+# ggsave("H1_Fig_gender_age_general.pdf", H1_Fig_gender_age_general, device = "pdf", width=18, height = 9)
 ```
 
 
@@ -1485,6 +1485,318 @@ When I divide age into stages of psychological development, I found strong evide
 For different target population, I compared general population for them firstly, I found strong evidence for $H_1$ that the age distribution from the Chinese subjects data of BTS data is different form the Chinese journals data, the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_PsyStages_general$BF$LogBF10`.
 
 Meanwhile, I found strong evidence support $H_1$ for another age category,the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_interval10_general$BF$LogBF10`.
+
+
+### attainment education
+Try to process educational attainment data from Chinese journal.
+
+```{r eval=FALSE, include=FALSE}
+# Journal_edu <- Journal %>% 
+#   dplyr::filter(Educational_Attainment_N == 1) %>% 
+#   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,M_age,SD_age,
+#                 Educational_Attainment_info_N) %>% 
+#   dplyr::mutate(Higher_edu = NA,
+#                 Below_higher_edu = NA,
+#                 Compulsory_edu_above = NA,
+#                 Compulsory_edu = NA ,
+#                 M_edu_year = NA,
+#                 SD_edu_year = NA)
+# 
+# writexl::write_xlsx(Journal_edu,"Journal_edu.xlsx")
+
+Journal_edu2 <- readxl::read_xlsx("Journal_edu.xlsx")
+
+
+## calculate the number of different categories 
+Journal_edu2_tab <- Journal_edu2 %>% 
+  dplyr::summarise(tab10 = sum(is.na(College_and_above)),
+                   tab11 = sum(is.na(Below_college)),
+                   tab12 = sum(is.na(High_school_and_above)),
+                   tab13 = sum(is.na(Below_high_school)),
+                   tab14 = sum(is.na(M_edu_year)),
+                   tab15 = sum(is.na(SD_edu_year))) %>% 
+  dplyr::select(1,3,5) %>% 
+  dplyr::rename(Class_higher_edu = 1, ## 90/185
+                Class_compulsory_edu = 2, ## 104/185
+                Class_edu_year = 3)  ## 152/185
+```
+
+
+In our study, we have three categories of educational attainments. I process three class data respectively.
+The first category is education years. I will use M and SD in the paper to simulate the number of subjects with the latter two categories of education level, and then combine them with the latter two categories respectively, and finally complete the subsequent analysis and visualization.
+```{r}
+Journal_edu2_year <- Journal_edu2 %>% 
+  dplyr::select(1:15) %>% 
+  dplyr::filter(!is.na(M_edu_year) & !is.na(SD_edu_year)) %>% 
+  dplyr::filter(is.na(College_and_above))  ## If there is data for the other two categories, there is no need to simulate using years of education, which is a screening done after looking at the data
+# sum(Journal_edu2_year$Sample_Size) ## 4662
+
+## Simulation of education data based on normal distribution
+College_threshold <- 15 ## The education years of college is set at 15
+Highschool_threshold <- 12 ## The education years of high school is set at 15
+
+
+## create a data.frame.
+Journal_edu2_year_simul <- data.frame(Article_IDs = character(),
+                      Study_Number = character(),
+                      Subjects_Group = character(),
+                      Sample_Size = integer(),
+                      College_and_above = integer(),
+                      Below_college = integer(),
+                      High_school_and_above = integer(),
+                      Below_high_school = integer())
+ 
+
+# Calculate sample size for each educated stages
+for (i in 1:nrow(Journal_edu2_year)) {
+  Article_IDs = Journal_edu2_year$Article_IDs[i]
+  Study_Number = Journal_edu2_year$Study_Number[i]
+  Subjects_Group = Journal_edu2_year$Subjects_Group[i]
+  Sample_Size <- Journal_edu2_year$Sample_Size[i] 
+  M_edu_year <- Journal_edu2_year$M_edu_year[i]  
+  SD_edu_year <- Journal_edu2_year$SD_edu_year[i] 
+  
+# Use the cumulative distribution function to calculate the proportion of subjects below each threshold
+  Prob_college_and_above <- pnorm(College_threshold, mean = M_edu_year, sd = SD_edu_year, lower.tail = FALSE)
+  Prob_highschool_and_above <- pnorm(Highschool_threshold, mean = M_edu_year, sd = SD_edu_year, lower.tail = FALSE)
+  
+#Count people by proportion.
+  College_and_above_count <- round(Sample_Size * Prob_college_and_above)
+  College_below_count <- Sample_Size - College_and_above_count
+  Highschool_and_above_count <- round(Sample_Size * Prob_highschool_and_above)
+  Highschool_below_count <- Sample_Size - Highschool_and_above_count
+  
+
+# Adds the result to the data.frame
+Journal_edu2_year_simul <- rbind(Journal_edu2_year_simul, data.frame(Article_IDs = Article_IDs,
+                                       Study_Number = Study_Number,
+                                       Subjects_Group = Subjects_Group,
+                                       Sample_Size = Sample_Size,
+                                       College_and_above = College_and_above_count,
+                                       Below_college = College_below_count,
+                                       High_school_and_above = Highschool_and_above_count,
+                                       Below_high_school = Highschool_below_count))
+}
+```
+
+
+The second category is 'college and above' and 'below college'. 
+```{r}
+Journal_college <- Journal_edu2 %>% 
+  dplyr::select(-c(5:9,12:15)) %>% 
+  dplyr::filter(!is.na(College_and_above) & !is.na(Below_college))
+
+##  both > 1
+Journal_college_integer <- Journal_college  %>%
+  dplyr::filter(College_and_above > 1 & Below_college > 1) %>%
+  dplyr::summarise(College_and_above = sum(College_and_above),
+                   Below_college = sum(Below_college)) ## sum 12,092
+  
+
+## both < 1
+Journal_college_decimal <- Journal_college  %>%
+  dplyr::filter(College_and_above <= 1 & Below_college <= 1) %>% 
+  dplyr::mutate(Total_college_and_above = College_and_above + Below_college) %>% 
+  dplyr::mutate(College_and_above_tab = floor(Sample_Size * College_and_above),
+                Below_college_tab = ifelse(Total_college_and_above == 1, Sample_Size - College_and_above_tab, floor(Sample_Size * Below_college))) %>% 
+  dplyr::mutate(tab = College_and_above_tab + Below_college_tab) %>% 
+  dplyr::summarise(College_and_above = sum(College_and_above_tab),
+                   Below_college = sum(Below_college_tab)) ## sum 9,315
+```
+
+
+The third category is 'high shcool and above' and 'below high school'
+```{R}
+Journal_high_school <- Journal_edu2 %>% 
+  dplyr::select(4,12:13) %>% 
+  dplyr::filter(!is.na(High_school_and_above) & !is.na(Below_high_school))
+
+##  both > 1
+Journal_high_school_integer <- Journal_high_school %>%
+  dplyr::filter(High_school_and_above > 1 & Below_high_school > 1) %>%
+  dplyr::summarise(High_school_and_above = sum(High_school_and_above),
+                   Below_high_school = sum(Below_high_school)) ## sum 9,306
+  
+## both < 1
+Journal_high_school_decimal <- Journal_high_school  %>%
+  dplyr::filter(High_school_and_above <= 1 & Below_high_school <= 1) %>% 
+  dplyr::mutate(Total_High_school = High_school_and_above + Below_high_school) %>% 
+  dplyr::mutate(High_school_and_above_tab = floor(Sample_Size * High_school_and_above),
+                Below_high_school_tab = ifelse(Total_High_school == 1, Sample_Size - High_school_and_above_tab, floor(Sample_Size * Below_high_school))) %>% 
+  dplyr::mutate(tab = High_school_and_above_tab + Below_high_school_tab) %>% 
+  dplyr::summarise(High_school_and_above = sum(High_school_and_above_tab),
+                   Below_high_school = sum(Below_high_school_tab)) ## 4,685
+```
+
+
+Combine education year with the other categories respectively.
+```{r}
+Journal_edu2_year_simul_sum <- Journal_edu2_year_simul %>% 
+  dplyr::summarise(College_and_above = sum(College_and_above),
+                   Below_college = sum(Below_college),
+                   High_school_and_above = sum(High_school_and_above),
+                   Below_high_school = sum(Below_high_school))
+
+## combine college data
+Journal_college2 <- Journal_edu2_year_simul_sum %>% 
+  dplyr::select(1:2) %>% 
+  bind_rows(Journal_college_decimal, Journal_college_integer) %>% 
+  dplyr::summarise(College_and_above = sum(College_and_above),
+                   Below_college = sum(Below_college)) %>% 
+  tidyr::pivot_longer(cols = c(College_and_above,Below_college),
+                      names_to = "Educational_attainment",
+                      values_to = "Num") %>% 
+  dplyr::mutate(Proportion = round(Num/sum(Num),2)*100,
+                Data_source = "Journal")
+
+
+## combine high school data
+Journal_high_school2  <- Journal_edu2_year_simul_sum %>% 
+  dplyr::select(3:4) %>% 
+  bind_rows(Journal_high_school_integer, Journal_high_school_decimal) %>% 
+  dplyr::summarise(High_school_and_above = sum(High_school_and_above),
+                   Below_high_school = sum(Below_high_school)) %>% 
+  tidyr::pivot_longer(cols = c(High_school_and_above,Below_high_school),
+                      names_to = "Educational_attainment",
+                      values_to = "Num") %>% 
+  dplyr::mutate(Proportion = round(Num/sum(Num),2)*100,
+                Data_source = "Journal")  ## 注意，计算round时*100的位置前后有所不同，后需要确认更改
+```
+
+
+Now, in this part, I process chinese subjects' edu data of BTS
+```{r}
+BTS_edu_list <- list()
+
+for(i in seq_along(BTS1)){
+  
+  BTS_name <- names(BTS1)[i]
+  
+  if("Education" %in% names(BTS1[[i]])){
+    
+    BTS_edu <- BTS1[[i]] %>% 
+      dplyr::filter(!is.na(Education) & !is.numeric(Education) & !is.na(ISO3)) %>%
+      dplyr::select(Article_Id,Education,Target_Population,ISO3) %>%
+      dplyr::mutate(Data_Source = BTS_name)
+  
+BTS_edu_list[[BTS_name]] <- BTS_edu
+  
+} else {  
+ 
+    cat(sprintf("Skipping '%s' because it does not contain a 'Education' column.\n", BTS_name))  
+  } 
+}
+
+
+## merge data.frame in list
+BTS_edu <-  do.call(rbind,BTS_edu_list)
+# 
+# 
+# bts1_edu <- data.frame(table(BTS_edu_CHN$Education))
+# writexl::write_xlsx(bts1_edu,"bts1_edu.xlsx")
+```
+
+
+Classify educational attainment and calculate special num
+```{r}
+BTS_edu <- BTS_edu %>% 
+  dplyr::mutate(College_cate = ifelse(Education %in% c("Bachelor","degree","Doctoral","doctorate",
+                                                              "Doctorate","four year degree","Four year degree",
+                                                              "Graduate","Masters","professional degree",
+                                                          "Professional degree","some college","Some college",
+                                                          "tertiary","two year degree","Two year degree",
+                                                          "University Masters","University MBA","University PhD",
+                                                          "University Undergraduate"),"College_and_above",
+                                      ifelse(Education %in% c("Elementary school","high school","High school",
+                                                          "I don't have any","less than high school","Less than high school",
+                                                          "no formal","No formal education","primary",
+                                                          "Primary ed.","Primary school","Primary school only",
+                                                          "Primary school through Secondary school","secondary","Secondary ed.",
+                                                          "Secondary school") ,"Below_college", NA)),
+                Highschool_cate = ifelse(Education %in% c("Bachelor","degree","Doctoral","doctorate",
+                                                              "Doctorate","four year degree","Four year degree",
+                                                              "Graduate","Masters","professional degree",
+                                                          "Professional degree","some college","Some college",
+                                                          "tertiary","two year degree","Two year degree",
+                                                          "University Masters","University MBA","University PhD",
+                                                          "University Undergraduate","high school","High school"),"High_school_and_above",
+                                         ifelse(Education %in% c("Elementary school","I don't have any","less than high school",
+                                                          "Less than high school","no formal","No formal education",
+                                                          "primary","Primary ed.","Primary school",
+                                                          "Primary school only"), "Below_high_school",NA)))
+
+## Filter chinese data
+BTS_edu_CHN <- BTS_edu %>%
+  dplyr::filter(ISO3 == "CHN")
+
+
+## calculate
+BTS_college <- BTS_edu_CHN %>%
+  dplyr::group_by(College_cate) %>%
+  dplyr::summarise(n=n()) %>% ## there are 995 NA values
+  dplyr::filter(!is.na(College_cate)) %>% 
+  dplyr::rename(Educational_attainment = 1, Num = 2) %>% 
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+                Data_source = "BTS Chinese")
+  
+  
+BTS_highschool <- BTS_edu_CHN %>%
+  dplyr::group_by(Highschool_cate) %>%
+  dplyr::summarise(n=n()) %>% ## there are 1647 NA values
+  dplyr::filter(!is.na(Highschool_cate)) %>% 
+  dplyr::rename(Educational_attainment = 1, Num = 2) %>% 
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+                Data_source = "BTS Chinese")
+
+
+## Combine data
+H1_edu_college <- rbind(Journal_college2,BTS_college)
+
+H1_edu_highschool <- rbind(Journal_high_school2,BTS_highschool)
+```
+
+
+visulize the edu data
+```{r}
+## college
+H1_Fig_college <- ggplot(data = H1_edu_college,aes(Data_source,Proportion,fill = Educational_attainment))+
+  geom_col()+
+  theme_classic()+ 
+  theme(legend.position = "bottom",    
+        axis.title= element_text(size = 15,family = "serif"),
+        axis.text = element_text(size = 10,family = "serif"),
+        strip.text = element_text(size = 15,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black"))
+
+H1_Fig_college
+
+## highschool
+## college
+H1_Fig_highschool <- ggplot(data = H1_edu_highschool,aes(Data_source,Proportion,fill =Educational_attainment))+
+  geom_col()+
+  theme_classic()+ 
+  theme(legend.position = "bottom",    
+        axis.title= element_text(size = 15,family = "serif"),
+        axis.text = element_text(size = 10,family = "serif"),
+        strip.text = element_text(size = 15,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black"))
+
+H1_Fig_highschool
+
+
+H1_Fig_gender_age_edu_general <-  H1_Fig_gender_general + H1_Fig_age_general + H1_Fig_college + H1_Fig_highschool +  
+  plot_layout(ncol = 2, heights = c(4,4))+
+  patchwork::plot_annotation(tag_levels = 'A')
+
+ggsave("H1_Fig_gender_age_edu_general.pdf",H1_Fig_gender_age_edu_general, device = "pdf", width=18, height = 18)
+
+H1_Fig_gender_age_edu_general
+```
+
+Note that there is not Bayes analysis here. 
+
 
 ## Test the 2st hypothesis
 
@@ -1922,6 +2234,130 @@ For age of H2, firstly, in total, I found two age categories both have strong ev
 
 Then, I also found the Bayesian multinomial test shows strong evidence for comparing them in general population. PsyStages and interval10 are $Log(BF_{10})$ = `r H2_BF_age_Psystages_general$BF$LogBF10` and interval10: $Log(BF_{10})$ = `r H2_BF_age_interval10_general$BF$LogBF10` respectively.
 
+
+### Educational attainment
+
+Load and process the edu data of census 7th
+```{r}
+Census7_edu <- readxl::read_xls("A0401.xls")
+
+Census7_edu_adults <- Census7_edu %>% 
+  dplyr::slice(c(3,4,29,30,32,39,46,53,60,67,74,81,88,95,102,109,116,123)) %>% 
+  dplyr::select(1,2,5,8,11,14,17,20,23,26,29) %>% 
+  dplyr::rename(Age = 1,Three_years_old_above = 2, Never_attended_school = 3,
+                Preschool_education = 4,Primary_school = 5,Middle_school = 6,
+                High_school = 7, Junior_college = 8, Undergraduate_education = 9,
+                Postgraduate_student = 10,Doctoral_student = 11) %>% 
+  dplyr::slice(-c(1:2)) %>% 
+  dplyr::mutate(across(-1,as.numeric)) 
+
+
+Census7_college <- Census7_edu_adults %>% 
+  dplyr::summarise(Below_college = sum(across(3:7)),
+                   College_and_above = sum(across(8:11))) %>% 
+  tidyr::pivot_longer(cols = c(1,2),
+                      names_to = "Educational_attainment",
+                      values_to = "Num") %>% 
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+                Data_source = "Census7")
+
+Census7_high_school <- Census7_edu_adults %>% 
+  dplyr::summarise(Below_high_school = sum(across(3:6)),
+                   High_school_and_above = sum(across(7:11))) %>% 
+  tidyr::pivot_longer(cols = c(1,2),
+                      names_to = "Educational_attainment",
+                      values_to = "Num") %>% 
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+                Data_source = "Census7")
+```
+
+
+receive edu data of CFPS2018
+```{r}
+CFPS2018_edu <- df_CFPS2018 %>% 
+  dplyr::filter(W01 > -1) %>% 
+  dplyr::group_by(W01) %>% 
+  dplyr::summarise(Num = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(W01 = as.character(W01)) %>% 
+  dplyr::mutate(W01 = case_when(W01 == 0 ~ "Illiterate/Semi - illiterate",
+                                W01 == 3 ~ "Primary school",
+                                W01 == 4 ~ "high school",
+                                W01 == 5 ~ "Senior high school/Secondary vocational school/Technical school/Vocational high school",
+                                W01 == 6 ~ "Junior college",
+                                W01 == 7 ~ "Undergraduate_education",
+                                W01 == 8 ~ "Postgraduate_student",
+                                W01 == 9 ~ "Doctoral_student",
+                                W01 == 10 ~ "Never attended school",
+                                TRUE ~ W01))
+
+
+CFPS2018_edu_college <- data.frame(Educational_attainment = c("Below_college","College_and_above"),
+                                   Num = c(2846+756+3598+5273,3058+1648+1335+112+7)) %>% 
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+                Data_source = "CFPS2018")
+
+CFPS2018_edu_high_school <- data.frame(Educational_attainment = c("Below_high_school","High_school_and_above"),
+                                   Num = c(2846+756+3598+5273+3058,1648+1335+112+7)) %>% 
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+                Data_source = "CFPS2018")
+```
+
+
+Combine multiple edu data
+```{r}
+H2_edu_college <- bind_rows(Journal_college2,Census7_college,CFPS2018_edu_college)
+
+
+H2_edu_high_school <- bind_rows(Journal_high_school2,Census7_high_school,CFPS2018_edu_high_school) %>% 
+  dplyr::mutate(Data_source = factor(Data_source,
+                                     levels = c("CFPS2018","Census7","Journal")))
+```
+
+
+And visualization
+```{r}
+## college
+H2_Fig_college <- ggplot(data = H2_edu_college,aes(Data_source,Proportion,fill = Educational_Attainment))+
+  geom_col()+
+  theme_classic()+ ## Journal num 4662+12092+9315
+  theme(legend.position = "bottom",    
+        axis.title= element_text(size = 15,family = "serif"),
+        axis.text = element_text(size = 10,family = "serif"),
+        strip.text = element_text(size = 15,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black"))
+
+H2_Fig_college
+
+
+## high school
+H2_Fig_high_school <- ggplot(data = H2_edu_high_school,aes(Data_source,Proportion,fill = Educational_Attainment))+
+  geom_col()+
+  theme_classic()+  ## Journal Num 4662+9306+4685
+  ylab("")+
+  theme(legend.position = "bottom",    
+        axis.title= element_text(size = 15,family = "serif"),
+        axis.text = element_text(size = 10,family = "serif"),
+        strip.text = element_text(size = 15,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black"))
+
+H2_Fig_high_school
+
+
+H2_Fig_edu <- H2_Fig_college + H2_Fig_high_school +
+   plot_annotation(tag_levels = "A")  & 
+  theme(plot.tag = element_text(size = 18, face = "bold"))
+
+
+ggsave("H2_Fig_edu.pdf", H2_Fig_edu, device = "pdf", width=18, height = 9)
+
+
+H2_Fig_edu
+```
+
+
 ### Region
 
 As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals. 
@@ -2296,303 +2732,6 @@ H2_BF_Journal_CFPS2018_region_general <- BayesMultiNomial(dataset = H2_region_ba
                                           expected = "CFPS2018")
 ```
 
-
-### Educational attainment
-
-Try to process educational attainment data from Chinese journal.
-
-```{r eval=FALSE, include=FALSE}
-# Journal_edu <- Journal %>% 
-#   dplyr::filter(Educational_Attainment_N == 1) %>% 
-#   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,M_age,SD_age,
-#                 Educational_Attainment_info_N) %>% 
-#   dplyr::mutate(Higher_edu = NA,
-#                 Below_higher_edu = NA,
-#                 Compulsory_edu_above = NA,
-#                 Compulsory_edu = NA ,
-#                 M_edu_year = NA,
-#                 SD_edu_year = NA)
-# 
-# writexl::write_xlsx(Journal_edu,"Journal_edu.xlsx")
-
-Journal_edu2 <- readxl::read_xlsx("Journal_edu.xlsx")
-
-
-## calculate the number of different categories 
-Journal_edu2_tab <- Journal_edu2 %>% 
-  dplyr::summarise(tab10 = sum(is.na(College_and_above)),
-                   tab11 = sum(is.na(Below_college)),
-                   tab12 = sum(is.na(High_school_and_above)),
-                   tab13 = sum(is.na(Below_high_school)),
-                   tab14 = sum(is.na(M_edu_year)),
-                   tab15 = sum(is.na(SD_edu_year))) %>% 
-  dplyr::select(1,3,5) %>% 
-  dplyr::rename(Class_higher_edu = 1, ## 90/185
-                Class_compulsory_edu = 2, ## 104/185
-                Class_edu_year = 3)  ## 152/185
-```
-
-
-In our study, we have three categories of educational attainments. I process three class data respectively.
-The first category is education years. I will use M and SD in the paper to simulate the number of subjects with the latter two categories of education level, and then combine them with the latter two categories respectively, and finally complete the subsequent analysis and visualization.
-```{r}
-Journal_edu2_year <- Journal_edu2 %>% 
-  dplyr::select(1:15) %>% 
-  dplyr::filter(!is.na(M_edu_year) & !is.na(SD_edu_year)) %>% 
-  dplyr::filter(is.na(College_and_above))  ## If there is data for the other two categories, there is no need to simulate using years of education, which is a screening done after looking at the data
-# sum(Journal_edu2_year$Sample_Size) ## 4662
-
-## Simulation of education data based on normal distribution
-College_threshold <- 15 ## The education years of college is set at 15
-Highschool_threshold <- 12 ## The education years of high school is set at 15
-
-
-## create a data.frame.
-Journal_edu2_year_simul <- data.frame(Article_IDs = character(),
-                      Study_Number = character(),
-                      Subjects_Group = character(),
-                      Sample_Size = integer(),
-                      College_and_above = integer(),
-                      Below_college = integer(),
-                      High_school_and_above = integer(),
-                      Below_high_school = integer())
- 
-
-# Calculate sample size for each educated stages
-for (i in 1:nrow(Journal_edu2_year)) {
-  Article_IDs = Journal_edu2_year$Article_IDs[i]
-  Study_Number = Journal_edu2_year$Study_Number[i]
-  Subjects_Group = Journal_edu2_year$Subjects_Group[i]
-  Sample_Size <- Journal_edu2_year$Sample_Size[i] 
-  M_edu_year <- Journal_edu2_year$M_edu_year[i]  
-  SD_edu_year <- Journal_edu2_year$SD_edu_year[i] 
-  
-# Use the cumulative distribution function to calculate the proportion of subjects below each threshold
-  Prob_college_and_above <- pnorm(College_threshold, mean = M_edu_year, sd = SD_edu_year, lower.tail = FALSE)
-  Prob_highschool_and_above <- pnorm(Highschool_threshold, mean = M_edu_year, sd = SD_edu_year, lower.tail = FALSE)
-  
-#Count people by proportion.
-  College_and_above_count <- round(Sample_Size * Prob_college_and_above)
-  College_below_count <- Sample_Size - College_and_above_count
-  Highschool_and_above_count <- round(Sample_Size * Prob_highschool_and_above)
-  Highschool_below_count <- Sample_Size - Highschool_and_above_count
-  
-
-# Adds the result to the data.frame
-Journal_edu2_year_simul <- rbind(Journal_edu2_year_simul, data.frame(Article_IDs = Article_IDs,
-                                       Study_Number = Study_Number,
-                                       Subjects_Group = Subjects_Group,
-                                       Sample_Size = Sample_Size,
-                                       College_and_above = College_and_above_count,
-                                       Below_college = College_below_count,
-                                       High_school_and_above = Highschool_and_above_count,
-                                       Below_high_school = Highschool_below_count))
-}
-```
-
-
-The second category is 'college and above' and 'below college'. 
-```{r}
-Journal_college <- Journal_edu2 %>% 
-  dplyr::select(-c(5:9,12:15)) %>% 
-  dplyr::filter(!is.na(College_and_above) & !is.na(Below_college))
-
-##  both > 1
-Journal_college_integer <- Journal_college  %>%
-  dplyr::filter(College_and_above > 1 & Below_college > 1) %>%
-  dplyr::summarise(College_and_above = sum(College_and_above),
-                   Below_college = sum(Below_college)) ## sum 12,092
-  
-
-## both < 1
-Journal_college_decimal <- Journal_college  %>%
-  dplyr::filter(College_and_above <= 1 & Below_college <= 1) %>% 
-  dplyr::mutate(Total_college_and_above = College_and_above + Below_college) %>% 
-  dplyr::mutate(College_and_above_tab = floor(Sample_Size * College_and_above),
-                Below_college_tab = ifelse(Total_college_and_above == 1, Sample_Size - College_and_above_tab, floor(Sample_Size * Below_college))) %>% 
-  dplyr::mutate(tab = College_and_above_tab + Below_college_tab) %>% 
-  dplyr::summarise(College_and_above = sum(College_and_above_tab),
-                   Below_college = sum(Below_college_tab)) ## sum 9,315
-```
-
-
-The third category is 'high shcool and above' and 'below high school'
-```{R}
-Journal_high_school <- Journal_edu2 %>% 
-  dplyr::select(4,12:13) %>% 
-  dplyr::filter(!is.na(High_school_and_above) & !is.na(Below_high_school))
-
-##  both > 1
-Journal_high_school_integer <- Journal_high_school %>%
-  dplyr::filter(High_school_and_above > 1 & Below_high_school > 1) %>%
-  dplyr::summarise(High_school_and_above = sum(High_school_and_above),
-                   Below_high_school = sum(Below_high_school)) ## sum 9,306
-  
-## both < 1
-Journal_high_school_decimal <- Journal_high_school  %>%
-  dplyr::filter(High_school_and_above <= 1 & Below_high_school <= 1) %>% 
-  dplyr::mutate(Total_High_school = High_school_and_above + Below_high_school) %>% 
-  dplyr::mutate(High_school_and_above_tab = floor(Sample_Size * High_school_and_above),
-                Below_high_school_tab = ifelse(Total_High_school == 1, Sample_Size - High_school_and_above_tab, floor(Sample_Size * Below_high_school))) %>% 
-  dplyr::mutate(tab = High_school_and_above_tab + Below_high_school_tab) %>% 
-  dplyr::summarise(High_school_and_above = sum(High_school_and_above_tab),
-                   Below_high_school = sum(Below_high_school_tab)) ## 4,685
-```
-
-
-Combine education year with the other categories respectively.
-```{r}
-Journal_edu2_year_simul_sum <- Journal_edu2_year_simul %>% 
-  dplyr::summarise(College_and_above = sum(College_and_above),
-                   Below_college = sum(Below_college),
-                   High_school_and_above = sum(High_school_and_above),
-                   Below_high_school = sum(Below_high_school))
-
-## combine college data
-Journal_college2 <- Journal_edu2_year_simul_sum %>% 
-  dplyr::select(1:2) %>% 
-  bind_rows(Journal_college_decimal, Journal_college_integer) %>% 
-  dplyr::summarise(College_and_above = sum(College_and_above),
-                   Below_college = sum(Below_college)) %>% 
-  tidyr::pivot_longer(cols = c(College_and_above,Below_college),
-                      names_to = "Educational_Attainment",
-                      values_to = "Num") %>% 
-  dplyr::mutate(Proportion = round(Num/sum(Num),2)*100,
-                Data_source = "Journal")
-
-
-## combine high school data
-Journal_high_school2  <- Journal_edu2_year_simul_sum %>% 
-  dplyr::select(3:4) %>% 
-  bind_rows(Journal_high_school_integer, Journal_high_school_decimal) %>% 
-  dplyr::summarise(High_school_and_above = sum(High_school_and_above),
-                   Below_high_school = sum(Below_high_school)) %>% 
-  tidyr::pivot_longer(cols = c(High_school_and_above,Below_high_school),
-                      names_to = "Educational_Attainment",
-                      values_to = "Num") %>% 
-  dplyr::mutate(Proportion = round(Num/sum(Num),2)*100,
-                Data_source = "Journal")  ## 注意，计算round时*100的位置前后有所不同，后需要确认更改
-```
-
-
-Load and process the edu data of census 7th
-```{r}
-Census7_edu <- readxl::read_xls("A0401.xls")
-
-Census7_edu_adults <- Census7_edu %>% 
-  dplyr::slice(c(3,4,29,30,32,39,46,53,60,67,74,81,88,95,102,109,116,123)) %>% 
-  dplyr::select(1,2,5,8,11,14,17,20,23,26,29) %>% 
-  dplyr::rename(Age = 1,Three_years_old_above = 2, Never_attended_school = 3,
-                Preschool_education = 4,Primary_school = 5,Middle_school = 6,
-                High_school = 7, Junior_college = 8, Undergraduate_education = 9,
-                Postgraduate_student = 10,Doctoral_student = 11) %>% 
-  dplyr::slice(-c(1:2)) %>% 
-  dplyr::mutate(across(-1,as.numeric)) 
-
-
-Census7_college <- Census7_edu_adults %>% 
-  dplyr::summarise(Below_college = sum(across(3:7)),
-                   College_and_above = sum(across(8:11))) %>% 
-  tidyr::pivot_longer(cols = c(1,2),
-                      names_to = "Educational_Attainment",
-                      values_to = "Num") %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
-                Data_source = "Census7")
-
-Census7_high_school <- Census7_edu_adults %>% 
-  dplyr::summarise(Below_high_school = sum(across(3:6)),
-                   High_school_and_above = sum(across(7:11))) %>% 
-  tidyr::pivot_longer(cols = c(1,2),
-                      names_to = "Educational_Attainment",
-                      values_to = "Num") %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
-                Data_source = "Census7")
-```
-
-
-receive edu data of CFPS2018
-```{r}
-CFPS2018_edu <- df_CFPS2018 %>% 
-  dplyr::filter(W01 > -1) %>% 
-  dplyr::group_by(W01) %>% 
-  dplyr::summarise(Num = n()) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(W01 = as.character(W01)) %>% 
-  dplyr::mutate(W01 = case_when(W01 == 0 ~ "Illiterate/Semi - illiterate",
-                                W01 == 3 ~ "Primary school",
-                                W01 == 4 ~ "high school",
-                                W01 == 5 ~ "Senior high school/Secondary vocational school/Technical school/Vocational high school",
-                                W01 == 6 ~ "Junior college",
-                                W01 == 7 ~ "Undergraduate_education",
-                                W01 == 8 ~ "Postgraduate_student",
-                                W01 == 9 ~ "Doctoral_student",
-                                W01 == 10 ~ "Never attended school",
-                                TRUE ~ W01))
-
-
-CFPS2018_edu_college <- data.frame(Educational_Attainment = c("Below_college","College_and_above"),
-                                   Num = c(2846+756+3598+5273,3058+1648+1335+112+7)) %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
-                Data_source = "CFPS2018")
-
-CFPS2018_edu_high_school <- data.frame(Educational_Attainment = c("Below_high_school","High_school_and_above"),
-                                   Num = c(2846+756+3598+5273+3058,1648+1335+112+7)) %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
-                Data_source = "CFPS2018")
-```
-
-
-Combine multiple edu data
-```{r}
-H2_edu_college <- bind_rows(Journal_college2,Census7_college,CFPS2018_edu_college)
-
-H2_edu_high_school <- bind_rows(Journal_high_school2,Census7_high_school,CFPS2018_edu_high_school) %>% 
-  dplyr::mutate(Data_source = factor(Data_source,
-                                     levels = c("CFPS2018","Census7","Journal")))
-```
-
-
-And visualization
-```{r}
-## college
-H2_Fig_college <- ggplot(data = H2_edu_college,aes(Data_source,Proportion,fill = Educational_Attainment))+
-  geom_col()+
-  theme_classic()+ ## Journal num 4662+12092+9315
-  theme(legend.position = "bottom",    
-        axis.title= element_text(size = 15,family = "serif"),
-        axis.text = element_text(size = 10,family = "serif"),
-        strip.text = element_text(size = 15,family = "serif"),
-        strip.background = element_rect(fill = NA,color = NA),
-        panel.border = element_rect(fill = NA,color = "black"))
-
-H2_Fig_college
-
-
-## high school
-H2_Fig_high_school <- ggplot(data = H2_edu_high_school,aes(Data_source,Proportion,fill = Educational_Attainment))+
-  geom_col()+
-  theme_classic()+  ## Journal Num 4662+9306+4685
-  ylab("")+
-  theme(legend.position = "bottom",    
-        axis.title= element_text(size = 15,family = "serif"),
-        axis.text = element_text(size = 10,family = "serif"),
-        strip.text = element_text(size = 15,family = "serif"),
-        strip.background = element_rect(fill = NA,color = NA),
-        panel.border = element_rect(fill = NA,color = "black"))
-
-H2_Fig_high_school
-
-
-H2_Fig_edu <- H2_Fig_college + H2_Fig_high_school +
-   plot_annotation(tag_levels = "A")  & 
-  theme(plot.tag = element_text(size = 18, face = "bold"))
-
-
-ggsave("H2_Fig_edu.pdf", H2_Fig_edu, device = "pdf", width=18, height = 9)
-
-
-H2_Fig_edu
-```
 
 ### Ethnicity
 
