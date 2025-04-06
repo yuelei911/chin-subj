@@ -2052,16 +2052,6 @@ H2_Fig_age_total <- ggplot(data= Census7_age_five5,
 
 
 H2_Fig_age_total
-
-
-H2_Fig_gender_age_total <- H2_Fig_gender_total + H2_Fig_age_total +
-  plot_annotation(tag_levels = 'A')
-
-
-ggsave("H2_Fig_gender_age_total.pdf", H2_Fig_gender_age_total, device = "pdf", width=18, height = 9)
-
-
-H2_Fig_gender_age_total
 ```
 general population
 ```{r}
@@ -2086,16 +2076,6 @@ H2_Fig_age_general <- ggplot(data= Census7_age_five5,
 
 
 H2_Fig_age_general
-
-
-H2_Fig_gender_age_general <- H2_Fig_gender_general + H2_Fig_age_general +
-  plot_annotation(tag_levels = 'A')
-
-
-ggsave("H2_Fig_gender_age_general.pdf", H2_Fig_gender_age_general, device = "pdf", width=18, height = 9)
-
-
-H2_Fig_gender_age_general
 ```
 
 
@@ -2306,25 +2286,45 @@ CFPS2018_edu_high_school <- data.frame(Educational_attainment = c("Below_high_sc
 
 Combine multiple edu data
 ```{r}
-H2_edu_college <- bind_rows(Journal_college2,Census7_college,CFPS2018_edu_college)
+## College
+Chinese_subjects_pools_edu_college <- H1_edu_college %>% 
+  dplyr::select(-3) %>% 
+  dplyr::group_by(Educational_attainment) %>% 
+  dplyr::summarise(Num = sum(Num)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+                Data_source = "Chinese subjects pools")
+
+H2_edu_college <- bind_rows(Chinese_subjects_pools_edu_college,Census7_college,CFPS2018_edu_college)
 
 
-H2_edu_high_school <- bind_rows(Journal_high_school2,Census7_high_school,CFPS2018_edu_high_school) %>% 
+## highschool
+Chinese_subjects_pools_edu_highschool <- H1_edu_highschool %>% 
+  dplyr::select(-3) %>% 
+  dplyr::group_by(Educational_attainment) %>% 
+  dplyr::summarise(Num = sum(Num)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+                Data_source = "Chinese subjects pools")
+
+H2_edu_highschool <- bind_rows(Chinese_subjects_pools_edu_highschool,Census7_high_school,CFPS2018_edu_high_school)  %>%
   dplyr::mutate(Data_source = factor(Data_source,
-                                     levels = c("CFPS2018","Census7","Journal")))
+                                     levels = c("CFPS2018","Census7","Chinese subjects pools")))
 ```
 
 
 And visualization
 ```{r}
 ## college
-H2_Fig_college <- ggplot(data = H2_edu_college,aes(Data_source,Proportion,fill = Educational_Attainment))+
+H2_Fig_college <- ggplot(data = H2_edu_college,aes(Data_source,Proportion,fill = Educational_attainment))+
   geom_col()+
-  theme_classic()+ ## Journal num 4662+12092+9315
-  theme(legend.position = "bottom",    
-        axis.title= element_text(size = 15,family = "serif"),
-        axis.text = element_text(size = 10,family = "serif"),
-        strip.text = element_text(size = 15,family = "serif"),
+  theme_classic()+ 
+  theme(legend.position = "bottom", 
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_text(size = 16, family = "serif"),
+        axis.title= element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"),
+        strip.text = element_text(size = 16,family = "serif"),
         strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black"))
 
@@ -2332,29 +2332,31 @@ H2_Fig_college
 
 
 ## high school
-H2_Fig_high_school <- ggplot(data = H2_edu_high_school,aes(Data_source,Proportion,fill = Educational_Attainment))+
+H2_Fig_highschool <- ggplot(data = H2_edu_highschool,aes(Data_source,Proportion,fill = Educational_attainment))+
   geom_col()+
-  theme_classic()+  ## Journal Num 4662+9306+4685
+  theme_classic()+ 
   ylab("")+
-  theme(legend.position = "bottom",    
-        axis.title= element_text(size = 15,family = "serif"),
-        axis.text = element_text(size = 10,family = "serif"),
-        strip.text = element_text(size = 15,family = "serif"),
+  theme(legend.position = "bottom", 
+        legend.text = element_text(size = 16, family = "serif"), 
+        legend.title = element_text(size = 16, family = "serif"),
+        axis.title= element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"),
+        strip.text = element_text(size = 16,family = "serif"),
         strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black"))
 
-H2_Fig_high_school
+H2_Fig_highschool
 
 
-H2_Fig_edu <- H2_Fig_college + H2_Fig_high_school +
-   plot_annotation(tag_levels = "A")  & 
-  theme(plot.tag = element_text(size = 18, face = "bold"))
+## combine Fig
 
+H2_Fig_gender_age_edu_general <- H2_Fig_gender_general + H2_Fig_age_general +H2_Fig_college + H2_Fig_highschool +
+  plot_layout(ncol = 2, heights = c(4,4))+
+  patchwork::plot_annotation(tag_levels = 'A')
 
-ggsave("H2_Fig_edu.pdf", H2_Fig_edu, device = "pdf", width=18, height = 9)
+ggsave("H2_Fig_gender_age_edu_general.pdf",H2_Fig_gender_age_edu_general, device = "pdf", width=18, height = 18)
 
-
-H2_Fig_edu
+H2_Fig_gender_age_edu_general
 ```
 
 
