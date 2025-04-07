@@ -1795,7 +1795,37 @@ ggsave("H1_Fig_gender_age_edu_general.pdf",H1_Fig_gender_age_edu_general, device
 H1_Fig_gender_age_edu_general
 ```
 
-Note that there is not Bayes analysis here. 
+Here I tested whether the educatinal attainment proportion distribution from Chinese five journal data are similar to that of the BTS data. 
+
+First, I calculate the first category: college.
+```{r}
+H1_edu_college_bayes <- H1_edu_college %>% 
+  dplyr::select(1,3:4) %>% 
+  tidyr::pivot_wider(names_from = Data_source, values_from = Proportion)
+
+
+H1_BF_edu_college <- BayesMultiNomial(dataset = H1_edu_college_bayes,
+                                      factor = "Educational_attainment",
+                                      observed = "BTS Chinese",
+                                      expected = "Journal")
+```
+
+I found strong evidence for the $H_1$ that the college proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_college$BF$LogBF10`.
+
+and then, I continue processing the second category: high school.
+```{r}
+H1_edu_highschool_bayes <- H1_edu_highschool %>% 
+  dplyr::select(1,3:4) %>% 
+  tidyr::pivot_wider(names_from = Data_source, values_from = Proportion)
+
+
+H1_BF_edu_highschool <- BayesMultiNomial(dataset = H1_edu_highschool_bayes,
+                                      factor = "Educational_attainment",
+                                      observed = "BTS Chinese",
+                                      expected = "Journal")
+```
+
+Similarity, I also found strong evidence for the $H_1$ that the high schools proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_highschool$BF$LogBF10`.
 
 
 ## Test the 2st hypothesis
@@ -2360,6 +2390,47 @@ H2_Fig_gender_age_edu_general
 ```
 
 
+Calculate the BF of edu
+```{r}
+## college
+H2_edu_college_bayes <- H2_edu_college %>% 
+  dplyr::select(1,3:4) %>% 
+  tidyr::pivot_wider(names_from = Data_source, values_from = Proportion)
+
+H2_BF_edu_college_Census7 <- BayesMultiNomial(dataset = H2_edu_college_bayes,
+                                          factor = "Educational_attainment",
+                                          observed = "Chinese subjects pools",
+                                          expected = "Census7")
+
+
+H2_BF_edu_college_CFPS2018 <- BayesMultiNomial(dataset = H2_edu_college_bayes,
+                                          factor = "Educational_attainment",
+                                          observed = "Chinese subjects pools",
+                                          expected = "CFPS2018")
+
+
+
+## high school
+H2_edu_highschool_bayes <- H2_edu_highschool %>% 
+  dplyr::select(1,3:4) %>% 
+  tidyr::pivot_wider(names_from = Data_source, values_from = Proportion)
+
+H2_BF_edu_highschool_Census7 <- BayesMultiNomial(dataset = H2_edu_highschool_bayes,
+                                          factor = "Educational_attainment",
+                                          observed = "Chinese subjects pools",
+                                          expected = "Census7")
+
+
+H2_BF_edu_highschool_CFPS2018 <- BayesMultiNomial(dataset = H2_edu_highschool_bayes,
+                                          factor = "Educational_attainment",
+                                          observed = "Chinese subjects pools",
+                                          expected = "CFPS2018")
+
+```
+
+Note, there is not results description.
+
+
 ### Region
 
 As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals. 
@@ -2895,7 +2966,7 @@ BTS_Psystages_allcountry <- BTS_age_PsyStages %>%
 ## Add Chinese data
 Journal_BTS_PsyStages_CHN <- Sim_Journal_age_PsyStages3_prop %>% 
   dplyr::rename(n = 2) %>% 
-  dplyr::bind_rows(BTS_age_PsyStages_CHN) %>% 
+  dplyr::bind_rows(BTS_age_PsyStages_CHN_total) %>%  
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n=sum(n)) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
@@ -2960,7 +3031,7 @@ BTS_interval10_allcountry <- BTS_age_interval10 %>%
 ## Add Chinese data
 Journal_BTS_interval10_CHN <- Sim_Journal_age_interval103_prop %>% 
   dplyr::rename(n = 2) %>% 
-  bind_rows(BTS_age_interval10_CHN2) %>% 
+  bind_rows(BTS_age_interval10_CHN_total) %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n=sum(n)) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
@@ -2973,7 +3044,7 @@ H3_interval10 <- bind_rows(BTS_interval10_allcountry,Journal_BTS_interval10_CHN)
 
 ## Set factor
 H3_interval10_factor <- H3_interval10 %>%
-  dplyr::add_row(ISO3 = "CUB",ageBins = "11~20",n = 0, Proportion =0) %>%
+  # dplyr::add_row(ISO3 = "CUB",ageBins = "11~20",n = 0, Proportion =0) %>%
   ##add data to visualization 
   dplyr::filter(ageBins == "11~20") %>% 
   dplyr::arrange(Proportion) %>% 
@@ -3117,11 +3188,20 @@ Third, I calculted age BF in two classification. In this part, I calculated BF f
 ## PsyStages
 H3_BF_PsyStages <- H3_PsyStages %>% 
   dplyr::select(ISO3,ageBins,Proportion) %>% 
-  dplyr::rename(Countries = 1) %>% 
-  dplyr::mutate(Countries = factor(Countries, levels = H3_BF_gender_factor)) %>% 
+  dplyr::rename(Countries = 1)
+
+# table(H3_BF_PsyStages$ageBins)
+
+H3_BF_PsyStages_factor <- H3_BF_PsyStages %>% 
+  dplyr::filter(ageBins == "18~25") %>%
+  dplyr::arrange(Proportion) %>% 
+  dplyr::pull(Countries)
+ 
+ H3_BF_PsyStages <- H3_BF_PsyStages %>%  
+  dplyr::mutate(Countries = factor(Countries, levels = H3_BF_PsyStages_factor)) %>%  ## 最好创建age自身的factor
   tidyr::pivot_wider(names_from = "Countries",values_from = "Proportion") %>%
   dplyr::mutate(across(2:last_col(), ~ifelse(is.na(.), 0, .))) %>%
-  Func_BFpairs(countries_order = H3_BF_gender_factor,
+  Func_BFpairs(countries_order = H3_BF_PsyStages_factor,
                prop_name = "ageBins")
 
 # sum(H3_BF_PsyStages$AGO,na.rm = TRUE) ## 0
@@ -3130,10 +3210,10 @@ H3_BF_PsyStages <- H3_PsyStages %>%
 H3_BF_interval10  <- H3_interval10 %>% 
   dplyr::select(ISO3,ageBins,Proportion) %>% 
   dplyr::rename(Countries = 1) %>% 
-  dplyr::mutate(Countries = factor(Countries, levels = H3_BF_gender_factor)) %>% 
+  dplyr::mutate(Countries = factor(Countries, levels = H3_BF_PsyStages_factor)) %>% 
   tidyr::pivot_wider(names_from = "Countries",values_from = "Proportion") %>%
   dplyr::mutate(across(2:last_col(), ~ifelse(is.na(.), 1, .))) %>%
-  Func_BFpairs(countries_order = H3_BF_gender_factor,
+  Func_BFpairs(countries_order = H3_BF_PsyStages_factor,
                prop_name = "ageBins")
 ```
 

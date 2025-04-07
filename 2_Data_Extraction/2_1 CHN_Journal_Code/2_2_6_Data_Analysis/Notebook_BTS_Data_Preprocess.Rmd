@@ -448,7 +448,7 @@ BTS[[23]] <- BTS[[23]] %>%
 
 
 ## BTS_Ruggeri_et_al_2022
-BTS[[23]] <- BTS[[23]] %>% 
+BTS[[24]] <- BTS[[24]] %>% 
   dplyr::mutate(Country = ifelse(Country == "BRG", "BGR",Country),
                 Country = ifelse(Country == "SRP", "SGP",Country))
 
