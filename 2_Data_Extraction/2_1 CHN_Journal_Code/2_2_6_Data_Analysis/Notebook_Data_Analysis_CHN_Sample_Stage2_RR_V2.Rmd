@@ -66,8 +66,9 @@ rm(df,df_PSA001,df_stage2_Journal_Code,Group1_bind,Group24567_bind,Group3_bind,d
 
 ## read the coding of BTS
 ```{r}
-BTS_coding <- readxl::read_xlsx("Chin_Subj_BTS_Coding_CE.xlsx") %>% 
-  dplyr::filter(Coder == "final")
+BTS_coding <- readxl::read_xlsx("Chin_Subj_BTS_Coding_CE.xlsx") 
+# %>%
+#   dplyr::filter(Coder == "final")
 ```
 
 
@@ -533,31 +534,9 @@ BTS_gender_CHN <- lapply(BTS_gender_list, function(df){
 BTS_gender_CHN <- do.call(rbind,BTS_gender_CHN)
 
 
-## total population
-BTS_gender_CHN_total <- BTS_gender_CHN %>%
-  dplyr::group_by(Gender) %>% 
-  dplyr::summarise(n = n()) %>% 
-  dplyr::mutate(Proportion = round(n/sum(n),2)*100) %>% 
-  dplyr::ungroup() %>%
-  dplyr::mutate(Data_Source = "BTS Chinese")
-
-H1_gender_total <- BTS_gender_CHN_total %>% 
-  dplyr::add_row(Gender = c("Female","Male"), n = c(273804,234047),
-                 Proportion = c(50,50),Data_Source = "Journal")   ## Here, enter data manually.
-
-H1_gender_factor_total <- H1_gender_total %>% 
-  dplyr::filter(Gender == "Female") %>% 
-  dplyr::arrange(Proportion) %>% 
-  dplyr::pull(Data_Source)
-
-H1_gender_total <- H1_gender_total %>% 
-  dplyr::mutate(Data_Source = factor(Data_Source,
-                                     levels = H1_gender_factor_total))
-
-
 ## General population
 BTS_gender_CHN_general <- BTS_gender_CHN %>%
-  dplyr::filter(Target_Population != 1) %>% 
+  dplyr::filter(Target_Population == 2 | Target_Population == 3) %>% 
   dplyr::group_by(Gender) %>% 
   dplyr::summarise(n = n()) %>% 
   dplyr::mutate(Proportion = round(n/sum(n),2)*100) %>% 
@@ -579,28 +558,8 @@ H1_gender_general <- H1_gender_general %>%
                                      levels = H1_gender_factor_general))
 ```
 
+
 Visualize gender data for Chinese journals and BTS.
-
-Total population
-```{r}
-H1_Fig_gender_total <- ggplot(data = H1_gender_total,aes(Data_Source,Proportion,fill = Gender))+
-  geom_col()+
-  geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
-  labs(y="Proportion")+
-  theme_classic()+
-  theme(panel.border =element_rect(fill=NA,color="black"),
-        legend.position = "bottom",
-        legend.box.spacing = unit(2,"pt"),
-        legend.text = element_text(size = 20, family = "serif"),
-        legend.title = element_blank(),
-        axis.title = element_text(size = 20,family = "serif"),
-        axis.text = element_text(size = 20,family = "serif"))
-
-H1_Fig_gender_total 
-```
-
-
-General population
 ```{r}
 H1_Fig_gender_general <- ggplot(data = H1_gender_general,aes(Data_Source,Proportion,fill = Gender))+
   geom_col()+
@@ -622,21 +581,8 @@ Here I tested whether the gender proportion distribution from Chinese five journ
 
 $H_0$: $\theta = c$, where $c$ is defined by Chinese five journal data; $H_1$: $\theta$ is free to vary.
 
-First, I calculate total population.
-```{r}
-H1_gender_bayes_total <- H1_gender_total %>% 
-  dplyr::select(1,3:4) %>% 
-  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
 
-H1_BF_gender_total <- BayesMultiNomial(dataset = H1_gender_bayes_total,
-                                             factor = "Gender",
-                                             observed = "BTS Chinese",
-                                             expected = "Journal")
-```
-
-I found moderate evidence for the $H_1$ that the gender proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_gender_total$BF$LogBF10`.
-
-and then, I compared the general population between the two.
+I compared the general population between the two.
 ```{r}
 H1_gender_bayes_general <- H1_gender_general %>% 
   dplyr::select(1,3:4) %>% 
@@ -650,16 +596,15 @@ H1_BF_gender_general <- BayesMultiNomial(dataset = H1_gender_bayes_general,
 
 However, I found there no different between BTS data and the general population of Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_general$BF$LogBF10`.
 
-At the end of gender data processing for hypothesis 1, I removed some data sets to reduce data set clutter.
 
+At the end of gender data processing for hypothesis 1, I removed some data sets to reduce data set clutter.
 ```{r}
-rm(H1_gender_bayes_total,H1_gender_factor_total,H1_gender_factor_general,i,BTS_name)
+rm(H1_gender_factor_general,i,BTS_name)
 ```
 
+
 ### Age
-
 Reprocess age data from Chinese journals.
-
 ```{r warning=FALSE}
 Journal_age <- Journal_key_variable %>% 
   dplyr::select(-c(7:9,14:17)) %>% 
@@ -695,10 +640,10 @@ Journal_single_age <- Journal_age %>%
 Journal_age2 <- bind_rows(Journal_strings_age,Journal_single_age)
 ```
 
+
 Since raw data is not available for papers in Chinese journals, I simulated the raw data using the method used in the Stges 1 of registration report. It is then combined with BTS and compared with census data.
 
 First, I created a function that groups ages into five-year intervals for the purpose of creating a Population pyramid chart.
-
 ```{r}
 Sim_Sens_mult_five <- function(Mean0, diff_age, SD0, sample_N=Sample_Size){
 
@@ -1182,57 +1127,17 @@ BTS_age_list[[BTS_name]] <- BTS_age
 BTS_age <-  bind_rows(BTS_age_list)
 ```
 
+
 Filter CHN age data from BTS, Combine BTS CHN data and Chinese journals data.
+
 
 considering the different target population, I process all data firstly.
 ```{r}
-BTS_age_total_CHN <- BTS_age %>% 
-  dplyr::filter(ISO3 == "CHN") %>% 
-  dplyr::count(ageBins) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                Data_Source = "BTS Chinese")
-
-## add 2 rows of ageBins without data
-# BTS_age_CHN_2rows <- data.frame(ageBins = c("0~4","5~9"),
-#                                 n = 0,
-#                                 Proportion = 0,
-#                                 Data_Source = "BTS Chinese")
-
-## combine 2 dataframe
-H1_age_total <- Sim_Journal_age_five3_prop %>%
-  dplyr::rename(n = 2) %>%
-  dplyr::bind_rows(BTS_age_total_CHN) ## 这里缺少>=95
-
-
-## set ageBins as factor to plot
-H1_age_total <- H1_age_total %>% 
-  dplyr::mutate(ageBins = factor(ageBins,
-                                 levels = c("0~4","5~9","10~14","15~19","20~24",
-                                 "25~29","30~34","35~39","40~44","45~49",
-                                 "50~54","55~59","60~64","65~69","70~74",
-                                 "75~79","80~84","85~89", "90~94",">=95" )))
-
-## calculate difference between of two data
-H1_age_twosource_difference <- H1_age_total %>% 
-  tidyr::pivot_wider(names_from = Data_Source,
-                     values_from = c(Proportion,n)) %>% 
-  dplyr::mutate(Differences = round(`Proportion_BTS Chinese`/ Proportion_Journal,2))
-```
-
-
-and then, I process the general population
-```{r}
 BTS_age_general_CHN <- BTS_age %>% 
-  dplyr::filter(ISO3 == "CHN" & Target_Population != 1) %>% 
+  dplyr::filter(ISO3 == "CHN" & (Target_Population == 2 & Target_Population == 3)) %>% 
   dplyr::count(ageBins) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
                 Data_Source = "BTS Chinese")
-
-## add 2 rows of ageBins without data
-# BTS_age_CHN_2rows <- data.frame(ageBins = c("0~4","5~9"),
-#                                 n = 0,
-#                                 Proportion = 0,
-#                                 Data_Source = "BTS Chinese")
 
 ## combine 2 dataframe
 H1_age_general <- Sim_Journal_age_five3_general_prop %>%
@@ -1252,35 +1157,6 @@ H1_age_general <- H1_age_general %>%
 
 Visualize age data from Chinese journals and census7.
 
-total 
-```{r}
-H1_Fig_age_total <- ggplot(data= H1_age_total, aes(x=ageBins, y=ifelse(Data_Source=="BTS Chinese", -Proportion, Proportion),fill = Data_Source)) +
-  geom_col(alpha=0.8, width = 1) +
-  coord_flip() +
-  labs(y="Proportion", x = "Age bins", color=NULL)+
-  scale_fill_manual(values = c("BTS Chinese" = "#619CFF", "Journal" = "#7CAE00")) +
-  theme_classic()+
-  theme(panel.border =element_rect(fill=NA,color="black"),
-        legend.position ="bottom",
-        legend.box.spacing = unit(2,"pt"),
-        legend.text = element_text(size = 16, family = "serif"),
-        legend.title = element_blank(),
-        axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
-
-
-H1_Fig_age_total
-
-# 
-# H1_Fig_gender_age_total <- H1_Fig_gender_total + H1_Fig_age_total +
-#   plot_annotation(tag_levels = 'A')
-# 
-# 
-# ggsave("H1_Fig_gender_age_total.pdf", H1_Fig_gender_age_total, device = "pdf", width=18, height = 9)
-# 
-# 
-# H1_Fig_gender_age_total
-```
 general
 ```{r}
 H1_Fig_age_general <- ggplot(data= H1_age_general, aes(x=ageBins, y=ifelse(Data_Source=="BTS Chinese", -Proportion, Proportion),fill = Data_Source)) +
@@ -1381,15 +1257,7 @@ And then, I filtered BTS CHN data.
 
 ```{r}
 ## psychological development stages in BTS
-### first, all data
-BTS_age_PsyStages_CHN_total <- BTS_age_PsyStages %>% 
-  dplyr::filter(ISO3 == "CHN") %>% 
-  dplyr::select(1,5) %>% 
-  dplyr::count(ageBins) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                Data_Source = "BTS CHN age")
-
-### then, psychological development
+### psychological development
 BTS_age_PsyStages_CHN_general <- BTS_age_PsyStages %>% 
   dplyr::filter(ISO3 == "CHN" & Target_Population != 1) %>% 
   dplyr::count(ageBins) %>% 
@@ -1398,15 +1266,6 @@ BTS_age_PsyStages_CHN_general <- BTS_age_PsyStages %>%
 
 
 ## 10-year-old segment in BTS
-### first, all data
-BTS_age_interval10_CHN_total <- BTS_age_interval10 %>% 
-  dplyr::filter(ISO3 == "CHN") %>% 
-  dplyr::select(1,5) %>% 
-  dplyr::count(ageBins) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                Data_Source = "BTS CHN age") 
-
-### 10-year-old
 BTS_age_interval10_CHN_general <- BTS_age_interval10 %>% 
   dplyr::filter(ISO3 == "CHN" & Target_Population != 1) %>% 
   dplyr::select(1,5) %>% 
@@ -1418,19 +1277,6 @@ BTS_age_interval10_CHN_general <- BTS_age_interval10 %>%
 Next, I Combined two CHN data to Bayesian multinomial test in two different classifications (PsyStages and 10-year-old). One is PsyStages.
 
 ```{r}
-## all subjects
-H1_PsyStages_bayes_total <- Sim_Journal_age_PsyStages3_prop %>% 
-  dplyr::rename(n = 2) %>% 
-  bind_rows(BTS_age_PsyStages_CHN_total) %>% 
-  dplyr::select(-2) %>% 
-  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
-
-  
-H1_BF_PsyStages_total <- BayesMultiNomial(dataset = H1_PsyStages_bayes_total,
-                                          factor = "ageBins",
-                                          observed = "BTS CHN age",
-                                          expected = "Journal")
-
 ## general population 
 H1_PsyStages_bayes_general <- Sim_Journal_age_PsyStages3_general_prop %>% 
   dplyr::rename(n = 2) %>% 
@@ -1444,26 +1290,9 @@ H1_BF_PsyStages_general <- BayesMultiNomial(dataset = H1_PsyStages_bayes_general
                                           expected = "Journal")
 ```
 
+
 The other is interval10.
-
 ```{r}
-# all subjects
-# BTS_age_interval10_CHN2 <- BTS_age_interval10_CHN %>% 
-#   dplyr::add_row(ageBins = "<=10", n = 0, Proportion = 0, Data_Source = "BTS CHN age")
-
-
-H1_interval10_bayes_total <- Sim_Journal_age_interval103_prop %>% 
-  dplyr::rename(n = 2) %>% 
-  bind_rows(BTS_age_interval10_CHN_total) %>%
-  dplyr::select(-2) %>% 
-  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
-
-
-H1_BF_interval10_total <- BayesMultiNomial(dataset = H1_interval10_bayes_total,
-                                          factor = "ageBins",
-                                          observed = "BTS CHN age",
-                                          expected = "Journal")
-
 ## general population 
 H1_interval10_bayes_general <- Sim_Journal_age_interval103_general_prop %>% 
   dplyr::rename(n = 2) %>% 
@@ -1478,9 +1307,6 @@ H1_BF_interval10_general <- BayesMultiNomial(dataset = H1_interval10_bayes_gener
                                           expected = "Journal")
 ```
 
-When I divide the age into 10 years,we found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r H1_BF_interval10$BF$LogBF10`.
-
-When I divide age into stages of psychological development, I found strong evidence for the $H_1$ that the age distribution from BTS data is different from that of Chinese journal data, with $Log(BF_{10})$ = `r H1_BF_PsyStages$BF$LogBF10`.
 
 For different target population, I compared general population for them firstly, I found strong evidence for $H_1$ that the age distribution from the Chinese subjects data of BTS data is different form the Chinese journals data, the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_PsyStages_general$BF$LogBF10`.
 
@@ -1762,10 +1588,12 @@ visulize the edu data
 H1_Fig_college <- ggplot(data = H1_edu_college,aes(Data_source,Proportion,fill = Educational_attainment))+
   geom_col()+
   theme_classic()+ 
-  theme(legend.position = "bottom",    
-        axis.title= element_text(size = 15,family = "serif"),
-        axis.text = element_text(size = 10,family = "serif"),
-        strip.text = element_text(size = 15,family = "serif"),
+  theme(legend.position = "bottom", 
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_text(size = 16, family = "serif"),
+        axis.title= element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"),
+        strip.text = element_text(size = 16,family = "serif"),
         strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black"))
 
@@ -1776,10 +1604,12 @@ H1_Fig_college
 H1_Fig_highschool <- ggplot(data = H1_edu_highschool,aes(Data_source,Proportion,fill =Educational_attainment))+
   geom_col()+
   theme_classic()+ 
-  theme(legend.position = "bottom",    
-        axis.title= element_text(size = 15,family = "serif"),
-        axis.text = element_text(size = 10,family = "serif"),
-        strip.text = element_text(size = 15,family = "serif"),
+  theme(legend.position = "bottom", 
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_text(size = 16, family = "serif"),
+        axis.title= element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"),
+        strip.text = element_text(size = 16,family = "serif"),
         strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black"))
 
@@ -1867,18 +1697,6 @@ Secondly, I converted data format and combined three data sources.
 ```{r}
 # all data
 ## Convert H1_gender data format
-H1_gender_total2 <- H1_gender_total %>% 
-  dplyr::select(1:2) %>% 
-  dplyr::group_by(Gender) %>% 
-  dplyr::summarise(n = sum(n)) %>% 
-  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
-                Data_Source = "Chinese subjects pool") %>% 
-  dplyr::ungroup()
-
-## combine the gender data from three data source
-H2_gender_total <-  bind_rows(Census7_gender,CFPS2018_gender,H1_gender_total2)
-
-
 ## general
 H1_gender_general2 <- H1_gender_general %>% 
   dplyr::select(1:2) %>% 
@@ -1891,28 +1709,8 @@ H1_gender_general2 <- H1_gender_general %>%
 H2_gender_general <- bind_rows(Census7_gender,CFPS2018_gender,H1_gender_general2)
 ```
 
+
 And then, I combined all Chinese gender data and visualized them.
-
-total
-```{r}
-H2_Fig_gender_total <- ggplot(H2_gender_total,aes(Data_Source,Proportion,fill= Gender))+
-  geom_col()+
-  geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
-  labs(y="Proportion",x = "Data Source")+
-  theme_classic()+
-  theme(panel.border =element_rect(fill=NA,color="black"),
-        legend.position = "bottom",
-        legend.box.spacing = unit(2,"pt"),
-        legend.text = element_text(size = 20, family = "serif"),
-        legend.title = element_blank(),
-        axis.title = element_text(size = 20,family = "serif"),
-        axis.text = element_text(size = 20,family = "serif"))
-
-
-H2_Fig_gender_total
-
-# ggsave("H2_fig_gender.pdf", H2_fig_gender, device = "pdf", width=18, height = 9)
-```
 
 general
 ```{r}
@@ -1938,23 +1736,6 @@ H2_Fig_gender_general
 Finally, I calculated the bayes factor for gender.
 
 ```{r}
-## total
-H2_gender_bayes_total <- H2_gender_total %>% 
-  dplyr::select(2,3,1) %>% 
-  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
-
-
-H2_BF_gender_Census7_total <- BayesMultiNomial(dataset = H2_gender_bayes_total,
-                                          factor = "Gender",
-                                          observed = "Chinese subjects pool",
-                                          expected = "Census7")
-
-
-H2_BF_gender_CFPS2018_total <- BayesMultiNomial(dataset = H2_gender_bayes_total,
-                                          factor = "Gender",
-                                          observed = "Chinese subjects pool",
-                                          expected = "CFPS2018")
-
 ## general population
 H2_gender_bayes_general <- H2_gender_general %>% 
   dplyr::select(2,3,1) %>% 
@@ -2038,16 +1819,6 @@ Census7_age_five5 <- Census7_age_five5 %>%
 
 Then, I convert the data format of H1_age.
 ```{r}
-## total
-H2_age_total <- H1_age_total %>% 
-  dplyr::select(1:2) %>% 
-  dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(n = sum(n)) %>% 
-  dplyr::mutate(Proportion = round(n/sum(n)*100,2)) %>% 
-  dplyr::ungroup()
-
-# sum(H2_age$Proportion) ## 99.99
-
 ## general
 H2_age_general <- H1_age_general %>%
   dplyr::select(1:2) %>% 
@@ -2059,31 +1830,8 @@ H2_age_general <- H1_age_general %>%
 
 Finally, I visualized all Chinese age data and combined figure of gender and age.
 
-total
-```{r}
-H2_Fig_age_total <- ggplot(data= Census7_age_five5, 
-       aes(x=ageBins, y = Proportion, fill="Census7")) +
-  geom_col(alpha=0.5, width = 1) +
-  geom_line(data = H2_age_total, aes(x=ageBins, 
-                y = Proportion,group = 1,color = "Chinese Subjects pool"),size =1)+
-  scale_fill_manual(values=c("Census7"="#00BFC4")) +  
-  scale_color_manual(values=c("Chinese Subjects pool" = "red")) +
-  scale_y_continuous(limits = c(0,35))+
-  coord_flip() +
-  labs(y="Proportion", x = "Age bins")+
-  theme_classic()+
-  theme(panel.border =element_rect(fill=NA,color="black"),
-        legend.position = "bottom",
-        legend.box.spacing = unit(2,"pt"),
-        legend.text = element_text(size = 16, family = "serif"),
-        legend.title = element_blank(),
-        axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
-
-
-H2_Fig_age_total
-```
 general population
+
 ```{r}
 H2_Fig_age_general <- ggplot(data= Census7_age_five5, 
        aes(x=ageBins, y = Proportion, fill="Census7")) +
@@ -2092,7 +1840,7 @@ H2_Fig_age_general <- ggplot(data= Census7_age_five5,
                 y = Proportion,group = 1,color = "Chinese Subjects pool"),size =1)+
   scale_fill_manual(values=c("Census7"="#00BFC4")) +  
   scale_color_manual(values=c("Chinese Subjects pool" = "red")) +
-  scale_y_continuous(limits = c(0,45))+
+  scale_y_continuous(limits = c(0,50))+
   coord_flip() +
   labs(y="Proportion", x = "Age bins")+
   theme_classic()+
@@ -2151,53 +1899,9 @@ Census7_age_interval10 <- Census7_age %>%
                 Proportion = ifelse(ageBins == ">61", Proportion + 0.01,Proportion),
                 Data_Source = "Census7")
 
-# Then, I calculate bayes factor, for a start, I calculate it in total.
-## PsyStages Total
-Sim_Journal_age_PsyStages3_prop <- Sim_Journal_age_PsyStages3_prop %>% 
-  dplyr::rename(n =2)
-
-BTS_age_PsyStages_CHN_total <- BTS_age_PsyStages_CHN_total %>% 
-  dplyr::mutate(n = as.numeric(n))
-
-H2_age_PsyStages_bayes_total<- bind_rows(BTS_age_PsyStages_CHN_total,Sim_Journal_age_PsyStages3_prop) %>% 
-  dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(n = sum(n)) %>% 
-  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
-                Data_Source = "Chinese subjects pool") %>% # sum(H2_age_general_bayes$Proportion) ## 100.01
-  dplyr::add_row(Census7_age_PsyStages) %>% 
-  dplyr::select(-2) %>% 
-  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
 
 
-## interval10
-Sim_Journal_age_interval103_total_prop <-  Sim_Journal_age_interval103_prop %>% 
-  dplyr::rename(n = 2)
-
-H2_age_inteval10_bayes_total <- bind_rows(BTS_age_interval10_CHN_total,Sim_Journal_age_interval103_total_prop) %>% 
-  dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(n = sum(n)) %>% 
-  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
-                Data_Source = "Chinese subjects pool") %>% # sum(H2_age_general_bayes$Proportion) ## 100.01
-  dplyr::add_row(Census7_age_interval10) %>% 
-  dplyr::select(-2) %>% 
-  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
-
-
-## calculate BF
-# PsyStages
-H2_BF_age_PsyStages_total <- BayesMultiNomial(dataset = H2_age_PsyStages_bayes_total,
-                                        factor = "ageBins",
-                                        observed = "Chinese subjects pool",
-                                        expected = "Census7")
-
-
-## interval 10
-H2_BF_age_interval10_total <- BayesMultiNomial(dataset = H2_age_interval10_bayes_total,
-                                        factor = "ageBins",
-                                        observed = "Chinese subjects pool",
-                                        expected = "Census7")
-
-## Next, For target population, I need combine two source data firstly.
+## For target population, I need combine two source data firstly.
 ## PsySatges
 Sim_Journal_age_PsyStages3_general_prop <- Sim_Journal_age_PsyStages3_general_prop %>% 
   dplyr::rename(n =2)
@@ -2240,9 +1944,7 @@ H2_BF_age_interval10_general <- BayesMultiNomial(dataset = H2_age_inteval10_baye
                               expected = "Census7")
 ```
 
-For age of H2, firstly, in total, I found two age categories both have strong evidence for $H_1$ that the age distribution of Chinese subjects pool are different from Census7. The Bayesian multinomial test are PsyStages: $Log(BF_{10})$ = `r H2_BF_age_PsyStages_total$BF$LogBF10` and interval10: $Log(BF_{10})$ = `r H2_BF_age_interval10_total$BF$LogBF10` respectively.
-
-Then, I also found the Bayesian multinomial test shows strong evidence for comparing them in general population. PsyStages and interval10 are $Log(BF_{10})$ = `r H2_BF_age_Psystages_general$BF$LogBF10` and interval10: $Log(BF_{10})$ = `r H2_BF_age_interval10_general$BF$LogBF10` respectively.
+For age of H2, firstly, in general population, I found the Bayesian multinomial test shows strong evidence for comparing them in general population. PsyStages and interval10 are $Log(BF_{10})$ = `r H2_BF_age_Psystages_general$BF$LogBF10` and interval10: $Log(BF_{10})$ = `r H2_BF_age_interval10_general$BF$LogBF10` respectively.
 
 
 ### Educational attainment
@@ -2806,63 +2508,6 @@ H2_BF_Journal_CFPS2018_region_general <- BayesMultiNomial(dataset = H2_region_ba
 ```
 
 
-### Ethnicity
-
-Try to analysis ethnicity data from Chinese journal
-
-```{r}
-Journal_ethnicity <- Journal %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,
-                Ethnicity,Ethnicity_info) %>% 
-  dplyr::filter(Ethnicity == 1) %>% 
-  tidyr::separate_rows(Ethnicity_info,sep = ";") %>% 
-  dplyr::filter(!grepl("少数|汉族|其他",Ethnicity_info))
-
-
-#table(df_CHN_Ethnicity$Ethnicity) 1507~0, 63~1
-
-Journal_ethnicity_tab <- data.frame(table(Journal_ethnicity$Ethnicity_info))
-
-Journal_ethnicity_add <- c("土家族","回族","蒙古族","畲族","满族","苗族","壮族","黎族","彝族","布依族")
-
-Journal_ethnicity_tab <- Journal_ethnicity_tab %>% 
-  dplyr::mutate(Freq = ifelse(Var1 %in% Journal_ethnicity_add, Freq+1, Freq))
-
-
-## sample size and different ethnicity
-Journal_ethnicity$Sample_Size[2] <- 251
-Journal_ethnicity$Sample_Size[3] <- 297
-Journal_ethnicity$Sample_Size[4] <- 110
-Journal_ethnicity$Sample_Size[5] <- 61
-
-Journal_ethnicity$Sample_Size[6:21] <- c(14,16,18,9,20,10,18,12,19,10,
-                                           19,12,17,15,21,13)
-
-Journal_ethnicity$Sample_Size[32:33] <- c(4,0)
-
-Journal_ethnicity$Sample_Size[34:62] <- c(139,108,71,51,50,40,38,31,
-                                         27,24,18,16,16,11,9,6,5,4,
-                                         3,3,3,2,2,1,1,1,1,1,1)
-
-Journal_ethnicity$Sample_Size[63:64] <- c(30,60)
-
-Journal_ethnicity$Sample_Size[65] <- 1006
-
-Journal_ethnicity$Sample_Size[72] <- 30
-
-## ethnicity sample size
-Journal_ethnicity_group <- Journal_ethnicity %>% 
-  dplyr::mutate(Sample_Size =as.numeric(Sample_Size)) %>% 
-  dplyr::group_by(Ethnicity_info) %>% 
-  dplyr::summarise(Sample = sum(Sample_Size)) %>% 
-  dplyr::ungroup()
-
-
-Journal_ethnicity_Articles_num <- Journal_ethnicity %>% 
-  dplyr::distinct(Article_IDs)
-### 17/997
-```
-
 ## Test the 3st hypothesis
 
 ### Gender
@@ -3217,6 +2862,7 @@ H3_BF_interval10  <- H3_interval10 %>%
                prop_name = "ageBins")
 ```
 
+
 and I visualized PsyStages BF at first.
 
 ```{r warning=FALSE}
@@ -3476,10 +3122,12 @@ Journal_abstract2_report <- Journal %>%
   dplyr::rename(n = 2)
 ```
 
+
 ## Bibliometrics Analysis
 
 ```{r eval=FALSE, include=FALSE}
 ```
+
 
 ## Target population explore
 
