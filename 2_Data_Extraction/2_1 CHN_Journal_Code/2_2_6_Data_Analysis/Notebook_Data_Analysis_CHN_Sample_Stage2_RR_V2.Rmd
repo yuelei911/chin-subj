@@ -1134,7 +1134,7 @@ Filter CHN age data from BTS, Combine BTS CHN data and Chinese journals data.
 considering the different target population, I process all data firstly.
 ```{r}
 BTS_age_general_CHN <- BTS_age %>% 
-  dplyr::filter(ISO3 == "CHN" & (Target_Population == 2 & Target_Population == 3)) %>% 
+  dplyr::filter(ISO3 == "CHN" & (Target_Population == 2 | Target_Population == 3)) %>% 
   dplyr::count(ageBins) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
                 Data_Source = "BTS Chinese")
@@ -1155,7 +1155,7 @@ H1_age_general <- H1_age_general %>%
 ```
 
 
-Visualize age data from Chinese journals and census7.
+Visualize age data from Chinese journals and BTS.
 
 general
 ```{r}
@@ -1274,6 +1274,7 @@ BTS_age_interval10_CHN_general <- BTS_age_interval10 %>%
                 Data_Source = "BTS CHN age") 
 ```
 
+
 Next, I Combined two CHN data to Bayesian multinomial test in two different classifications (PsyStages and 10-year-old). One is PsyStages.
 
 ```{r}
@@ -1330,11 +1331,24 @@ Try to process educational attainment data from Chinese journal.
 # 
 # writexl::write_xlsx(Journal_edu,"Journal_edu.xlsx")
 
-Journal_edu2 <- readxl::read_xlsx("Journal_edu.xlsx")
+Journal_edu <- readxl::read_xlsx("Journal_edu.xlsx")
+
+
+## analysis edu base on terget population
+## general population
+Journal_edu_general_article <- Journal_key_variable %>% 
+  dplyr::select(Article_IDs,Target_Population_N) %>% 
+  dplyr::distinct(Article_IDs,Target_Population_N) %>%   ## 20219132目标人群需要重新处理
+  dplyr::filter(Target_Population_N != 1)
+  
+## filter target population is general population
+Journal_edu_general <- Journal_edu %>% 
+  dplyr::filter(Article_IDs %in% Journal_edu_general_article$Article_IDs)
+
 
 
 ## calculate the number of different categories 
-Journal_edu2_tab <- Journal_edu2 %>% 
+Journal_edu2_tab <- Journal_edu_general %>% 
   dplyr::summarise(tab10 = sum(is.na(College_and_above)),
                    tab11 = sum(is.na(Below_college)),
                    tab12 = sum(is.na(High_school_and_above)),
@@ -1351,7 +1365,7 @@ Journal_edu2_tab <- Journal_edu2 %>%
 In our study, we have three categories of educational attainments. I process three class data respectively.
 The first category is education years. I will use M and SD in the paper to simulate the number of subjects with the latter two categories of education level, and then combine them with the latter two categories respectively, and finally complete the subsequent analysis and visualization.
 ```{r}
-Journal_edu2_year <- Journal_edu2 %>% 
+Journal_edu2_year <- Journal_edu_general %>% 
   dplyr::select(1:15) %>% 
   dplyr::filter(!is.na(M_edu_year) & !is.na(SD_edu_year)) %>% 
   dplyr::filter(is.na(College_and_above))  ## If there is data for the other two categories, there is no need to simulate using years of education, which is a screening done after looking at the data
@@ -1408,7 +1422,7 @@ Journal_edu2_year_simul <- rbind(Journal_edu2_year_simul, data.frame(Article_IDs
 
 The second category is 'college and above' and 'below college'. 
 ```{r}
-Journal_college <- Journal_edu2 %>% 
+Journal_college <- Journal_edu_general %>% 
   dplyr::select(-c(5:9,12:15)) %>% 
   dplyr::filter(!is.na(College_and_above) & !is.na(Below_college))
 
@@ -1433,7 +1447,7 @@ Journal_college_decimal <- Journal_college  %>%
 
 The third category is 'high shcool and above' and 'below high school'
 ```{R}
-Journal_high_school <- Journal_edu2 %>% 
+Journal_high_school <- Journal_edu_general %>% 
   dplyr::select(4,12:13) %>% 
   dplyr::filter(!is.na(High_school_and_above) & !is.na(Below_high_school))
 
@@ -2137,103 +2151,16 @@ Note, there is not results description.
 
 As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals. 
 
-All the data containing the region is processed.
-
-```{r}
-## single region
-Journal_region_single <- Journal %>% 
-  dplyr::select(3,5,7,37,40,16,30) %>% 
-  dplyr::mutate(Subjects_Recruitment_Area = gsub("[;；、，,]",";",Subjects_Recruitment_Area),
-                Sample_Size = as.numeric(Sample_Size)) %>% 
-  dplyr::filter(Subjects_Recruitment_Area != "0" & !grepl(";",Subjects_Recruitment_Area)) 
-
-
-# sum(Journal_region_single$Sample_Size,na.rm = TRUE)+33
-# 
-# table(Journal_region_single$Subjects_Recruitment_Area)
-
-
-## calculate the number of articles and studies that include provincial administrative regions 
-## studies
-# Journal_region_single_studies_num <- Journal_region_single %>% 
-#   dplyr::distinct(Article_IDs,Study_Number)  ## single 592 studies + multiple 10
-# 
-# ## papers
-# Journal_region_single_papers_num <- Journal_region_single %>% 
-#   dplyr::distinct(Article_IDs) ## single 519 papers + multiple 10
-
-
-Journal_region_single_tab <- Journal_region_single %>% 
-  dplyr::select(Article_IDs,Target_Population_N,Sample_Size,Subjects_Recruitment_Area) %>% 
-  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == "内蒙古自治区", "内蒙古",Subjects_Recruitment_Area),
-                Sample_Size = ifelse(Article_IDs == "20185082",33,Sample_Size)) %>% 
-  dplyr::group_by(Subjects_Recruitment_Area) %>% 
-  dplyr::summarise(n = sum(Sample_Size)) %>% 
-  dplyr::filter(Subjects_Recruitment_Area %in% c("新疆","西藏","甘肃","青海","内蒙古",
-                                                 "宁夏","四川","重庆","陕西","贵州","云南",
-                                                 "北京","山西","河北","河南","湖北","湖南",
-                                                 "广西","广东","香港","澳门","台湾","海南",
-                                                 "黑龙江","吉林","辽宁","天津","山东","江苏",
-                                                 "安徽","上海","浙江","江西","福建"))
-  
-
-## multiple regions
-Journal_region_multiple <- Journal %>% 
-  dplyr::select(3,5,7,37,40,16,30) %>% 
-  dplyr::mutate(Subjects_Recruitment_Area = gsub("[;；、，,]",";",Subjects_Recruitment_Area)) %>% 
-  dplyr::filter(Subjects_Recruitment_Area != "0" & grepl(";",Subjects_Recruitment_Area)) 
-
-# writexl::write_xlsx(Journal_region_multiple,"Journal_region_multiple.xlsx")
-
-## re-input data and load dataa
-Journal_region_multiple <- readxl::read_xlsx("Journal_region_multiple.xlsx") %>% 
-  dplyr::filter(True_Value != "No specific value") 
-
-Journal_region_multiple_tab <-  Journal_region_multiple %>% 
-  dplyr::select(Article_IDs, Target_Population_N,True_Value) %>% 
-  tidyr::separate_rows(True_Value,sep = ";") %>% 
-  tidyr::separate(True_Value,c("Subjects_Recruitment_Area","Sample_Size"),sep = ":") %>% 
-   dplyr::filter(Subjects_Recruitment_Area %in% c("新疆","西藏","甘肃","青海","内蒙古",
-                                                 "宁夏","四川","重庆","陕西","贵州","云南",
-                                                 "北京","山西","河北","河南","湖北","湖南",
-                                                 "广西","广东","香港","澳门","台湾","海南",
-                                                 "黑龙江","吉林","辽宁","天津","山东","江苏",
-                                                 "安徽","上海","浙江","江西","福建")) %>% 
-  dplyr::mutate(Sample_Size  = as.numeric(Sample_Size),
-                Sample_Size = ifelse(Article_IDs == "20213104",ceiling(Sample_Size*2500),Sample_Size)) %>% 
-  dplyr::select(Sample_Size,Subjects_Recruitment_Area) %>% 
-  dplyr::rename(n = Sample_Size)
-
-
-## combine data
-Journal_region_tab <-bind_rows(Journal_region_single_tab,Journal_region_multiple_tab) %>% 
-  dplyr::group_by(Subjects_Recruitment_Area) %>% 
-  dplyr::summarise(n = sum(n),.groups = "drop") %>% 
-  dplyr::mutate(Proportion = (round(n/sum(n),2))*100)
-
-
-# sum(Journal_region_tab$Proportion) ## 1.01
-
-# names(Journal)
-
-Journal_region_tab2 <- Journal_region_tab %>% 
-  dplyr::mutate(Count_Bins = cut(Proportion,
-                                 breaks = c(-Inf,1,5,10,Inf),
-                labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Journal_region_total")%>% 
-  dplyr::rename(Region = 1)
-
-# sum(Journal_region_tab2$n) 290,585
-
-sum(Journal_region_tab2$Proportion)
-```
-
 
 The data is processed when the target population is the general population.
 ```{r}
 ## single region
 Journal_region_single_general <- Journal_region_single %>% 
   dplyr::filter(Target_Population_N != 1)
+
+# region_tab <- Journal_region_single_general %>% 
+#   filter(Target_Population_N != 1 & Subjects_Recruitment_Area !=0) %>% 
+#   distinct(Article_IDs) ## 129 papers
 
 Journal_region_single_general_tab <- Journal_region_single_general %>% 
   dplyr::select(Article_IDs,Target_Population_N,Sample_Size,Subjects_Recruitment_Area) %>% 
@@ -2378,28 +2305,6 @@ China <- dplyr::left_join(China,Region_data,by= "QUHUADAIMA")
 
 
 
-## Chinese journal papers in total
-H2_Fig_region_total <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(Color_Journal_region_total))) +
-  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
-                    breaks = c("0","1","2", "3", "4"),
-                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
-  geom_sf(data = gjx) +
-  labs(title = "Journal all subjects recruitment region distribution (290,585 subjects)") +
-  theme(plot.title = element_text(color = "black",size = 16,
-                                  face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.title = element_blank(),
-        legend.position = c(0.2, 0.2),
-        panel.grid = element_blank(),
-        panel.background = element_blank(),
-        axis.text = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title = element_blank())+
-  annotation_north_arrow(location = 'tl',which_north = 'false',
-                         style = north_arrow_orienteering())
-
-
-
 ## Chinese journal papers in general population
 H2_Fig_region_general <- ggplot() +
   geom_sf(data = China,aes(fill = factor(Color_Journal_region_general_population))) +
@@ -2461,39 +2366,27 @@ H2_Fig_Census7_region <- ggplot() +
 
 
 
-H2_region <- (H2_Fig_Census7_region + H2_Fig_CFPS2018_region)/( 
-  H2_Fig_region_total + H2_Fig_region_general) +
-  plot_layout(guides = "collect")+
+H2_region <- H2_Fig_Census7_region + H2_Fig_CFPS2018_region + H2_Fig_region_general +
+  plot_layout(ncol = 1, nrow = 3, heights = c(4,4))+
   plot_annotation(tag_levels = 'A', title = "Area distribution",
                   theme = theme(plot.title = element_text(size = 24))) + 
   theme(plot.tag = element_text(size = 20))
 
 
-ggsave("H2_region .pdf", H2_region , device = "pdf", width=18, height = 15)
+ggsave("H2_region .pdf", H2_region , device = "pdf", width=10, height = 15)
 
 H2_region 
 ```
 
 ```{r}
 ## combine three source data
-H2_region_bayes <- bind_rows(Journal_region_general_tab2,Journal_region_tab2,
-                             Census7_region,CFPS2018_region) %>% 
+H2_region_bayes <- bind_rows(Journal_region_general_tab2,Census7_region,CFPS2018_region) %>% 
   dplyr::select(1,3,5) %>% 
   dplyr::mutate(Data_Source = ifelse(Data_Source == "Journal_region_total","Journal",Data_Source)) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion) %>% 
   dplyr::mutate(across(everything(),~ifelse(is.na(.),1,.)))
 
 
-H2_BF_Journal_Census7_region_total <- BayesMultiNomial(dataset = H2_region_bayes,
-                                          factor = "Region",
-                                          observed = "Journal",
-                                          expected = "Census7")
-
-
-H2_BF_Journal_CFPS2018_region_total <- BayesMultiNomial(dataset = H2_region_bayes,
-                                          factor = "Region",
-                                          observed = "Journal",
-                                          expected = "CFPS2018")
 
 ## different target population compared
 H2_BF_Journal_Census7_region_general <- BayesMultiNomial(dataset = H2_region_bayes,
