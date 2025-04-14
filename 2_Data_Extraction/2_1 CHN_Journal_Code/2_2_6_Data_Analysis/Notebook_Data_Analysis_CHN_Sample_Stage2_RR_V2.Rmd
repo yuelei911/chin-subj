@@ -1364,7 +1364,9 @@ Journal_edu2_tab <- Journal_edu_general %>%
 
 In our study, we have three categories of educational attainments. I process three class data respectively.
 The first category is education years. I will use M and SD in the paper to simulate the number of subjects with the latter two categories of education level, and then combine them with the latter two categories respectively, and finally complete the subsequent analysis and visualization.
-```{r}
+```{r eval=FALSE, include=FALSE}
+## I found there is no data for simul
+
 Journal_edu2_year <- Journal_edu_general %>% 
   dplyr::select(1:15) %>% 
   dplyr::filter(!is.na(M_edu_year) & !is.na(SD_edu_year)) %>% 
@@ -1478,8 +1480,8 @@ Journal_edu2_year_simul_sum <- Journal_edu2_year_simul %>%
                    Below_high_school = sum(Below_high_school))
 
 ## combine college data
-Journal_college2 <- Journal_edu2_year_simul_sum %>% 
-  dplyr::select(1:2) %>% 
+ Journal_college2 <- #Journal_edu2_year_simul_sum %>% 
+#   dplyr::select(1:2) %>% 
   bind_rows(Journal_college_decimal, Journal_college_integer) %>% 
   dplyr::summarise(College_and_above = sum(College_and_above),
                    Below_college = sum(Below_college)) %>% 
@@ -1491,8 +1493,8 @@ Journal_college2 <- Journal_edu2_year_simul_sum %>%
 
 
 ## combine high school data
-Journal_high_school2  <- Journal_edu2_year_simul_sum %>% 
-  dplyr::select(3:4) %>% 
+Journal_high_school2  <- #Journal_edu2_year_simul_sum %>% 
+  #dplyr::select(3:4) %>% 
   bind_rows(Journal_high_school_integer, Journal_high_school_decimal) %>% 
   dplyr::summarise(High_school_and_above = sum(High_school_and_above),
                    Below_high_school = sum(Below_high_school)) %>% 
