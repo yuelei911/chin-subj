@@ -63,16 +63,16 @@ load("BTS.Rdata")
 rm(df,df_PSA001,df_stage2_Journal_Code,Group1_bind,Group24567_bind,Group3_bind,df_regionCode)
 ```
 
-
 ## read the coding of BTS
+
 ```{r}
 BTS_coding <- readxl::read_xlsx("Chin_Subj_BTS_Coding_CE.xlsx") 
 # %>%
 #   dplyr::filter(Coder == "final")
 ```
 
-
 ## combine raw data and coding data of BTS
+
 ```{r}
 for (i in seq_along(BTS)) {
   
@@ -88,7 +88,6 @@ BTS1 <- BTS[[2]]
 table(BTS1$Target_Population)
 
 ```
-
 
 Here, I used self-defined function in Stage1 to calculate Bayesian multinomial test.
 
@@ -166,7 +165,6 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 }
 ```
 
-
 At this point, I have finished loading the package and data. Next, I analyzed the data and visualized it according to the logic of the written protocal.
 
 I began by analyzing the basic case of the two data sets (BTS and Chinese journals).
@@ -194,6 +192,39 @@ Journal_sample_size <- Journal %>%
 
 ## Here, I remove some data sets to reduce data set clutter.
 rm(Journal_articles_num,Journal_study_num,df_stage2_Journal_Code2)
+```
+
+Meanwhile, we process the special target population
+
+```{r}
+Journal_special_target_population <- Journal %>% 
+  dplyr::select(Article_IDs,Article_Title,Target_Population_N,Coding_Basis_N,Sample_Type_N) %>% 
+  dplyr::filter(Target_Population_N == 1) %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::slice(1)
+
+# writexl::write_xlsx(Journal_special_target_population,"Journal_special_target_populationk.xlsx")
+
+Journal_special_target_population2 <- readxl::read_xlsx("Journal_special_target_population.xlsx") %>% 
+  dplyr::select(20,22,7,19,23,24,28) %>% 
+  dplyr::rename(Abstract = 3)
+```
+
+Next, I try to classify special target population
+
+```{r}
+## college
+
+Journal_college_TP <- Journal_special_target_population2 %>% 
+  dplyr::filter(grepl("大学生|研究生",Recode_target_population)) %>% 
+  dplyr::filter(!Recode_target_population %in% c("大学生和青少年罪犯","女大学生","中学生和大学生"))
+
+table(Journal_college_TP$Recode_target_population)
+
+
+## children and adolenscent
+Journal_children_adolenscent_TP <- Journal_special_target_population2 %>% 
+  dplyr::filter(grepl("儿童|幼儿|青少年|初中生|高中生|小学生|中学生|中职",Recode_target_population))
 ```
 
 ## The basic situation about BTS data
@@ -558,8 +589,8 @@ H1_gender_general <- H1_gender_general %>%
                                      levels = H1_gender_factor_general))
 ```
 
-
 Visualize gender data for Chinese journals and BTS.
+
 ```{r}
 H1_Fig_gender_general <- ggplot(data = H1_gender_general,aes(Data_Source,Proportion,fill = Gender))+
   geom_col()+
@@ -581,8 +612,8 @@ Here I tested whether the gender proportion distribution from Chinese five journ
 
 $H_0$: $\theta = c$, where $c$ is defined by Chinese five journal data; $H_1$: $\theta$ is free to vary.
 
-
 I compared the general population between the two.
+
 ```{r}
 H1_gender_bayes_general <- H1_gender_general %>% 
   dplyr::select(1,3:4) %>% 
@@ -596,15 +627,33 @@ H1_BF_gender_general <- BayesMultiNomial(dataset = H1_gender_bayes_general,
 
 However, I found there no different between BTS data and the general population of Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_general$BF$LogBF10`.
 
+In this part, I will analysis gender based on the special target population.
+
+first, I process Journal data
+
+```{r}
+Journal_college_TP_articleIDs <- Journal_college_TP %>% 
+  dplyr::distinct(Article_IDs) %>% 
+  dplyr::pull(Article_IDs)
+
+Journal_gender_special_college <- Journal_gender2 %>% 
+  dplyr::filter(Article_IDs %in% Journal_college_TP_articleIDs)
+
+
+## combine two data source
+## I found there is no data of BTS on college in special target population.
+```
 
 At the end of gender data processing for hypothesis 1, I removed some data sets to reduce data set clutter.
+
 ```{r}
 rm(H1_gender_factor_general,i,BTS_name)
 ```
 
-
 ### Age
+
 Reprocess age data from Chinese journals.
+
 ```{r warning=FALSE}
 Journal_age <- Journal_key_variable %>% 
   dplyr::select(-c(7:9,14:17)) %>% 
@@ -640,10 +689,10 @@ Journal_single_age <- Journal_age %>%
 Journal_age2 <- bind_rows(Journal_strings_age,Journal_single_age)
 ```
 
-
 Since raw data is not available for papers in Chinese journals, I simulated the raw data using the method used in the Stges 1 of registration report. It is then combined with BTS and compared with census data.
 
 First, I created a function that groups ages into five-year intervals for the purpose of creating a Population pyramid chart.
+
 ```{r}
 Sim_Sens_mult_five <- function(Mean0, diff_age, SD0, sample_N=Sample_Size){
 
@@ -1127,11 +1176,10 @@ BTS_age_list[[BTS_name]] <- BTS_age
 BTS_age <-  bind_rows(BTS_age_list)
 ```
 
-
 Filter CHN age data from BTS, Combine BTS CHN data and Chinese journals data.
 
-
 considering the different target population, I process all data firstly.
+
 ```{r}
 BTS_age_general_CHN <- BTS_age %>% 
   dplyr::filter(ISO3 == "CHN" & (Target_Population == 2 | Target_Population == 3)) %>% 
@@ -1154,10 +1202,10 @@ H1_age_general <- H1_age_general %>%
                                  "75~79","80~84","85~89", "90~94",">=95" )))
 ```
 
-
 Visualize age data from Chinese journals and BTS.
 
 general
+
 ```{r}
 H1_Fig_age_general <- ggplot(data= H1_age_general, aes(x=ageBins, y=ifelse(Data_Source=="BTS Chinese", -Proportion, Proportion),fill = Data_Source)) +
   geom_col(alpha=0.8, width = 1) +
@@ -1184,9 +1232,6 @@ H1_Fig_age_general
 # 
 # ggsave("H1_Fig_gender_age_general.pdf", H1_Fig_gender_age_general, device = "pdf", width=18, height = 9)
 ```
-
-
-
 
 Process age for Bayesian multinomial test. First of all, I processed BTS CHN age in psychological development stages.
 
@@ -1274,7 +1319,6 @@ BTS_age_interval10_CHN_general <- BTS_age_interval10 %>%
                 Data_Source = "BTS CHN age") 
 ```
 
-
 Next, I Combined two CHN data to Bayesian multinomial test in two different classifications (PsyStages and 10-year-old). One is PsyStages.
 
 ```{r}
@@ -1291,8 +1335,8 @@ H1_BF_PsyStages_general <- BayesMultiNomial(dataset = H1_PsyStages_bayes_general
                                           expected = "Journal")
 ```
 
-
 The other is interval10.
+
 ```{r}
 ## general population 
 H1_interval10_bayes_general <- Sim_Journal_age_interval103_general_prop %>% 
@@ -1308,13 +1352,12 @@ H1_BF_interval10_general <- BayesMultiNomial(dataset = H1_interval10_bayes_gener
                                           expected = "Journal")
 ```
 
-
 For different target population, I compared general population for them firstly, I found strong evidence for $H_1$ that the age distribution from the Chinese subjects data of BTS data is different form the Chinese journals data, the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_PsyStages_general$BF$LogBF10`.
 
 Meanwhile, I found strong evidence support $H_1$ for another age category,the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_interval10_general$BF$LogBF10`.
 
-
 ### attainment education
+
 Try to process educational attainment data from Chinese journal.
 
 ```{r eval=FALSE, include=FALSE}
@@ -1361,9 +1404,8 @@ Journal_edu2_tab <- Journal_edu_general %>%
                 Class_edu_year = 3)  ## 152/185
 ```
 
+In our study, we have three categories of educational attainments. I process three class data respectively. The first category is education years. I will use M and SD in the paper to simulate the number of subjects with the latter two categories of education level, and then combine them with the latter two categories respectively, and finally complete the subsequent analysis and visualization.
 
-In our study, we have three categories of educational attainments. I process three class data respectively.
-The first category is education years. I will use M and SD in the paper to simulate the number of subjects with the latter two categories of education level, and then combine them with the latter two categories respectively, and finally complete the subsequent analysis and visualization.
 ```{r eval=FALSE, include=FALSE}
 ## I found there is no data for simul
 
@@ -1421,8 +1463,8 @@ Journal_edu2_year_simul <- rbind(Journal_edu2_year_simul, data.frame(Article_IDs
 }
 ```
 
+The second category is 'college and above' and 'below college'.
 
-The second category is 'college and above' and 'below college'. 
 ```{r}
 Journal_college <- Journal_edu_general %>% 
   dplyr::select(-c(5:9,12:15)) %>% 
@@ -1446,8 +1488,8 @@ Journal_college_decimal <- Journal_college  %>%
                    Below_college = sum(Below_college_tab)) ## sum 9,315
 ```
 
-
 The third category is 'high shcool and above' and 'below high school'
+
 ```{R}
 Journal_high_school <- Journal_edu_general %>% 
   dplyr::select(4,12:13) %>% 
@@ -1470,14 +1512,14 @@ Journal_high_school_decimal <- Journal_high_school  %>%
                    Below_high_school = sum(Below_high_school_tab)) ## 4,685
 ```
 
-
 Combine education year with the other categories respectively.
+
 ```{r}
-Journal_edu2_year_simul_sum <- Journal_edu2_year_simul %>% 
-  dplyr::summarise(College_and_above = sum(College_and_above),
-                   Below_college = sum(Below_college),
-                   High_school_and_above = sum(High_school_and_above),
-                   Below_high_school = sum(Below_high_school))
+# Journal_edu2_year_simul_sum <- Journal_edu2_year_simul %>% 
+#   dplyr::summarise(College_and_above = sum(College_and_above),
+#                    Below_college = sum(Below_college),
+#                    High_school_and_above = sum(High_school_and_above),
+#                    Below_high_school = sum(Below_high_school))
 
 ## combine college data
  Journal_college2 <- #Journal_edu2_year_simul_sum %>% 
@@ -1505,8 +1547,8 @@ Journal_high_school2  <- #Journal_edu2_year_simul_sum %>%
                 Data_source = "Journal")  ## 注意，计算round时*100的位置前后有所不同，后需要确认更改
 ```
 
-
 Now, in this part, I process chinese subjects' edu data of BTS
+
 ```{r}
 BTS_edu_list <- list()
 
@@ -1538,8 +1580,8 @@ BTS_edu <-  do.call(rbind,BTS_edu_list)
 # writexl::write_xlsx(bts1_edu,"bts1_edu.xlsx")
 ```
 
-
 Classify educational attainment and calculate special num
+
 ```{r}
 BTS_edu <- BTS_edu %>% 
   dplyr::mutate(College_cate = ifelse(Education %in% c("Bachelor","degree","Doctoral","doctorate",
@@ -1597,8 +1639,8 @@ H1_edu_college <- rbind(Journal_college2,BTS_college)
 H1_edu_highschool <- rbind(Journal_high_school2,BTS_highschool)
 ```
 
-
 visulize the edu data
+
 ```{r}
 ## college
 H1_Fig_college <- ggplot(data = H1_edu_college,aes(Data_source,Proportion,fill = Educational_attainment))+
@@ -1641,9 +1683,10 @@ ggsave("H1_Fig_gender_age_edu_general.pdf",H1_Fig_gender_age_edu_general, device
 H1_Fig_gender_age_edu_general
 ```
 
-Here I tested whether the educatinal attainment proportion distribution from Chinese five journal data are similar to that of the BTS data. 
+Here I tested whether the educatinal attainment proportion distribution from Chinese five journal data are similar to that of the BTS data.
 
 First, I calculate the first category: college.
+
 ```{r}
 H1_edu_college_bayes <- H1_edu_college %>% 
   dplyr::select(1,3:4) %>% 
@@ -1659,6 +1702,7 @@ H1_BF_edu_college <- BayesMultiNomial(dataset = H1_edu_college_bayes,
 I found strong evidence for the $H_1$ that the college proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_college$BF$LogBF10`.
 
 and then, I continue processing the second category: high school.
+
 ```{r}
 H1_edu_highschool_bayes <- H1_edu_highschool %>% 
   dplyr::select(1,3:4) %>% 
@@ -1672,7 +1716,6 @@ H1_BF_edu_highschool <- BayesMultiNomial(dataset = H1_edu_highschool_bayes,
 ```
 
 Similarity, I also found strong evidence for the $H_1$ that the high schools proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_highschool$BF$LogBF10`.
-
 
 ## Test the 2st hypothesis
 
@@ -1725,10 +1768,10 @@ H1_gender_general2 <- H1_gender_general %>%
 H2_gender_general <- bind_rows(Census7_gender,CFPS2018_gender,H1_gender_general2)
 ```
 
-
 And then, I combined all Chinese gender data and visualized them.
 
 general
+
 ```{r}
 H2_Fig_gender_general <- ggplot(H2_gender_general,aes(Data_Source,Proportion,fill= Gender))+
   geom_col()+
@@ -1746,8 +1789,6 @@ H2_Fig_gender_general <- ggplot(H2_gender_general,aes(Data_Source,Proportion,fil
 
 H2_Fig_gender_general
 ```
-
-
 
 Finally, I calculated the bayes factor for gender.
 
@@ -1776,6 +1817,31 @@ H2_BF_gender_CFPS2018_general <- BayesMultiNomial(dataset = H2_gender_bayes_gene
 The calculation results show that there is no significant difference between the data in Chinese subjects pool and Census7 and CFPS2018, and the calculation results are $Log(BF_{10})$ = `r H2_BF_gender_Census7_total$BF$LogBF10` and $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_total$BF$LogBF10` respectively.
 
 for general population, I also found similar results. Census7: $Log(BF_{10})$ = `r H2_BF_gender_Census7_general$BF$LogBF10` , CFPS2018: $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_general$BF$LogBF10`
+
+In this part, I calculate data based on sepcial terget population
+
+```{r}
+H2_gender_college <-  Journal_gender_special_college %>% 
+  dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
+                   Female_Num = sum(Female_Num,na.rm = TRUE),
+                   Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
+                   Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
+                   Data_Source = "Target_population_special_College")
+
+## The total data we compared is from *the Outline for Women's Development in China (2021-2030)* released by the National Bureau of Statistics of China in 2022.
+
+H2_gender_bayes_special_college <- data.frame(Gender = c("Male","Female"),
+                                              Journal = c(45,55),
+                                              Outline_Women = c(50,50))
+
+H2_BF_gender_special_college <- BayesMultiNomial(dataset = H2_gender_bayes_special_college,
+                                                 factor = "Gender",
+                                                 observed = "Journal",
+                                                 expected = "Outline_Women")
+```
+
+In terms of gender, for the special target population of college students, we have found that there is no difference between Journal and the overall data of China (the Outline for Women's Development in China (2021-2030)),  $Log(BF_{10})$ = `r H2_BF_gender_special_college$BF$LogBF10`.
+
 
 ### Age
 
@@ -1832,8 +1898,8 @@ Census7_age_five5 <- Census7_age_five5 %>%
                                  "75~79","80~84","85~89", "90~94",">=95" )))
 ```
 
-
 Then, I convert the data format of H1_age.
+
 ```{r}
 ## general
 H2_age_general <- H1_age_general %>%
@@ -1871,8 +1937,6 @@ H2_Fig_age_general <- ggplot(data= Census7_age_five5,
 
 H2_Fig_age_general
 ```
-
-
 
 In addition, I calculated the bayes factor.
 
@@ -1962,10 +2026,10 @@ H2_BF_age_interval10_general <- BayesMultiNomial(dataset = H2_age_inteval10_baye
 
 For age of H2, firstly, in general population, I found the Bayesian multinomial test shows strong evidence for comparing them in general population. PsyStages and interval10 are $Log(BF_{10})$ = `r H2_BF_age_Psystages_general$BF$LogBF10` and interval10: $Log(BF_{10})$ = `r H2_BF_age_interval10_general$BF$LogBF10` respectively.
 
-
 ### Educational attainment
 
 Load and process the edu data of census 7th
+
 ```{r}
 Census7_edu <- readxl::read_xls("A0401.xls")
 
@@ -1999,8 +2063,8 @@ Census7_high_school <- Census7_edu_adults %>%
                 Data_source = "Census7")
 ```
 
-
 receive edu data of CFPS2018
+
 ```{r}
 CFPS2018_edu <- df_CFPS2018 %>% 
   dplyr::filter(W01 > -1) %>% 
@@ -2031,8 +2095,8 @@ CFPS2018_edu_high_school <- data.frame(Educational_attainment = c("Below_high_sc
                 Data_source = "CFPS2018")
 ```
 
-
 Combine multiple edu data
+
 ```{r}
 ## College
 Chinese_subjects_pools_edu_college <- H1_edu_college %>% 
@@ -2060,8 +2124,8 @@ H2_edu_highschool <- bind_rows(Chinese_subjects_pools_edu_highschool,Census7_hig
                                      levels = c("CFPS2018","Census7","Chinese subjects pools")))
 ```
 
-
 And visualization
+
 ```{r}
 ## college
 H2_Fig_college <- ggplot(data = H2_edu_college,aes(Data_source,Proportion,fill = Educational_attainment))+
@@ -2107,8 +2171,8 @@ ggsave("H2_Fig_gender_age_edu_general.pdf",H2_Fig_gender_age_edu_general, device
 H2_Fig_gender_age_edu_general
 ```
 
-
 Calculate the BF of edu
+
 ```{r}
 ## college
 H2_edu_college_bayes <- H2_edu_college %>% 
@@ -2148,13 +2212,12 @@ H2_BF_edu_highschool_CFPS2018 <- BayesMultiNomial(dataset = H2_edu_highschool_ba
 
 Note, there is not results description.
 
-
 ### Region
 
-As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals. 
-
+As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals.
 
 The data is processed when the target population is the general population.
+
 ```{r}
 ## single region
 Journal_region_single_general <- Journal_region_single %>% 
@@ -2215,7 +2278,6 @@ Journal_region_general_tab2 <- Journal_region_general_tab %>%
 # sum(Journal_region_general_tab2$n) 42,890
 ```
 
-
 The second step, I processed of provincial distribution of population for census7.
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
@@ -2262,7 +2324,6 @@ CFPS2018_region <- data.frame(table(df_CFPS2018$PROVCD18)) %>%
 
 # sum(CFPS2018_region$n) 37,104
 ```
-
 
 Combine all region data and load color data
 
@@ -2402,7 +2463,6 @@ H2_BF_Journal_CFPS2018_region_general <- BayesMultiNomial(dataset = H2_region_ba
                                           expected = "CFPS2018")
 ```
 
-
 ## Test the 3st hypothesis
 
 ### Gender
@@ -2506,7 +2566,7 @@ BTS_Psystages_allcountry <- BTS_age_PsyStages %>%
 ## Add Chinese data
 Journal_BTS_PsyStages_CHN <- Sim_Journal_age_PsyStages3_prop %>% 
   dplyr::rename(n = 2) %>% 
-  dplyr::bind_rows(BTS_age_PsyStages_CHN_total) %>%  
+  # dplyr::bind_rows(BTS_age_PsyStages_CHN_total) %>%  
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n=sum(n)) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
@@ -2571,7 +2631,7 @@ BTS_interval10_allcountry <- BTS_age_interval10 %>%
 ## Add Chinese data
 Journal_BTS_interval10_CHN <- Sim_Journal_age_interval103_prop %>% 
   dplyr::rename(n = 2) %>% 
-  bind_rows(BTS_age_interval10_CHN_total) %>% 
+  # bind_rows(BTS_age_interval10_CHN_total) %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n=sum(n)) %>% 
   dplyr::mutate(Proportion = round((n/sum(n))*100,2),
@@ -2682,7 +2742,6 @@ H3_BF_gender <- H3_BF_gender  %>%
                prop_name = "Gender")
 ```
 
-
 ```{r warning=FALSE}
 H3_Fig_BF_gender <- ggplot(H3_BF_gender, aes( x = `Log(BF10)_NonInform`, y = Countries)) +
   geom_point() +
@@ -2756,7 +2815,6 @@ H3_BF_interval10  <- H3_interval10 %>%
   Func_BFpairs(countries_order = H3_BF_PsyStages_factor,
                prop_name = "ageBins")
 ```
-
 
 and I visualized PsyStages BF at first.
 
@@ -2853,7 +2911,7 @@ H3_Fig_gender_age
 
 ## suppl
 H3_Fig_gender_age_suppl <- H3_Fig_BF_interval10 + H3_Fig_interval10 +
-   plot_annotation(tag_levels =list(c("S1a","S1b")))  & 
+   plot_annotation(tag_levels =list(c("S3a","S3b")))  & 
   theme(plot.tag = element_text(size = 18, face = "bold"))
 
 
@@ -2977,7 +3035,6 @@ ggsave("H3_region.pdf",H3_region, device = "pdf", width=18, height = 9)
 H3_region
 ```
 
-
 In addition to the above analysis, I also conducted some exploratory analysis of the data.
 
 # Exploratory analysis
@@ -3017,10 +3074,24 @@ Journal_abstract2_report <- Journal %>%
   dplyr::rename(n = 2)
 ```
 
-
 ## Bibliometrics Analysis
 
 ```{r eval=FALSE, include=FALSE}
+```
+
+
+Journal_subjects_recruitment <- Journal %>% 
+dplyr::filter(Article_IDs,Article_Title,Study_Number_N,Subjects_Group_N,
+Target_Population_N,Sample_Type_N,Subjects_Recruitment_Method_N)## Reasons for results
+```{r}
+Journal_subjects_recruitment <- Journal %>% 
+  dplyr::select(Article_IDs,Article_Title,Study_Number_N,Subjects_Group_N,
+                Target_Population_N,Sample_Type_N,Sampling_Method,Subjects_Recruitment_Method_N,
+                Subjects_Recruitment_Method_info_N)
+
+table(Journal_subjects_recruitment$Sampling_Method)  ## 0(1064),1(219),2(284)
+
+
 ```
 
 
@@ -3080,5 +3151,5 @@ Journal_institution <-  Journal %>%
   dplyr::slice(1) %>% 
   dplyr::mutate(institution = NA)
 
-writexl::write_xlsx(Journal_institution,"Journal_institution.xlsx")
+# writexl::write_xlsx(Journal_institution,"Journal_institution.xlsx")
 ```
