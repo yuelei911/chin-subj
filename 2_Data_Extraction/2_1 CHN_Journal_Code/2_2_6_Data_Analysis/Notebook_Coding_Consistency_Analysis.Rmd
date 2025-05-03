@@ -18,14 +18,17 @@ p_load("tidyverse")
 
 # load data
 ```{r}
+## Chinese journals consistency data
 load("Chin_Subj_check_data.Rdata")
+
+## BTS consistency data
+BTS_check_data <- readxl::read_xlsx("D://chin-subj//2_Data_Extraction//2_2_BTS//Chin_Subj_Proofreading_BTS_20250429.xlsx")
 ```
 
 
 # Analysis
+Chinese journals
 ```{r}
-# str(Chin_Subj_check_data)
-
 CE_score <- Chin_Subj_check_data %>% 
   dplyr::select(-c(1:2)) %>% 
   dplyr::mutate(across(everything(), ~as.numeric(as.character(.)))) %>% 
@@ -34,7 +37,25 @@ CE_score <- Chin_Subj_check_data %>%
   mutate(Column_name = as.character(Column_name),
          Mean = round(Mean,4))
 
-writexl::write_xlsx(Chin_Subj_check_data,"Chin_Subj_check_data.xlsx")
+# writexl::write_xlsx(Chin_Subj_check_data,"Chin_Subj_check_data.xlsx")
+```
+
+
+BTS
+```{r}
+BTS_CE_score <- BTS_check_data %>% 
+  dplyr::filter(Coder == "check") %>% 
+  dplyr::select(-c(1,4,10:11))
+  
+  
+BTS_CE_score_range <- BTS_CE_score %>% 
+  dplyr::mutate(across(everything(), ~as.numeric(as.character(.)))) %>% 
+  dplyr::summarise(across(everything(), ~mean(., na.rm = TRUE))) %>% 
+  tidyr::pivot_longer(cols = everything(), names_to = "Column_name", values_to = "Mean") %>%
+  mutate(Column_name = as.character(Column_name),
+         Mean = round(Mean,4))
+
+write.csv(BTS_CE_score,"D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_CE_score.csv",row.names = FALSE)
 ```
 
 
