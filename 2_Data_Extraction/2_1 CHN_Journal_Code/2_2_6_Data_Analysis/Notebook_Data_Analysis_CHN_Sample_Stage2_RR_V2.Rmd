@@ -172,7 +172,6 @@ I began by analyzing the basic case of the two data sets (BTS and Chinese journa
 # Overview of participants
 
 ## The basic situation of Chinese journals coding data
-
 ```{r warning=FALSE}
 Journal <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
@@ -180,6 +179,15 @@ Journal <- df_stage2_Journal_Code2 %>%
 
 Journal_articles_num <- Journal %>% 
   dplyr::distinct(Article_IDs) ## A total 962 articles
+
+# calculate exclude articles that only need code simple info
+Journal_simple_info_articles <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(Article_IDs,Remark1,Remark2,Remark3,Subjects_Recruitment_Area) %>% 
+  dplyr::filter(!Article_IDs %in% Journal_articles_num$Article_IDs) %>% 
+  dplyr::distinct(Article_IDs,.keep_all = TRUE)   ## 这里20082248排除错误，后面记得处理
+
+table(Journal_simple_info_articles$Remark1)
+
 
 Journal_study_num <- Journal %>% 
   dplyr::distinct(Article_IDs,Study_Number) ## A total 1217 studies
@@ -408,15 +416,15 @@ Journal_age_report_detail_papers_num <- Journal_age_report_detail_study_num %>%
 Journal_age_fuzzy_report <- Journal_age_report_detail %>% 
   dplyr::filter(is.na(M_age)) 
 
-## 20082227,20083017,20183340,20183097,20214027 Other age include Mage
+## 20082227,20083017,20183340,20183097,20214027 20181065 Other age include Mage
 ##这里后面还需要重新处理一下部分Otherage包含Mage的情况
 
 Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>% 
-  dplyr::distinct(Article_IDs,Study_Number) ## 130-5=125
+  dplyr::distinct(Article_IDs) ## 115-6=109
 
 ## Here, I remove some data sets to reduce data set clutter.
-rm(Journal_age_report_detail,Journal_age_report_detail_study_num,
-   Journal_age_fuzzy_report,Journal_age_fuzzy_report_study_num)
+# rm(Journal_age_report_detail,Journal_age_report_detail_study_num,
+#    Journal_age_fuzzy_report,Journal_age_fuzzy_report_study_num)
 ```
 
 In this section, I began by testing and analyzing three main hypotheses.
@@ -3091,7 +3099,16 @@ Journal_subjects_recruitment <- Journal %>%
 
 table(Journal_subjects_recruitment$Sampling_Method)  ## 0(1064),1(219),2(284)
 
+table(Journal_subjects_recruitment$Subjects_Recruitment_Method_N)
 
+
+```
+
+```{r}
+Journal_subjects_recruitment2 <- Journal_subjects_recruitment %>% 
+  dplyr::filter(Target_Population_N != 1)
+
+table(Journal_subjects_recruitment2$Subjects_Recruitment_Method_N)
 ```
 
 
