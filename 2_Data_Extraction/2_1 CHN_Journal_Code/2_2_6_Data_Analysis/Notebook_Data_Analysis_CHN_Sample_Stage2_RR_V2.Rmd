@@ -974,7 +974,7 @@ Sim_Journal_age_five2_general <- do.call(rbind,Sim_Journal_age_five1_general)
 
 Sim_Journal_age_five3_general <- Sim_Journal_age_five2_general %>% 
   dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE),4)) %>% 
+  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
   dplyr::ungroup() %>% 
   dplyr::mutate(ageBins =factor(ageBins,
                                 levels = c("0~4","5~9","10~14","15~19","20~24",
@@ -1006,7 +1006,7 @@ Sim_Journal_age_PsyStages2_general <- do.call(rbind,Sim_Journal_age_PsyStages1_g
 
 Sim_Journal_age_PsyStages3_general <- Sim_Journal_age_PsyStages2_general %>% 
   dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE),4)) %>% 
+  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
   dplyr::ungroup() %>% 
   dplyr::mutate(ageBins =factor(ageBins,
                                 levels = c("<=17","18~25", "26~40", "41~60", ">=61")))
@@ -1035,7 +1035,7 @@ Sim_Journal_age_interval102_general <- do.call(rbind,Sim_Journal_age_interval101
 ## Use simulation function to process data. 
 Sim_Journal_age_interval103_general <- Sim_Journal_age_interval102_general %>% 
   dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE),4)) %>% 
+  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
   dplyr::ungroup() %>% 
   dplyr::mutate(ageBins =factor(ageBins,
                                 levels = c("<=10", "11~20", "21~30", 
@@ -1146,14 +1146,57 @@ Sim_Journal_age_five3_general_prop <- Sim_Journal_age_five3_general %>%
   dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,4),
                 Data_Source = "Journal")
 
-sum(Sim_Journal_age_five3_general_prop$Proportion)
+sum(Sim_Journal_age_five3_general_prop$Proportion)  ## sum 100.0002
+
+
+## fill to percent 100
+Sim_Journal_age_five3_general_prop <- Sim_Journal_age_five3_general_prop %>% 
+  dplyr::mutate(FloorPro = floor(Proportion),
+                index = Proportion - FloorPro)
+
+Sim_Journal_age_five3_general_prop_index <- Sim_Journal_age_five3_general_prop %>% 
+  dplyr::group_by(Data_Source) %>% 
+  dplyr::summarise(sum = sum(FloorPro)) %>% 
+  dplyr::ungroup()
+
+
+Sim_Journal_age_five3_general_prop_fill <- data.frame(matrix(ncol = ncol(Sim_Journal_age_five3_general_prop),
+                                                             nrow = 0))
+colnames(Sim_Journal_age_five3_general_prop_fill) <- colnames(Sim_Journal_age_five3_general_prop)
+
+rm(df_sim1)
+
+for (i in 1:nrow(Sim_Journal_age_five3_general_prop_index)) {
+  
+  df_sim1 <- Sim_Journal_age_five3_general_prop %>% 
+    dplyr::filter(Data_Source == Sim_Journal_age_five3_general_prop_index$Data_Source[i]) %>% 
+    dplyr::arrange(desc(index))
+  
+  if(Sim_Journal_age_five3_general_prop_index$sum[i] < 100){
+    
+    for(j in seq(100 - Sim_Journal_age_five3_general_prop_index$sum[i])){
+      
+      df_sim1$FloorPro[j] <- df_sim1$FloorPro[j] + 1
+      
+    }
+    
+    Sim_Journal_age_five3_general_prop_fill <- rbind(Sim_Journal_age_five3_general_prop_fill,df_sim1)
+    
+  }
+  
+  return(Sim_Journal_age_five3_general_prop_fill)
+  
+}
+
+sum(Sim_Journal_age_five3_general_prop_fill$FloorPro) ## 100
+
 ```
 
 
 ```{r}
 ## general population PsyStages
 Sim_Journal_age_PsyStages3_general_prop <- Sim_Journal_age_PsyStages3_general %>% 
-    dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
+    dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,4),
                 Data_Source = "Journal")
 
 sum(Sim_Journal_age_PsyStages3_general_prop$Proportion)
@@ -1163,53 +1206,53 @@ sum(Sim_Journal_age_PsyStages3_general_prop$Proportion)
 ```{r}
 ## general population interval10
 Sim_Journal_age_interval103_general_prop <- Sim_Journal_age_interval103_general %>% 
-    dplyr::mutate(Proportion = round((sim1/sum(sim1))*100),
+    dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,4),
                 Data_Source = "Journal")
 
-sum(Sim_Journal_age_interval103_general_prop$Proportion) ## 99.99
+sum(Sim_Journal_age_interval103_general_prop$Proportion) ## 100
 
-# fill to percent 100
-Sim_Journal_age_interval103_general_prop <- Sim_Journal_age_interval103_general_prop %>% 
-  dplyr::mutate(FloorPro = floor(Proportion),
-                index = Proportion - FloorPro)
-
-Sim_Journal_age_interval103_general_prop_index <- Sim_Journal_age_interval103_general_prop %>% 
-  dplyr::group_by(Data_Source) %>% 
-  dplyr::summarise(sum=sum(FloorPro)) %>% 
-  dplyr::ungroup()
-
-Sim_Journal_age_interval103_general_prop_fill <- data.frame(matrix(ncol = ncol(Sim_Journal_age_interval103_general_prop),nrow = 0))
-colnames(Sim_Journal_age_interval103_general_prop_fill) <- colnames(Sim_Journal_age_interval103_general_prop)
-
-for (i in 1:nrow(Sim_Journal_age_interval103_general_prop_index)) {
-  
-  df_sim_interval103_general <- Sim_Journal_age_interval103_general_prop %>% 
-    dplyr::filter(Data_Source == Sim_Journal_age_interval103_general_prop_index$Data_Source[i]) %>% 
-    dplyr::arrange(desc(index))
-  
-  if(Sim_Journal_age_interval103_general_prop_index$sum[i] < 100){
-    
-    for (j in seq(100 - Sim_Journal_age_interval103_general_prop_index$sum[i])) {
-      
-        df_sim_interval103_general$FloorPro[j] <-    df_sim_interval103_general$FloorPro[j] + 1
-      
-    }
-    
-    Sim_Journal_age_interval103_general_prop_fill <- rbind(Sim_Journal_age_interval103_general_prop_fill,
-                                                     df_sim_interval103_general)
-    
-  }
-  
-  return(Sim_Journal_age_interval103_general_prop_fill)
-
-}
-
-sum(Sim_Journal_age_interval103_general_prop_fill$FloorPro)
+# # fill to percent 100
+# Sim_Journal_age_interval103_general_prop <- Sim_Journal_age_interval103_general_prop %>% 
+#   dplyr::mutate(FloorPro = floor(Proportion),
+#                 index = Proportion - FloorPro)
+# 
+# Sim_Journal_age_interval103_general_prop_index <- Sim_Journal_age_interval103_general_prop %>% 
+#   dplyr::group_by(Data_Source) %>% 
+#   dplyr::summarise(sum=sum(FloorPro)) %>% 
+#   dplyr::ungroup()
+# 
+# Sim_Journal_age_interval103_general_prop_fill <- data.frame(matrix(ncol = ncol(Sim_Journal_age_interval103_general_prop),nrow = 0))
+# colnames(Sim_Journal_age_interval103_general_prop_fill) <- colnames(Sim_Journal_age_interval103_general_prop)
+# 
+# for (i in 1:nrow(Sim_Journal_age_interval103_general_prop_index)) {
+#   
+#   df_sim_interval103_general <- Sim_Journal_age_interval103_general_prop %>% 
+#     dplyr::filter(Data_Source == Sim_Journal_age_interval103_general_prop_index$Data_Source[i]) %>% 
+#     dplyr::arrange(desc(index))
+#   
+#   if(Sim_Journal_age_interval103_general_prop_index$sum[i] < 100){
+#     
+#     for (j in seq(100 - Sim_Journal_age_interval103_general_prop_index$sum[i])) {
+#       
+#         df_sim_interval103_general$FloorPro[j] <-    df_sim_interval103_general$FloorPro[j] + 1
+#       
+#     }
+#     
+#     Sim_Journal_age_interval103_general_prop_fill <- rbind(Sim_Journal_age_interval103_general_prop_fill,
+#                                                      df_sim_interval103_general)
+#     
+#   }
+#   
+#   return(Sim_Journal_age_interval103_general_prop_fill)
+# 
+# }
+# 
+# sum(Sim_Journal_age_interval103_general_prop_fill$FloorPro)
 ```
 
 
 sepcial target population
-```{r}
+```{r eval=FALSE, include=FALSE}
 ## special population 5-old-years
 Sim_Journal_age_five3_special_prop <- Sim_Journal_age_five3_special %>% 
   dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
@@ -1246,8 +1289,8 @@ rm(Sim_Journal_age_five1,Sim_Journal_age_five2,Sim_Journal_age_five3,
    Sim_Journal_age_PsyStages1_special,Sim_Journal_age_PsyStages2_special,Sim_Journal_age_PsyStages3_special)
 ```
 
-Process age data from BTS.
 
+Process age data from BTS.
 ```{r}
 BTS1 <- BTS[-c(3,16,17,8)]
 # str(BTS1)## 使用BTS1是因为部分数据年龄有问题，所以筛选，后续有多处是这样，数据再次清洗后请注意更换
@@ -1298,10 +1341,49 @@ considering the different target population, I process all data firstly.
 BTS_age_general_CHN <- BTS_age %>% 
   dplyr::filter(ISO3 == "CHN" & (Target_Population == 2 | Target_Population == 3)) %>% 
   dplyr::count(ageBins) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+  dplyr::mutate(Proportion = round((n/sum(n))*100,4),
                 Data_Source = "BTS Chinese")
-sum(BTS_age_general_CHN$Proportion)
+sum(BTS_age_general_CHN$Proportion) ## 99.9999
 
+# ## fill to percent 100
+# BTS_age_general_CHN <- BTS_age_general_CHN %>% 
+#   dplyr::mutate(FloorPro = floor(Proportion),
+#                 index = Proportion - FloorPro)
+# 
+# BTS_age_general_CHN_index <- BTS_age_general_CHN %>% 
+#   dplyr::group_by(Data_Source) %>% 
+#   dplyr::summarise(sum = sum(FloorPro)) %>% 
+#   dplyr::ungroup()
+# 
+# 
+# BTS_age_general_CHN_fill <- data.frame(matrix(ncol = ncol(BTS_age_general_CHN),
+#                                                              nrow = 0))
+# colnames(BTS_age_general_CHN_fill) <- colnames(BTS_age_general_CHN)
+# 
+# rm(df_sim1)
+# 
+# for (i in 1:nrow(BTS_age_general_CHN_index)) {
+#   
+#   df_sim1 <- BTS_age_general_CHN %>% 
+#     dplyr::filter(Data_Source == BTS_age_general_CHN_index$Data_Source[i]) %>% 
+#     dplyr::arrange(desc(index))
+#   
+#   if(BTS_age_general_CHN_index$sum[i] < 100){
+#     
+#     for(j in seq(100 - BTS_age_general_CHN_index$sum[i])){
+#       
+#       df_sim1$FloorPro[j] <- df_sim1$FloorPro[j] + 1
+#       
+#     }
+#     
+#     BTS_age_general_CHN_fill <- rbind(BTS_age_general_CHN_fill,df_sim1)
+#     
+#   }
+#   
+#   return(BTS_age_general_CHN_fill)
+#   
+# }
+# # sum(BTS_age_general_CHN_fill$FloorPro) ## 100
 
 
 ## combine 2 dataframe
@@ -1423,8 +1505,9 @@ And then, I filtered BTS CHN data.
 BTS_age_PsyStages_CHN_general <- BTS_age_PsyStages %>% 
   dplyr::filter(ISO3 == "CHN" & Target_Population != 1) %>% 
   dplyr::count(ageBins) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+  dplyr::mutate(Proportion = round((n/sum(n))*100,4),
                 Data_Source = "BTS CHN age")
+# sum(BTS_age_PsyStages_CHN_general$Proportion) ## 100
 
 
 ## 10-year-old segment in BTS
@@ -1432,8 +1515,10 @@ BTS_age_interval10_CHN_general <- BTS_age_interval10 %>%
   dplyr::filter(ISO3 == "CHN" & Target_Population != 1) %>% 
   dplyr::select(1,5) %>% 
   dplyr::count(ageBins) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+  dplyr::mutate(Proportion = round((n/sum(n))*100,4),
                 Data_Source = "BTS CHN age") 
+
+# sum(BTS_age_interval10_CHN_general$Proportion) ## 100
 ```
 
 Next, I Combined two CHN data to Bayesian multinomial test in two different classifications (PsyStages and 10-year-old). One is PsyStages.
@@ -1647,8 +1732,10 @@ Combine education year with the other categories respectively.
   tidyr::pivot_longer(cols = c(College_and_above,Below_college),
                       names_to = "Educational_attainment",
                       values_to = "Num") %>% 
-  dplyr::mutate(Proportion = round(Num/sum(Num),2)*100,
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,4),
                 Data_source = "Journal")
+
+# sum(Journal_college2$Proportion)  ## 100
 
 
 ## combine high school data
@@ -1660,8 +1747,10 @@ Journal_high_school2  <- #Journal_edu2_year_simul_sum %>%
   tidyr::pivot_longer(cols = c(High_school_and_above,Below_high_school),
                       names_to = "Educational_attainment",
                       values_to = "Num") %>% 
-  dplyr::mutate(Proportion = round(Num/sum(Num),2)*100,
-                Data_source = "Journal")  ## 注意，计算round时*100的位置前后有所不同，后需要确认更改
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+                Data_source = "Journal")  
+
+# sum(Journal_high_school2$Proportion) ## 100
 ```
 
 Now, in this part, I process chinese subjects' edu data of BTS
@@ -1737,8 +1826,10 @@ BTS_college <- BTS_edu_CHN %>%
   dplyr::summarise(n=n()) %>% ## there are 995 NA values
   dplyr::filter(!is.na(College_cate)) %>% 
   dplyr::rename(Educational_attainment = 1, Num = 2) %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,4),
                 Data_source = "BTS Chinese")
+
+ # sum(BTS_college$Proportion) ## 100
   
   
 BTS_highschool <- BTS_edu_CHN %>%
@@ -1746,8 +1837,10 @@ BTS_highschool <- BTS_edu_CHN %>%
   dplyr::summarise(n=n()) %>% ## there are 1647 NA values
   dplyr::filter(!is.na(Highschool_cate)) %>% 
   dplyr::rename(Educational_attainment = 1, Num = 2) %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,4),
                 Data_source = "BTS Chinese")
+
+# sum(BTS_highschool$Proportion) ## 100
 
 
 ## Combine data
@@ -1862,25 +1955,28 @@ CFPS2018_gender <- df_CFPS2018 %>%
   dplyr::rename(Gender = QA002) %>%
   dplyr::count(Gender) %>%
   dplyr::filter(!is.na(Gender)) %>%
-  dplyr::mutate(Proportion = round(n / sum(n), 2) * 100,
+  dplyr::mutate(Proportion = round((n / sum(n))*100, 4),
                 Data_Source = "CFPS2018",
                 Gender= ifelse(Gender == 1, "Male", "Female")) %>%
   dplyr::select(Data_Source, Gender, Proportion)
+
+# sum(CFPS2018_gender$Proportion) ## 100
 ```
 
 Secondly, I converted data format and combined three data sources.
 
 ```{r}
-# all data
 ## Convert H1_gender data format
 ## general
 H1_gender_general2 <- H1_gender_general %>% 
   dplyr::select(1:2) %>% 
   dplyr::group_by(Gender) %>% 
   dplyr::summarise(n = sum(n)) %>% 
-  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
+  dplyr::mutate(Proportion = round((n/sum(n))*100,4),
                 Data_Source = "Chinese subjects pool") %>% 
   dplyr::ungroup()
+
+# sum(H1_gender_general2$Proportion) ## 100
 
 H2_gender_general <- bind_rows(Census7_gender,CFPS2018_gender,H1_gender_general2)
 ```
@@ -1941,14 +2037,17 @@ In this part, I calculate data based on sepcial terget population
 H2_gender_college <-  Journal_gender_special_college %>% 
   dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
                    Female_Num = sum(Female_Num,na.rm = TRUE),
-                   Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
-                   Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
+                   Male_Proportion = round((Male_Num/(Male_Num + Female_Num))*100,4),
+                   Female_Proportion = round((Female_Num/(Male_Num + Female_Num))*100,4),
                    Data_Source = "Target_population_special_College")
+
+# sum(H2_gender_college$Male_Proportion) + sum(H2_gender_college$Female_Proportion) ## 100
+
 
 ## The total data we compared is from *the Outline for Women's Development in China (2021-2030)* released by the National Bureau of Statistics of China in 2022.
 
 H2_gender_bayes_special_college <- data.frame(Gender = c("Male","Female"),
-                                              Journal = c(45,55),
+                                              Journal = c(44.8077,55.1923),
                                               Outline_Women = c(50,50))
 
 H2_BF_gender_special_college <- BayesMultiNomial(dataset = H2_gender_bayes_special_college,
@@ -2023,8 +2122,10 @@ H2_age_general <- H1_age_general %>%
   dplyr::select(1:2) %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n = sum(n)) %>% 
-  dplyr::mutate(Proportion = round(n/sum(n)*100,2)) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,4)) %>% 
   dplyr::ungroup()
+
+# sum(H2_age_general$Proportion) ## 100.0001 fill to percent 100?
 ```
 
 Finally, I visualized all Chinese age data and combined figure of gender and age.
@@ -2108,12 +2209,14 @@ H2_age_Psystages_bayes_general <- bind_rows(BTS_age_PsyStages_CHN_general,Sim_Jo
   dplyr::select(1:2) %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n = sum(n)) %>% 
-  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
-                Data_Source = "Chinese subjects pool") %>% # sum(H2_age_general_bayes$Proportion) ## 100.01
+  dplyr::mutate(Proportion = round(n/sum(n)*100,4),
+                Data_Source = "Chinese subjects pool") %>% 
   dplyr::add_row(Census7_age_PsyStages) %>% 
   dplyr::select(-2) %>% 
   tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
-  
+
+# sum(H2_age_Psystages_bayes_general$`Chinese subjects pool`) ## 100
+
 ## interval10
 Sim_Journal_age_interval103_general_prop <-  Sim_Journal_age_interval103_general_prop %>% 
   dplyr::rename(n = 2)
@@ -2122,11 +2225,13 @@ H2_age_inteval10_bayes_general <- bind_rows(BTS_age_interval10_CHN_general,Sim_J
   dplyr::select(1:2) %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n = sum(n)) %>% 
-  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
-                Data_Source = "Chinese subjects pool") %>% # sum(H2_age_general_bayes$Proportion) ## 100.01
+  dplyr::mutate(Proportion = round(n/sum(n)*100,4),
+                Data_Source = "Chinese subjects pool") %>% 
   dplyr::add_row(Census7_age_interval10) %>% 
   dplyr::select(-2) %>% 
   tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
+
+# sum(H2_age_inteval10_bayes_general$`Chinese subjects pool`) ## 100.0001 fill to percent 100?
 
 ## calculate bayes factor
 H2_BF_age_Psystages_general <- BayesMultiNomial(dataset = H2_age_Psystages_bayes_general,
@@ -2167,8 +2272,11 @@ Census7_college <- Census7_edu_adults %>%
   tidyr::pivot_longer(cols = c(1,2),
                       names_to = "Educational_attainment",
                       values_to = "Num") %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,4),
                 Data_source = "Census7")
+
+# sum(Census7_college$Proportion) ## 100
+
 
 Census7_high_school <- Census7_edu_adults %>% 
   dplyr::summarise(Below_high_school = sum(across(3:6)),
@@ -2176,8 +2284,10 @@ Census7_high_school <- Census7_edu_adults %>%
   tidyr::pivot_longer(cols = c(1,2),
                       names_to = "Educational_attainment",
                       values_to = "Num") %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,4),
                 Data_source = "Census7")
+
+# sum(Census7_high_school$Proportion) ## 100
 ```
 
 receive edu data of CFPS2018
@@ -2203,26 +2313,34 @@ CFPS2018_edu <- df_CFPS2018 %>%
 
 CFPS2018_edu_college <- data.frame(Educational_attainment = c("Below_college","College_and_above"),
                                    Num = c(2846+756+3598+5273,3058+1648+1335+112+7)) %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,4),
                 Data_source = "CFPS2018")
+
+# sum(CFPS2018_edu_college$Proportion) ## 100
+
 
 CFPS2018_edu_high_school <- data.frame(Educational_attainment = c("Below_high_school","High_school_and_above"),
                                    Num = c(2846+756+3598+5273+3058,1648+1335+112+7)) %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,4),
                 Data_source = "CFPS2018")
+
+# sum(CFPS2018_edu_high_school$Proportion) ## 100
 ```
 
 Combine multiple edu data
 
 ```{r}
 ## College
-Chinese_subjects_pools_edu_college <- H1_edu_college %>% 
-  dplyr::select(-3) %>% 
-  dplyr::group_by(Educational_attainment) %>% 
-  dplyr::summarise(Num = sum(Num)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+Chinese_subjects_pools_edu_college <- H1_edu_college %>%
+  dplyr::select(-3) %>%
+  dplyr::group_by(Educational_attainment) %>%
+  dplyr::summarise(Num = sum(Num)) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,4),
                 Data_source = "Chinese subjects pools")
+
+# sum(Chinese_subjects_pools_edu_college$Proportion) ## 100
+
 
 H2_edu_college <- bind_rows(Chinese_subjects_pools_edu_college,Census7_college,CFPS2018_edu_college)
 
@@ -2233,8 +2351,11 @@ Chinese_subjects_pools_edu_highschool <- H1_edu_highschool %>%
   dplyr::group_by(Educational_attainment) %>% 
   dplyr::summarise(Num = sum(Num)) %>% 
   dplyr::ungroup() %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,4),
                 Data_source = "Chinese subjects pools")
+
+# sum(Chinese_subjects_pools_edu_highschool$Proportion) ## 100
+
 
 H2_edu_highschool <- bind_rows(Chinese_subjects_pools_edu_highschool,Census7_high_school,CFPS2018_edu_high_school)  %>%
   dplyr::mutate(Data_source = factor(Data_source,
@@ -2380,9 +2501,9 @@ Journal_region_multiple_general_tab <-  Journal_region_multiple_general %>%
 Journal_region_general_tab <-bind_rows(Journal_region_single_general_tab,Journal_region_multiple_general_tab) %>% 
   dplyr::group_by(Subjects_Recruitment_Area) %>% 
   dplyr::summarise(n = sum(n),.groups = "drop") %>% 
-  dplyr::mutate(Proportion = (round(n/sum(n),2))*100)
+  dplyr::mutate(Proportion = (round(n/sum(n)*100,4)))
 
-# sum(Journal_region_general_tab$Proportion) ## 100
+sum(Journal_region_general_tab$Proportion) ## 100
 
 
 Journal_region_general_tab2 <- Journal_region_general_tab %>% 
@@ -2410,7 +2531,7 @@ Census7_3 <- data.frame(Region = c("台湾","香港","澳门"),n =c(23561236,747
 
 
 Census7_region <- rbind(Census7_region,Census7_3) %>% 
-  dplyr::mutate(Proportion = round((n / sum(n))*100,2)) %>% 
+  dplyr::mutate(Proportion = round(n / sum(n)*100,4)) %>% 
   dplyr::mutate(Count_Bins = cut(Proportion,
                                       breaks = c(-Inf,1,5,10,Inf),
                                       labels = c("<1","1~5","5~10",">=10")),
@@ -2420,6 +2541,7 @@ Census7_region <- rbind(Census7_region,Census7_3) %>%
 Census7_region$Region <- gsub(" ", "", Census7_region$Region)  
 
 # sum(Census7_region$n) 1,441,497,378
+# sum(Census7_region$Proportion) ## 100
 ```
 
 The third step, I processed of provincial distribution of population for CFPS2018.
@@ -2433,13 +2555,13 @@ CFPS2018_region <- data.frame(table(df_CFPS2018$PROVCD18)) %>%
                              "山东","河南","湖北","湖南","广东","广西","海南",
                              "重庆","四川","贵州","云南","西藏","陕西","甘肃",
                              "青海","宁夏","新疆")) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+  dplyr::mutate(Proportion = round((n/sum(n))*100,4),
                 Count_Bins = cut(Proportion,
                                       breaks = c(-Inf,1,5,10,Inf),
                                       labels = c("<1","1~5","5~10",">=10")),
                 Data_Source = "CFPS2018")
 
-# sum(CFPS2018_region$n) 37,104
+# sum(CFPS2018_region$Proportion) ## 100.0001 fil to percent 100?
 ```
 
 Combine all region data and load color data
@@ -2617,8 +2739,13 @@ BTS_gender_allcountry <- BTS_gender_allcountry %>%
 
 BTS_gender_allcountry_prop <- BTS_gender_allcountry %>% 
   dplyr::group_by(ISO3) %>% 
-  dplyr::mutate(Proportion = round(n/sum(n),2)*100) %>%
+  dplyr::mutate(Proportion = round(n/sum(n)*100,4)) %>%
   dplyr::ungroup()
+
+BTS_gender_allcountry_sum_prop <- BTS_gender_allcountry_prop %>% 
+  dplyr::group_by(ISO3) %>% 
+  dplyr::mutate(sum = sum(Proportion)) %>% 
+  dplyr::ungroup() ## all sum are 100
 
 ## Set factor levels according to gender proportion
 BTS_gender_allcountry_factor <- BTS_gender_allcountry_prop %>% 
@@ -2676,20 +2803,25 @@ BTS_Psystages_allcountry <- BTS_age_PsyStages %>%
   dplyr::filter(ISO3 != "CHN") %>% ## drop Chinese data
   dplyr::group_by(ISO3,ageBins) %>% 
   dplyr::summarise(n=n()) %>% 
-  dplyr::mutate(Proportion = round(n/sum(n)*100,2)) %>% 
+  dplyr::mutate(Proportion = round(n/sum(n)*100,4)) %>% 
+  dplyr::ungroup()
+
+BTS_Psystages_allcountry_sum_prop <- BTS_Psystages_allcountry %>% 
+  dplyr::group_by(ISO3) %>% 
+  dplyr::summarise(sum = sum(Proportion)) %>% 
   dplyr::ungroup()
 
 
 ## Add Chinese data
-Journal_BTS_PsyStages_CHN <- Sim_Journal_age_PsyStages3_prop %>% 
+Journal_BTS_PsyStages_CHN <- Sim_Journal_age_PsyStages3_general_prop %>% 
   dplyr::rename(n = 2) %>% 
   # dplyr::bind_rows(BTS_age_PsyStages_CHN_total) %>%  
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n=sum(n)) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+  dplyr::mutate(Proportion = round((n/sum(n))*100,4),
                 ISO3 = "CHN")
 
-# sum(Journal_BTS_PsyStages_CHN$Proportion) # 100
+# sum(Journal_BTS_PsyStages_CHN$Proportion)  ## 100
   
 
 ## Combine data
@@ -2698,7 +2830,7 @@ H3_PsyStages <- dplyr::bind_rows(BTS_Psystages_allcountry,Journal_BTS_PsyStages_
 
 ## Set factor
 H3_PsyStages_factor <- H3_PsyStages %>% 
-  dplyr::filter(ageBins == "18~25") %>% 
+  dplyr::filter(ageBins == "<=17") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(ISO3)
 
