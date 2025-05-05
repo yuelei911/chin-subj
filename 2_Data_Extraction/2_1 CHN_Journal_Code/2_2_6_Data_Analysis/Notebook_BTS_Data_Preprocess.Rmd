@@ -629,6 +629,13 @@ process attainment education of BTS
 #   dplyr::mutate(Education = case_when(Education == ""))
 ```
 
+Process Article_ID
+```{r}
+BTS[[1]] <- BTS[[1]] %>% 
+  dplyr::mutate(Article_Id = "Anllo_et_al_2023")
+```
+
+
 
 ```{r include=FALSE}
 ## Here, I remove some data sets to reduce data set clutter.
@@ -639,6 +646,6 @@ gc()
 
 # Save Rdata
 ```{r}
-save(BTS0, BTS, WEIRD, Countrycodelist_iso2_iso3,file = "BTS.Rdata")
+save(BTS, WEIRD, Countrycodelist_iso2_iso3,file = "BTS.Rdata")
 ```
 

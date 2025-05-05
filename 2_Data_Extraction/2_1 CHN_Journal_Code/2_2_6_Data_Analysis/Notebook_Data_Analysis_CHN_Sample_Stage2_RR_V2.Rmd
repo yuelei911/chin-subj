@@ -59,20 +59,14 @@ load("df_chinese_subj_rr_stage1.Rdata")
 
 load("BTS.Rdata")
 
+load("D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_coding.Rdata")
+
 ## Here, I remove some data sets to reduce data set clutter.
 rm(df,df_PSA001,df_stage2_Journal_Code,Group1_bind,Group24567_bind,Group3_bind,df_regionCode)
 ```
 
-## read the coding of BTS
-
-```{r}
-BTS_coding <- readxl::read_xlsx("Chin_Subj_BTS_Coding_CE.xlsx") 
-# %>%
-#   dplyr::filter(Coder == "final")
-```
 
 ## combine raw data and coding data of BTS
-
 ```{r}
 for (i in seq_along(BTS)) {
   
@@ -1301,7 +1295,7 @@ for(i in seq_along(BTS1)){
   
   BTS_name <- names(BTS1)[i]
   
-  if("Age" %in% names(BTS[[i]])){
+  if("Age" %in% names(BTS1[[i]])){
     
     BTS_age <- BTS1[[i]] %>% 
       dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
@@ -2704,6 +2698,19 @@ H2_BF_Journal_CFPS2018_region_general <- BayesMultiNomial(dataset = H2_region_ba
 
 ## Test the 3st hypothesis
 
+
+Before starting the subsequent analysis, I need to remove those countries whose total sample size is less than 30.
+```{r}
+H3_country_filter <- BTS_Overview2 %>% 
+  dplyr::filter(n > 30)
+
+H3_country_filter <-  merge(H3_country_filter,Countrycodelist_iso2_iso3,by = "ISO2",all.x = TRUE)
+
+H3_country_filter <- H3_country_filter %>% 
+  dplyr::pull(ISO3)
+```
+
+
 ### Gender
 
 As with the first two hypotheses, I dealt with gender data first.
@@ -2719,14 +2726,8 @@ BTS_gender_allcountry <- lapply(BTS_gender_list, function(df){
 BTS_gender_allcountry <- do.call(rbind, BTS_gender_allcountry) 
 
 ## Filter n > 30
-BTS_gender_allcountry_tab <- BTS_gender_allcountry %>%
-  dplyr::group_by(ISO3) %>%
-  dplyr::summarise(n=n(),.groups = "drop") %>% 
-  dplyr::filter(n > 30) %>%
-  dplyr::pull(ISO3)
-
 BTS_gender_allcountry <- BTS_gender_allcountry %>% 
-  dplyr::filter(ISO3 %in% BTS_gender_allcountry_tab) %>% 
+  dplyr::filter(ISO3 %in% H3_country_filter) %>% 
   dplyr::group_by(ISO3,Gender) %>%
   dplyr::summarise(n = n()) %>%
   dplyr::ungroup() %>%
@@ -2799,13 +2800,14 @@ Secondly, I processed age data. Similarity, I processed age data in two classifi
 
 ```{r}
 BTS_Psystages_allcountry <- BTS_age_PsyStages %>% 
-  dplyr::filter(ISO3 %in% BTS_gender_allcountry_tab) %>% 
+  dplyr::filter(ISO3 %in% H3_country_filter) %>% 
   dplyr::filter(ISO3 != "CHN") %>% ## drop Chinese data
   dplyr::group_by(ISO3,ageBins) %>% 
   dplyr::summarise(n=n()) %>% 
   dplyr::mutate(Proportion = round(n/sum(n)*100,4)) %>% 
   dplyr::ungroup()
 
+## calculate total sum
 BTS_Psystages_allcountry_sum_prop <- BTS_Psystages_allcountry %>% 
   dplyr::group_by(ISO3) %>% 
   dplyr::summarise(sum = sum(Proportion)) %>% 
