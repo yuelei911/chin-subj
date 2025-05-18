@@ -83,82 +83,31 @@ for (i in seq_along(BTS)) {
 
 ```
 
-Here, I used self-defined function in Stage1 to calculate Bayesian multinomial test.
+Here, I define the function for converting chi square values and df to Bayesian factors.
 
-# Define a Func to calculate Bayesian multinomial test
-
-## Algorithm in R
-
-```         
-lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
-lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
-
-LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
-```
-
-Here, `alphas` defined the prior Dirichlet distribution, e.g., noninformative prior is a vector of $1$ s, `counts` are the observed frequencies.
-
-To use the algorithm in R, we defined a function here:
-
+The purpose of subtracting thresh in the froot() function is to compute the optimal noncentral parameter lambda. To calculate the Bayes factor, use the front_bf() function.
 ```{r}
-BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior = TRUE, prior = NA){
-  # datase - the input dataframe
-  # factor - column name of the factor,
-  # observed - column name of the column contains counts information for the observed,
-  # expected - column name of the column contains counts information for the expected,
-  # default_prior - whether use the default, defused prior
-  # prior - priors defined by users
-  
-  fact_level <- dataset %>% dplyr::select(all_of(factor)) %>% dplyr::pull()
-  observed_data <- dataset %>% dplyr::select(all_of(observed)) %>% dplyr::pull()
-  names(observed_data) <- fact_level
-  expected_data <- dataset %>% dplyr::select(all_of(expected)) %>% dplyr::pull()
-  n_levels <- length(observed_data)
-  
-  
-  if (default_prior & all(is.na(prior))) {
-    prior <- rep(1, n_levels)
-  } else{
-    if (is.character(prior)){
-      prior <- dataset %>% dplyr::select(all_of(prior)) %>% dplyr::pull()
-    } else if (is.array(prior)){
-      prior <-  prior
-    } else if (is.numeric(prior)){
-      prior <-  prior
-    } else{
-      print("prior much a column of the input data or a vector")
-    }
-  }
-  
-  alphas <- prior
-  counts <- observed_data
-  thetas <- expected_data
-  
-  if(sum(thetas) != 1) {
-    thetas <- thetas/sum(thetas)
-    }
-  
-  expected <- setNames(sum(counts)*thetas, names(counts))
-  
-  lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
-  lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
-
-  if (any(rowSums(cbind(thetas, counts)) == 0)) {
-    LogBF10 <- (lbeta.xa-lbeta.a)
-  } else {
-     LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
-  }
-
-  BF <- data.frame(LogBF10 = LogBF10,
-                   BF10    = exp(LogBF10),
-                   BF01    = 1/exp(LogBF10))
-
-  return(list(BF       = BF,
-              expected = expected))
-  
+froot_bf <- function(x, lambda, df){
+ dchisq(x, df, ncp = lambda)/dchisq(x, df)
 }
-```
 
+froot <- function(x, lambda, thresh, df){
+ dchisq(x, df, ncp = lambda)/dchisq(x, df) - thresh
+ }
+
+ f1 <- function(lambda, thresh, df){
+ r <- uniroot(froot, lambda = lambda, thresh = thresh, df = df, c(0.01, 1000))$root
+ }
+ vf1 <- Vectorize(f1)
+ 
+ UMPBT <- function(df, thresh){
+ optout <- optimize(vf1, c(0, 100),thresh = thresh, df = df)
+ z <- optout$minimum
+ return(z)
+ }
+```
+ 
+ 
 At this point, I have finished loading the package and data. Next, I analyzed the data and visualized it according to the logic of the written protocal.
 
 I began by analyzing the basic case of the two data sets (BTS and Chinese journals).
@@ -194,10 +143,6 @@ Journal_sample_size <- Journal %>%
 
 ## Here, I remove some data sets to reduce data set clutter.
 rm(Journal_articles_num,Journal_study_num,df_stage2_Journal_Code2)
-
-
-## Save Journal to explore analysis
-save(Journal, file ="Journal.Rdata")
 ```
 
 Meanwhile, we process the special target population
@@ -293,8 +238,6 @@ for (i in 1:nrow(BTS_Overview2_idx)) {
 
 
 sum(BTS_Overviewfill$FloorPro)
-
-??floor
 ```
 
 ## The reported situation of Chinese Journals
@@ -376,8 +319,6 @@ Journal_report <- rbind(Journal_report,Journal_education_occupation_table) %>%
                                               "SES","Ethnicity","Religious")),
                 proportion = proportion *100)
 ```
-
-
 
 ### Visualize subjects information reported situations in Chinese journals
 
@@ -586,7 +527,7 @@ BTS_gender_CHN_general <- BTS_gender_CHN %>%
 ## Combine CHN journal data and set factor
 H1_gender_general <- BTS_gender_CHN_general %>% 
   dplyr::add_row(Gender = c("Female","Male"), n = c(273804,234047),
-                 Proportion = c(54,46),Data_Source = "Journal")   ## Here, enter data manually.
+                 Proportion = c(54,46),Data_Source = "Journal")   ## Here, enter data manually.  ## notice this proportion
 
 H1_gender_factor_general <- H1_gender_general %>% 
   dplyr::filter(Gender == "Female") %>% 
@@ -617,24 +558,44 @@ H1_Fig_gender_general <- ggplot(data = H1_gender_general,aes(Data_Source,Proport
 H1_Fig_gender_general 
 ```
 
-Here I tested whether the gender proportion distribution from Chinese five journal data are similar to that of the BTS data. I used Bayesian multinomial test (Bayesian goodness-of-fit test) to examine whether the observed (BTS data) fit the expected (Chinese five journal data).
+Here I tested whether the gender proportion distribution from Chinese five journal data are similar to that of the BTS data. I used the self-define func to calculate.
 
 $H_0$: $\theta = c$, where $c$ is defined by Chinese five journal data; $H_1$: $\theta$ is free to vary.
 
 I compared the general population between the two.
 
 ```{r}
+## convert data
 H1_gender_bayes_general <- H1_gender_general %>% 
-  dplyr::select(1,3:4) %>% 
-  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
+  dplyr::filter(Data_Source == "BTS Chinese") %>% 
+  dplyr::select(Gender, `BTS Chinese` = n) %>% 
+  dplyr::left_join(H1_gender_general %>% 
+                     filter(Data_Source == "Journal") %>% 
+                     select(Gender, Journal = Proportion),
+                   by = "Gender") %>% 
+  dplyr::mutate(Journal = Journal*0.01)
 
-H1_BF_gender_general <- BayesMultiNomial(dataset = H1_gender_bayes_general,
-                                             factor = "Gender",
-                                             observed = "BTS Chinese",
-                                             expected = "Journal")
+## calculate Chi-square
+observed1 <- H1_gender_bayes_general$`BTS Chinese`
+expected1 <- H1_gender_bayes_general$Journal
+
+H1_Chi_gender_general <- chisq.test(x = observed1, p = expected1)
+H1_Chi_gender_general
+
+
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_gender_general$parameter,thresh = 6)
+
+BF1 <- froot_bf(x = H1_Chi_gender_general$statistic, lambda = lambda, df = H1_Chi_gender_general$parameter)
+
+H1_BF_gender_general <- log(BF1)
+
+H1_BF_gender_general 
+
+## rm 
+rm(observed1,expected1,BF1)
 ```
 
-However, I found there no different between BTS data and the general population of Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_general$BF$LogBF10`.
 
 In this part, I will analysis gender based on the special target population.
 
@@ -1523,37 +1484,82 @@ BTS_age_interval10_CHN_general <- BTS_age_interval10 %>%
 # sum(BTS_age_interval10_CHN_general$Proportion) ## 100
 ```
 
+
 Next, I Combined two CHN data to Bayesian multinomial test in two different classifications (PsyStages and 10-year-old). One is PsyStages.
 
 ```{r}
-## general population 
+## convert data format 
 H1_PsyStages_bayes_general <- Sim_Journal_age_PsyStages3_general_prop %>% 
-  dplyr::rename(n = 2) %>% 
-  bind_rows(BTS_age_PsyStages_CHN_general) %>% 
-  dplyr::select(-2) %>% 
-  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
+  dplyr::mutate(Data_Source = Proportion) %>%  
+  dplyr::select(-c(sim1,Proportion)) %>% 
+  dplyr::rename(Journal = 2) %>% 
+  dplyr::left_join(BTS_age_PsyStages_CHN_general %>%
+                     mutate(Data_Source = n) %>%
+                     rename(`BTS CHN age` = Data_Source) %>% 
+                     select(-c(n,Proportion)),
+                   by = "ageBins") %>% 
+  dplyr::mutate(Journal = Journal*0.01)
 
-H1_BF_PsyStages_general <- BayesMultiNomial(dataset = H1_PsyStages_bayes_general,
-                                          factor = "ageBins",
-                                          observed = "BTS CHN age",
-                                          expected = "Journal")
+
+## calculate Chi-square
+observed1 <- H1_PsyStages_bayes_general$`BTS CHN age`
+expected1 <- H1_PsyStages_bayes_general$Journal
+
+H1_Chi_PsyStages_general <- chisq.test(x = observed1, p = expected1)
+H1_Chi_PsyStages_general
+
+
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_PsyStages_general$parameter,thresh = 6)
+
+BF1 <- froot_bf(x = H1_Chi_PsyStages_general$statistic, lambda = lambda, df = H1_Chi_PsyStages_general$parameter)
+
+H1_BF_PsyStages_general <- log(BF1)
+
+H1_BF_PsyStages_general
+
+## rm
+# rm(observed1,expected1,BF1)
 ```
 
 The other is interval10.
 
 ```{r}
-## general population 
+## convert data format 
 H1_interval10_bayes_general <- Sim_Journal_age_interval103_general_prop %>% 
-  dplyr::rename(n = 2) %>% 
-  bind_rows(BTS_age_interval10_CHN_general) %>%
-  dplyr::select(-2) %>% 
-  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
+  dplyr::mutate(Data_Source = Proportion) %>%  
+  dplyr::select(-c(sim1,Proportion)) %>% 
+  dplyr::rename(Journal = 2) %>% 
+  dplyr::left_join(BTS_age_interval10_CHN_general %>%
+                     mutate(Data_Source = n) %>%
+                     rename(`BTS CHN age` = Data_Source) %>% 
+                     select(-c(n,Proportion)),
+                   by = "ageBins") %>% 
+  dplyr::mutate(Journal = Journal*0.01)
 
 
-H1_BF_interval10_general <- BayesMultiNomial(dataset = H1_interval10_bayes_general,
-                                          factor = "ageBins",
-                                          observed = "BTS CHN age",
-                                          expected = "Journal")
+## calculate Chi-square
+observed1 <- H1_interval10_bayes_general$`BTS CHN age`
+expected1 <- H1_interval10_bayes_general$Journal
+
+H1_Chi_interval10_general <- chisq.test(x = observed1, p = expected1)
+H1_Chi_interval10_general 
+
+
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_interval10_general$parameter,thresh = 6)
+
+BF1 <- froot_bf(x = H1_Chi_interval10_general$statistic, 
+                lambda = lambda, 
+                df = H1_Chi_interval10_general$parameter)
+
+H1_BF_interval10_general <- log(BF1)
+
+H1_BF_interval10_general
+
+
+## rm
+rm(observed1,expected1,BF1)
 ```
 
 For different target population, I compared general population for them firstly, I found strong evidence for $H_1$ that the age distribution from the Chinese subjects data of BTS data is different form the Chinese journals data, the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_PsyStages_general$BF$LogBF10`.
@@ -1692,6 +1698,7 @@ Journal_college_decimal <- Journal_college  %>%
                    Below_college = sum(Below_college_tab)) ## sum 9,315
 ```
 
+
 The third category is 'high shcool and above' and 'below high school'
 
 ```{R}
@@ -1715,6 +1722,7 @@ Journal_high_school_decimal <- Journal_high_school  %>%
   dplyr::summarise(High_school_and_above = sum(High_school_and_above_tab),
                    Below_high_school = sum(Below_high_school_tab)) ## 4,685
 ```
+
 
 Combine education year with the other categories respectively.
 
@@ -1754,6 +1762,7 @@ Journal_high_school2  <- #Journal_edu2_year_simul_sum %>%
 
 # sum(Journal_high_school2$Proportion) ## 100
 ```
+
 
 Now, in this part, I process chinese subjects' edu data of BTS
 
@@ -1851,6 +1860,7 @@ H1_edu_college <- rbind(Journal_college2,BTS_college)
 H1_edu_highschool <- rbind(Journal_high_school2,BTS_highschool)
 ```
 
+
 visulize the edu data
 
 ```{r}
@@ -1900,15 +1910,35 @@ Here I tested whether the educatinal attainment proportion distribution from Chi
 First, I calculate the first category: college.
 
 ```{r}
-H1_edu_college_bayes <- H1_edu_college %>% 
-  dplyr::select(1,3:4) %>% 
-  tidyr::pivot_wider(names_from = Data_source, values_from = Proportion)
+## convert data
+H1_edu_college_bayes  <- H1_edu_college %>% 
+  dplyr::filter(Data_source == "BTS Chinese") %>% 
+  dplyr::select(Educational_attainment, `BTS Chinese` = Num) %>% 
+  dplyr::left_join(H1_edu_college %>% 
+                     filter(Data_source == "Journal") %>% 
+                     select(Educational_attainment, Journal = Proportion),
+                   by = "Educational_attainment") %>% 
+  dplyr::mutate(Journal = Journal*0.01)
+
+## calculate Chi-square
+observed1 <- H1_edu_college_bayes$`BTS Chinese`
+expected1 <- H1_edu_college_bayes$Journal
+
+H1_Chi_edu_college <- chisq.test(x = observed1, p = expected1)
+H1_Chi_edu_college
 
 
-H1_BF_edu_college <- BayesMultiNomial(dataset = H1_edu_college_bayes,
-                                      factor = "Educational_attainment",
-                                      observed = "BTS Chinese",
-                                      expected = "Journal")
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_edu_college$parameter,thresh = 6)
+
+BF1 <- froot_bf(x = H1_Chi_edu_college$statistic, lambda = lambda, df = H1_Chi_edu_college$parameter)
+
+H1_BF_edu_college  <- log(BF1)
+
+H1_BF_edu_college 
+
+## rm 
+rm(observed1,expected1,BF1)
 ```
 
 I found strong evidence for the $H_1$ that the college proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_college$BF$LogBF10`.
@@ -1916,15 +1946,35 @@ I found strong evidence for the $H_1$ that the college proportion from Chinese f
 and then, I continue processing the second category: high school.
 
 ```{r}
-H1_edu_highschool_bayes <- H1_edu_highschool %>% 
-  dplyr::select(1,3:4) %>% 
-  tidyr::pivot_wider(names_from = Data_source, values_from = Proportion)
+## convert data
+H1_edu_highschool_bayes  <- H1_edu_highschool %>% 
+  dplyr::filter(Data_source == "BTS Chinese") %>% 
+  dplyr::select(Educational_attainment, `BTS Chinese` = Num) %>% 
+  dplyr::left_join( H1_edu_highschool %>% 
+                     filter(Data_source == "Journal") %>% 
+                     select(Educational_attainment, Journal = Proportion),
+                   by = "Educational_attainment") %>% 
+  dplyr::mutate(Journal = Journal*0.01)
+
+## calculate Chi-square
+observed1 <- H1_edu_highschool_bayes$`BTS Chinese`
+expected1 <- H1_edu_highschool_bayes$Journal
+
+H1_Chi_edu_highschool <- chisq.test(x = observed1, p = expected1)
+H1_Chi_edu_highschool 
 
 
-H1_BF_edu_highschool <- BayesMultiNomial(dataset = H1_edu_highschool_bayes,
-                                      factor = "Educational_attainment",
-                                      observed = "BTS Chinese",
-                                      expected = "Journal")
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_edu_highschool$parameter,thresh = 6)
+
+BF1 <- froot_bf(x = H1_Chi_edu_highschool$statistic, lambda = lambda, df = H1_Chi_edu_highschool$parameter)
+
+H1_BF_edu_highschool  <- log(BF1)
+
+H1_BF_edu_highschool
+
+## rm 
+rm(observed1,expected1,BF1)
 ```
 
 Similarity, I also found strong evidence for the $H_1$ that the high schools proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_highschool$BF$LogBF10`.
@@ -1965,6 +2015,7 @@ CFPS2018_gender <- df_CFPS2018 %>%
 # sum(CFPS2018_gender$Proportion) ## 100
 ```
 
+
 Secondly, I converted data format and combined three data sources.
 
 ```{r}
@@ -1982,6 +2033,7 @@ H1_gender_general2 <- H1_gender_general %>%
 
 H2_gender_general <- bind_rows(Census7_gender,CFPS2018_gender,H1_gender_general2)
 ```
+
 
 And then, I combined all Chinese gender data and visualized them.
 
@@ -2008,34 +2060,62 @@ H2_Fig_gender_general
 Finally, I calculated the bayes factor for gender.
 
 ```{r}
-## general population
+# convert format data
 H2_gender_bayes_general <- H2_gender_general %>% 
-  dplyr::select(2,3,1) %>% 
-  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
+  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion) %>% 
+  dplyr::mutate(`Chinese subjects pool` = ifelse(Gender == "Male", 259134,298258)) %>% 
+  dplyr::select(-2) %>% 
+  dplyr::slice(-c(3:4)) %>% 
+  dplyr::mutate(Census7 = Census7 * 0.01,
+                CFPS2018 = CFPS2018 * 0.01)
 
 
-H2_BF_gender_Census7_general <- BayesMultiNomial(dataset = H2_gender_bayes_general,
-                                          factor = "Gender",
-                                          observed = "Chinese subjects pool",
-                                          expected = "Census7")
+# calculate Chi-square
+observed1 <- H2_gender_bayes_general$`Chinese subjects pool`
+expected1 <- H2_gender_bayes_general$Census7
+expected2 <- H2_gender_bayes_general$CFPS2018
+
+## Census7
+H2_Chi_gender_Census7_general <- chisq.test(x = observed1, p = expected1)
+H2_Chi_gender_Census7_general
+
+## CFPS2018
+H2_Chi_gender_CFPS2018_general <- chisq.test(x = observed1, p = expected2)
+H2_Chi_gender_CFPS2018_general
 
 
-H2_BF_gender_CFPS2018_general <- BayesMultiNomial(dataset = H2_gender_bayes_general,
-                                          factor = "Gender",
-                                          observed = "Chinese subjects pool",
-                                          expected = "CFPS2018")
+# calculate BF
+## Census7
+lambda <- UMPBT(df = H2_Chi_gender_Census7_general$parameter,thresh = 6)
+
+BF1 <- froot_bf(x = H2_Chi_gender_Census7_general$statistic, lambda = lambda, df = H2_Chi_gender_Census7_general$parameter)
+
+H2_BF_gender_Census7_general <- log(BF1)
+
+H2_BF_gender_Census7_general
+
+
+## CFPS2018
+lambda <- UMPBT(df = H2_Chi_gender_CFPS2018_general$parameter,thresh = 6)
+
+BF2 <- froot_bf(x = H2_Chi_gender_CFPS2018_general$statistic, lambda = lambda, df = H2_Chi_gender_CFPS2018_general$parameter)
+
+H2_BF_gender_CFPS2018_general  <- log(BF2)
+
+H2_BF_gender_CFPS2018_general 
+
+
+## rm 
+rm(observed1,expected1,expected2,BF1,BF2)
 
 ## general population
 ## 这里还继续处理，后续可以等BTS的编码后完善，类似的涉及到目标人群的BTS数据时都应如此。
 ```
 
-The calculation results show that there is no significant difference between the data in Chinese subjects pool and Census7 and CFPS2018, and the calculation results are $Log(BF_{10})$ = `r H2_BF_gender_Census7_total$BF$LogBF10` and $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_total$BF$LogBF10` respectively.
-
-for general population, I also found similar results. Census7: $Log(BF_{10})$ = `r H2_BF_gender_Census7_general$BF$LogBF10` , CFPS2018: $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_general$BF$LogBF10`
 
 In this part, I calculate data based on sepcial terget population
 
-```{r}
+```{r eval=FALSE, include=FALSE}
 H2_gender_college <-  Journal_gender_special_college %>% 
   dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
                    Female_Num = sum(Female_Num,na.rm = TRUE),
@@ -2116,6 +2196,7 @@ Census7_age_five5 <- Census7_age_five5 %>%
                                  "75~79","80~84","85~89", "90~94",">=95" )))
 ```
 
+
 Then, I convert the data format of H1_age.
 
 ```{r}
@@ -2130,6 +2211,7 @@ H2_age_general <- H1_age_general %>%
 # sum(H2_age_general$Proportion) ## 100.0001 fill to percent 100?
 ```
 
+
 Finally, I visualized all Chinese age data and combined figure of gender and age.
 
 general population
@@ -2142,7 +2224,7 @@ H2_Fig_age_general <- ggplot(data= Census7_age_five5,
                 y = Proportion,group = 1,color = "Chinese Subjects pool"),size =1)+
   scale_fill_manual(values=c("Census7"="#00BFC4")) +  
   scale_color_manual(values=c("Chinese Subjects pool" = "red")) +
-  scale_y_continuous(limits = c(0,50))+
+  scale_y_continuous(limits = c(0,45))+
   coord_flip() +
   labs(y="Proportion", x = "Age bins")+
   theme_classic()+
@@ -2198,27 +2280,58 @@ Census7_age_interval10 <- Census7_age %>%
   dplyr::mutate(n = ifelse(ageBins == ">61", n+118866,n),
                 Proportion = ifelse(ageBins == ">61", Proportion + 0.01,Proportion),
                 Data_Source = "Census7")
+```
 
 
-
-## For target population, I need combine two source data firstly.
+calculate BF
+```{r}
+# For target population, I need combine two source data firstly.
 ## PsySatges
 Sim_Journal_age_PsyStages3_general_prop <- Sim_Journal_age_PsyStages3_general_prop %>% 
   dplyr::rename(n =2)
-
 
 H2_age_Psystages_bayes_general <- bind_rows(BTS_age_PsyStages_CHN_general,Sim_Journal_age_PsyStages3_general_prop) %>% 
   dplyr::select(1:2) %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n = sum(n)) %>% 
-  dplyr::mutate(Proportion = round(n/sum(n)*100,4),
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
                 Data_Source = "Chinese subjects pool") %>% 
   dplyr::add_row(Census7_age_PsyStages) %>% 
-  dplyr::select(-2) %>% 
-  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
+  tidyr::pivot_wider(names_from = Data_Source,
+                     values_from = c(Proportion, n)) %>% 
+  dplyr::select(1,4,3) %>% 
+  dplyr::rename(`Chinese subjects pools` = 2,
+                Census7 = 3) %>% 
+  dplyr::mutate(Census7 = Census7 * 0.01)
 
-# sum(H2_age_Psystages_bayes_general$`Chinese subjects pool`) ## 100
 
+# calculate Chi-square
+observed1 <- H2_age_Psystages_bayes_general$`Chinese subjects pools`
+expected1 <- H2_age_Psystages_bayes_general$Census7
+
+
+## Census7
+H2_Chi_age_Psystages_general  <- chisq.test(x = observed1, p = expected1)
+H2_Chi_age_Psystages_general 
+
+
+# calculate BF
+## Census7
+lambda <- UMPBT(df = H2_Chi_age_Psystages_general$parameter,thresh = 6)
+
+BF1 <- froot_bf(x = H2_Chi_age_Psystages_general$statistic, lambda = lambda, df = H2_Chi_age_Psystages_general$parameter)
+
+H2_BF_age_Psystages_general  <- log(BF1)
+
+H2_BF_age_Psystages_general 
+
+
+## rm
+rm(observed1,expected1,BF1)
+```
+
+
+```{r}
 ## interval10
 Sim_Journal_age_interval103_general_prop <-  Sim_Journal_age_interval103_general_prop %>% 
   dplyr::rename(n = 2)
@@ -2230,22 +2343,36 @@ H2_age_inteval10_bayes_general <- bind_rows(BTS_age_interval10_CHN_general,Sim_J
   dplyr::mutate(Proportion = round(n/sum(n)*100,4),
                 Data_Source = "Chinese subjects pool") %>% 
   dplyr::add_row(Census7_age_interval10) %>% 
-  dplyr::select(-2) %>% 
-  tidyr::pivot_wider(names_from = Data_Source,values_from = Proportion)
-
-# sum(H2_age_inteval10_bayes_general$`Chinese subjects pool`) ## 100.0001 fill to percent 100?
-
-## calculate bayes factor
-H2_BF_age_Psystages_general <- BayesMultiNomial(dataset = H2_age_Psystages_bayes_general,
-                              factor = "ageBins",
-                              observed = "Chinese subjects pool",
-                              expected = "Census7")
+  tidyr::pivot_wider(names_from = Data_Source,
+                     values_from = c(Proportion, n)) %>% 
+  dplyr::select(1,4,3) %>% 
+  dplyr::rename(`Chinese subjects pools` = 2,
+                Census7 = 3) %>% 
+  dplyr::mutate(Census7 = Census7 * 0.01)
 
 
-H2_BF_age_interval10_general <- BayesMultiNomial(dataset = H2_age_inteval10_bayes_general,
-                              factor = "ageBins",
-                              observed = "Chinese subjects pool",
-                              expected = "Census7")
+# calculate Chi-square
+observed1 <- H2_age_inteval10_bayes_general$`Chinese subjects pools`
+expected1 <- H2_age_inteval10_bayes_general$Census7
+
+
+## Census7
+H2_Chi_age_inteval10_general  <- chisq.test(x = observed1, p = expected1)
+H2_Chi_age_inteval10_general 
+
+# calculate BF
+## Census7
+lambda <- UMPBT(df = H2_Chi_age_inteval10_general$parameter,thresh = 6)
+
+BF1 <- froot_bf(x = H2_Chi_age_inteval10_general$statistic, lambda = lambda, df = H2_Chi_age_inteval10_general$parameter)
+
+H2_BF_age_inteval10_general  <- log(BF1)
+
+H2_BF_age_inteval10_general 
+
+
+## rm
+rm(observed1,expected1,BF1)
 ```
 
 For age of H2, firstly, in general population, I found the Bayesian multinomial test shows strong evidence for comparing them in general population. PsyStages and interval10 are $Log(BF_{10})$ = `r H2_BF_age_Psystages_general$BF$LogBF10` and interval10: $Log(BF_{10})$ = `r H2_BF_age_interval10_general$BF$LogBF10` respectively.
@@ -2329,6 +2456,7 @@ CFPS2018_edu_high_school <- data.frame(Educational_attainment = c("Below_high_sc
 # sum(CFPS2018_edu_high_school$Proportion) ## 100
 ```
 
+
 Combine multiple edu data
 
 ```{r}
@@ -2363,6 +2491,7 @@ H2_edu_highschool <- bind_rows(Chinese_subjects_pools_edu_highschool,Census7_hig
   dplyr::mutate(Data_source = factor(Data_source,
                                      levels = c("CFPS2018","Census7","Chinese subjects pools")))
 ```
+
 
 And visualization
 
@@ -2411,43 +2540,64 @@ ggsave("H2_Fig_gender_age_edu_general.pdf",H2_Fig_gender_age_edu_general, device
 H2_Fig_gender_age_edu_general
 ```
 
+
 Calculate the BF of edu
 
 ```{r}
-## college
+# college
+## convert format
 H2_edu_college_bayes <- H2_edu_college %>% 
-  dplyr::select(1,3:4) %>% 
-  tidyr::pivot_wider(names_from = Data_source, values_from = Proportion)
-
-H2_BF_edu_college_Census7 <- BayesMultiNomial(dataset = H2_edu_college_bayes,
-                                          factor = "Educational_attainment",
-                                          observed = "Chinese subjects pools",
-                                          expected = "Census7")
-
-
-H2_BF_edu_college_CFPS2018 <- BayesMultiNomial(dataset = H2_edu_college_bayes,
-                                          factor = "Educational_attainment",
-                                          observed = "Chinese subjects pools",
-                                          expected = "CFPS2018")
+  tidyr::pivot_wider(names_from = Data_source, values_from = c(Num,Proportion)) %>% 
+  dplyr::select(1,2,6,7) %>% 
+  dplyr::rename(`Chinese subjects pools` = 2,
+                Census7 = 3,
+                CFPS2018 = 4) %>% 
+  dplyr::mutate(Census7 = Census7 * 0.01,
+                CFPS2018 = CFPS2018 * 0.01)
 
 
+# calculate Chi-square
+observed1 <- H2_edu_college_bayes$`Chinese subjects pools`
+expected1 <- H2_edu_college_bayes$Census7
+expected2 <- H2_edu_college_bayes$CFPS2018
 
-## high school
-H2_edu_highschool_bayes <- H2_edu_highschool %>% 
-  dplyr::select(1,3:4) %>% 
-  tidyr::pivot_wider(names_from = Data_source, values_from = Proportion)
+## Census7
+H2_Chi_Census7_edu_college <- chisq.test(x = observed1, p = expected1)
+H2_Chi_Census7_edu_college
 
-H2_BF_edu_highschool_Census7 <- BayesMultiNomial(dataset = H2_edu_highschool_bayes,
-                                          factor = "Educational_attainment",
-                                          observed = "Chinese subjects pools",
-                                          expected = "Census7")
+## CFPS2018
+H2_Chi_CFPS2018_edu_college  <- chisq.test(x = observed1, p = expected2)
+H2_Chi_CFPS2018_edu_college 
 
 
-H2_BF_edu_highschool_CFPS2018 <- BayesMultiNomial(dataset = H2_edu_highschool_bayes,
-                                          factor = "Educational_attainment",
-                                          observed = "Chinese subjects pools",
-                                          expected = "CFPS2018")
+# calculate BF
+## Census7
+lambda <- UMPBT(df = H2_Chi_Census7_edu_college$parameter,thresh = 6)
 
+BF1 <- froot_bf(x = H2_Chi_Census7_edu_college$statistic, 
+                lambda = lambda, 
+                df = H2_Chi_Census7_edu_college$parameter)
+
+H2_BF_Census7_edu_college  <- log(BF1)
+
+H2_BF_Census7_edu_college 
+
+
+## CFPS2018
+lambda <- UMPBT(df = H2_Chi_CFPS2018_edu_college$parameter,thresh = 6)
+
+BF2 <- froot_bf(x = H2_Chi_CFPS2018_edu_college$statistic, 
+                lambda = lambda, 
+                df = H2_Chi_CFPS2018_edu_college$parameter)
+
+
+H2_BF_CFPS2018_edu_college <- log(BF2)
+
+H2_BF_CFPS2018_edu_college 
+
+
+## rm 
+rm(observed1,expected1,expected2,BF1,BF2)
 ```
 
 Note, there is not results description.
@@ -3361,11 +3511,72 @@ ggsave("H3_region.pdf",H3_region, device = "pdf", width=18, height = 9)
 H3_region
 ```
 
+In addition to the above analysis, I also conducted some exploratory analysis of the data.
+
+# Exploratory analysis
+
+## Abstract1 subjects information reported of Chinese journal
+
+```{r message=FALSE, warning=FALSE}
+Journal_abstract1_report <- Journal %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
+                Target_Population_N,Sample_Type_N,Abstract1) %>% 
+  dplyr::filter(Sample_Type_N != 5) %>%
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::mutate(Study_Type = ifelse(all(Sample_Type_N == 1),"Only college students",ifelse(any(grepl("1",Sample_Type_N)) & any(Sample_Type_N !=1),"College students & other populations","Only sample outside colleges"))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Sample_Mentioned = ifelse(Abstract1 == "0" ,"Samples mentioned", "Sample not mentioned")) %>% 
+  dplyr::group_by(Sample_Mentioned,Study_Type) %>% 
+  dplyr::count() %>% 
+  dplyr::ungroup() %>% 
+  tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
+
+
+## university students reported in abstract when sample type is 1
+Journal_abstract2_report <- Journal %>% 
+  dplyr::filter(grepl("1",Sample_Type_N)) %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::mutate(Abstract2_same = n_distinct(Abstract2) == 1) %>%  ## check multiple subjects group Abstract2 whether is consistent.
+  dplyr::slice(1) %>% ## for one articles have multiple rows, only save the first row
+  dplyr::ungroup() %>% 
+  dplyr::group_by(Abstract2) %>% 
+  dplyr::summarise(report = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(proportion = round(report/sum(report),2),
+                Abstract2 = ifelse(Abstract2 == 0 ,"Unreported","Reported")) %>% 
+  dplyr::rename(n = 2)
+```
 
 ## Bibliometrics Analysis
 
 ```{r eval=FALSE, include=FALSE}
+```
 
+
+Journal_subjects_recruitment <- Journal %>% 
+dplyr::filter(Article_IDs,Article_Title,Study_Number_N,Subjects_Group_N,
+Target_Population_N,Sample_Type_N,Subjects_Recruitment_Method_N)## Reasons for results
+```{r}
+Journal_subjects_recruitment <- Journal %>% 
+  dplyr::select(Article_IDs,Article_Title,Study_Number_N,Subjects_Group_N,
+                Target_Population_N,Sample_Type_N,Sampling_Method,Subjects_Recruitment_Method_N,
+                Subjects_Recruitment_Method_info_N)
+
+table(Journal_subjects_recruitment$Sampling_Method)  ## 0(1064),1(219),2(284)
+
+table(Journal_subjects_recruitment$Subjects_Recruitment_Method_N)
+
+
+```
+
+```{r}
+Journal_subjects_recruitment2 <- Journal_subjects_recruitment %>% 
+  dplyr::filter(Target_Population_N != 1)
+
+table(Journal_subjects_recruitment2$Subjects_Recruitment_Method_N)
 ```
 
 

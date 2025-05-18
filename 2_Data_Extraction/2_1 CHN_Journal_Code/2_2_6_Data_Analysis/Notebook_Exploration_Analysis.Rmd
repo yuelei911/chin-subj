@@ -1,0 +1,510 @@
+---
+title: "Notebook_Exploration_Analysis"
+author: "Lei Yue"
+date: "2025-05-13"
+output: html_document
+---
+
+
+
+## intall library
+```{r}
+rm(list = ls())
+
+if (!require("pacman")) install.packages("pacman")
+
+p_load("tidyverse","ggplot2")
+```
+
+
+
+## Load data
+```{r}
+load("Journal.Rdata")
+```
+
+
+## Journal report
+```{r}
+Journal_year2008_report <- Journal %>% 
+  dplyr::filter(substr(Article_IDs_N,1,4) == "2008") %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
+                Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
+                SES_N = ifelse(SES_N == 0, 0, 1),
+                Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N == 0, 0, 1)) %>%
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Age = max(Age) > 0,
+                   Gender = max(Gender) > 0,
+                   Religious = max(Religious) > 0,
+                   Ethnicity = max(Ethnicity) > 0,
+                   Sampling_Method = max(Sampling_Method) > 0,
+                   Recruitment_Area = max(Subjects_Recruitment_Area) > 0,
+                   Recruitment_Method = max(Subjects_Recruitment_Method_N) > 0,
+                   SES = max(SES_N) > 0,
+                   .groups = "drop") %>% 
+  dplyr::select(3:last_col())
+
+
+report_list <- list()
+
+for (i in names(Journal_year2008_report )){
+  
+  
+  report_table <- data.frame(table(Journal_year2008_report [[i]])) %>% 
+    dplyr::mutate(col_names = names(Journal_year2008_report [i]),
+                  proportion = round(Freq / sum(Freq),4))
+  
+  report_list[[i]] <- report_table
+  
+}
+
+Journal_year2008_report <- do.call(rbind, report_list) %>% 
+  dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
+
+
+### Calculate reported status of Educational_Attainment and Occupation
+Journal_year2008_education_occupation <- Journal %>% 
+  dplyr::filter(substr(Article_IDs_N,1,4) == "2008") %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
+                   Occupation_N = max(Occupation_N) > 0,.groups = "drop") 
+
+
+
+# table(Journal_year2008_education_occupation$Educational_Attainment_N) ## FALSE 32 TRUE 30
+# table(Journal_year2008_education_occupation$Occupation_N)  ## FALSE 35 TRUE 27
+
+
+Journal_year2008_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
+                                                            "Unreported","Reported"),
+                                                   Freq = c(32,30,35,27),
+                                                   col_names= c("Educational_Attainment",
+                                                                "Educational_Attainment",
+                                                                "Occupation","Occupation"),
+                                                   proportion = c(0.52,0.48,0.56,0.44))
+
+Journal_year2008_report2 <- rbind(Journal_year2008_report,
+                                  Journal_year2008_education_occupation_table) %>%
+  dplyr::mutate(col_names = factor(col_names, 
+                                   labels = c("Gender","Recruitment Method",
+                                              "Recruitment Area",
+                                              "Age","Educational Attainment",
+                                              "Occupation","Sampling Method",
+                                              "SES","Ethnicity","Religious"),
+                                   levels = c("Gender","Recruitment_Method",
+                                              "Recruitment_Area",
+                                              "Age","Educational_Attainment",
+                                              "Occupation","Sampling_Method",
+                                              "SES","Ethnicity","Religious")),
+                proportion = proportion *100) %>% 
+  dplyr::mutate(Year = "2008")
+
+```
+
+
+```{r}
+Journal_year2018_report <- Journal %>% 
+  dplyr::filter(substr(Article_IDs_N,1,4) == "2018") %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
+                Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
+                SES_N = ifelse(SES_N == 0, 0, 1),
+                Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N == 0, 0, 1)) %>%
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Age = max(Age) > 0,
+                   Gender = max(Gender) > 0,
+                   Religious = max(Religious) > 0,
+                   Ethnicity = max(Ethnicity) > 0,
+                   Sampling_Method = max(Sampling_Method) > 0,
+                   Recruitment_Area = max(Subjects_Recruitment_Area) > 0,
+                   Recruitment_Method = max(Subjects_Recruitment_Method_N) > 0,
+                   SES = max(SES_N) > 0,
+                   .groups = "drop") %>% 
+  dplyr::select(3:last_col())
+
+
+report_list <- list()
+
+for (i in names(Journal_year2018_report )){
+  
+  
+  report_table <- data.frame(table(Journal_year2018_report [[i]])) %>% 
+    dplyr::mutate(col_names = names(Journal_year2018_report [i]),
+                  proportion = round(Freq / sum(Freq),4))
+  
+  report_list[[i]] <- report_table
+  
+}
+
+Journal_year2018_report <- do.call(rbind, report_list) %>% 
+  dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
+
+
+### Calculate reported status of Educational_Attainment and Occupation
+Journal_year2018_education_occupation <- Journal %>% 
+  dplyr::filter(substr(Article_IDs_N,1,4) == "2018") %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
+                   Occupation_N = max(Occupation_N) > 0,.groups = "drop") 
+
+
+
+table(Journal_year2018_education_occupation$Educational_Attainment_N) ## FALSE 73 TRUE 69
+table(Journal_year2018_education_occupation$Occupation_N)  ## FALSE 84 TRUE 58
+
+
+Journal_year2018_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
+                                                            "Unreported","Reported"),
+                                                   Freq = c(73,69,84,58),
+                                                   col_names= c("Educational_Attainment",
+                                                                "Educational_Attainment",
+                                                                "Occupation","Occupation"),
+                                                   proportion = c(0.51,0.49,0.59,0.41))
+
+Journal_year2018_report2 <- rbind(Journal_year2018_report,
+                                  Journal_year2018_education_occupation_table) %>%
+  dplyr::mutate(col_names = factor(col_names, 
+                                   labels = c("Gender","Age","Recruitment Method",
+                                              "Recruitment Area",
+                                              "Educational Attainment",
+                                              "Occupation","Sampling Method",
+                                              "SES","Ethnicity","Religious"),
+                                   levels = c("Gender","Age","Recruitment_Method",
+                                              "Recruitment_Area",
+                                              "Educational_Attainment",
+                                              "Occupation","Sampling_Method",
+                                              "SES","Ethnicity","Religious")),
+                proportion = proportion *100)%>% 
+  dplyr::mutate(Year = "2018")
+
+```
+
+
+```{r}
+Journal_year2021_report <- Journal %>% 
+  dplyr::filter(substr(Article_IDs_N,1,4) == "2021") %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
+                Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
+                SES_N = ifelse(SES_N == 0, 0, 1),
+                Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N == 0, 0, 1)) %>%
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Age = max(Age) > 0,
+                   Gender = max(Gender) > 0,
+                   Religious = max(Religious) > 0,
+                   Ethnicity = max(Ethnicity) > 0,
+                   Sampling_Method = max(Sampling_Method) > 0,
+                   Recruitment_Area = max(Subjects_Recruitment_Area) > 0,
+                   Recruitment_Method = max(Subjects_Recruitment_Method_N) > 0,
+                   SES = max(SES_N) > 0,
+                   .groups = "drop") %>% 
+  dplyr::select(3:last_col())
+
+
+report_list <- list()
+
+for (i in names(Journal_year2021_report )){
+  
+  
+  report_table <- data.frame(table(Journal_year2021_report [[i]])) %>% 
+    dplyr::mutate(col_names = names(Journal_year2021_report [i]),
+                  proportion = round(Freq / sum(Freq),4))
+  
+  report_list[[i]] <- report_table
+  
+}
+
+Journal_year2021_report <- do.call(rbind, report_list) %>% 
+  dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
+
+
+### Calculate reported status of Educational_Attainment and Occupation
+Journal_year2021_education_occupation <- Journal %>% 
+  dplyr::filter(substr(Article_IDs_N,1,4) == "2021") %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
+                   Occupation_N = max(Occupation_N) > 0,.groups = "drop") 
+
+
+
+table(Journal_year2021_education_occupation$Educational_Attainment_N) ## FALSE 55 TRUE 33
+table(Journal_year2021_education_occupation$Occupation_N)  ## FALSE 72 TRUE 16
+
+
+Journal_year2021_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
+                                                            "Unreported","Reported"),
+                                                   Freq = c(55,33,72,16),
+                                                   col_names= c("Educational_Attainment",
+                                                                "Educational_Attainment",
+                                                                "Occupation","Occupation"),
+                                                   proportion = c(0.63,0.37,0.82,0.19))
+
+Journal_year2021_report2 <- rbind(Journal_year2021_report,
+                                  Journal_year2021_education_occupation_table) %>%
+  dplyr::mutate(col_names = factor(col_names, 
+                                   labels = c("Gender","Age","Recruitment Method",
+                                              "Recruitment Area","Sampling Method",
+                                              "Educational Attainment",
+                                              "SES","Occupation",
+                                              "Ethnicity","Religious"),
+                                   levels = c("Gender","Age","Recruitment_Method",
+                                              "Recruitment_Area","Sampling_Method",
+                                              "Educational_Attainment",
+                                              "SES","Occupation",
+                                              "Ethnicity","Religious")),
+                proportion = proportion *100)%>% 
+  dplyr::mutate(Year = "2021")
+```
+
+
+combine three data
+```{r}
+Journal_report <- bind_rows(Journal_year2008_report2,Journal_year2018_report2,Journal_year2021_report2) %>% 
+  dplyr::filter(Var1 == "Reported") %>% 
+  dplyr::add_row(data.frame(Var1 = c("Reported","Reported"),
+                            Freq = c(0,0),
+                            col_names = c("Religious","Religious"),
+                            proportion = c(0,0),
+                            Year = c("2008","2021"))) %>% 
+  dplyr::mutate(col_names = factor(col_names,
+                                   levels = c("Gender","Recruitment Method","Recruitment Area",
+                                              "Age","Educational Attainment","Occupation",
+                                              "Sampling Method","SES","Ethnicity",
+                                              "Religious"),
+                                   labels = c("Gender","Recruitment Method","Recruitment Area",
+                                              "Age","Educational Attainment","Occupation",
+                                              "Sampling Method","SES","Ethnicity",
+                                              "Religious")))
+
+Journal_report_year <- Journal_report %>% 
+  ggplot(aes(x = Year, y = proportion, color = col_names, group = col_names))+
+  geom_line(size = 1)+
+  geom_point(size = 3)+
+  labs(y="Proportion", x = "Year")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+
+ggsave("Journal_report_year.pdf", Journal_report_year, device = "pdf", width=12, height = 9)
+
+
+Journal_report_year
+```
+
+
+## Abstract report
+
+Abstract1 subjects information reported of Chinese journal
+```{r message=FALSE, warning=FALSE}
+## all data
+Journal_abstract1_report <- Journal %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
+                Target_Population_N,Sample_Type_N,Abstract1) %>% 
+  dplyr::filter(Sample_Type_N != 5) %>%
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::mutate(Study_Type = ifelse(all(Sample_Type_N == 1),"Only college students",ifelse(any(grepl("1",Sample_Type_N)) & any(Sample_Type_N !=1),"College students & other populations","Only sample outside colleges"))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Sample_Mentioned = ifelse(Abstract1 == "0" ,"Samples mentioned", "Sample not mentioned")) %>% 
+  dplyr::group_by(Sample_Mentioned,Study_Type) %>% 
+  dplyr::count() %>% 
+  dplyr::ungroup() %>% 
+  tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
+
+
+## Chi
+matrix_Journal_abstract1_report <- matrix(c(223, 195), nrow = 1)
+colnames(matrix_Journal_abstract1_report) <- c("Sample not mentioned", "Samples mentioned")
+rownames(matrix_Journal_abstract1_report) <- "Only college students"
+
+matrix_Journal_abstract1_result <- chisq.test(matrix_Journal_abstract1_report)
+matrix_Journal_abstract1_result 
+```
+
+
+I would like to explore whether there are differences in specific demographic information.
+
+Mention in sample type
+```{r}
+## all data
+Journal_abstract1_sampletype_report <- Journal %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
+                Target_Population_N,Sample_Type_N,Abstract1) %>% 
+  dplyr::filter(Sample_Type_N != 5) %>%
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::mutate(Study_Type = ifelse(all(Sample_Type_N == 1),"Only college students",ifelse(any(grepl("1",Sample_Type_N)) & any(Sample_Type_N !=1),"College students & other populations","Only sample outside colleges"))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Sample_Mentioned = ifelse(grepl("1", Abstract1),"Samples mentioned", "Sample not mentioned")) %>% 
+  dplyr::group_by(Sample_Mentioned,Study_Type) %>% 
+  dplyr::count() %>% 
+  dplyr::ungroup() %>% 
+  tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
+```
+
+
+Chi-sqaure test
+```{r}
+## sample type mentioned for colleges
+matrix_abstract1_sampletype_report <- matrix(c(212, 206), nrow = 1)
+colnames(matrix_abstract1_sampletype_report) <- c("Sample not mentioned", "Samples mentioned")
+rownames(matrix_abstract1_sampletype_report) <- "Only college students"
+
+
+matrix_abstract1_sampletype_result <- chisq.test(matrix_abstract1_sampletype_report)
+matrix_abstract1_sampletype_result
+
+
+
+## I also try to analysis "Only sample outside colleges"
+matrix_outside_colleges_report <- matrix(c(43, 401), nrow = 1)
+colnames(matrix_outside_colleges_report) <- c("Sample not mentioned", "Samples mentioned")
+rownames(matrix_outside_colleges_report) <- "Only sample outside colleges"
+
+
+matrix_matrix_outside_colleges_result <- chisq.test(matrix_outside_colleges_report)
+matrix_matrix_outside_colleges_result
+
+
+## colleges and others samples
+matrix_colleges_andothers_report <- matrix(c(11, 30), nrow = 1)
+colnames(matrix_colleges_andothers_report) <- c("Sample not mentioned", "Samples mentioned")
+rownames(matrix_colleges_andothers_report) <- "College students & other populations"
+
+
+matrix_colleges_andothers_result <- chisq.test(matrix_colleges_andothers_report)
+matrix_colleges_andothers_result 
+```
+
+
+Filter  2021 article and analysis abstract1 report
+```{r} 
+## all data
+Journal_abstract1_year2021_report <- Journal %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
+                Target_Population_N,Sample_Type_N,Abstract1) %>% 
+  dplyr::filter(substr(Article_IDs,1,4) == "2021") %>% 
+  dplyr::filter(Sample_Type_N != 5) %>%
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::mutate(Study_Type = ifelse(all(Sample_Type_N == 1),"Only college students",ifelse(any(grepl("1",Sample_Type_N)) & any(Sample_Type_N !=1),"College students & other populations","Only sample outside colleges"))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Sample_Mentioned = ifelse(Abstract1 == "0" ,"Samples mentioned", "Sample not mentioned")) %>% 
+  dplyr::group_by(Sample_Mentioned,Study_Type) %>% 
+  dplyr::count() %>% 
+  dplyr::ungroup() %>% 
+  tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
+
+
+## sample type
+Journal_abstract1_year2021_sampletype_report <- Journal %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
+                Target_Population_N,Sample_Type_N,Abstract1) %>% 
+  dplyr::filter(substr(Article_IDs,1,4) == "2021") %>% 
+  dplyr::filter(Sample_Type_N != 5) %>%
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::mutate(Study_Type = ifelse(all(Sample_Type_N == 1),"Only college students",ifelse(any(grepl("1",Sample_Type_N)) & any(Sample_Type_N !=1),"College students & other populations","Only sample outside colleges"))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Sample_Mentioned = ifelse(grepl("1", Abstract1),"Samples mentioned", "Sample not mentioned")) %>% 
+  dplyr::group_by(Sample_Mentioned,Study_Type) %>% 
+  dplyr::count() %>% 
+  dplyr::ungroup() %>% 
+  tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
+```
+
+
+```{r}
+## sample type mentioned for colleges
+matrix_abstract1_sampletype_year2021_report <- matrix(c(62, 42), nrow = 1)
+colnames(matrix_abstract1_sampletype_year2021_report) <- c("Sample not mentioned", "Samples mentioned")
+rownames(matrix_abstract1_sampletype_year2021_report) <- "Only college students"
+
+
+matrix_abstract1_sampletype_year2021_result <- chisq.test(matrix_abstract1_sampletype_year2021_report)
+matrix_abstract1_sampletype_year2021_result
+
+
+
+## I also try to analysis "Only sample outside colleges"
+matrix_outside_colleges_year2021_report <- matrix(c(99, 4), nrow = 1)
+colnames(matrix_outside_colleges_year2021_report) <- c("Sample not mentioned", "Samples mentioned")
+rownames(matrix_outside_colleges_year2021_report) <- "Only sample outside colleges"
+
+
+matrix_matrix_outside_colleges_year2021_result <- chisq.test(matrix_outside_colleges_year2021_report)
+matrix_matrix_outside_colleges_year2021_result
+
+
+## colleges and others samples
+matrix_colleges_andothers_year2021_report <- matrix(c(16, 1), nrow = 1)
+colnames(matrix_colleges_andothers_year2021_report) <- c("Sample not mentioned", "Samples mentioned")
+rownames(matrix_colleges_andothers_year2021_report) <- "College students & other populations"
+
+
+matrix_colleges_andothers_year2021_result <- chisq.test(matrix_colleges_andothers_year2021_report)
+matrix_colleges_andothers_year2021_result 
+```
+
+
+Abstract2 report
+university students reported in abstract when sample type is 1
+```{r}
+Journal_abstract2_report <- Journal %>% 
+  dplyr::filter(grepl("1",Sample_Type_N)) %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::mutate(Abstract2_same = n_distinct(Abstract2) == 1) %>%  ## check multiple subjects group Abstract2 whether is consistent.
+  dplyr::slice(1) %>% ## for one articles have multiple rows, only save the first row
+  dplyr::ungroup() %>% 
+  dplyr::group_by(Abstract2) %>% 
+  dplyr::summarise(report = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(proportion = round(report/sum(report),2),
+                Abstract2 = ifelse(Abstract2 == 0 ,"Unreported","Reported")) %>% 
+  dplyr::rename(n = 2)
+
+
+## Chi
+matrix_abstract2_report <- matrix(c(241, 218), nrow = 1)
+colnames(matrix_abstract2_report) <- c("Unreported", "Reported")
+
+abstract2_result <- chisq.test(matrix_abstract2_report)
+abstract2_result
+```
+
+
+
+## Reason for current data pattern
+```{r}
+Journal_subjects_recruitment <- Journal %>% 
+  dplyr::select(Article_IDs,Article_Title,Study_Number_N,Subjects_Group_N,
+                Target_Population_N,Sample_Type_N,Sampling_Method,Subjects_Recruitment_Method_N,
+                Subjects_Recruitment_Method_info_N)
+
+table(Journal_subjects_recruitment$Sampling_Method)  ## 0(1064),1(219),2(284)
+
+table(Journal_subjects_recruitment$Subjects_Recruitment_Method_N)
+```
+
+
+```{r}
+Journal_subjects_recruitment2 <- Journal_subjects_recruitment %>% 
+  dplyr::filter(Target_Population_N != 1)
+
+table(Journal_subjects_recruitment2$Subjects_Recruitment_Method_N)
+```
+```
+
