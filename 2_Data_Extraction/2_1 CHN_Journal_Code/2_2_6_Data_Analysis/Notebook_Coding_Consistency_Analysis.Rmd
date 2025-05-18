@@ -31,13 +31,15 @@ Chinese journals
 ```{r}
 CE_score <- Chin_Subj_check_data %>% 
   dplyr::select(-c(1:2)) %>% 
-  dplyr::mutate(across(everything(), ~as.numeric(as.character(.)))) %>% 
-  dplyr::summarise(across(everything(), ~mean(., na.rm = TRUE))) %>% 
-  tidyr::pivot_longer(cols = everything(), names_to = "Column_name", values_to = "Mean") %>%
-  mutate(Column_name = as.character(Column_name),
-         Mean = round(Mean,4))
+  dplyr::mutate(across(everything(), ~as.numeric(as.character(.))),
+                across(everything(), ~ifelse(. == 3, 3, 0)))
 
-# writexl::write_xlsx(Chin_Subj_check_data,"Chin_Subj_check_data.xlsx")
+  # dplyr::summarise(across(everything(), ~mean(., na.rm = TRUE))) %>% 
+  # tidyr::pivot_longer(cols = everything(), names_to = "Column_name", values_to = "Mean") %>%
+  # mutate(Column_name = as.character(Column_name),
+  #        Mean = round(Mean,4))
+
+writexl::write_xlsx(CE_score,"CE_score.xlsx")
 ```
 
 
@@ -49,13 +51,17 @@ BTS_CE_score <- BTS_check_data %>%
   
   
 BTS_CE_score_range <- BTS_CE_score %>% 
-  dplyr::mutate(across(everything(), ~as.numeric(as.character(.)))) %>% 
-  dplyr::summarise(across(everything(), ~mean(., na.rm = TRUE))) %>% 
-  tidyr::pivot_longer(cols = everything(), names_to = "Column_name", values_to = "Mean") %>%
-  mutate(Column_name = as.character(Column_name),
-         Mean = round(Mean,4))
+   dplyr::mutate(across(everything(), ~as.numeric(as.character(.))),
+                across(everything(), ~ifelse(. == 3, 3, 0)))
 
-write.csv(BTS_CE_score,"D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_CE_score.csv",row.names = FALSE)
+  # dplyr::summarise(across(everything(), ~mean(., na.rm = TRUE))) %>% 
+  # tidyr::pivot_longer(cols = everything(), names_to = "Column_name", values_to = "Mean") %>%
+  # mutate(Column_name = as.character(Column_name),
+  #        Mean = round(Mean,4))
+
+# write.csv(BTS_CE_score,"D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_CE_score.csv",row.names = FALSE)
+
+write.csv(BTS_CE_score_range,"D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_CE_score2.csv",row.names = FALSE)
 ```
 
 
