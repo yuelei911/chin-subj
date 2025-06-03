@@ -20,6 +20,13 @@ pacman::p_load("tidyverse","here","rio")
 
 
 # Load the data of BTS
+```{r}
+load("D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_data1.Rdata")
+
+load("D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_data2.Rdata")
+```
+
+
 
 Here, we first converted some data that is not in .xlsx format.
 ```{r}
