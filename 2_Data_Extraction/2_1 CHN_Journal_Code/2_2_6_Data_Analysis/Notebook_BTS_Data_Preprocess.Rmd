@@ -135,9 +135,6 @@ for (name in names(BTS)) {
 # Combine the result list into a single data.frame
 BTS_colnames <- do.call(rbind, colname_list)
 rm(colname_list,temp_df,col_names,name,df)
-
-
-table(BTS[[3]]$Country)
 ```
 
 
@@ -146,7 +143,6 @@ In this part, I tried to batch country code.
 
 ```{r}
 # str(BTS)
-
 ## Handle some more specific encodings
 names(BTS[[20]])[names(BTS[[20]]) == "Country_now"] <- "Country"  ## BTS_Klein 2018 Slate1
 
@@ -160,28 +156,6 @@ names(BTS[[30]])[names(BTS[[30]]) == "Country_ID"]  <-  "Country" ## BTS_Tybur 2
 
 BTS[[8]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[8]]$Country))    ## BTS_Buchanan 2023
 BTS[[33]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[33]]$Country))  ## BTS_Wang 2021
-
-
-## Process the country code use num format
-
-
-
-
-BTS <- BTS[-c(6,14,18)] ## remove data.frame with the country code as num (Bago et al 2022, Greenberg et al 2022, Kirkland et al 2022)
-
-
-## Check the country code of the BTS data
-BTS_countrycode_check <- lapply(BTS, function(df){
-  
-  df <- df %>% 
-    dplyr::group_by(Countrycode) %>% 
-    dplyr::summarise(n=n()) %>% 
-    dplyr::ungroup()
-  
-  return(df)
-})
-
-BTS_countrycode_check <- do.call(rbind, BTS_countrycode_check)
 
 
 
@@ -221,8 +195,8 @@ BTS[[5]] <- BTS[[5]] %>%
                                     Country %in% c("IT1","IT2") ~ "IT",
                                     Country %in% "MX2" ~ "MX",
                                     Country %in% "RO2" ~ "RO",
+                                    Country %in% "CHN" ~ "CN",
                                     TRUE ~ Country))
-
 
 
 # ## BTS_Bertolo_et_al_2023
@@ -267,8 +241,9 @@ BTS[[7]] <- BTS[[7]] %>%
 ## BTS_Buchanan_et_al_2023
 BTS[[8]] <- BTS[[8]] %>% 
   dplyr::mutate(Country = case_when(Country %in% c("TWN","HKG","MAC") ~ "CHN",
-                                    Country %in% "Ken, Na" ~ "KEN",
-                                    TRUE ~ Country))
+                                    TRUE ~ Country),
+                Country = ifelse(Country == "NA",NA,Country),
+                Country = ifelse(Country == "KEN, NA", "KEN",Country))
 
 
 
@@ -377,7 +352,8 @@ BTS[[22]] <- BTS[[22]] %>%
   dplyr::mutate(Country = ifelse(Country == "UK", "United Kingdom",Country),
                 Country = ifelse(Country == "USA", "United States",Country),
                 Country = ifelse(Country == "Bosnia and Herzegovina","Bosnia & Herzegovina",Country),
-                Country = ifelse(Country == "Czech Republic","Czechia",Country))
+                Country = ifelse(Country == "Czech Republic","Czechia",Country),
+                Country = ifelse(Country == "CHN","China",Country))
 
 
 
@@ -538,6 +514,25 @@ BTS[[33]] <- BTS[[33]] %>%
 
   
 
+BTS <- BTS[-c(6,14)] ## remove data.frame with the country code as num (Bago et al 2022, Greenberg et al 2022)
+
+
+
+## Create CountryCode line
+BTS <- lapply(BTS, function(df){
+  
+  df <- df %>% 
+    dplyr::mutate(Country = toupper(Country),
+                  Country = ifelse(nchar(Country) > 3, str_to_title(Country),Country),
+                  Countrycode = ifelse(nchar(Country) > 3, "Countryfullname", 
+                                ifelse(nchar(Country) == 3, "ISO3", "ISO2")))
+  
+  return(df)
+  
+})
+
+
+
 ## Combine the BTS_data and Countrycodelist_iso2_iso3
 Countrycode_merge <- function(df, Countrycode) {  
   
@@ -562,6 +557,22 @@ Countrycode_merge <- function(df, Countrycode) {
   
 BTS <- lapply(BTS, Countrycode_merge, Countrycode = Countrycodelist_iso2_iso3)  
 
+
+## Check the countrycode of the BTS data
+BTS_countrycode_check <- lapply(BTS, function(df){
+  
+  df <- df %>% 
+    dplyr::group_by(Countrycode) %>% 
+    dplyr::summarise(n=n()) %>% 
+    dplyr::ungroup()
+  
+  return(df)
+})
+
+BTS_countrycode_check <- do.call(rbind, BTS_countrycode_check)
+
+
+
 ## Change the column name so that each BTS data has "ISO3"
 BTS <- lapply(BTS,function(df){
   
@@ -574,6 +585,7 @@ BTS <- lapply(BTS,function(df){
   return(df)
   
 })
+
 
 ## Change the column name so that each BTS data has "ISO2"
 BTS <- lapply(BTS,function(df){
@@ -601,33 +613,6 @@ BTS <- lapply(BTS,function(df){
   return(df)
   
 })
-
-
-## Because the country code of the countrycode package is the full name, but some of the actual data set is recorded by abbreviation (for example: United States is USA), so this part is not converted properly, and is now found and processed separately.
-## BTS_Bertolo_et_al_2023
-BTS[[6]] <- BTS[[6]] %>% 
-  dplyr::mutate(Article_Id = "Bertolo_et_al_2023")
-
-
-## BTS_Lucca_et_al_2024
-BTS[[19]] <- BTS[[19]] %>% 
-  dplyr::mutate(Article_Id = "Lucca_et_al_2024")
-
-
-BTS_na <- lapply(BTS, function(df){
-  
-  df <- df %>% 
-    dplyr::filter(is.na(ISO3)) %>% 
-    dplyr::select(Article_Id, Country, ISO3)
-  
-  return(df)
-})
-
-BTS_na <- do.call(rbind,BTS_na)
-
-BTS_na_table <- BTS_na %>% 
-  dplyr::group_by(Article_Id,Country) %>% 
-  dplyr::summarise(n=n())
 ```
 
 
@@ -660,33 +645,125 @@ BTS_gender_check <- lapply(BTS, function(df){
 
 BTS_gender_check <- do.call(rbind, BTS_gender_check)
 
-# BTS_gender_check %>% 
-#   dplyr::filter(Gender %in% c("Female","Male")) %>% 
-#   dplyr::summarise(n=sum(n))
 
-# write.csv(BTS_gender_check,"BTS_gender_check.csv")
+
+## process gender of BTS 
+## BTS_Buchanan_et_al_2023
+BTS[[7]] <- BTS[[7]] %>% 
+  dplyr::mutate(Gender = ifelse(Gender == "Female, Female","Female",Gender))
+
+
+## BTS_Hoogeveen_et_al_2022
+BTS[[14]] <- BTS[[14]] %>% 
+  dplyr::mutate(Gender = ifelse(Gender == "Man", "Male",Gender),
+                Gender = ifelse(Gender == "Woman","Female",Gender))
 ```
 
 
 process age data of BTS
 ```{r}
+## Awad_et_al_2018
+BTS[[4]] <- BTS[[4]] %>% 
+  dplyr::select(-Age)
+
+
+## BTS_Hu_et_al_2019
+## Hu et al' data collect in 2016, see https://doi.org/10.1525/collabra.165
+BTS[[15]] <- BTS[[15]] %>% 
+  dplyr::mutate(Age = 2016 - Age)
+
+
+## BTSK_lein_et_al_2018_Slate2
+BTS[[19]] <- BTS[[19]] %>% 
+  dplyr::mutate(Age = ifelse(Age > 200, 2014-Age,Age))
+
+
 ## Lucca et al. 2024'Age use age days record subjects' age, therefore I will transform
 ## Lucca et al. 2024
-BTS[[19]] <- BTS[[19]] %>% 
+BTS[[21]] <- BTS[[21]] %>% 
   dplyr::mutate(Age = round((Age_days/365),2))
 
+
+## BTS_Vlasceanu_et_al_2023
+BTS[[30]] <- BTS[[30]] %>% 
+  dplyr::mutate(Age = ifelse(Age == "NA",NA,Age))
 ```
 
 
 process attainment education of BTS
 ```{r}
+## BTS_Arechar_et_al_2023
+BTS[[2]] <- BTS[[2]] %>% 
+  dplyr::mutate(Education = case_when(Education == 1 ~ "None",
+                                      Education == 2 ~ "Less than secondary school degree",
+                                      Education == 3 ~ "Less than high school degree",
+                                      Education == 4 ~ "High school diploma",
+                                      Education == 5~ "Attended College",
+                                      Education == 6 ~ "Bachelor's degree",
+                                      Education == 7 ~ "Graduate degree",
+                                      TRUE ~ Education))
+
+
 ## BTS_Eriksson_et_al_2021
-# bts1 <- BTS[[6]]
-# table(bts1$Education)
-# 
-# bts1 <- BTS[[13]] %>% 
-#   dplyr::mutate(Education = case_when(Education == ""))
+BTS[[10]] <- BTS[[10]] %>% 
+  dplyr::mutate(Education = as.character(Education),
+                Education = case_when(Education == "1" ~ "Less than high school degree",
+                                      Education == "2" ~ "High school graduate",
+                                      Education == "3" ~ "Some college but no degree",
+                                      Education == "4" ~ "Bachelor's/Associate degree",
+                                      Education == "5" ~ "Master's degree",
+                                      Education == "6" ~ "Doctoral degree",
+                                      TRUE ~ Education))
+
+
+## BTS_Everett_et_al_2021
+BTS[[11]] <- BTS[[11]] %>% 
+  dplyr::mutate(Education = as.character(Education),
+                Education = case_when(Education == "1" ~ "Some elementary school",
+                                      Education == "2" ~ "Completed elementary school",
+                                      Education == "3" ~ "Some high school",
+                                      Education == "4" ~ "Completed high school",
+                                      Education == "5" ~ "Some college",
+                                      Education == "6" ~ "Completed college",
+                                      Education == "7" ~ "Completed some postgraduate study",
+                                      Education == "8" ~ "Completed advanced postgraduate degree",
+                                      TRUE ~ Education))
+
+
+## BTS_Hoogeveen_et_al_2022
+BTS[[14]] <- BTS[[14]] %>% 
+  dplyr::mutate(Education = as.character(Education),
+                Education = case_when(Education == "1" ~ "primary school",
+                                      Education == "2" ~ "some high school",
+                                      Education == "3" ~ "completed high school or equivalent",
+                                      Education == "4" ~ "some university/college",
+                                      Education == "5" ~ "completed university/college",
+                                      Education == "6" ~ "some postgraduate work",
+                                      Education == "7" ~ "completed a postgraduate degree",
+                                      TRUE ~  Education))
+
+
+## BTS_Klein_et_al_2018_Slate2 
+
+
+
+## BTS_Psychological_Science_Accelerator_Self_Determination_Theory_Collaboration_2022
+
+
+## BTS_Vlasceanu_et_al_2023
+BTS[[30]] <- BTS[[30]] %>% 
+  dplyr::mutate(Education = case_when(Education == 1 ~ "up to grade school/elementary school",
+                                      Education == 2 ~ "up to high school",
+                                      Education == 3 ~ "college/undergraduate university/certificate training",
+                                      Education == 4 ~ "doctorate degree, medical degree,etc.",
+                                      Education == "NA" ~ "Prefer not to answer",
+                                      TRUE ~ Education))
+ 
+df <- BTS[[31]]
+df_edu <- data.frame(table(df$Education)) 
+ 
 ```
+
 
 Process Article_ID
 ```{r}
