@@ -818,8 +818,7 @@ cat(sprintf("Skipping '%s' because it does not contain a 'Education' column.\n",
 }
 
 
-df1 <- BTS_edu_list[[2]]
-table(df1$Education)
+
 
 ## BTS_Arechar_et_al_2023
 BTS_edu_list[[1]] <- BTS_edu_list[[1]] %>% 
@@ -829,8 +828,7 @@ BTS_edu_list[[1]] <- BTS_edu_list[[1]] %>%
                                        Education %in% c("High school diploma",
                                                         "Attended College",
                                                         "Bachelor's degree",
-                                                        "Graduate degree") ~ "high_school_and_above",
-                                       TRUE ~ Education),
+                                                        "Graduate degree") ~ "High_school_and_above"),
                 College = case_when(Education %in% c("None","Less than secondary school degree","Less than high school degree","High school diploma") ~ "Below_college",
                                     Education %in% c("Attended College","Bachelor's degree","Graduate degree") ~ "College_and_above"))
 
@@ -838,22 +836,175 @@ BTS_edu_list[[1]] <- BTS_edu_list[[1]] %>%
 
 
 ## BTS_Awad_et_al_2018
+BTS_edu_list[[2]] <- BTS_edu_list[[2]] %>% 
+  dplyr::mutate(Highschool = case_when(Education == "underHigh" ~ "Below_high_school",
+                                       Education %in% c("high","vocational","college","bachelor","graduate") ~ "High_school_and_above"),
+                College = case_when(Education %in% c("underHigh","high","vocational") ~ "Below_college",
+                                    Education %in% c("college","bachelor","graduate") ~ "College_and_above"))
 
 
 
+## BTS_Bosson_et_al_2021
+BTS_edu_list[[3]] <- BTS_edu_list[[3]] %>% 
+  dplyr::mutate(Highschool = case_when(Education %in% c("Elementary school","I don't have any") ~ "Below_high_school",
+                                       Education %in% c("Bachelor","Masters","Doctoral","Secondary school") ~ "High_school_and_above"),
+                College = case_when(Education %in% c("Elementary school","I don't have any","Secondary school") ~ "Below_college",
+                                    Education %in% c("Bachelor","Masters","Doctoral") ~ "College_and_above"))
 
 
 
-# ## merge edu list
-# BTS_edu_twocate <- do.call(rbind,BTS_edu_list)
-# 
-# 
-# ## trans edu
-# BTS_edu_twocate <- BTS_edu_twocate %>% 
-#   dplyr::mutate(College = case_when(Education == ))
-# 
-# ## Create a data.frame
-# df <- data.frame(table(BTS_edu_twocate$Education))
+## BTS_Dorison_et_al_2020
+BTS_edu_list[[4]] <- BTS_edu_list[[4]] %>% 
+  dplyr::mutate(Highschool = case_when(Education == "Less than high school" ~ "Below_high_school",
+                                       Education %in% c("Doctorate","Four year degree","High school","Professional degree","Some college","Two year degree") ~ "High_school_and_above"),
+                College = case_when(Education %in% c("Less than high school","High school") ~ "Below_college",
+                                    Education %in% c("Doctorate","Four year degree","Professional degree","Some college","Two year degree") ~ "College_and_above"))
+
+
+
+## BTS_Eriksson_et_al_2021
+BTS_edu_list[[5]] <- BTS_edu_list[[5]] %>% 
+  dplyr::mutate(Highschool = case_when(Education == "Less than high school degree" ~ "Below_high_school",
+                                       Education %in% c("Bachelor's/Associate degree","Doctoral degree","High school graduate","Master's degree","Some college but no degree") ~ "High_school_and_above"),
+                College = case_when(Education %in% c("Less than high school","High school graduate") ~ "Below_college",
+                                    Education %in% c("Bachelor's/Associate degree","Doctoral degree","Master's degree","Some college but no degree") ~ "College_and_above"))
+
+
+
+## BTS_Everett_et_al_2021
+BTS_edu_list[[6]] <- BTS_edu_list[[6]] %>% 
+  dplyr::mutate(Highschool = case_when(Education %in% c("Completed elementary school","Some elementary school") ~ "Below_high_school",
+                                       Education %in% c("Completed advanced postgraduate degree","Completed college","Completed high school","Completed some postgraduate study","Some college","Some high school") ~ "High_school_and_above"),
+                College = case_when(Education %in% c("Completed elementary school","Some elementary school","Completed high school","Some high school") ~ "Below_college",
+                                    Education %in% c("Completed advanced postgraduate degree","Completed college","Completed some postgraduate study","Some college") ~ "College_and_above"))
+
+
+
+## BTS_Fernandez_Velasco_et_al_2023
+BTS_edu_list[[7]] <- BTS_edu_list[[7]] %>% 
+  dplyr::mutate(Highschool = ifelse(Education == "tertiary","High_school_and_above",NA),
+                College = ifelse(Education == "tertiary","College_and_above","Below_college"))
+
+
+
+## BTS_Hall_et_al_2018
+
+
+## BTS_Hoogeveen_et_al_2022
+BTS_edu_list[[9]] <- BTS_edu_list[[9]] %>% 
+  dplyr::mutate(Highschool = case_when(Education %in% c("primary school") ~ 
+                                         "Below_high_school",
+                                       Education %in% c("completed a postgraduate degree",
+                                                        "completed high school or equivalent",
+                                                        "completed university/college",
+                                                        "some high school",
+                                                        "some postgraduate work", 
+                                                        "some university/college") ~ "High_school_and_above"),
+                College = case_when(Education %in% c("primary school", 
+                                              "completed high school or equivalent", 
+                                              "some high school") ~ "Below_college",
+                             Education %in% c("completed a postgraduate degree", 
+                                              "completed university/college", 
+                                              "some postgraduate work", 
+                                              "some university/college") ~ "College_and_above"))
+
+
+
+## BTS_Klein_et_al_2018_Slate1
+BTS_edu_list[[10]] <- BTS_edu_list[[10]] %>% 
+  mutate(Highschool = case_when(Education %in% c("Completed primary/elementary school", "No formal education") ~ "Below_high_school",
+                                Education %in% c("Completed secondary school/high school", "Completed university/college degree", "Completed advanced degree", "Some university/college") ~ "High_school_and_above"),
+         College = case_when(Education %in% c("Completed primary/elementary school", "Completed secondary school/high school", "No formal education") ~ "Below_college",
+                             Education %in% c("Completed university/college degree", "Completed advanced degree", "Some university/college") ~ "College_and_above"))
+
+
+
+## BTS_Klein_et_al_2018_Slate2
+BTS_edu_list[[11]] <- BTS_edu_list[[11]] %>% 
+  mutate(Highschool = case_when(Education %in% c("No formal education",
+                                                 "Completed primary/elementary school") ~
+                                  "Below_high_school",
+                                Education %in% c("Completed secondary school/high school",
+                                                 "Some university/college", 
+                                                 "Completed university/college degree",
+                                                 "Completed advanced degree") ~
+                                  "High_school_and_above"),
+         College = case_when(Education %in% c("No formal education",
+                                              "Completed primary/elementary school",
+                                              "Completed secondary school/high school") ~
+                               "Below_college",
+                             Education %in% c("Some university/college",
+                                              "Completed university/college degree",
+                                              "Completed advanced degree") ~
+                               "College_and_above"))
+
+
+
+## BTS_Psychological_Science_Accelerator_Self_Determination_Theory_Collaboration_2022
+
+
+
+## BTS_Ruggeri_et_al_2020
+BTS_edu_list[[13]] <- BTS_edu_list[[13]] %>% 
+  mutate(Highschool = case_when(Education %in% c("Primary school") ~ "Below_high_school",
+                                Education %in% c("Secondary school", "University Masters", "University MBA","University PhD", "University Undergraduate", "Vocational school") ~ "High_school_and_above"),
+         College = case_when(Education %in% c("Primary school", "Secondary school", "Vocational school") ~ "Below_college",
+                             Education %in% c("University Masters", "University MBA", "University PhD","University Undergraduate") ~ "College_and_above"))
+
+
+
+## BTS_Ruggeri_et_al_2022
+BTS_edu_list[[14]] <- BTS_edu_list[[14]] %>% 
+  mutate(Highschool = case_when(Education %in% c("Primary ed.") ~ "Below_high_school",
+                                Education %in% c("Bachelor", "Graduate", "Secondary ed.","Technical ed.") ~ "High_school_and_above"),
+         College = case_when(Education %in% c("Primary ed.", "Secondary ed.", "Technical ed.") ~ "Below_college",Education %in% c("Bachelor", "Graduate") ~ "College_and_above"))
+
+
+
+## BTS_Sorokowski_et_al_2023
+BTS_edu_list[[15]] <- BTS_edu_list[[15]] %>%
+  mutate(Highschool = case_when(Education %in% c("no formal", "primary") ~ "Below_high_school",
+                                Education %in% c("degree", "high school", "secondary") ~ "High_school_and_above"),
+         College = case_when(Education %in% c("no formal", "primary", "high school", "secondary") ~ "Below_college",
+                             Education %in% c("degree") ~ "College_and_above"))
+
+ 
+
+## BTS_Vlasceanu_et_al_2023
+BTS_edu_list[[16]] <- BTS_edu_list[[16]] %>%
+  mutate(Highschool = case_when(Education %in% c("up to grade school/elementary school") ~ "Below_high_school",
+                                Education %in% c("college/undergraduate university/certificate training", 
+                                                 "doctorate degree, medical degree,etc.",
+                                                 "up to high school") ~ 
+                                  "High_school_and_above"),
+         College = case_when(Education %in% c("up to grade school/elementary school", 
+                                              "up to high school") ~ "Below_college",
+                             Education %in% c("college/undergraduate university/certificate training",
+                                              "doctorate degree, medical degree,etc.") ~ "College_and_above"))
+
+
+
+## BTS_Wang_et_al_2021 
+BTS_edu_list[[17]] <- BTS_edu_list[[17]] %>%
+  mutate(Highschool = case_when(Education %in% c("less than high school") ~ "Below_high_school",
+                                Education %in% c("doctorate", 
+                                                 "four year degree", 
+                                                 "high school", 
+                                                 "professional degree", 
+                                                 "some college", 
+                                                 "two year degree") ~ 
+                                  "High_school_and_above"),
+         College = case_when(Education %in% c("less than high school", 
+                                              "high school") ~
+                               "Below_college",
+                             Education %in% c("doctorate", "four year degree",
+                                              "professional degree", "two year degree",
+                                              "some college") ~
+                               "College_and_above"))
+
+# df1 <- BTS_edu_list[[14]]
+# table(df1$Education)
+
 ```
 
 
