@@ -704,6 +704,18 @@ BTS[[2]] <- BTS[[2]] %>%
                                       TRUE ~ Education))
 
 
+
+## BTS_Bago_et_al_2022
+# BTS[[6]] <- BTS[[6]] %>% 
+#   dplyr::mutate(Education = case_when(Education == 1 ~ "Below high school",
+#                                       Education == 2 ~ "Highschool",
+#                                       Education == 3 ~ "Bachelor’s degree",
+#                                       Education == 4 ~ "Master’s degree",
+#                                       Education == 5 ~ "Doctoral degree",
+#                                       TRUE ~ Education))
+
+
+
 ## BTS_Eriksson_et_al_2021
 BTS[[10]] <- BTS[[10]] %>% 
   dplyr::mutate(Education = as.character(Education),
@@ -730,6 +742,16 @@ BTS[[11]] <- BTS[[11]] %>%
                                       TRUE ~ Education))
 
 
+
+## BTS_Greenberg_et_al_2022
+# BTS[[14]] <- BTS[[14]] %>% 
+#   dplyr::mutate(Education = case_when(Education == 1 ~ "pre-high school",
+#                                       Education == 2 ~ "high school",
+#                                       Education == 3 ~ "college",
+#                                       Education == 4 ~ "Master or a professional degree",
+#                                       Education == 5 ~ "PhD(Doctorate)"))
+
+
 ## BTS_Hoogeveen_et_al_2022
 BTS[[14]] <- BTS[[14]] %>% 
   dplyr::mutate(Education = as.character(Education),
@@ -750,6 +772,16 @@ BTS[[14]] <- BTS[[14]] %>%
 ## BTS_Psychological_Science_Accelerator_Self_Determination_Theory_Collaboration_2022
 
 
+## BTS_Sorowski_et_al_2023
+BTS[[27]] <- BTS[[27]] %>% 
+  dplyr::mutate(Education = as.character(Education),
+                Education = case_when(Education == "1" ~ "no formal",
+                                      Education == "2" ~ "primary",
+                                      Education == "3" ~ "secondary",
+                                      Education == "4" ~ "high school",
+                                      Education == "5" ~ "degree",
+                                      TRUE ~ Education))
+  
 ## BTS_Vlasceanu_et_al_2023
 BTS[[30]] <- BTS[[30]] %>% 
   dplyr::mutate(Education = case_when(Education == 1 ~ "up to grade school/elementary school",
@@ -758,26 +790,72 @@ BTS[[30]] <- BTS[[30]] %>%
                                       Education == 4 ~ "doctorate degree, medical degree,etc.",
                                       Education == "NA" ~ "Prefer not to answer",
                                       TRUE ~ Education))
- 
-df <- BTS[[31]]
-df_edu <- data.frame(table(df$Education)) 
- 
 ```
 
 
-Process Article_ID
+Process edu of BTS data to the formal analysis
 ```{r}
-BTS[[1]] <- BTS[[1]] %>% 
-  dplyr::mutate(Article_Id = "Anllo_et_al_2023")
+
+BTS_edu_list <- list()
+
+for (i in seq_along(BTS)) {
+  
+  BTS_name <- names(BTS)[[i]]
+
+  if("Education" %in% names(BTS[[i]])){
+   
+    BTS_edu <- BTS[[i]] %>% 
+      dplyr::select(Article_Id,Country,Education)
+    
+    BTS_edu_list[[BTS_name]] <- BTS_edu
+    
+  }else{
+    
+cat(sprintf("Skipping '%s' because it does not contain a 'Education' column.\n", BTS_name))  
+    
+  }
+  
+}
+
+
+df1 <- BTS_edu_list[[2]]
+table(df1$Education)
+
+## BTS_Arechar_et_al_2023
+BTS_edu_list[[1]] <- BTS_edu_list[[1]] %>% 
+  dplyr::mutate(Highschool = case_when(Education == "None" ~ "Below_high_school",
+                                       Education == "Less than secondary school degree" ~ "Below_high_school",
+                                       Education == "Less than high school degree" ~ "Below_high_school",
+                                       Education %in% c("High school diploma",
+                                                        "Attended College",
+                                                        "Bachelor's degree",
+                                                        "Graduate degree") ~ "high_school_and_above",
+                                       TRUE ~ Education),
+                College = case_when(Education %in% c("None","Less than secondary school degree","Less than high school degree","High school diploma") ~ "Below_college",
+                                    Education %in% c("Attended College","Bachelor's degree","Graduate degree") ~ "College_and_above"))
+
+
+
+
+## BTS_Awad_et_al_2018
+
+
+
+
+
+
+# ## merge edu list
+# BTS_edu_twocate <- do.call(rbind,BTS_edu_list)
+# 
+# 
+# ## trans edu
+# BTS_edu_twocate <- BTS_edu_twocate %>% 
+#   dplyr::mutate(College = case_when(Education == ))
+# 
+# ## Create a data.frame
+# df <- data.frame(table(BTS_edu_twocate$Education))
 ```
 
-
-
-```{r include=FALSE}
-## Here, I remove some data sets to reduce data set clutter.
-rm(BTS_na_table,BTS_na,Countrycode_merge,BTS_countrycode_check)
-gc()
-```
 
 
 # Save Rdata
