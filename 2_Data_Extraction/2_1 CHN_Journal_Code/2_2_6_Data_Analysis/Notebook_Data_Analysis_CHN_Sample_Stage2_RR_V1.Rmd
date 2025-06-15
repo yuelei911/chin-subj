@@ -1632,6 +1632,15 @@ df_stage2_Journal_Code2$Target_Population_N[950] <- 3
 ### Article_IDs 20214067
 df_stage2_Journal_Code2$Target_Population_N[972] <- 3
 
+## Article_IDs 20182161
+df_stage2_Journal_Code2$Target_Population_N[1058] <- 3
+
+## Article_IDs 20215005
+df_stage2_Journal_Code2$Target_Population_N[1202] <- 3
+
+## Article_IDs 20215042
+df_stage2_Journal_Code2$Target_Population_N[1219:1221] <- 3
+
 ### Article_IDs 20081051
 df_stage2_Journal_Code2$Target_Population_N[1274] <- 3
 df_stage2_Journal_Code2$Coding_Basis_N[1274] <- "这表明当代西方文化中的理想模型———男性化模型并不适用于中国,理想的性别角色模型具有文化特异性。这一结果不仅增进和丰富了人们对文化对心理和行为的影响的认识,还对我国目前青少年良好个性品质的塑造和培养以及心理健康教育的实践具有重要指导作用。"
@@ -1645,6 +1654,10 @@ df_stage2_Journal_Code2$Coding_Basis_N[1415] <- "（1）网站临场感对女性
 
 ### Article_IDs 20185102
 df_stage2_Journal_Code2$Target_Population_N[1416] <- 3
+
+### Article_IDs 20211018
+df_stage2_Journal_Code2$Target_Population_N[1675:1676] <- 3
+
 
 rm(Target_Population_N)
 
