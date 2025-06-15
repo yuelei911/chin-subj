@@ -28,7 +28,7 @@ pacman::p_load("tidyverse","rio","here")
 getwd()
 
 file_list <- list.files(
-  here("C:/Users/yuelei/Desktop/Stage_2_Code_Data"),
+  here("C:/Users/ynian/Desktop/Stage_2_Code_Data"),
   pattern = ".xlsx",
   full.names = TRUE, recursive = TRUE)
 
@@ -787,6 +787,10 @@ df_stage2_Journal_Code2$Remark2_N[357] <- "被试重复使用"
 
 ### Article_IDs 20184042
 df_stage2_Journal_Code2$Remark2_N[388] <- "被试重复使用"
+
+## Article_IDs 20082248
+df_stage2_Journal_Code2$Remark2[711:712] <- NA
+df_stage2_Journal_Code2$Remark2_N[711:712] <- NA
 
 ### Article_IDs 20181022
 df_stage2_Journal_Code2$Remark2[782:783] <- NA
