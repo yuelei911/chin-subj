@@ -302,13 +302,25 @@ BTS[[16]] <- BTS[[16]] %>%
   dplyr::mutate(
     Country = ifelse(Country == "US", "United States", Country),
     Country = ifelse(Country == "CHN", "China", Country),
-    Country = ifelse(Country == "UK", "United Kingdom", Country)
-  )
+    Country = ifelse(Country == "UK", "United Kingdom", Country))
                 
       
-
 ### BTS_Hu_et_al_2019
+## I converted the country codes based on the information in the IJzerman et al (2018), https://doi.org/10.1525/collabra.165.
 
+BTS[[17]] <- BTS[[17]] %>% 
+  dplyr::mutate(Country = case_when(Country == "Bamberg" ~ "Germany",
+                                    Country == "Kassel" ~ "Germany",
+                                    Country == "METU" ~ "Turkey",
+                                    Country == "Oslo" ~ "Norway",
+                                    Country == "Oxford" ~ "United Kingdom",
+                                    Country == "SMU" ~ "Singapore",
+                                    Country == "Southampton" ~ "United Kingdom",
+                                    Country == "Tsinghua" ~ "China",
+                                    Country == "UCSB" ~ "United States",
+                                    Country == "Zurich" ~ "Switzerland",
+                                    Country == "VCU" ~ "United States",
+                                    TRUE ~ Country))
 
 
 ## BTS_Jones_et_al_2021
@@ -662,9 +674,10 @@ BTS[[14]] <- BTS[[14]] %>%
 
 process age data of BTS
 ```{r}
-## Awad_et_al_2018
+## BTS_Awad_et_al_2018
+## According to the document "MMdata_Readme.txt" by Awad et al (2018), the section "- Review_age: answer to the question 'How old are you?' Age is collected via an empty box (users can input numbers). Only data corresponding to age between 18 and 75 is included." indicates that we have decided to set the age range for this project as 18 to 75.
 BTS[[4]] <- BTS[[4]] %>% 
-  dplyr::select(-Age)
+  dplyr::mutate(Age = ifelse(Age < 18 | Age >75,NA,Age))
 
 
 ## BTS_Hu_et_al_2019
@@ -1008,9 +1021,8 @@ BTS_edu_list[[17]] <- BTS_edu_list[[17]] %>%
 ```
 
 
-
 # Save Rdata
 ```{r}
-save(BTS, WEIRD, Countrycodelist_iso2_iso3,file = "BTS.Rdata")
+save(BTS, WEIRD, BTS_edu_list, Countrycodelist_iso2_iso3,file = "BTS.Rdata")
 ```
 
