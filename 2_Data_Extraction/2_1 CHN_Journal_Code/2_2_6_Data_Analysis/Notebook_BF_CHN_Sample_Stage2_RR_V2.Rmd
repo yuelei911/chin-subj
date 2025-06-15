@@ -305,21 +305,19 @@ Journal_age_report_detail <- Journal %>%
 
 ### Age report studies num
 Journal_age_report_detail_study_num <- Journal_age_report_detail %>%
-    dplyr::distinct(Article_IDs,Study_Number) ## 989 studies
+    dplyr::distinct(Article_IDs,Study_Number) ## 991 studies
 
 ### Age report papers num
 Journal_age_report_detail_papers_num <- Journal_age_report_detail_study_num %>% 
-  dplyr::distinct(Article_IDs) ## 792 articles
+  dplyr::distinct(Article_IDs) ## 793 articles
   
 ### Age fuzzy report studies num
 Journal_age_fuzzy_report <- Journal_age_report_detail %>% 
   dplyr::filter(is.na(M_age)) 
 
-## 20082227,20083017,20183340,20183097,20214027 20181065 Other age include Mage
-##这里后面还需要重新处理一下部分Otherage包含Mage的情况
 
 Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>% 
-  dplyr::distinct(Article_IDs) ## 115-6=109
+  dplyr::distinct(Article_IDs) ## 116-6=110
 
 ## Here, I remove some data sets to reduce data set clutter.
 # rm(Journal_age_report_detail,Journal_age_report_detail_study_num,
@@ -327,16 +325,14 @@ Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>%
 ```
 
 
+
 In this section, I began by testing and analyzing three main hypotheses.
-
 # Test three hypotheses
-
 ## Test the 1st hypothesis
-
 ### Gender
 
+
 Process gender data from Chinese journals.
-  
 ```{r warning=FALSE}
 ## Filter for information-rich key variables
 Journal_key_variable <- Journal %>% 

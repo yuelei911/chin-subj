@@ -76,12 +76,8 @@ for (i in seq_along(BTS)) {
   BTS[[i]] <- merged_df
   
 }
-
-## VIEW 
-# BTS1 <- BTS[[2]]
-# table(BTS1$Target_Population)
-
 ```
+
 
 Here, I used self-defined function in Stage1 to calculate Bayesian multinomial test.
 
@@ -159,20 +155,21 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 }
 ```
 
-At this point, I have finished loading the package and data. Next, I analyzed the data and visualized it according to the logic of the written protocal.
 
+At this point, I have finished loading the package and data. Next, I analyzed the data and visualized it according to the logic of the written protocal.
 I began by analyzing the basic case of the two data sets (BTS and Chinese journals).
 
 # Overview of participants
-
 ## The basic situation of Chinese journals coding data
 ```{r warning=FALSE}
 Journal <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) ## valid 1567 rows
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) ## valid 1569 rows
 
 Journal_articles_num <- Journal %>% 
-  dplyr::distinct(Article_IDs) ## A total 962 articles
+  dplyr::distinct(Article_IDs) ## A total 963 articles
+
+
 
 # ## output `Journal` to help download bibliographic data from CNKI
 # Journal_cnki <- Journal %>% 
@@ -182,34 +179,37 @@ Journal_articles_num <- Journal %>%
 # write.csv(Journal_cnki,"Journal_cnki.csv",row.names = FALSE)
 
 
+
 # calculate exclude articles that only need code simple info
 Journal_simple_info_articles <- df_stage2_Journal_Code2 %>% 
   dplyr::select(Article_IDs,Remark1,Remark2,Remark3,Subjects_Recruitment_Area) %>% 
   dplyr::filter(!Article_IDs %in% Journal_articles_num$Article_IDs) %>% 
-  dplyr::distinct(Article_IDs,.keep_all = TRUE)   ## 这里20082248排除错误，后面记得处理
+  dplyr::distinct(Article_IDs,.keep_all = TRUE)  
 
 table(Journal_simple_info_articles$Remark1)
 
 
 Journal_study_num <- Journal %>% 
-  dplyr::distinct(Article_IDs,Study_Number) ## A total 1217 studies
+  dplyr::distinct(Article_IDs,Study_Number) ## A total 1219 studies
 
 Journal_sample_size <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size) %>% 
   dplyr::mutate(Sample_Size = as.numeric(Sample_Size),
                 Sample_Size = ifelse(Article_IDs == "20185082",33,Sample_Size))
-# sum(Journal_sample_size$Sample_Size,na.rm = TRUE)  ## 538,552
+
+# sum(Journal_sample_size$Sample_Size,na.rm = TRUE)  ## 538,949
+
 
 ## Here, I remove some data sets to reduce data set clutter.
-rm(Journal_articles_num,Journal_study_num,df_stage2_Journal_Code2)
+# rm(Journal_articles_num,Journal_study_num,df_stage2_Journal_Code2)
 
 
 ## Save Journal to explore analysis
 save(Journal, file ="Journal.Rdata")
 ```
 
-Meanwhile, we process the special target population
 
+Meanwhile, we process the special target population
 ```{r}
 Journal_special_target_population <- Journal %>% 
   dplyr::select(Article_IDs,Article_Title,Target_Population_N,Coding_Basis_N,Sample_Type_N) %>% 
@@ -224,8 +224,8 @@ Journal_special_target_population2 <- readxl::read_xlsx("Journal_special_target_
   dplyr::rename(Abstract = 3)
 ```
 
-Next, I try to classify special target population
 
+Next, I try to classify special target population
 ```{r}
 ## college
 
@@ -238,8 +238,9 @@ table(Journal_college_TP$Recode_target_population)
 
 ## children and adolenscent
 Journal_children_adolenscent_TP <- Journal_special_target_population2 %>% 
-  dplyr::filter(grepl("儿童|幼儿|青少年|初中生|高中生|小学生|中学生|中职",Recode_target_population))
+  dplyr::filter(grepl("儿童|幼儿|青少年|初中生|高中生|小学生|中学生|中职|婴儿|学龄|学前",Recode_target_population))
 ```
+
 
 ## The basic situation about BTS data
 ```{r}
@@ -258,55 +259,15 @@ BTS_Overview2 <- BTS_Overview %>%
   dplyr::filter(!is.na(ISO2)) %>%   ## ISO2 is used to subsequent visualize the spatial distribution in and filter out the data with countries as NA.
   dplyr::group_by(ISO2) %>% 
   dplyr::summarise(n = n()) %>% 
-  dplyr::mutate(Proportion = round(n/sum(n)*100,4),
-                FloorPro = floor(Proportion),
-                index = Proportion - FloorPro,
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
+                Proportion_sum = sum(Proportion),
+                Proportion_adjust = Proportion / Proportion_sum,
+                Proportion_sum_adjust = sum(Proportion_adjust),
                 Site = "BTS")
-
-
-sum(BTS_Overview2$Proportion)
-
-
-BTS_Overview2_idx <- BTS_Overview2 %>% 
-  group_by(Site) %>% 
-  summarise(sum = sum(FloorPro)) %>% 
-  ungroup()
 ```
 
-
-## try percent 100
-```{r}
-BTS_Overviewfill <- data.frame(matrix(ncol = ncol(BTS_Overview2),nrow = 0))
-colnames(BTS_Overviewfill) <- colnames(BTS_Overview2)
-
-
-for (i in 1:nrow(BTS_Overview2_idx)) {
-
-  df55 <- BTS_Overview2 %>%
-    dplyr::filter(Site == BTS_Overview2_idx$Site[i]) %>%
-    dplyr::arrange(desc(index))
-
-  if(BTS_Overview2_idx$sum[i] < 100) {
-
-    for(j in seq(100 - BTS_Overview2_idx$sum[i])){
-
-      df55$FloorPro[j] <- df55$FloorPro[j] + 1
-    }
-      BTS_Overviewfill <- rbind(BTS_Overviewfill,df55)
-  }
-
-   return(BTS_Overviewfill)
-
-}
-
-
-sum(BTS_Overviewfill$FloorPro)
-
-??floor
-```
 
 ## The reported situation of Chinese Journals
-
 ```{r}
 ## calculate region data
 # Journal_region_detail_tab <- Journal %>% 
@@ -388,7 +349,6 @@ Journal_report <- rbind(Journal_report,Journal_education_occupation_table) %>%
 
 
 ### Visualize subjects information reported situations in Chinese journals
-
 ```{r}
 Fig_Journal_report <- ggplot(Journal_report,aes(col_names,proportion,fill=Var1))+
   geom_col()+
@@ -412,8 +372,8 @@ ggsave("Fig_Journal_report.pdf", Fig_Journal_report, device = "pdf", width=16, h
 rm(report_list,report_table,i,Journal_education_occupation,Journal_education_occupation_table)
 ```
 
-### Specific reports on some demographic categories
 
+### Specific reports on some demographic categories
 ```{r}
 Journal_age_report_detail <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Age,M_age,SD_age,Other_age) %>%
@@ -421,37 +381,33 @@ Journal_age_report_detail <- Journal %>%
 
 ### Age report studies num
 Journal_age_report_detail_study_num <- Journal_age_report_detail %>%
-    dplyr::distinct(Article_IDs,Study_Number) ## 989 studies
+    dplyr::distinct(Article_IDs,Study_Number) ## 991 studies
 
 ### Age report papers num
 Journal_age_report_detail_papers_num <- Journal_age_report_detail_study_num %>% 
-  dplyr::distinct(Article_IDs) ## 792 articles
+  dplyr::distinct(Article_IDs) ## 793 articles
   
 ### Age fuzzy report studies num
 Journal_age_fuzzy_report <- Journal_age_report_detail %>% 
   dplyr::filter(is.na(M_age)) 
 
-## 20082227,20083017,20183340,20183097,20214027 20181065 Other age include Mage
-##这里后面还需要重新处理一下部分Otherage包含Mage的情况
-
 Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>% 
-  dplyr::distinct(Article_IDs) ## 115-6=109
+  dplyr::distinct(Article_IDs) ## 116-6=110
 
 ## Here, I remove some data sets to reduce data set clutter.
 # rm(Journal_age_report_detail,Journal_age_report_detail_study_num,
 #    Journal_age_fuzzy_report,Journal_age_fuzzy_report_study_num)
 ```
 
+
 In this section, I began by testing and analyzing three main hypotheses.
 
 # Test three hypotheses
-
 ## Test the 1st hypothesis
-
 ### Gender
 
-Process gender data from Chinese journals.
 
+Process gender data from Chinese journals.
 ```{r warning=FALSE}
 ## Filter for information-rich key variables
 Journal_key_variable <- Journal %>% 
@@ -518,31 +474,54 @@ Target_population_special_gender <- Journal_gender2 %>%
                    Female_Proportion = round((Female_Num/(Male_Num + Female_Num))*100,2),
                    Data_Source = "Target_population_special")
 
-## target population is special and sample type is 23. 
-Target_population_special_sampletype23_gender <- Journal_gender2 %>% 
-  dplyr::filter(Target_Population_N == 1) %>%
-  dplyr::filter(grepl("2",Sample_Type_N) | grepl("3",Sample_Type_N)) %>% 
-  dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
-                   Female_Num = sum(Female_Num,na.rm = TRUE),
-                   Male_Proportion = round(Male_Num/(Male_Num + Female_Num),2)*100,
-                   Female_Proportion = round(Female_Num/(Male_Num + Female_Num),2)*100,
-                   Data_Source = "Target_population_special23")
 
-Journal_gender_different_categories <- bind_rows(Target_population_general_gender,
-                                                 Target_population_special_gender,
-                                                 Target_population_special_sampletype23_gender) 
+table(Target_population_special_gender$Sample_Type_N)
+
+# ## combine tow target population
+# Journal_gender_different_categories <- bind_rows(Target_population_general_gender,
+#                                                  Target_population_special_gender)
+
+
+## infants and toddlers & special target population
+## Filter studies targeting infants/toddlers from "Journal_special_target_population2"
+Journal_gender_Infants_toddlers_TP <- Journal_special_target_population2 %>% 
+  dplyr::select(Article_IDs,Article_Title,Recode_target_population) %>% 
+  dplyr::filter(grepl("幼儿|岁儿童|学步儿|学前|学龄|低龄", Recode_target_population)) %>% 
+  dplyr::filter(!grepl("幼儿父亲|幼儿教师|母亲|8|10|11|12",Recode_target_population))
+  
+## merge the above data.frame with "Journal" data.frame
+Journal_gender_Infants_toddlers_TP_IDs <- Journal %>% 
+  dplyr::filter(Article_IDs_N %in% Journal_Infants_toddlers_TP$Article_IDs) %>% 
+  dplyr::select(Article_IDs_N,Article_Title,Study_Number_N,Subjects_Group_N,
+                M_age,SD_age,Other_age,Age,
+                Gender,Male_Num,Female_Num,
+                Sample_Type_N,Sample_Type_info_N) %>% 
+  dplyr::filter(Gender == 1) %>% 
+  dplyr::filter(!grepl("父亲|母亲|父母组",Subjects_Group_N)) %>% 
+  dplyr::left_join(Journal_Infants_toddlers_TP,
+                   by = c("Article_IDs_N" = "Article_IDs")) %>%
+  dplyr::select(1:2,14:15,3:13)
+
+
+## calculate gender num
+## male num and female both are integer
+Journal_gender_Infants_toddlers <- Journal_gender_Infants_toddlers_TP_IDs %>% 
+  dplyr::summarise(Male_Num = sum(as.numeric(Male_Num)),
+                   Female_Num = sum(as.numeric(Female_Num)),
+                   Male_Proportion = round(Male_Num/(Male_Num+Female_Num)*100,2),
+                   Female_Proportion = round(Female_Num/(Male_Num+Female_Num)*100,2)) ## Male 51.58, Female 48.42
 ```
 
-Here, I remove some data sets to reduce data set clutter.
 
+Here, I remove some data sets to reduce data set clutter.
 ```{r}
 rm(Journal_gender_decimal,Journal_gender_decimal2,
    Journal_gender_integer,Journal_gender_integer2,
    Journal_gender_integer_add,Journal_gender)
 ```
 
-Process gender data from BTS.
 
+Process gender data from BTS.
 ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 BTS_gender_list <- list()
 
@@ -567,8 +546,8 @@ for(i in seq_along(BTS)) {
 }
 ```
 
-Combine gender data from Chinese Journal and BTS.
 
+Combine gender data from Chinese Journal and BTS.
 ```{r}
 ## Extracting Chinese data
 BTS_gender_CHN <- lapply(BTS_gender_list, function(df){
@@ -587,27 +566,30 @@ BTS_gender_CHN_general <- BTS_gender_CHN %>%
   dplyr::filter(Target_Population == 2 | Target_Population == 3) %>% 
   dplyr::group_by(Gender) %>% 
   dplyr::summarise(n = n()) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,4)) %>% 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2)) %>% 
   dplyr::ungroup() %>%
   dplyr::mutate(Data_Source = "BTS Chinese")
   
+
 ## Combine CHN journal data and set factor
 H1_gender_general <- BTS_gender_CHN_general %>% 
-  dplyr::add_row(Gender = c("Female","Male"), n = c(273804,234047),
-                 Proportion = c(54,46),Data_Source = "Journal")   ## Here, enter data manually.
+  dplyr::add_row(Gender = c("Female","Male"), n = c(55366,45480),
+                 Proportion = c(54.90,45.10),Data_Source = "Journal")   ## Here, enter data manually.
+
 
 H1_gender_factor_general <- H1_gender_general %>% 
   dplyr::filter(Gender == "Female") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(Data_Source)
 
+
 H1_gender_general <- H1_gender_general %>% 
   dplyr::mutate(Data_Source = factor(Data_Source,
                                      levels = H1_gender_factor_general))
 ```
 
-Visualize gender data for Chinese journals and BTS.
 
+Visualize gender data for Chinese journals and BTS.
 ```{r}
 H1_Fig_gender_general <- ggplot(data = H1_gender_general,aes(Data_Source,Proportion,fill = Gender))+
   geom_col()+
@@ -620,7 +602,8 @@ H1_Fig_gender_general <- ggplot(data = H1_gender_general,aes(Data_Source,Proport
         legend.text = element_text(size = 20, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 20,family = "serif"),
-        axis.text = element_text(size = 20,family = "serif"))
+        axis.text = element_text(size = 20,family = "serif"))+
+  xlab("Data Source")
 
 H1_Fig_gender_general 
 ```
@@ -644,22 +627,34 @@ H1_BF_gender_general <- BayesMultiNomial(dataset = H1_gender_bayes_general,
 
 However, I found there no different between BTS data and the general population of Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_general$BF$LogBF10`.
 
-In this part, I will analysis gender based on the special target population.
 
-first, I process Journal data
-
+In this part, I will analysis gender based on the special target population. For the first research question, only Lucca et al.(2024)' target population is special target population Specifically, it focuses on infants. Therefore, in specila target population, I will compare Lucca et al..(2024) with Chinese journal studies targeting infants/toddlers.
 ```{r}
-Journal_college_TP_articleIDs <- Journal_college_TP %>% 
-  dplyr::distinct(Article_IDs) %>% 
-  dplyr::pull(Article_IDs)
+Lucca_gender_special <- BTS[[21]] %>% 
+  dplyr::filter(ISO2 == "CN") %>% 
+  dplyr::group_by(Gender) %>% 
+  dplyr::summarise(n = n()) %>% ## Male 79, Female 77
+  dplyr::ungroup() %>% 
+  dplyr::filter(!is.na(Gender)) %>% 
+  dplyr::mutate(Porportion = round(n/sum(n)*100,2), ## Male 50.64, Female 49.36
+                Data_Source = "Lucca") %>% 
+  dplyr::select(1,3,4)
 
-Journal_gender_special_college <- Journal_gender2 %>% 
-  dplyr::filter(Article_IDs %in% Journal_college_TP_articleIDs)
 
+## create a data.frame that include two data.source
+H1_gender_bayes_special <- data.frame(Gender = c("Female","Male"),
+           Lucca = c(49.36,50.64),
+           Journal = c(48.42,51.58))
 
-## combine two data source
-## I found there is no data of BTS on college in special target population.
+## calculate BF
+H1_BF_gender_special <-  BayesMultiNomial(dataset = H1_gender_bayes_special,
+                                          factor = "Gender",
+                                          observed = "Lucca",
+                                          expected = "Journal")
 ```
+In the specific population of infants and toddlers, I did not find significant difference between Lucca et al. (2024) and Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_special$BF$LogBF10`.
+
+
 
 At the end of gender data processing for hypothesis 1, I removed some data sets to reduce data set clutter.
 
