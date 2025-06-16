@@ -170,7 +170,6 @@ Journal_articles_num <- Journal %>%
   dplyr::distinct(Article_IDs) ## A total 963 articles
 
 
-
 # ## output `Journal` to help download bibliographic data from CNKI
 # Journal_cnki <- Journal %>% 
 #   dplyr::select(Article_IDs_N,Article_Title,First_Author,Journal) %>% 
@@ -700,17 +699,19 @@ Journal_single_age <- Journal_age %>%
 Journal_otherage <- Journal_otherage %>% 
   dplyr::mutate(Article_IDs = as.character(Article_IDs),
                 Study_Number = as.character(Study_Number)) %>% 
-  dplyr::rename(M_age = 8,SD_age = 9,Other_age = 10)
+  dplyr::rename(M_age = 8,SD_age = 9,Other_age = 10) %>% 
+  dplyr::filter(!is.na(SD_age))
 
 ## Combining journal age data for three categories 
 Journal_age2 <- bind_rows(Journal_strings_age,Journal_single_age,Journal_otherage)
+
+sum(Journal_age2$Sample_Size)  ## 359176
 ```
 
 
 Since raw data is not available for papers in Chinese journals, I simulated the raw data using the method used in the Stges 1 of registration report. It is then combined with BTS and compared with census data.
 
 First, I created a function that groups ages into five-year intervals for the purpose of creating a Population pyramid chart.
-
 ```{r}
 Sim_Sens_mult_five <- function(Mean0, diff_age, SD0, sample_N=Sample_Size){
 
@@ -748,76 +749,10 @@ Sim_Sens_mult_five <- function(Mean0, diff_age, SD0, sample_N=Sample_Size){
 
   return(Sim_agefive_df)
 }
-
-
-## Use simulation function to process data.
-Sim_Journal_age_five1 <- lapply(1:nrow(Journal_age2),function(i){
-  
-  Sim_Sens_mult_five(Mean0 = Journal_age2$M_age[i],
-                diff_age = 0,
-                SD0 = Journal_age2$SD_age[i],
-                sample_N = Journal_age2$Sample_Size[i])
-  
-  })
-
-
-Sim_Journal_age_five2 <- do.call(rbind,Sim_Journal_age_five1)
-
-
-Sim_Journal_age_five3 <- Sim_Journal_age_five2 %>% 
-  dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE),4)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(ageBins =factor(ageBins,
-                                levels = c("0~4","5~9","10~14","15~19","20~24",
-                                           "25~29","30~34","35~39","40~44","45~49",
-                                           "50~54","55~59","60~64","65~69","70~74",
-                                           "75~79","80~84","85~89", "90~94",">=95")))
-
-## fill to percent 100
-Sim_Journal_age_five3 <- Sim_Journal_age_five3 %>% 
-  dplyr::mutate(Floorsim1 = floor(sim1),
-                index = sim1 - Floorsim1,
-                Site = "Journal")
-
-Sim_Journal_age_five3_idx <- Sim_Journal_age_five3 %>% 
-  dplyr::group_by(Site) %>% 
-  dplyr::summarise(sum=sum(Floorsim1))
-
-
-Sim_Journal_age_five3_fill <- data.frame(matrix(ncol = ncol(Sim_Journal_age_five3),nrow = 0))
-colnames(Sim_Journal_age_five3_fill) <- colnames(Sim_Journal_age_five3)
-
-
-for (i in 1:nrow(Sim_Journal_age_five3_idx)) {
-  
-  df_sim1 <- Sim_Journal_age_five3 %>% 
-    dplyr::filter(Site == Sim_Journal_age_five3_idx$Site[i]) %>% 
-    dplyr::arrange(desc(index))
-  
-  if(Sim_Journal_age_five3_idx$sum[i] < 357734){
-    
-    for (j in seq(357734 - Sim_Journal_age_five3_idx$sum[i])) {
-      
-      df_sim1$Floorsim1[j] <- df_sim1$Floorsim1[j] + 1
-      
-    }
-    
-    Sim_Journal_age_five3_fill <- rbind(Sim_Journal_age_five3_fill,df_sim1)
-    
-  }
-  
-  return(Sim_Journal_age_five3_fill)
-  
-}
-
-
-## Calculate the sample difference between the coded data and the simulated data
-sum(Journal_age2$Sample_Size)-sum(Sim_Journal_age_five3_fill$Floorsim1,na.rm = TRUE) 
 ```
 
-I then continued to use the same steps to divide age into psychological developmental stages.
 
+I then continued to use the same steps to divide age into psychological developmental stages.
 ```{r}
 Sim_Sens_mult_PsyStages <- function(Mean1, diff_age, SD1, sample_N=Sample_Size){
   
@@ -837,36 +772,10 @@ Sim_Sens_mult_PsyStages <- function(Mean1, diff_age, SD1, sample_N=Sample_Size){
 
   return(Sim_agePsyStages_df)
 }
-
-
-## Use simulation function to process data. 
-Sim_Journal_age_PsyStages1 <- lapply(1:nrow(Journal_age2),function(i){
-  
-  Sim_Sens_mult_PsyStages(Mean1 = Journal_age2$M_age[i],
-                diff_age = 0,
-                SD1 = Journal_age2$SD_age[i],
-                sample_N = Journal_age2$Sample_Size[i])
-  
-  })
-
-
-Sim_Journal_age_PsyStages2 <- do.call(rbind,Sim_Journal_age_PsyStages1)
-
-
-Sim_Journal_age_PsyStages3 <- Sim_Journal_age_PsyStages2 %>% 
-  dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE),4)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(ageBins =factor(ageBins,
-                                levels = c("<=17","18~25", "26~40", "41~60", ">=61")))
-
-
-## Calculate the sample difference between the coded data and the simulated data
-sum(Journal_age2$Sample_Size)-sum(Sim_Journal_age_PsyStages3$sim1,na.rm = TRUE)
 ```
 
-Meanwhile, I created func to process age data simulation in 10-year-old segment.
 
+Meanwhile, I created func to process age data simulation in 10-year-old segment.
 ```{r}
 Sim_Sens_mult_interval10 <- function(Mean2, diff_age2, SD2, sample_N2=Sample_Size){
 
@@ -890,83 +799,16 @@ Sim_Sens_mult_interval10 <- function(Mean2, diff_age2, SD2, sample_N2=Sample_Siz
   
   return(Sim_ageinterval10_df)
 }
-
-
-Sim_Journal_age_interval101 <- lapply(1:nrow(Journal_age2),function(i){
-  
-  Sim_Sens_mult_interval10(Mean2 = Journal_age2$M_age[i],
-                diff_age2 = 0,
-                SD2 = Journal_age2$SD_age[i],
-                sample_N2 = Journal_age2$Sample_Size[i])
-  
-  })
-
-
-Sim_Journal_age_interval102 <- do.call(rbind,Sim_Journal_age_interval101)
-
-
-## Use simulation function to process data. 
-Sim_Journal_age_interval103 <- Sim_Journal_age_interval102 %>% 
-  dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE),4)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(ageBins =factor(ageBins,
-                                levels = c("<=10", "11~20", "21~30", 
-                                           "31~40", "41~50", "51~60", ">=61")))
-  
-
-## fill to percent 100
-Sim_Journal_age_interval103 <- Sim_Journal_age_interval103 %>% 
-  dplyr::mutate(Floorsim1 = floor(sim1),
-                index = sim1 - Floorsim1,
-                Site = "Journal")
-
-Sim_Journal_age_interval103_idx <- Sim_Journal_age_interval103 %>% 
-  dplyr::group_by(Site) %>% 
-  dplyr::summarise(sum=sum(Floorsim1))
-
-
-Sim_Journal_age_interval103_fill <- data.frame(matrix(ncol = ncol(Sim_Journal_age_interval103),nrow = 0))
-colnames(Sim_Journal_age_interval103_fill) <- colnames(Sim_Journal_age_interval103)
-
-
-for (i in 1:nrow(Sim_Journal_age_interval103_idx)) {
-  
-  df_sim1 <- Sim_Journal_age_interval103 %>% 
-    dplyr::filter(Site == Sim_Journal_age_interval103_idx$Site[i]) %>% 
-    dplyr::arrange(desc(index))
-  
-  if(Sim_Journal_age_interval103_idx$sum[i] < 357734){
-    
-    for (j in seq(357734 - Sim_Journal_age_interval103_idx$sum[i])) {
-      
-      df_sim1$Floorsim1[j] <- df_sim1$Floorsim1[j] + 1
-      
-    }
-    
-    Sim_Journal_age_interval103_fill <- rbind(Sim_Journal_age_interval103_fill,df_sim1)
-    
-  }
-  
-  return(Sim_Journal_age_interval103_fill)
-  
-}
-
-
-
-## Calculate the sample difference between the coded data and the simulated data
-sum(Journal_age2$Sample_Size)-sum(Sim_Journal_age_interval103_fill$Floorsim1,na.rm = TRUE)
 ```
 
-In the following part, I will calculate other age data based on different target population.
 
-The first is general population.
+In the following part, I will calculate other age data based on different target population.The first is general population.
 
 5-years-old
 ```{r}
-## general target population
 Journal_age_general <-  Journal_age2 %>%
   dplyr::filter(Target_Population_N != 1)
+
 
 ## simulate different categories age data
 ### five-year-old
@@ -995,7 +837,7 @@ Sim_Journal_age_five3_general <- Sim_Journal_age_five2_general %>%
 
 
 ## Calculate the sample difference between the coded data and the simulated data
-sum(Journal_age_general$Sample_Size)-sum(Sim_Journal_age_five3_general$sim1,na.rm = TRUE) 
+sum(Journal_age_general$Sample_Size)-sum(Sim_Journal_age_five3_general$sim1) 
 ```
 
 
@@ -1058,266 +900,24 @@ Sim_Journal_age_interval103_general <- Sim_Journal_age_interval102_general %>%
 sum(Journal_age_general$Sample_Size)-sum(Sim_Journal_age_interval103_general$sim1,na.rm = TRUE)
 ```
 
-The others is special target population
-(特定人群的年龄模拟等数据确定后需要重新计算）
-```{r}
-Target_special_population_age <- Journal_age2 %>% 
-  dplyr::filter(Target_Population_N == 1)
-
-
-## simulate different categories age data
-### five-year-old
-Sim_Journal_age_five1_special <- lapply(1:nrow(Target_special_population_age),function(i){
-  
-  Sim_Sens_mult_five(Mean0 = Target_special_population_age$M_age[i],
-                diff_age = 0,
-                SD0 = Target_special_population_age$SD_age[i],
-                sample_N = Target_special_population_age$Sample_Size[i])
-  
-  })
-
-
-Sim_Journal_age_five2_special <- do.call(rbind,Sim_Journal_age_five1_special)
-
-
-Sim_Journal_age_five3_special <- Sim_Journal_age_five2_special %>% 
-  dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(ageBins =factor(ageBins,
-                                levels = c("0~4","5~9","10~14","15~19","20~24",
-                                           "25~29","30~34","35~39","40~44","45~49",
-                                           "50~54","55~59","60~64","65~69","70~74",
-                                           "75~79","80~84","85~89", "90~94",">=95")))
-
-
-## Calculate the sample difference between the coded data and the simulated data
-sum(Target_special_population_age$Sample_Size)-sum(Sim_Journal_age_five3_special$sim1,na.rm = TRUE) 
-
-
-## PsyStages
-Sim_Journal_age_PsyStages1_special <- lapply(1:nrow(Target_special_population_age),function(i){
-  
-  Sim_Sens_mult_PsyStages(Mean1 = Target_special_population_age$M_age[i],
-                diff_age = 0,
-                SD1 = Target_special_population_age$SD_age[i],
-                sample_N = Target_special_population_age$Sample_Size[i])
-  
-  })
-
-
-Sim_Journal_age_PsyStages2_special <- do.call(rbind,Sim_Journal_age_PsyStages1_special)
-
-
-Sim_Journal_age_PsyStages3_special <- Sim_Journal_age_PsyStages2_special %>% 
-  dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE),4)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(ageBins =factor(ageBins,
-                                levels = c("<=17","18~25", "26~40", "41~60", ">=61")))
-
-
-## Calculate the sample difference between the coded data and the simulated data
-sum(Target_special_population_age$Sample_Size)-sum(Sim_Journal_age_PsyStages3_special$sim1,na.rm = TRUE)
-
-
-## ten-years-old
-Sim_Journal_age_interval101_special <- lapply(1:nrow(Target_special_population_age),function(i){
-  
-  Sim_Sens_mult_interval10(Mean2 = Target_special_population_age$M_age[i],
-                diff_age2 = 0,
-                SD2 = Target_special_population_age$SD_age[i],
-                sample_N2 = Target_special_population_age$Sample_Size[i])
-  
-  })
-
-
-Sim_Journal_age_interval102_special <- do.call(rbind,Sim_Journal_age_interval101_special)
-
-
-## Use simulation function to process data. 
-Sim_Journal_age_interval103_special <- Sim_Journal_age_interval102_special %>% 
-  dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(ageBins =factor(ageBins,
-                                levels = c("<=10", "11~20", "21~30", 
-                                           "31~40", "41~50", "51~60", ">=61")))
-  
-
-
-## Calculate the sample difference between the coded data and the simulated data
-sum(Target_special_population_age$Sample_Size)-sum(Sim_Journal_age_interval103_special$sim1,na.rm = TRUE)
-```
-
-And I calculated the proportion of age data for different segments to facilitate visualization and Bayesian calculation.
-```{r}
-## general population 5-old-years
-Sim_Journal_age_five3_general_prop <- Sim_Journal_age_five3_general %>% 
-  dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,4),
-                Data_Source = "Journal")
-
-sum(Sim_Journal_age_five3_general_prop$Proportion)  ## sum 100.0002
-
-
-## fill to percent 100
-Sim_Journal_age_five3_general_prop <- Sim_Journal_age_five3_general_prop %>% 
-  dplyr::mutate(FloorPro = floor(Proportion),
-                index = Proportion - FloorPro)
-
-Sim_Journal_age_five3_general_prop_index <- Sim_Journal_age_five3_general_prop %>% 
-  dplyr::group_by(Data_Source) %>% 
-  dplyr::summarise(sum = sum(FloorPro)) %>% 
-  dplyr::ungroup()
-
-
-Sim_Journal_age_five3_general_prop_fill <- data.frame(matrix(ncol = ncol(Sim_Journal_age_five3_general_prop),
-                                                             nrow = 0))
-colnames(Sim_Journal_age_five3_general_prop_fill) <- colnames(Sim_Journal_age_five3_general_prop)
-
-rm(df_sim1)
-
-for (i in 1:nrow(Sim_Journal_age_five3_general_prop_index)) {
-  
-  df_sim1 <- Sim_Journal_age_five3_general_prop %>% 
-    dplyr::filter(Data_Source == Sim_Journal_age_five3_general_prop_index$Data_Source[i]) %>% 
-    dplyr::arrange(desc(index))
-  
-  if(Sim_Journal_age_five3_general_prop_index$sum[i] < 100){
-    
-    for(j in seq(100 - Sim_Journal_age_five3_general_prop_index$sum[i])){
-      
-      df_sim1$FloorPro[j] <- df_sim1$FloorPro[j] + 1
-      
-    }
-    
-    Sim_Journal_age_five3_general_prop_fill <- rbind(Sim_Journal_age_five3_general_prop_fill,df_sim1)
-    
-  }
-  
-  return(Sim_Journal_age_five3_general_prop_fill)
-  
-}
-
-sum(Sim_Journal_age_five3_general_prop_fill$FloorPro) ## 100
-
-```
-
-
-```{r}
-## general population PsyStages
-Sim_Journal_age_PsyStages3_general_prop <- Sim_Journal_age_PsyStages3_general %>% 
-    dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,4),
-                Data_Source = "Journal")
-
-sum(Sim_Journal_age_PsyStages3_general_prop$Proportion)
-```
-
-
-```{r}
-## general population interval10
-Sim_Journal_age_interval103_general_prop <- Sim_Journal_age_interval103_general %>% 
-    dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,4),
-                Data_Source = "Journal")
-
-sum(Sim_Journal_age_interval103_general_prop$Proportion) ## 100
-
-# # fill to percent 100
-# Sim_Journal_age_interval103_general_prop <- Sim_Journal_age_interval103_general_prop %>% 
-#   dplyr::mutate(FloorPro = floor(Proportion),
-#                 index = Proportion - FloorPro)
-# 
-# Sim_Journal_age_interval103_general_prop_index <- Sim_Journal_age_interval103_general_prop %>% 
-#   dplyr::group_by(Data_Source) %>% 
-#   dplyr::summarise(sum=sum(FloorPro)) %>% 
-#   dplyr::ungroup()
-# 
-# Sim_Journal_age_interval103_general_prop_fill <- data.frame(matrix(ncol = ncol(Sim_Journal_age_interval103_general_prop),nrow = 0))
-# colnames(Sim_Journal_age_interval103_general_prop_fill) <- colnames(Sim_Journal_age_interval103_general_prop)
-# 
-# for (i in 1:nrow(Sim_Journal_age_interval103_general_prop_index)) {
-#   
-#   df_sim_interval103_general <- Sim_Journal_age_interval103_general_prop %>% 
-#     dplyr::filter(Data_Source == Sim_Journal_age_interval103_general_prop_index$Data_Source[i]) %>% 
-#     dplyr::arrange(desc(index))
-#   
-#   if(Sim_Journal_age_interval103_general_prop_index$sum[i] < 100){
-#     
-#     for (j in seq(100 - Sim_Journal_age_interval103_general_prop_index$sum[i])) {
-#       
-#         df_sim_interval103_general$FloorPro[j] <-    df_sim_interval103_general$FloorPro[j] + 1
-#       
-#     }
-#     
-#     Sim_Journal_age_interval103_general_prop_fill <- rbind(Sim_Journal_age_interval103_general_prop_fill,
-#                                                      df_sim_interval103_general)
-#     
-#   }
-#   
-#   return(Sim_Journal_age_interval103_general_prop_fill)
-# 
-# }
-# 
-# sum(Sim_Journal_age_interval103_general_prop_fill$FloorPro)
-```
-
-
-sepcial target population
-```{r eval=FALSE, include=FALSE}
-## special population 5-old-years
-Sim_Journal_age_five3_special_prop <- Sim_Journal_age_five3_special %>% 
-  dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
-                Data_Source = "Journal")
-
-## sum(Sim_Journal_age_five3_special_prop$Proportion) ## 100.03
-
-## special population PsyStages
-Sim_Journal_age_PsyStages3_special_prop <- Sim_Journal_age_PsyStages3_special %>% 
-    dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
-                Data_Source = "Journal")
-
-## sum(Sim_Journal_age_PsyStages3_special_prop$Proportion) ## 100
-
-## special population interval10
-Sim_Journal_age_interval103_special_prop <- Sim_Journal_age_interval103_special %>% 
-    dplyr::mutate(Proportion = round((sim1/sum(sim1))*100,2),
-                Data_Source = "Journal")
-
-## sum(Sim_Journal_age_interval103_special_prop$Proportion) ## 99.99
-```
-
-
-To reduce data set clutter, I removed some data sets during processing Journal age above.
-```{r}
-rm(Sim_Journal_age_five1,Sim_Journal_age_five2,Sim_Journal_age_five3,
-   Sim_Journal_age_interval101,Sim_Journal_age_interval102,Sim_Journal_age_interval103,
-   Sim_Journal_age_PsyStages1,Sim_Journal_age_PsyStages2,Sim_Journal_age_PsyStages3,
-   Sim_Journal_age_five1_general,Sim_Journal_age_five2_general,Sim_Journal_age_five3_general,
-   Sim_Journal_age_interval101_general,Sim_Journal_age_interval102_general,Sim_Journal_age_interval103_general,
-   Sim_Journal_age_PsyStages1_general,Sim_Journal_age_PsyStages2_general,Sim_Journal_age_PsyStages3_general,
-   Sim_Journal_age_five1_special,Sim_Journal_age_five2_special,Sim_Journal_age_five3_special,
-   Sim_Journal_age_interval101_special,Sim_Journal_age_interval102_special,Sim_Journal_age_interval103_special,
-   Sim_Journal_age_PsyStages1_special,Sim_Journal_age_PsyStages2_special,Sim_Journal_age_PsyStages3_special)
-```
+As mentioned before, the sepcial target population of BTS is only Lucca et al.(2024), its target population is babies, and there is no need to compare ages between BTS and Journals in age.
 
 
 Process age data from BTS.
 ```{r}
-BTS1 <- BTS[-c(3,16,17,8)]
-# str(BTS1)## 使用BTS1是因为部分数据年龄有问题，所以筛选，后续有多处是这样，数据再次清洗后请注意更换
-
+# BTS1 <- BTS[-c(3,16,17,8)]
 BTS_age_list <- list()
 
-for(i in seq_along(BTS1)){
+for(i in seq_along(BTS)){
   
-  BTS_name <- names(BTS1)[i]
+  BTS_name <- names(BTS)[i]
   
-  if("Age" %in% names(BTS1[[i]])){
+  if("Age" %in% names(BTS[[i]])){
     
-    BTS_age <- BTS1[[i]] %>% 
+    BTS_age <- BTS[[i]] %>% 
       dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
       dplyr::select(Article_Id,Age,Target_Population,ISO3) %>% 
-      #dplyr::group_by(ISO3) %>% 
+      dplyr::mutate(Age = as.numeric(Age)) %>% 
       dplyr::mutate(ageBins = cut(Age,
                                 breaks = c(-Inf,4.5,9.5,14.5,19.5,24.5,
                                            29.5,34.5,39.5,44.5,49.5,
@@ -1344,63 +944,25 @@ BTS_age_list[[BTS_name]] <- BTS_age
 BTS_age <-  bind_rows(BTS_age_list)
 ```
 
-Filter CHN age data from BTS, Combine BTS CHN data and Chinese journals data.
 
-considering the different target population, I process all data firstly.
-
+I filter Chinese age data from BTS, and combine BTS CHN data with Journals data. Considering the different target population, I process all data firstly.
 ```{r}
 BTS_age_general_CHN <- BTS_age %>% 
   dplyr::filter(ISO3 == "CHN" & (Target_Population == 2 | Target_Population == 3)) %>% 
   dplyr::count(ageBins) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,4),
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
                 Data_Source = "BTS Chinese")
-sum(BTS_age_general_CHN$Proportion) ## 99.9999
-
-# ## fill to percent 100
-# BTS_age_general_CHN <- BTS_age_general_CHN %>% 
-#   dplyr::mutate(FloorPro = floor(Proportion),
-#                 index = Proportion - FloorPro)
-# 
-# BTS_age_general_CHN_index <- BTS_age_general_CHN %>% 
-#   dplyr::group_by(Data_Source) %>% 
-#   dplyr::summarise(sum = sum(FloorPro)) %>% 
-#   dplyr::ungroup()
-# 
-# 
-# BTS_age_general_CHN_fill <- data.frame(matrix(ncol = ncol(BTS_age_general_CHN),
-#                                                              nrow = 0))
-# colnames(BTS_age_general_CHN_fill) <- colnames(BTS_age_general_CHN)
-# 
-# rm(df_sim1)
-# 
-# for (i in 1:nrow(BTS_age_general_CHN_index)) {
-#   
-#   df_sim1 <- BTS_age_general_CHN %>% 
-#     dplyr::filter(Data_Source == BTS_age_general_CHN_index$Data_Source[i]) %>% 
-#     dplyr::arrange(desc(index))
-#   
-#   if(BTS_age_general_CHN_index$sum[i] < 100){
-#     
-#     for(j in seq(100 - BTS_age_general_CHN_index$sum[i])){
-#       
-#       df_sim1$FloorPro[j] <- df_sim1$FloorPro[j] + 1
-#       
-#     }
-#     
-#     BTS_age_general_CHN_fill <- rbind(BTS_age_general_CHN_fill,df_sim1)
-#     
-#   }
-#   
-#   return(BTS_age_general_CHN_fill)
-#   
-# }
-# # sum(BTS_age_general_CHN_fill$FloorPro) ## 100
+sum(BTS_age_general_CHN$Proportion) ## 100
 
 
 ## combine 2 dataframe
-H1_age_general <- Sim_Journal_age_five3_general_prop %>%
+H1_age_general <- Sim_Journal_age_five3_general %>%
   dplyr::rename(n = 2) %>%
-  dplyr::bind_rows(BTS_age_general_CHN) ## 这里缺少>=95
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
+                Data_Source = "Journal") %>% 
+  dplyr::bind_rows(BTS_age_general_CHN) %>% 
+  dplyr::add_row(ageBins = ">=95",n = 0, 
+                 Proportion =0 ,Data_Source = "BTS Chinese")
 
 
 ## set ageBins as factor to plot
@@ -1412,10 +974,11 @@ H1_age_general <- H1_age_general %>%
                                  "75~79","80~84","85~89", "90~94",">=95" )))
 ```
 
+
+
 Visualize age data from Chinese journals and BTS.
 
-general
-
+in general target population
 ```{r}
 H1_Fig_age_general <- ggplot(data= H1_age_general, aes(x=ageBins, y=ifelse(Data_Source=="BTS Chinese", -Proportion, Proportion),fill = Data_Source)) +
   geom_col(alpha=0.8, width = 1) +
@@ -1443,19 +1006,20 @@ H1_Fig_age_general
 # ggsave("H1_Fig_gender_age_general.pdf", H1_Fig_gender_age_general, device = "pdf", width=18, height = 9)
 ```
 
-Process age for Bayesian multinomial test. First of all, I processed BTS CHN age in psychological development stages.
 
+Process age for Bayesian multinomial test. First of all, I processed BTS CHN age in psychological development stages.
 ```{r}
 BTS_age_PsyStages_list <- list()
 
-for(i in seq_along(BTS1)){
+for(i in seq_along(BTS)){
   
-  BTS_name <- names(BTS1)[i]
+  BTS_name <- names(BTS)[i]
   
-  if("Age" %in% names(BTS1[[i]])){
+  if("Age" %in% names(BTS[[i]])){
     
-    BTS_age <- BTS1[[i]] %>% 
+    BTS_age <- BTS[[i]] %>% 
       dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
+      dplyr::mutate(Age = as.numeric(Age)) %>% 
       dplyr::select(Article_Id,Age,Target_Population,ISO3) %>% 
       #dplyr::group_by(ISO3) %>% 
       dplyr::mutate(ageBins = cut(Age,
@@ -1476,20 +1040,21 @@ BTS_age_PsyStages_list[[BTS_name]] <- BTS_age
 BTS_age_PsyStages <-  do.call(rbind,BTS_age_PsyStages_list)
 ```
 
-Secondly, I processed BTS CHN age in 10-year-old segment.
 
+Secondly, I processed BTS CHN age in 10-year-old segment.
 ```{r}
 BTS_age_interval10_list <- list()
 
-for(i in seq_along(BTS1)){
+for(i in seq_along(BTS)){
   
-  BTS_name <- names(BTS1)[i]
+  BTS_name <- names(BTS)[i]
   
-  if("Age" %in% names(BTS1[[i]])){
+  if("Age" %in% names(BTS[[i]])){
     
-    BTS_age <- BTS1[[i]] %>% 
+    BTS_age <- BTS[[i]] %>% 
       dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
       dplyr::select(Article_Id,Age,Target_Population,ISO3) %>% 
+      dplyr::mutate(Age = as.numeric(Age)) %>% 
       dplyr::mutate(ageBins = cut(Age,
                                 breaks = c(0, 10.5, 20.5, 30.5, 40.5, 50.5, 60.5, Inf),
                                 labels = c("<=10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"),
@@ -1516,9 +1081,9 @@ And then, I filtered BTS CHN data.
 BTS_age_PsyStages_CHN_general <- BTS_age_PsyStages %>% 
   dplyr::filter(ISO3 == "CHN" & Target_Population != 1) %>% 
   dplyr::count(ageBins) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,4),
-                Data_Source = "BTS CHN age")
-# sum(BTS_age_PsyStages_CHN_general$Proportion) ## 100
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+                Data_Source = "BTS Chinese")
+sum(BTS_age_PsyStages_CHN_general$Proportion) ## 100
 
 
 ## 10-year-old segment in BTS
@@ -1526,53 +1091,60 @@ BTS_age_interval10_CHN_general <- BTS_age_interval10 %>%
   dplyr::filter(ISO3 == "CHN" & Target_Population != 1) %>% 
   dplyr::select(1,5) %>% 
   dplyr::count(ageBins) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,4),
-                Data_Source = "BTS CHN age") 
+  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
+                Data_Source = "BTS Chinese") 
 
-# sum(BTS_age_interval10_CHN_general$Proportion) ## 100
+sum(BTS_age_interval10_CHN_general$Proportion) ## 100.01
 ```
 
 Next, I Combined two CHN data to Bayesian multinomial test in two different classifications (PsyStages and 10-year-old). One is PsyStages.
-
 ```{r}
 ## general population 
-H1_PsyStages_bayes_general <- Sim_Journal_age_PsyStages3_general_prop %>% 
+H1_PsyStages_bayes_general <- Sim_Journal_age_PsyStages3_general %>% 
   dplyr::rename(n = 2) %>% 
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
+                Data_Source = "Journal") %>% 
   bind_rows(BTS_age_PsyStages_CHN_general) %>% 
   dplyr::select(-2) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
+## two data sum both 100 ##
 
 H1_BF_PsyStages_general <- BayesMultiNomial(dataset = H1_PsyStages_bayes_general,
                                           factor = "ageBins",
-                                          observed = "BTS CHN age",
+                                          observed = "BTS Chinese",
                                           expected = "Journal")
 ```
 
-The other is interval10.
 
+The other is interval10.
 ```{r}
 ## general population 
-H1_interval10_bayes_general <- Sim_Journal_age_interval103_general_prop %>% 
-  dplyr::rename(n = 2) %>% 
+H1_interval10_bayes_general <- Sim_Journal_age_interval103_general %>% 
+  dplyr::rename(n = 2) %>%
+  dplyr::mutate(Proportion = round(n/sum(n)*100,2),
+                Data_Source = "Journal") %>% 
   bind_rows(BTS_age_interval10_CHN_general) %>%
   dplyr::select(-2) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
 
+# sum(H1_interval10_bayes_general$Journal)  ## 100.01
+# sum(H1_interval10_bayes_general$`BTS Chinese`) ## 100.01
+
 
 H1_BF_interval10_general <- BayesMultiNomial(dataset = H1_interval10_bayes_general,
                                           factor = "ageBins",
-                                          observed = "BTS CHN age",
+                                          observed = "BTS Chinese",
                                           expected = "Journal")
 ```
 
 For different target population, I compared general population for them firstly, I found strong evidence for $H_1$ that the age distribution from the Chinese subjects data of BTS data is different form the Chinese journals data, the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_PsyStages_general$BF$LogBF10`.
 
+
 Meanwhile, I found strong evidence support $H_1$ for another age category,the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_interval10_general$BF$LogBF10`.
 
+
 ### attainment education
-
 Try to process educational attainment data from Chinese journal.
-
 ```{r eval=FALSE, include=FALSE}
 # Journal_edu <- Journal %>% 
 #   dplyr::filter(Educational_Attainment_N == 1) %>% 
@@ -1590,11 +1162,11 @@ Try to process educational attainment data from Chinese journal.
 Journal_edu <- readxl::read_xlsx("Journal_edu.xlsx")
 
 
-## analysis edu base on terget population
+## analysis edu base on target population
 ## general population
 Journal_edu_general_article <- Journal_key_variable %>% 
   dplyr::select(Article_IDs,Target_Population_N) %>% 
-  dplyr::distinct(Article_IDs,Target_Population_N) %>%   ## 20219132目标人群需要重新处理
+  dplyr::distinct(Article_IDs,Target_Population_N) %>%   
   dplyr::filter(Target_Population_N != 1)
   
 ## filter target population is general population
@@ -1612,21 +1184,27 @@ Journal_edu2_tab <- Journal_edu_general %>%
                    tab14 = sum(is.na(M_edu_year)),
                    tab15 = sum(is.na(SD_edu_year))) %>% 
   dplyr::select(1,3,5) %>% 
-  dplyr::rename(Class_higher_edu = 1, ## 90/185
-                Class_compulsory_edu = 2, ## 104/185
-                Class_edu_year = 3)  ## 152/185
+  dplyr::rename(Class_higher_edu = 1, ## 20/185
+                Class_compulsory_edu = 2, ## 25/185
+                Class_edu_year = 3)  ## 48/185
 ```
 
-In our study, we have three categories of educational attainments. I process three class data respectively. The first category is education years. I will use M and SD in the paper to simulate the number of subjects with the latter two categories of education level, and then combine them with the latter two categories respectively, and finally complete the subsequent analysis and visualization.
 
+In our study, we have three categories of educational attainments. I process three class data respectively. The first category is education years. I will use M and SD in the paper to simulate the number of subjects with the latter two categories of education level, and then combine them with the latter two categories respectively, and finally complete the subsequent analysis and visualization.
 ```{r eval=FALSE, include=FALSE}
 ## I found there is no data for simul
 
 Journal_edu2_year <- Journal_edu_general %>% 
   dplyr::select(1:15) %>% 
   dplyr::filter(!is.na(M_edu_year) & !is.na(SD_edu_year)) %>% 
-  dplyr::filter(is.na(College_and_above))  ## If there is data for the other two categories, there is no need to simulate using years of education, which is a screening done after looking at the data
-# sum(Journal_edu2_year$Sample_Size) ## 4662
+  dplyr::filter(is.na(College_and_above)) 
+# sum(Journal_edu2_year$Sample_Size) ## 0
+
+
+
+## If there is data for the other two categories, there is no need to simulate using years of education, which is a screening done after looking at the data
+
+
 
 ## Simulation of education data based on normal distribution
 College_threshold <- 15 ## The education years of college is set at 15
@@ -1676,8 +1254,8 @@ Journal_edu2_year_simul <- rbind(Journal_edu2_year_simul, data.frame(Article_IDs
 }
 ```
 
-The second category is 'college and above' and 'below college'.
 
+The second category is 'college and above' and 'below college'.
 ```{r}
 Journal_college <- Journal_edu_general %>% 
   dplyr::select(-c(5:9,12:15)) %>% 
@@ -1687,7 +1265,7 @@ Journal_college <- Journal_edu_general %>%
 Journal_college_integer <- Journal_college  %>%
   dplyr::filter(College_and_above > 1 & Below_college > 1) %>%
   dplyr::summarise(College_and_above = sum(College_and_above),
-                   Below_college = sum(Below_college)) ## sum 12,092
+                   Below_college = sum(Below_college)) 
   
 
 ## both < 1
@@ -1701,8 +1279,8 @@ Journal_college_decimal <- Journal_college  %>%
                    Below_college = sum(Below_college_tab)) ## sum 9,315
 ```
 
-The third category is 'high shcool and above' and 'below high school'
 
+The third category is 'high shcool and above' and 'below high school'
 ```{R}
 Journal_high_school <- Journal_edu_general %>% 
   dplyr::select(4,12:13) %>% 
@@ -1712,7 +1290,7 @@ Journal_high_school <- Journal_edu_general %>%
 Journal_high_school_integer <- Journal_high_school %>%
   dplyr::filter(High_school_and_above > 1 & Below_high_school > 1) %>%
   dplyr::summarise(High_school_and_above = sum(High_school_and_above),
-                   Below_high_school = sum(Below_high_school)) ## sum 9,306
+                   Below_high_school = sum(Below_high_school)) 
   
 ## both < 1
 Journal_high_school_decimal <- Journal_high_school  %>%
@@ -1722,37 +1300,28 @@ Journal_high_school_decimal <- Journal_high_school  %>%
                 Below_high_school_tab = ifelse(Total_High_school == 1, Sample_Size - High_school_and_above_tab, floor(Sample_Size * Below_high_school))) %>% 
   dplyr::mutate(tab = High_school_and_above_tab + Below_high_school_tab) %>% 
   dplyr::summarise(High_school_and_above = sum(High_school_and_above_tab),
-                   Below_high_school = sum(Below_high_school_tab)) ## 4,685
+                   Below_high_school = sum(Below_high_school_tab)) 
 ```
 
+
 Combine education year with the other categories respectively.
-
 ```{r}
-# Journal_edu2_year_simul_sum <- Journal_edu2_year_simul %>% 
-#   dplyr::summarise(College_and_above = sum(College_and_above),
-#                    Below_college = sum(Below_college),
-#                    High_school_and_above = sum(High_school_and_above),
-#                    Below_high_school = sum(Below_high_school))
-
 ## combine college data
- Journal_college2 <- #Journal_edu2_year_simul_sum %>% 
-#   dplyr::select(1:2) %>% 
-  bind_rows(Journal_college_decimal, Journal_college_integer) %>% 
+ Journal_college2 <-  bind_rows(Journal_college_decimal, Journal_college_integer) %>% 
   dplyr::summarise(College_and_above = sum(College_and_above),
                    Below_college = sum(Below_college)) %>% 
   tidyr::pivot_longer(cols = c(College_and_above,Below_college),
                       names_to = "Educational_attainment",
                       values_to = "Num") %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,4),
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
                 Data_source = "Journal")
 
 # sum(Journal_college2$Proportion)  ## 100
 
 
 ## combine high school data
-Journal_high_school2  <- #Journal_edu2_year_simul_sum %>% 
-  #dplyr::select(3:4) %>% 
-  bind_rows(Journal_high_school_integer, Journal_high_school_decimal) %>% 
+Journal_high_school2  <-   bind_rows(Journal_high_school_integer,
+                                     Journal_high_school_decimal) %>% 
   dplyr::summarise(High_school_and_above = sum(High_school_and_above),
                    Below_high_school = sum(Below_high_school)) %>% 
   tidyr::pivot_longer(cols = c(High_school_and_above,Below_high_school),
@@ -1764,104 +1333,57 @@ Journal_high_school2  <- #Journal_edu2_year_simul_sum %>%
 # sum(Journal_high_school2$Proportion) ## 100
 ```
 
+
 Now, in this part, I process chinese subjects' edu data of BTS
-
 ```{r}
-BTS_edu_list <- list()
+# names(BTS_edu_list)
+BTS_edu_list2 <- BTS_edu_list[-c(8,12)]
 
-for(i in seq_along(BTS1)){
+BTS_edu_CHN <- lapply(BTS_edu_list2,function(df_edu){
   
-  BTS_name <- names(BTS1)[i]
+  df_edu <- df_edu %>% 
+    dplyr::filter(Country == "CHN" | Country == "CN" | Country == "China")
   
-  if("Education" %in% names(BTS1[[i]])){
-    
-    BTS_edu <- BTS1[[i]] %>% 
-      dplyr::filter(!is.na(Education) & !is.numeric(Education) & !is.na(ISO3)) %>%
-      dplyr::select(Article_Id,Education,Target_Population,ISO3) %>%
-      dplyr::mutate(Data_Source = BTS_name)
-  
-BTS_edu_list[[BTS_name]] <- BTS_edu
-  
-} else {  
- 
-    cat(sprintf("Skipping '%s' because it does not contain a 'Education' column.\n", BTS_name))  
-  } 
-}
+  return(df_edu)
+})
 
-
-## merge data.frame in list
-BTS_edu <-  do.call(rbind,BTS_edu_list)
-# 
-# 
-# bts1_edu <- data.frame(table(BTS_edu_CHN$Education))
-# writexl::write_xlsx(bts1_edu,"bts1_edu.xlsx")
+BTS_edu_CHN <- do.call(rbind,BTS_edu_CHN)
 ```
 
+
 Classify educational attainment and calculate special num
-
 ```{r}
-BTS_edu <- BTS_edu %>% 
-  dplyr::mutate(College_cate = ifelse(Education %in% c("Bachelor","degree","Doctoral","doctorate",
-                                                              "Doctorate","four year degree","Four year degree",
-                                                              "Graduate","Masters","professional degree",
-                                                          "Professional degree","some college","Some college",
-                                                          "tertiary","two year degree","Two year degree",
-                                                          "University Masters","University MBA","University PhD",
-                                                          "University Undergraduate"),"College_and_above",
-                                      ifelse(Education %in% c("Elementary school","high school","High school",
-                                                          "I don't have any","less than high school","Less than high school",
-                                                          "no formal","No formal education","primary",
-                                                          "Primary ed.","Primary school","Primary school only",
-                                                          "Primary school through Secondary school","secondary","Secondary ed.",
-                                                          "Secondary school") ,"Below_college", NA)),
-                Highschool_cate = ifelse(Education %in% c("Bachelor","degree","Doctoral","doctorate",
-                                                              "Doctorate","four year degree","Four year degree",
-                                                              "Graduate","Masters","professional degree",
-                                                          "Professional degree","some college","Some college",
-                                                          "tertiary","two year degree","Two year degree",
-                                                          "University Masters","University MBA","University PhD",
-                                                          "University Undergraduate","high school","High school"),"High_school_and_above",
-                                         ifelse(Education %in% c("Elementary school","I don't have any","less than high school",
-                                                          "Less than high school","no formal","No formal education",
-                                                          "primary","Primary ed.","Primary school",
-                                                          "Primary school only"), "Below_high_school",NA)))
-
-## Filter chinese data
-BTS_edu_CHN <- BTS_edu %>%
-  dplyr::filter(ISO3 == "CHN")
-
-
 ## calculate
-BTS_college <- BTS_edu_CHN %>%
-  dplyr::group_by(College_cate) %>%
-  dplyr::summarise(n=n()) %>% ## there are 995 NA values
-  dplyr::filter(!is.na(College_cate)) %>% 
+BTS_college_CHN <- BTS_edu_CHN %>%
+  dplyr::filter(!is.na(College)) %>% 
+  dplyr::group_by(College) %>%
+  dplyr::summarise(n=n()) %>% 
   dplyr::rename(Educational_attainment = 1, Num = 2) %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,4),
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
                 Data_source = "BTS Chinese")
 
- # sum(BTS_college$Proportion) ## 100
+ # sum(BTS_college_CHN$Proportion) ## 100
   
   
-BTS_highschool <- BTS_edu_CHN %>%
-  dplyr::group_by(Highschool_cate) %>%
-  dplyr::summarise(n=n()) %>% ## there are 1647 NA values
-  dplyr::filter(!is.na(Highschool_cate)) %>% 
+BTS_highschool_CHN <- BTS_edu_CHN %>%
+  dplyr::filter(!is.na(Highschool)) %>% 
+  dplyr::group_by(Highschool) %>%
+  dplyr::summarise(n=n()) %>% 
   dplyr::rename(Educational_attainment = 1, Num = 2) %>% 
-  dplyr::mutate(Proportion = round((Num/sum(Num))*100,4),
+  dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
                 Data_source = "BTS Chinese")
 
-# sum(BTS_highschool$Proportion) ## 100
+# sum(BTS_highschool_CHN$Proportion) ## 100
 
 
 ## Combine data
-H1_edu_college <- rbind(Journal_college2,BTS_college)
+H1_edu_college <- rbind(Journal_college2,BTS_college_CHN)
 
-H1_edu_highschool <- rbind(Journal_high_school2,BTS_highschool)
+H1_edu_highschool <- rbind(Journal_high_school2,BTS_highschool_CHN)
 ```
 
-visulize the edu data
 
+visulize the edu data
 ```{r}
 ## college
 H1_Fig_college <- ggplot(data = H1_edu_college,aes(Data_source,Proportion,fill = Educational_attainment))+
@@ -1869,12 +1391,18 @@ H1_Fig_college <- ggplot(data = H1_edu_college,aes(Data_source,Proportion,fill =
   theme_classic()+ 
   theme(legend.position = "bottom", 
         legend.text = element_text(size = 16, family = "serif"),
-        legend.title = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
         axis.title= element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"),
         strip.text = element_text(size = 16,family = "serif"),
         strip.background = element_rect(fill = NA,color = NA),
-        panel.border = element_rect(fill = NA,color = "black"))
+        panel.border = element_rect(fill = NA,color = "black"))+
+  # scale_fill_manual(values = c("Below_college" = "#F8766D",
+  #                              "College_and_above" = "#00BFC4",
+  #                              "Below_high_school"= "#7cae00",
+  #                              "High_school_and_above" = "#619CFF"))+
+  # guides(fill = guide_legend(nrow = 2, byrow = TRUE)) + 
+  xlab("Data Source")
 
 H1_Fig_college
 
@@ -1885,29 +1413,37 @@ H1_Fig_highschool <- ggplot(data = H1_edu_highschool,aes(Data_source,Proportion,
   theme_classic()+ 
   theme(legend.position = "bottom", 
         legend.text = element_text(size = 16, family = "serif"),
-        legend.title = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
         axis.title= element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"),
         strip.text = element_text(size = 16,family = "serif"),
         strip.background = element_rect(fill = NA,color = NA),
-        panel.border = element_rect(fill = NA,color = "black"))
+        panel.border = element_rect(fill = NA,color = "black"))+
+  # scale_fill_manual(values = c("Below_college" = "#F8766D",
+  #                              "College_and_above" = "#00BFC4",
+  #                              "Below_high_school"= "#7cae00",
+  #                              "High_school_and_above" = "#619cff"))+
+  # guides(fill = guide_legend(nrow = 2, byrow = TRUE)) + 
+  xlab("Data Source")
 
 H1_Fig_highschool
 
 
-H1_Fig_gender_age_edu_general <-  H1_Fig_gender_general + H1_Fig_age_general + H1_Fig_college + H1_Fig_highschool +  
+H1_Fig_gender_age_edu_general <-  H1_Fig_gender_general + H1_Fig_age_general + H1_Fig_college + H1_Fig_highschool + 
   plot_layout(ncol = 2, heights = c(4,4))+
-  patchwork::plot_annotation(tag_levels = 'A')
+  patchwork::plot_annotation(tag_levels = 'A')&
+  theme(legend.position = 'bottom')
 
 ggsave("H1_Fig_gender_age_edu_general.pdf",H1_Fig_gender_age_edu_general, device = "pdf", width=18, height = 18)
 
 H1_Fig_gender_age_edu_general
 ```
 
+
 Here I tested whether the educatinal attainment proportion distribution from Chinese five journal data are similar to that of the BTS data.
 
-First, I calculate the first category: college.
 
+First, I calculate the first category: college.
 ```{r}
 H1_edu_college_bayes <- H1_edu_college %>% 
   dplyr::select(1,3:4) %>% 
@@ -1938,7 +1474,9 @@ H1_BF_edu_highschool <- BayesMultiNomial(dataset = H1_edu_highschool_bayes,
 
 Similarity, I also found strong evidence for the $H_1$ that the high schools proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_highschool$BF$LogBF10`.
 
+
 ## Test the 2st hypothesis
+
 
 For hypothesis 2, I first tried to analyze the data in general. I would then compare certain demographic characteristics of the Chinese subjects in studies (BTS and Chinese journals) with those corresponding to Census data or other representative large general social surveys (e.g., CFPS2018) based on the target population.
 
