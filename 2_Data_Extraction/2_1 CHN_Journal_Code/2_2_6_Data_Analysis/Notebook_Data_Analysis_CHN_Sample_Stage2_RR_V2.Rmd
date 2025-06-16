@@ -489,16 +489,17 @@ Journal_gender_Infants_toddlers_TP <- Journal_special_target_population2 %>%
   dplyr::filter(grepl("幼儿|岁儿童|学步儿|学前|学龄|低龄", Recode_target_population)) %>% 
   dplyr::filter(!grepl("幼儿父亲|幼儿教师|母亲|8|10|11|12",Recode_target_population))
   
+
 ## merge the above data.frame with "Journal" data.frame
 Journal_gender_Infants_toddlers_TP_IDs <- Journal %>% 
-  dplyr::filter(Article_IDs_N %in% Journal_Infants_toddlers_TP$Article_IDs) %>% 
+  dplyr::filter(Article_IDs_N %in% Journal_gender_Infants_toddlers_TP$Article_IDs) %>% 
   dplyr::select(Article_IDs_N,Article_Title,Study_Number_N,Subjects_Group_N,
                 M_age,SD_age,Other_age,Age,
                 Gender,Male_Num,Female_Num,
                 Sample_Type_N,Sample_Type_info_N) %>% 
   dplyr::filter(Gender == 1) %>% 
   dplyr::filter(!grepl("父亲|母亲|父母组",Subjects_Group_N)) %>% 
-  dplyr::left_join(Journal_Infants_toddlers_TP,
+  dplyr::left_join(Journal_gender_Infants_toddlers_TP,
                    by = c("Article_IDs_N" = "Article_IDs")) %>%
   dplyr::select(1:2,14:15,3:13)
 
@@ -657,15 +658,13 @@ In the specific population of infants and toddlers, I did not find significant d
 
 
 At the end of gender data processing for hypothesis 1, I removed some data sets to reduce data set clutter.
-
 ```{r}
 rm(H1_gender_factor_general,i,BTS_name)
 ```
 
+
 ### Age
-
 Reprocess age data from Chinese journals.
-
 ```{r warning=FALSE}
 Journal_age <- Journal_key_variable %>% 
   dplyr::select(-c(7:9,14:17)) %>% 
@@ -697,9 +696,16 @@ Journal_single_age <- Journal_age %>%
   dplyr::mutate_at(vars(4:9),as.numeric)
 
 
-## Combining journal age data for both categories 
-Journal_age2 <- bind_rows(Journal_strings_age,Journal_single_age)
+## Some articles contain the mean (M) and standard deviation (SD) of ages, but they was coded in "Other_Age". The V1 version of the document is stored separately.
+Journal_otherage <- Journal_otherage %>% 
+  dplyr::mutate(Article_IDs = as.character(Article_IDs),
+                Study_Number = as.character(Study_Number)) %>% 
+  dplyr::rename(M_age = 8,SD_age = 9,Other_age = 10)
+
+## Combining journal age data for three categories 
+Journal_age2 <- bind_rows(Journal_strings_age,Journal_single_age,Journal_otherage)
 ```
+
 
 Since raw data is not available for papers in Chinese journals, I simulated the raw data using the method used in the Stges 1 of registration report. It is then combined with BTS and compared with census data.
 
