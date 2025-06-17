@@ -29,11 +29,11 @@ load("D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_data2.Rdata")
 
 Next, I loaded all BTS data and processed BTS data.
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-BTS_Hall_et_al_2018 <- pro_Hall_et_al_2018
-BTS_Lucca_et_al_2024 <- BTS_Kelsey_et_al_2024
 
-rm(pro_Hall_et_al_2018,BTS_Bertolo_et_al_2023,new_name,old_name,proc_vars,
-   BTS_Elbæk_et_al_2023_1,BTS_Elbæk_et_al_2023_2,BTS_Kelsey_et_al_2024)
+BTS_Lucca_et_al_2024 <- BTS_Kelsey_et_al_2024
+rm(BTS_Kelsey_et_al_2024,raw_Elbæk_et_al_2023)
+BTS_Bertolo_et_al_2023 <- BTS_Bertolo_et_al_2023 %>% 
+  dplyr::mutate(Article_Id = "Bertolo_et_al_2023")
 
 
 ## trans data.frame to list
@@ -144,18 +144,18 @@ In this part, I tried to batch country code.
 ```{r}
 # str(BTS)
 ## Handle some more specific encodings
-names(BTS[[20]])[names(BTS[[20]]) == "Country_now"] <- "Country"  ## BTS_Klein 2018 Slate1
+names(BTS[[21]])[names(BTS[[21]]) == "Country_now"] <- "Country"  ## BTS_Klein 2018 Slate1
 
-names(BTS[[21]])[names(BTS[[21]]) == "Country_now"] <- "Country"  ## BTS_Klein 2018 Slate2
+names(BTS[[22]])[names(BTS[[22]]) == "Country_now"] <- "Country"  ## BTS_Klein 2018 Slate2
 
-names(BTS[[22]])[names(BTS[[22]]) == "Country_now"] <- "Country"  ## BTS_Kowal 2018
+names(BTS[[23]])[names(BTS[[23]]) == "Country_now"] <- "Country"  ## BTS_Kowal 2018
 
-names(BTS[[33]])[names(BTS[[33]]) == "Country_now"] <- "Country"  ## BTS_Wang 2021
+names(BTS[[34]])[names(BTS[[34]]) == "Country_now"] <- "Country"  ## BTS_Wang 2021
 
-names(BTS[[30]])[names(BTS[[30]]) == "Country_ID"]  <-  "Country" ## BTS_Tybur 2016
+names(BTS[[31]])[names(BTS[[31]]) == "Country_ID"]  <-  "Country" ## BTS_Tybur 2016
 
-BTS[[8]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[8]]$Country))    ## BTS_Buchanan 2023
-BTS[[33]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[33]]$Country))  ## BTS_Wang 2021
+BTS[[9]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[9]]$Country))    ## BTS_Buchanan 2023
+BTS[[34]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[34]]$Country))  ## BTS_Wang 2021
 
 
 
@@ -199,38 +199,50 @@ BTS[[5]] <- BTS[[5]] %>%
                                     TRUE ~ Country))
 
 
+## BTS_Bago_et_al_2022 
+## its country code data from https://lab2.labinthewild.org/multitasking/
+BTS_Bago_et_al_2022_Countrycode <- readxl::read_xlsx("D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_Bago_et_al_2022_Countrycode.xlsx") %>% 
+  dplyr::mutate(Country = as.character(Country))
+
+BTS[[6]] <- BTS[[6]] %>% 
+  dplyr::left_join(BTS_Bago_et_al_2022_Countrycode,
+                   by = "Country") %>% 
+  dplyr::rename(Country_IDs = Country,
+                Country = Country_name)
+
+
 # ## BTS_Bertolo_et_al_2023
-# BTS[[6]] <- BTS[[6]] %>% 
-#   dplyr::mutate(Country = case_when(Country == "Antigua And Barbuda" ~  "Antigua & Barbuda",
-#                                     Country == "Artsakh"  ~  "Azerbaijan", #*
-#                                     Country %in% c("Côte D'ivoire","Ivory Coast") ~  "Côte d’Ivoire",
-#                                     Country == "Democratic People's Republic Of Korea" ~ "North Korea",
-#                                     Country == "Democratic Republic Of The Congo" ~ "Congo - Kinshasa",
-#                                     Country == "East Timor" ~  "Timor-Leste",
-#                                     Country == "Kingdom Of The Netherlands"  ~  "Netherlands",
-#                                     Country == "Micronesia"  ~ "Micronesia (Federated States of)",
-#                                     Country == "Myanmar"  ~  "Myanmar (Burma)",
-#                                     # Country == "Northern Cyprus" #*
-#                                     Country == "Palestine"  ~ "Palestinian Territories",
-#                                     Country == "Sahrawi Arab Democratic Republic" ~ "Western Sahara", #*
-#                                     Country == "Saint Kitts And Nevis" ~ "St. Kitts & Nevis",
-#                                     Country == "Saint Lucia" ~ "St. Lucia",
-#                                     Country == "Saint Vincent And The Grenadines" ~  "St. Vincent & Grenadines",
-#                                     # Country == "Somaliland" ~ "", #*
-#                                     # Country == "South Ossetia" ~ "", #*
-#                                     Country == "Swaziland" ~ "Eswatini",
-#                                     Country == "São Tomé And Príncipe" ~ "São Tomé & Príncipe",
-#                                     Country == "The Bahamas" ~ "Bahamas",
-#                                     Country == "The Gambia" ~ "Gambia",
-#                                     # Country == "Transnistria" ~ "", #*
-#                                     Country == "Trinidad And Tobago" ~ "Trinidad & Tobago",
-#                                     TRUE ~ Country))
+BTS[[7]] <- BTS[[7]] %>%
+  dplyr::mutate(Country = case_when(Country == "Antigua And Barbuda" ~  "Antigua & Barbuda",
+                                    Country == "Artsakh"  ~  "Azerbaijan", #*
+                                    Country %in% c("Côte D'ivoire","Ivory Coast") ~  "Côte d’Ivoire",
+                                    Country == "Democratic People's Republic Of Korea" ~ "North Korea",
+                                    Country == "Democratic Republic Of The Congo" ~ "Congo - Kinshasa",
+                                    Country == "East Timor" ~  "Timor-Leste",
+                                    Country == "Kingdom Of The Netherlands"  ~  "Netherlands",
+                                    Country == "Micronesia"  ~ "Micronesia (Federated States of)",
+                                    Country == "Myanmar"  ~  "Myanmar (Burma)",
+                                    # Country == "Northern Cyprus" #*
+                                    Country == "Palestine"  ~ "Palestinian Territories",
+                                    Country == "Sahrawi Arab Democratic Republic" ~ "Western Sahara", #*
+                                    Country == "Saint Kitts And Nevis" ~ "St. Kitts & Nevis",
+                                    Country == "Saint Lucia" ~ "St. Lucia",
+                                    Country == "Saint Vincent And The Grenadines" ~  "St. Vincent & Grenadines",
+                                    # Country == "Somaliland" ~ "", #*
+                                    # Country == "South Ossetia" ~ "", #*
+                                    Country == "Swaziland" ~ "Eswatini",
+                                    Country == "São Tomé And Príncipe" ~ "São Tomé & Príncipe",
+                                    Country == "The Bahamas" ~ "Bahamas",
+                                    Country == "The Gambia" ~ "Gambia",
+                                    # Country == "Transnistria" ~ "", #*
+                                    Country == "Trinidad And Tobago" ~ "Trinidad & Tobago",
+                                    TRUE ~ Country))
 
 
 
 
 ## BTS_Bosson_et_al_2021
-BTS[[7]] <- BTS[[7]] %>% 
+BTS[[8]] <- BTS[[8]] %>% 
   dplyr::mutate(Country = ifelse(Country == "USA", "United States",Country),
                 Country = ifelse(Country == "CHN", "China",Country),
                 Country = ifelse(Country == "UEA", "United Arab Emirates",Country),
@@ -239,7 +251,7 @@ BTS[[7]] <- BTS[[7]] %>%
 
 
 ## BTS_Buchanan_et_al_2023
-BTS[[8]] <- BTS[[8]] %>% 
+BTS[[9]] <- BTS[[9]] %>% 
   dplyr::mutate(Country = case_when(Country %in% c("TWN","HKG","MAC") ~ "CHN",
                                     TRUE ~ Country),
                 Country = ifelse(Country == "NA",NA,Country),
@@ -248,7 +260,7 @@ BTS[[8]] <- BTS[[8]] %>%
 
 
 ## BTS_Dorison_et_al_2020
-BTS[[9]] <- BTS[[9]] %>% 
+BTS[[10]] <- BTS[[10]] %>% 
   dplyr::mutate(Country = trimws(Country)) %>% 
   dplyr::mutate(Country = ifelse(Country == "TWN" | Country == "HKG"| Country == "MAC","CHN",Country),
                 Country = ifelse(Country == "many", NA, Country))
@@ -260,7 +272,7 @@ BTS[[9]] <- BTS[[9]] %>%
 
 
 ## BTS_Eriksson_et_al_2021
-BTS[[11]] <- BTS[[11]] %>% 
+BTS[[12]] <- BTS[[12]] %>% 
   dplyr::mutate(Country = trimws(Country)) %>% 
   dplyr::mutate(Country = case_when(Country == "Ivory Coast" ~  "Côte d’Ivoire",
                                     Country == "Trinidad And Tobago" ~ "Trinidad & Tobago",
@@ -273,32 +285,40 @@ BTS[[11]] <- BTS[[11]] %>%
 
 
 ## Everett_et_al_2021
-BTS[[12]] <- BTS[[12]] %>% 
+BTS[[13]] <- BTS[[13]] %>% 
   dplyr::mutate(Country = ifelse(Country == "Kingdom of Saudi Arabia","Saudi Arabia",Country),
                 Country = ifelse(Country == "The Netherlands", "Netherlands",Country))
 
 
 
 ## BTS_Fernandez_Velasco_et_al_2023
-BTS[[13]] <- BTS[[13]] %>%
+BTS[[14]] <- BTS[[14]] %>%
   dplyr::mutate(Country = case_when(Country %in% c("TW","HK","MO") ~ "CN",
                                     TRUE ~ Country))
 
 
 
 ## BTS_Greenberg_et_al_2022
+## its country code data from https://socialintelligence.labinthewild.org/mite/?
+BTS_Greenberg_et_al_2022_Countrycode <- readxl::read_xlsx("D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_Greenberg_et_al_2022_Countrycode.xlsx") 
 
 
+BTS[[15]] <- BTS[[15]] %>% 
+  dplyr::left_join(BTS_Greenberg_et_al_2022_Countrycode,
+                   by = "Country") %>% 
+  dplyr::rename(Country_IDs = Country,
+                Country = Country_name)
 
+df <- BTS[[11]]
 ## BTS_Hall_et_al_2018
-BTS[[15]] <- BTS[[15]] %>%
+BTS[[16]] <- BTS[[16]] %>%
   dplyr::mutate(Country = case_when(Country %in% c("TWN","HKG","MAC") ~ "CHN",
                                     TRUE ~ Country))
 
 
 
 ## BTS_Hoogeveen_et_al_2022
-BTS[[16]] <- BTS[[16]] %>%
+BTS[[17]] <- BTS[[17]] %>%
   dplyr::mutate(
     Country = ifelse(Country == "US", "United States", Country),
     Country = ifelse(Country == "CHN", "China", Country),
@@ -308,7 +328,7 @@ BTS[[16]] <- BTS[[16]] %>%
 ### BTS_Hu_et_al_2019
 ## I converted the country codes based on the information in the IJzerman et al (2018), https://doi.org/10.1525/collabra.165.
 
-BTS[[17]] <- BTS[[17]] %>% 
+BTS[[18]] <- BTS[[18]] %>% 
   dplyr::mutate(Country = case_when(Country == "Bamberg" ~ "Germany",
                                     Country == "Kassel" ~ "Germany",
                                     Country == "METU" ~ "Turkey",
@@ -324,14 +344,14 @@ BTS[[17]] <- BTS[[17]] %>%
 
 
 ## BTS_Jones_et_al_2021
-BTS[[18]] <- BTS[[18]] %>%
+BTS[[19]] <- BTS[[19]] %>%
   dplyr::mutate(Country = case_when(Country %in% c("TW","HK","MO") ~ "CN",
                                     TRUE ~ Country))
 
 
 
 ## BTS_Kirkland_et_al_2022
-BTS[[19]] <- BTS[[19]] %>% 
+BTS[[20]] <- BTS[[20]] %>% 
    dplyr::mutate(Country = case_when(Country %in% c("Canada_EN","Canada_FR") ~ "Canada",
                                     Country %in% "CHN" ~ "China",
                                     Country %in% "Hong Kong" ~ "China",
@@ -342,15 +362,6 @@ BTS[[19]] <- BTS[[19]] %>%
 
 
 ## BTS_Klein_et_al_2018 Slate1
-BTS[[20]] <- BTS[[20]] %>% 
-  dplyr::mutate(Country = ifelse(Country == "UK", "United Kingdom",Country),
-                Country = ifelse(Country == "USA", "United States",Country),
-                Country = ifelse(Country == "The Netherlands","Netherlands",Country),
-                Country = ifelse(Country == "Czech Republic" ,"Czechia",Country))
-
-
-
-## BTS_Klein_et_al_2018 Slate2
 BTS[[21]] <- BTS[[21]] %>% 
   dplyr::mutate(Country = ifelse(Country == "UK", "United Kingdom",Country),
                 Country = ifelse(Country == "USA", "United States",Country),
@@ -359,8 +370,17 @@ BTS[[21]] <- BTS[[21]] %>%
 
 
 
-## BTS_Kowal_et_al_2022
+## BTS_Klein_et_al_2018 Slate2
 BTS[[22]] <- BTS[[22]] %>% 
+  dplyr::mutate(Country = ifelse(Country == "UK", "United Kingdom",Country),
+                Country = ifelse(Country == "USA", "United States",Country),
+                Country = ifelse(Country == "The Netherlands","Netherlands",Country),
+                Country = ifelse(Country == "Czech Republic" ,"Czechia",Country))
+
+
+
+## BTS_Kowal_et_al_2022
+BTS[[23]] <- BTS[[23]] %>% 
   dplyr::mutate(Country = ifelse(Country == "UK", "United Kingdom",Country),
                 Country = ifelse(Country == "USA", "United States",Country),
                 Country = ifelse(Country == "Bosnia and Herzegovina","Bosnia & Herzegovina",Country),
@@ -370,7 +390,7 @@ BTS[[22]] <- BTS[[22]] %>%
 
 
 # BTS_Lucca_et_al_2024
-BTS[[23]] <- BTS[[23]] %>% 
+BTS[[24]] <- BTS[[24]] %>% 
   dplyr::rename(Country = 2) %>% 
   dplyr::mutate(Country = case_when(Country == "babylabamsterdam" ~ "Netherlands",
                                     Country == "babylablmu" ~ "Germany",
@@ -413,13 +433,13 @@ BTS[[23]] <- BTS[[23]] %>%
 
 
 ## BTS_Mankara_et_al_2022
-BTS[[24]] <- BTS[[24]] %>% 
+BTS[[25]] <- BTS[[25]] %>% 
   dplyr::mutate(Country = ifelse(Country == "CHN","China",Country))
 
 
 
 ## BTS_Pizzol_et_al_2023
-BTS[[25]] <- BTS[[25]] %>% 
+BTS[[26]] <- BTS[[26]] %>% 
   dplyr::mutate(Country = case_when(Country == "Korea, Rep." ~  "South Korea",
                                     Country == "Russian Federation" ~ "Russia",
                                     Country == "Slovak Republic" ~ "Slovakia",
@@ -430,7 +450,7 @@ BTS[[25]] <- BTS[[25]] %>%
 
 
 ## BTS_Psychological_Science_Accelerator_Self_Determination_Theory_Collaboration_2022
-BTS[[26]] <- BTS[[26]] %>% 
+BTS[[27]] <- BTS[[27]] %>% 
   dplyr::mutate(Country = ifelse(Country == "IRAN", "IRN", Country),
                 Country = ifelse(Country == "SLO", NA, Country),
                 Country = ifelse(Country == "TWN" | Country =="HKG" | Country == "MAC","CHN",Country))
@@ -438,7 +458,7 @@ BTS[[26]] <- BTS[[26]] %>%
 
 
 ## BTS_Ruggeri_et_al_2020
-BTS[[27]] <- BTS[[27]] %>% 
+BTS[[28]] <- BTS[[28]] %>% 
   dplyr::mutate(Country = ifelse(Country == "UK", "United Kingdom",Country),
                 Country = ifelse(Country == "USA", "United States",Country),
                 Country = ifelse(Country == "Mainland China" | Country == "Hong Kong", "China",Country))
@@ -446,21 +466,21 @@ BTS[[27]] <- BTS[[27]] %>%
 
 
 ## BTS_Ruggeri_et_al_2022
-BTS[[28]] <- BTS[[28]] %>% 
+BTS[[29]] <- BTS[[29]] %>% 
   dplyr::mutate(Country = ifelse(Country == "BRG", "BGR",Country),
                 Country = ifelse(Country == "SRP", "SGP",Country))
 
 
 
 ## BTS_Sorokowski_et_al_2023
-BTS[[29]] <- BTS[[29]] %>% 
+BTS[[30]] <- BTS[[30]] %>% 
   dplyr::mutate(Country = ifelse(Country == "The Netherlands", "Netherlands",Country),
                 Country = ifelse(Country == "CHN","China",Country))
 
 
 
 # BTS_Tybur_et_al_2016 
-BTS[[30]] <- BTS[[30]] %>% 
+BTS[[31]] <- BTS[[31]] %>% 
   dplyr::mutate(Country = as.character(Country),
                 Country = case_when(Country == "1" ~ "IL",
                                     Country == "2" ~ "SG",
@@ -497,7 +517,7 @@ BTS[[30]] <- BTS[[30]] %>%
 
 
 ## BTS_Van_Bavel_et_al_2022
-BTS[[31]] <- BTS[[31]] %>% 
+BTS[[32]] <- BTS[[32]] %>% 
   dplyr::mutate(Country = as.character(unclass(Country)),
                 Country = case_when(Country == "TW" ~ "CN",
                                     TRUE ~ Country))
@@ -505,7 +525,7 @@ BTS[[31]] <- BTS[[31]] %>%
 
 
 ## BTS_Vlasceanu_et_al_2023
-BTS[[32]] <- BTS[[32]] %>% 
+BTS[[33]] <- BTS[[33]] %>% 
   dplyr::mutate(Country = ifelse(Country == "Uk", "United Kingdom",Country),
                 Country = ifelse(Country == "Usa", "United States",Country),
                 Country = case_when(Country == "Newzealand" ~ "New Zealand",
@@ -521,7 +541,7 @@ BTS[[32]] <- BTS[[32]] %>%
                                     
                                     
 ## BTS_Wang_et_al_2021
-BTS[[33]] <- BTS[[33]] %>% 
+BTS[[34]] <- BTS[[34]] %>% 
   dplyr::mutate(Country = ifelse(Country == "China", "CHN",Country))
 
   
@@ -630,6 +650,12 @@ BTS <- lapply(BTS,function(df){
 
 process gender data of BTS
 ```{r}
+## BTS_Bago_et_al_2022
+BTS[[6]] <- BTS[[6]] %>% 
+  dplyr::mutate(Gender = case_when(Gender == 1 ~ "Male",
+                                   Gender == 2 ~ "Female"))
+                
+
 ## Batch processing of gender for different data sources
 BTS <- lapply(BTS,function(df){
   
@@ -661,12 +687,12 @@ BTS_gender_check <- do.call(rbind, BTS_gender_check)
 
 ## process gender of BTS 
 ## BTS_Buchanan_et_al_2023
-BTS[[7]] <- BTS[[7]] %>% 
+BTS[[9]] <- BTS[[9]] %>% 
   dplyr::mutate(Gender = ifelse(Gender == "Female, Female","Female",Gender))
 
 
 ## BTS_Hoogeveen_et_al_2022
-BTS[[14]] <- BTS[[14]] %>% 
+BTS[[17]] <- BTS[[17]] %>% 
   dplyr::mutate(Gender = ifelse(Gender == "Man", "Male",Gender),
                 Gender = ifelse(Gender == "Woman","Female",Gender))
 ```
@@ -682,23 +708,23 @@ BTS[[4]] <- BTS[[4]] %>%
 
 ## BTS_Hu_et_al_2019
 ## Hu et al' data collect in 2016, see https://doi.org/10.1525/collabra.165
-BTS[[15]] <- BTS[[15]] %>% 
+BTS[[18]] <- BTS[[18]] %>% 
   dplyr::mutate(Age = 2016 - Age)
 
 
 ## BTSK_lein_et_al_2018_Slate2
-BTS[[19]] <- BTS[[19]] %>% 
+BTS[[21]] <- BTS[[21]] %>% 
   dplyr::mutate(Age = ifelse(Age > 200, 2014-Age,Age))
 
 
 ## Lucca et al. 2024'Age use age days record subjects' age, therefore I will transform
 ## Lucca et al. 2024
-BTS[[21]] <- BTS[[21]] %>% 
+BTS[[24]] <- BTS[[24]] %>% 
   dplyr::mutate(Age = round((Age_days/365),2))
 
 
 ## BTS_Vlasceanu_et_al_2023
-BTS[[30]] <- BTS[[30]] %>% 
+BTS[[33]] <- BTS[[33]] %>% 
   dplyr::mutate(Age = ifelse(Age == "NA",NA,Age))
 ```
 
@@ -719,18 +745,29 @@ BTS[[2]] <- BTS[[2]] %>%
 
 
 ## BTS_Bago_et_al_2022
-# BTS[[6]] <- BTS[[6]] %>% 
-#   dplyr::mutate(Education = case_when(Education == 1 ~ "Below high school",
-#                                       Education == 2 ~ "Highschool",
-#                                       Education == 3 ~ "Bachelor’s degree",
-#                                       Education == 4 ~ "Master’s degree",
-#                                       Education == 5 ~ "Doctoral degree",
-#                                       TRUE ~ Education))
+BTS[[6]] <- BTS[[6]] %>%
+  dplyr::mutate(Education = case_when(Education == 1 ~ "Below high school",
+                                      Education == 2 ~ "Highschool",
+                                      Education == 3 ~ "Bachelor’s degree",
+                                      Education == 4 ~ "Master’s degree",
+                                      Education == 5 ~ "Doctoral degree",
+                                      TRUE ~ Education))
 
+
+## BTS_Bertolo_et_al_2023
+BTS[[7]] <- BTS[[7]] %>% 
+  dplyr::mutate(education = case_when(Education == 1 ~ "Some elementary/middle school (primary school)",
+                                      Education == 2 ~ "Completed elementary/middle school (primary school)",
+                                      Education == 3 ~ "Some high school",
+                                      Education == 4 ~ "Completed high school (secondary school)",
+                                      Education == 5 ~  "Some undergrad (higher education)",
+                                      Education == 6 ~  "Completed undergrad degree (~3-5 years higher education)",
+                                      Education == 7 ~ "Some graduate school",
+                                      Education == 8 ~ "Completed graduate school"))
 
 
 ## BTS_Eriksson_et_al_2021
-BTS[[10]] <- BTS[[10]] %>% 
+BTS[[12]] <- BTS[[12]] %>% 
   dplyr::mutate(Education = as.character(Education),
                 Education = case_when(Education == "1" ~ "Less than high school degree",
                                       Education == "2" ~ "High school graduate",
@@ -742,7 +779,7 @@ BTS[[10]] <- BTS[[10]] %>%
 
 
 ## BTS_Everett_et_al_2021
-BTS[[11]] <- BTS[[11]] %>% 
+BTS[[13]] <- BTS[[13]] %>% 
   dplyr::mutate(Education = as.character(Education),
                 Education = case_when(Education == "1" ~ "Some elementary school",
                                       Education == "2" ~ "Completed elementary school",
@@ -757,16 +794,16 @@ BTS[[11]] <- BTS[[11]] %>%
 
 
 ## BTS_Greenberg_et_al_2022
-# BTS[[14]] <- BTS[[14]] %>% 
-#   dplyr::mutate(Education = case_when(Education == 1 ~ "pre-high school",
-#                                       Education == 2 ~ "high school",
-#                                       Education == 3 ~ "college",
-#                                       Education == 4 ~ "Master or a professional degree",
-#                                       Education == 5 ~ "PhD(Doctorate)"))
+BTS[[15]] <- BTS[[15]] %>%
+  dplyr::mutate(Education = case_when(Education == 1 ~ "pre-high school",
+                                      Education == 2 ~ "high school",
+                                      Education == 3 ~ "college",
+                                      Education == 4 ~ "Master or a professional degree",
+                                      Education == 5 ~ "PhD(Doctorate)"))
 
 
 ## BTS_Hoogeveen_et_al_2022
-BTS[[14]] <- BTS[[14]] %>% 
+BTS[[17]] <- BTS[[17]] %>% 
   dplyr::mutate(Education = as.character(Education),
                 Education = case_when(Education == "1" ~ "primary school",
                                       Education == "2" ~ "some high school",
@@ -783,10 +820,10 @@ BTS[[14]] <- BTS[[14]] %>%
 
 
 ## BTS_Psychological_Science_Accelerator_Self_Determination_Theory_Collaboration_2022
-
+df <- BTS[[27]]
 
 ## BTS_Sorowski_et_al_2023
-BTS[[27]] <- BTS[[27]] %>% 
+BTS[[30]] <- BTS[[30]] %>% 
   dplyr::mutate(Education = as.character(Education),
                 Education = case_when(Education == "1" ~ "no formal",
                                       Education == "2" ~ "primary",
@@ -796,7 +833,7 @@ BTS[[27]] <- BTS[[27]] %>%
                                       TRUE ~ Education))
   
 ## BTS_Vlasceanu_et_al_2023
-BTS[[30]] <- BTS[[30]] %>% 
+BTS[[33]] <- BTS[[33]] %>% 
   dplyr::mutate(Education = case_when(Education == 1 ~ "up to grade school/elementary school",
                                       Education == 2 ~ "up to high school",
                                       Education == 3 ~ "college/undergraduate university/certificate training",
