@@ -1548,6 +1548,7 @@ H2_Fig_gender_general <- ggplot(H2_gender_general,aes(Data_source,Proportion,fil
 H2_Fig_gender_general
 ```
 
+
 Finally, I calculated the bayes factor for gender.
 ```{r}
 ## general population
@@ -1568,10 +1569,10 @@ H2_BF_gender_CFPS2018_general <- BayesMultiNomial(dataset = H2_gender_bayes_gene
                                           expected = "CFPS2018")
 ```
 
+
 The calculation results show that there is no significant difference between the data in Chinese subjects pool and Census7 and CFPS2018, and the calculation results are $Log(BF_{10})$ = `r H2_BF_gender_Census7_total$BF$LogBF10` and $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_total$BF$LogBF10` respectively.
 
 for general population, I also found similar results. Census7: $Log(BF_{10})$ = `r H2_BF_gender_Census7_general$BF$LogBF10` , CFPS2018: $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_general$BF$LogBF10`
-
 
 
 In this part, I calculate data based on special target population
