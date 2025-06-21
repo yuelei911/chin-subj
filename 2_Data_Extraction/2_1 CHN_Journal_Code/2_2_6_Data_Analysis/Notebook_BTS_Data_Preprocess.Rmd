@@ -168,7 +168,7 @@ BTS[[1]] <- BTS[[1]] %>%
 
 ## BTS_Arechar_et_al_2023
 BTS[[2]] <- BTS[[2]] %>% 
-  dplyr::mutate(Country = ifelse(Country == "UK", "GB",Country))
+  dplyr::mutate(Country = ifelse(Country == "uk", "gb",Country))
 
 
 
@@ -180,9 +180,9 @@ BTS[[3]] <- BTS[[3]] %>%
 
 
 ## BTS_Awad_et_al_2018
-BTS[[4]] <- BTS[[4]] %>% 
-  dplyr::mutate(Country = case_when(Country %in% c("TWN","HKG","MAC") ~ "CHN",
-                                    TRUE ~ Country))
+# BTS[[4]] <- BTS[[4]] %>% 
+#   dplyr::mutate(Country = case_when(Country %in% c("TWN","HKG","MAC") ~ "CHN",
+#                                     TRUE ~ Country))
 
 
 
@@ -199,6 +199,7 @@ BTS[[5]] <- BTS[[5]] %>%
                                     TRUE ~ Country))
 
 
+
 ## BTS_Bago_et_al_2022 
 ## its country code data from https://lab2.labinthewild.org/multitasking/
 BTS_Bago_et_al_2022_Countrycode <- readxl::read_xlsx("D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_Bago_et_al_2022_Countrycode.xlsx") %>% 
@@ -207,10 +208,48 @@ BTS_Bago_et_al_2022_Countrycode <- readxl::read_xlsx("D://chin-subj//2_Data_Extr
 BTS[[6]] <- BTS[[6]] %>% 
   dplyr::left_join(BTS_Bago_et_al_2022_Countrycode,
                    by = "Country") %>% 
-  dplyr::rename(Country_IDs = Country,
-                Country = Country_name)
+  dplyr::rename(Country_IDs = Country)
 
 
+BTS[[6]] <- BTS[[6]] %>% 
+  dplyr::mutate(Country = case_when(Country_region_name %in% c("Faroe Islands","Greenland") ~ "Denmark",
+                                    Country_region_name %in% c("French Guiana","French Polynesia",
+                                                 "French Southern Territories",
+                                                 "Guadeloupe","Martinique","Reunion") ~ "France",
+                                    Country_region_name == "Aruba" ~ "Netherlands",
+                                    Country_region_name == "Cook Islands" ~ "New Zealand",
+                                    Country_region_name %in% c("Bermuda","British Indian Ocean Territory",
+                                                 "Cayman Islands","Falkland Islands (Malvinas)",
+                                                 "Gibraltar","Guernsey","Jersey",
+                                                 "Montserrat","Pitcairn","Turks And Caicos Islands") ~ "United Kingdom",
+                                    Country_region_name %in% c("Northern Mariana Islands","Puerto Rico","U.S. Virgin Islands") ~ "United States",
+                                    TRUE ~ Country_region_name))
+
+
+BTS[[6]] <- BTS[[6]] %>% 
+  dplyr::mutate(Country == case_when(Country == "Aland Islands" ~  "Åland Islands",
+                                     Country == "Antigua And Barbuda" ~ "Antigua & Barbuda",
+                                     Country == "Bosnia And Herzegovina" ~ "Bosnia & Herzegovina",
+                                     Country == "Brunei Darussalam" ~ "Brunei",
+                                     Country == "Cote Divoire" ~ "Côte d’Ivoire",
+                                     Country == "Czechia" ~ "Czech Republic",
+                                     Country == "North Korea" ~ "Democratic Peoples Republic of Korea",
+                                     Country == "Guinea-bissau" ~ "Guinea-Bissau",
+                                     Country == "Heard Island And Mcdonald Islands" ~ "Heard & McDonald Islands",
+                                     Country == "Holy See (Vatican City State)" ~ "Vatican City",
+                                     Country == "Isle Of Man" ~ "Isle of Man",
+                                     Country == "Lao Peoples Democratic Republic" ~ "Laos",
+                                     Country == ""))
+
+
+df <- BTS[[6]]
+Tab <- data.frame(table(df$Country))
+
+df <- df %>% 
+  dplyr::anti_join(Countrycodelist_iso2_iso3,by = c("Country" = "Countryfullname"))
+Tab2 <- data.frame(table(df$Country))
+
+# write.csv(Tab,"Tab.csv")
 # ## BTS_Bertolo_et_al_2023
 BTS[[7]] <- BTS[[7]] %>%
   dplyr::mutate(Country = case_when(Country == "Antigua And Barbuda" ~  "Antigua & Barbuda",
@@ -1061,5 +1100,10 @@ BTS_edu_list[[17]] <- BTS_edu_list[[17]] %>%
 # Save Rdata
 ```{r}
 save(BTS, WEIRD, BTS_edu_list, Countrycodelist_iso2_iso3,file = "BTS.Rdata")
+
+
+## Hong Kong, Macao and Taiwan are inalienable parts of China. The data analysis in this ## paper does not combine them into one dataset because the survey data will be compared ## with the seventh national population census data released by China's National Bureau of ## Statistics, which does not include data from Hong Kong, Macao and Taiwan.
 ```
+
+
 
