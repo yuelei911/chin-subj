@@ -212,7 +212,7 @@ BTS[[6]] <- BTS[[6]] %>%
 
 
 BTS[[6]] <- BTS[[6]] %>% 
-  dplyr::mutate(Country == case_when(Country_region_name == "Aland Islands" ~  "Åland Islands",
+  dplyr::mutate(Country = case_when(Country_region_name == "Aland Islands" ~  "Åland Islands",
                                      Country_region_name == "Antigua And Barbuda" ~ "Antigua & Barbuda",
                                      Country_region_name == "Bosnia And Herzegovina" ~ "Bosnia & Herzegovina",
                                      Country_region_name == "Brunei Darussalam" ~ "Brunei",
@@ -250,45 +250,53 @@ BTS[[6]] <- BTS[[6]] %>%
                                      Country_region_name == "Faroe Islands" ~ "Faroe Islands",
                                      Country_region_name == "Reunion" ~ "Réunion",
                                      Country_region_name == "Falkland Islands (Malvinas)" ~ "Falkland Islands",
-                                     Country == "Pitcairn" ~ "Pitcairn Islands",
+                                     Country_region_name == "Pitcairn" ~ "Pitcairn Islands",
                                      Country_region_name == "Turks And Caicos Islands" ~ "Turks & Caicos Islands",
                                      TRUE ~ Country_region_name))
 
 
 df <- BTS[[6]]
 Tab <- data.frame(table(df$Country))
+table(df$Country_IDs)
 
 df <- df %>% 
   dplyr::anti_join(Countrycodelist_iso2_iso3,by = c("Country" = "Countryfullname"))
 Tab2 <- data.frame(table(df$Country))
 
 # write.csv(Tab,"Tab.csv")
+
+
+
 # ## BTS_Bertolo_et_al_2023
 BTS[[7]] <- BTS[[7]] %>%
-  dplyr::mutate(Country = case_when(Country == "Antigua And Barbuda" ~  "Antigua & Barbuda",
-                                    Country == "Artsakh"  ~  "Azerbaijan", #*
-                                    Country %in% c("Côte D'ivoire","Ivory Coast") ~  "Côte d’Ivoire",
-                                    Country == "Democratic People's Republic Of Korea" ~ "North Korea",
-                                    Country == "Democratic Republic Of The Congo" ~ "Congo - Kinshasa",
-                                    Country == "East Timor" ~  "Timor-Leste",
-                                    Country == "Kingdom Of The Netherlands"  ~  "Netherlands",
-                                    Country == "Micronesia"  ~ "Micronesia (Federated States of)",
-                                    Country == "Myanmar"  ~  "Myanmar (Burma)",
-                                    # Country == "Northern Cyprus" #*
-                                    Country == "Palestine"  ~ "Palestinian Territories",
-                                    Country == "Sahrawi Arab Democratic Republic" ~ "Western Sahara", #*
-                                    Country == "Saint Kitts And Nevis" ~ "St. Kitts & Nevis",
-                                    Country == "Saint Lucia" ~ "St. Lucia",
-                                    Country == "Saint Vincent And The Grenadines" ~  "St. Vincent & Grenadines",
-                                    # Country == "Somaliland" ~ "", #*
-                                    # Country == "South Ossetia" ~ "", #*
-                                    Country == "Swaziland" ~ "Eswatini",
-                                    Country == "São Tomé And Príncipe" ~ "São Tomé & Príncipe",
-                                    Country == "The Bahamas" ~ "Bahamas",
-                                    Country == "The Gambia" ~ "Gambia",
-                                    # Country == "Transnistria" ~ "", #*
-                                    Country == "Trinidad And Tobago" ~ "Trinidad & Tobago",
-                                    TRUE ~ Country))
+  mutate(Country = case_when(Country == "Antigua and Barbuda" ~ "Antigua & Barbuda",
+                              Country == "Artsakh" ~ "Azerbaijan",
+                              Country == "Bosnia and Herzegovina" ~ "Bosnia & Herzegovina",
+                              Country == "Côte d'Ivoire" ~ "Côte d’Ivoire",
+                              Country == "Czech Republic" ~ "Czechia",
+                              Country == "Democratic People's Republic of Korea" ~ "North Korea",
+                              Country == "Democratic Republic of the Congo" ~ "Congo - Kinshasa",
+                              Country == "East Timor" ~ "Timor-Leste",
+                              Country == "Hong Kong" ~ "Hong Kong SAR China",
+                              Country == "Ivory Coast" ~ "Côte d’Ivoire",
+                              Country == "Kingdom of the Netherlands" ~ "Netherlands",
+                              Country == "Macedonia" ~ "North Macedonia",
+                              Country == "Micronesia" ~ "Micronesia (Federated States of)",
+                              Country == "Myanmar" ~ "Myanmar (Burma)",
+                              Country == "Northern Cyprus" ~ "Cyprus",
+                              Country == "Palestine" ~ "Palestinian Territories",
+                              Country == "Sahrawi Arab Democratic Republic" ~ "Western Sahara",
+                              Country == "Saint Kitts and Nevis" ~ "St. Kitts & Nevis",
+                              Country == "Saint Lucia" ~ "St. Lucia",
+                              Country == "Saint Vincent and the Grenadines" ~ "St. Vincent & Grenadines",
+                              Country == "São Tomé and Príncipe" ~ "São Tomé & Príncipe",
+                              Country == "South Ossetia" ~ "Georgia",
+                              Country == "Swaziland" ~ "Eswatini",
+                              Country == "The Bahamas" ~ "Bahamas",
+                              Country == "The Gambia" ~ "Gambia",
+                              Country == "The Netherlands" ~ "Netherlands",
+                              Country == "Transnistria" ~ "Moldova",
+                              Country == "Trinidad and Tobago" ~ "Trinidad & Tobago"))
 
 
 
@@ -298,15 +306,15 @@ BTS[[8]] <- BTS[[8]] %>%
   dplyr::mutate(Country = ifelse(Country == "USA", "United States",Country),
                 Country = ifelse(Country == "CHN", "China",Country),
                 Country = ifelse(Country == "UEA", "United Arab Emirates",Country),
-                Country = ifelse(Country == "Bosnia and. Herz.","Bosnia & Herzegovina",Country))
+                Country = ifelse(Country == "Bosnia and. Herz.","Bosnia & Herzegovina",Country),
+                Country = ifelse(Country == "England" | Country == "Northern Ireland" | Country == "Wales","United Kingdom",Country),
+                Country = ifelse(Country == "SlovakRepublic", "Slovakia",Country))
 
 
 
 ## BTS_Buchanan_et_al_2023
 BTS[[9]] <- BTS[[9]] %>% 
-  dplyr::mutate(Country = case_when(Country %in% c("TWN","HKG","MAC") ~ "CHN",
-                                    TRUE ~ Country),
-                Country = ifelse(Country == "NA",NA,Country),
+  dplyr::mutate(Country = ifelse(Country == "NA",NA,Country),
                 Country = ifelse(Country == "KEN, NA", "KEN",Country))
 
 
@@ -314,8 +322,7 @@ BTS[[9]] <- BTS[[9]] %>%
 ## BTS_Dorison_et_al_2020
 BTS[[10]] <- BTS[[10]] %>% 
   dplyr::mutate(Country = trimws(Country)) %>% 
-  dplyr::mutate(Country = ifelse(Country == "TWN" | Country == "HKG"| Country == "MAC","CHN",Country),
-                Country = ifelse(Country == "many", NA, Country))
+  dplyr::mutate(Country = ifelse(Country == "many", NA, Country))
 
 
 
@@ -327,7 +334,7 @@ BTS[[10]] <- BTS[[10]] %>%
 BTS[[12]] <- BTS[[12]] %>% 
   dplyr::mutate(Country = trimws(Country)) %>% 
   dplyr::mutate(Country = case_when(Country == "Ivory Coast" ~  "Côte d’Ivoire",
-                                    Country == "Trinidad And Tobago" ~ "Trinidad & Tobago",
+                                    Country == "Trinidad and Tobago" ~ "Trinidad & Tobago",
                                     Country == "UAE" ~ "United Arab Emirates",
                                     Country == "Czech Republic" ~ "Czechia",
                                     Country == "Bosnia and Herzegovina" ~ "Bosnia & Herzegovina",
@@ -344,9 +351,7 @@ BTS[[13]] <- BTS[[13]] %>%
 
 
 ## BTS_Fernandez_Velasco_et_al_2023
-BTS[[14]] <- BTS[[14]] %>%
-  dplyr::mutate(Country = case_when(Country %in% c("TW","HK","MO") ~ "CN",
-                                    TRUE ~ Country))
+
 
 
 
@@ -361,11 +366,8 @@ BTS[[15]] <- BTS[[15]] %>%
   dplyr::rename(Country_IDs = Country,
                 Country = Country_name)
 
-df <- BTS[[11]]
+
 ## BTS_Hall_et_al_2018
-BTS[[16]] <- BTS[[16]] %>%
-  dplyr::mutate(Country = case_when(Country %in% c("TWN","HKG","MAC") ~ "CHN",
-                                    TRUE ~ Country))
 
 
 
@@ -376,7 +378,8 @@ BTS[[17]] <- BTS[[17]] %>%
     Country = ifelse(Country == "CHN", "China", Country),
     Country = ifelse(Country == "UK", "United Kingdom", Country))
                 
-      
+  
+
 ### BTS_Hu_et_al_2019
 ## I converted the country codes based on the information in the IJzerman et al (2018), https://doi.org/10.1525/collabra.165.
 
@@ -393,12 +396,9 @@ BTS[[18]] <- BTS[[18]] %>%
                                     Country == "Zurich" ~ "Switzerland",
                                     Country == "VCU" ~ "United States",
                                     TRUE ~ Country))
-
+  
 
 ## BTS_Jones_et_al_2021
-BTS[[19]] <- BTS[[19]] %>%
-  dplyr::mutate(Country = case_when(Country %in% c("TW","HK","MO") ~ "CN",
-                                    TRUE ~ Country))
 
 
 
@@ -409,6 +409,7 @@ BTS[[20]] <- BTS[[20]] %>%
                                     Country %in% "Hong Kong" ~ "China",
                                     Country %in% c("Northern Ireland","Scotland","Wales","England") ~ "United Kingdom",
                                     Country %in% c("USA_North","USA_South") ~ "United States",
+                                    Country == "Macedonia" ~ "North Macedonia",
                                     TRUE ~ Country))
 
 
@@ -458,7 +459,7 @@ BTS[[24]] <- BTS[[24]] %>%
                                     Country == "cbplabumn" ~ "United States",
                                     Country == "childstudiesucsb"~ "United States",
                                     Country == "cogcienmat_univalle" ~ "Colombia",
-                                    Country == "cogdevlabhku"  ~ "China", ## this data is China Hongkong
+                                    Country == "cogdevlabhku"  ~ "Hong Kong SAR China", ## this data is China Hongkong
                                     Country == "corbitlab" ~ "Canada",
                                     Country == "cutelabunak" ~ "Iceland",
                                     Country == "devlabmta" ~ "New Zealand",
@@ -479,6 +480,8 @@ BTS[[24]] <- BTS[[24]] %>%
                                     Country == "weltentdeckerzurich" ~ "Switzerland",
                                     Country == "wsumarcs" ~ "Australia",
                                     Country == "yonseichild" ~ "South Korea",
+                                    Country == "ellaauckland" ~ "New Zealand",
+                                    Country == "princetonbabylab" ~ "United States",
                                     TRUE ~ Country))
 
 
@@ -486,9 +489,14 @@ BTS[[24]] <- BTS[[24]] %>%
 
 ## BTS_Mankara_et_al_2022
 BTS[[25]] <- BTS[[25]] %>% 
-  dplyr::mutate(Country = ifelse(Country == "CHN","China",Country))
+  dplyr::mutate(Country = ifelse(Country == "CHN","China",Country),
+                Country = ifelse(Country == "England","United Kingdom",Country))
 
+df <- BTS[[25]]
 
+df <- df %>% 
+  dplyr::anti_join(Countrycodelist_iso2_iso3,by = c("Country" = "Countryfullname"))
+Tab2 <- data.frame(table(df$Country))
 
 ## BTS_Pizzol_et_al_2023
 BTS[[26]] <- BTS[[26]] %>% 
