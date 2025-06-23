@@ -59,7 +59,9 @@ load("df_chinese_subj_rr_stage1.Rdata")
 
 load("BTS.Rdata")
 
-load("D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_coding.Rdata")
+BTS_coding <- readxl::read_xlsx("D://chin-subj//2_Data_Extraction//2_2_BTS//Chin_Subj_Proofreading_BTS_Target_Population.xlsx")
+BTS_coding <- BTS_coding %>% 
+  dplyr::filter(Coder == "final")
 
 ## Here, I remove some data sets to reduce data set clutter.
 rm(df,df_PSA001,df_stage2_Journal_Code,Group1_bind,Group24567_bind,Group3_bind,df_regionCode)
@@ -76,6 +78,12 @@ for (i in seq_along(BTS)) {
   BTS[[i]] <- merged_df
   
 }
+
+## Process the target population of BTS_klein_et_al
+# BTS_list_name <- names(BTS)
+
+BTS[["BTS_Klein_et_al_2018_1"]]$Target_Population <- 2
+BTS[["BTS_Klein_et_al_2018_2"]]$Target_Population <- 2
 ```
 
 

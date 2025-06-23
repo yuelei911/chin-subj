@@ -35,6 +35,8 @@ rm(BTS_Kelsey_et_al_2024,raw_Elbæk_et_al_2023)
 BTS_Bertolo_et_al_2023 <- BTS_Bertolo_et_al_2023 %>% 
   dplyr::mutate(Article_Id = "Bertolo_et_al_2023")
 
+BTS_Lucca_et_al_2024 <- BTS_Lucca_et_al_2024 %>% 
+  dplyr::mutate(Article_Id = "Lucca_et_al_2024")
 
 ## trans data.frame to list
 current_data_frame <- ls()[sapply(ls(), function(x) is.data.frame(get(x)))]
