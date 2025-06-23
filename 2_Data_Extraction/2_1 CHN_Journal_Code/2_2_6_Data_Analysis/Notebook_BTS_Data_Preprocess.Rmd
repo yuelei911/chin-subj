@@ -849,14 +849,15 @@ BTS[[2]] <- BTS[[2]] %>%
 
 ## BTS_Bertolo_et_al_2023
 BTS[[6]] <- BTS[[6]] %>% 
-  dplyr::mutate(education = case_when(Education == 1 ~ "Some elementary/middle school (primary school)",
-                                      Education == 2 ~ "Completed elementary/middle school (primary school)",
-                                      Education == 3 ~ "Some high school",
-                                      Education == 4 ~ "Completed high school (secondary school)",
-                                      Education == 5 ~  "Some undergrad (higher education)",
-                                      Education == 6 ~  "Completed undergrad degree (~3-5 years higher education)",
-                                      Education == 7 ~ "Some graduate school",
-                                      Education == 8 ~ "Completed graduate school"))
+  dplyr::mutate(Education = as.character(Education),
+                Education = case_when(Education == "1" ~ "Some elementary/middle school (primary school)",
+                                      Education == "2" ~ "Completed elementary/middle school (primary school)",
+                                      Education == "3" ~ "Some high school",
+                                      Education == "4" ~ "Completed high school (secondary school)",
+                                      Education == "5" ~  "Some undergrad (higher education)",
+                                      Education == "6" ~  "Completed undergrad degree (~3-5 years higher education)",
+                                      Education == "7" ~ "Some graduate school",
+                                      Education == "8" ~ "Completed graduate school"))
 
 
 ## BTS_Eriksson_et_al_2021
@@ -996,6 +997,28 @@ BTS_edu_list[[2]] <- BTS_edu_list[[2]] %>%
 
 
 
+## BTS_Bertolo_et_al_2023
+
+BTS_edu_list[[3]] <- BTS_edu_list[[3]] %>% 
+  dplyr::mutate(Highschool = case_when(Education %in% c("Completed elementary/middle school (primary school)", 
+                                                        "Some elementary/middle school (primary school)") ~ "Below_high_school",
+                                       Education %in% c("Completed high school (secondary school)", 
+                                                        "Some high school",
+                                                        "Completed undergrad degree (~3-5 years higher education)",
+                                                        "Some undergrad (higher education)",
+                                                        "Completed graduate school",
+                       "Some graduate school") ~ "High_school_and_above"),
+                College = case_when(Education %in% c("Completed elementary/middle school (primary school)", 
+                                                     "Some elementary/middle school (primary school)",
+                                                     "Completed high school (secondary school)",
+                                                     "Some high school") ~ "Below_college",
+                                    Education %in% c("Completed undergrad degree (~3-5 years higher education)",
+                                                     "Some undergrad (higher education)",
+                                                     "Completed graduate school",
+                                                     "Some graduate school") ~ "College_and_above"))
+
+
+
 ## BTS_Bosson_et_al_2021
 BTS_edu_list[[4]] <- BTS_edu_list[[4]] %>% 
   dplyr::mutate(Highschool = case_when(Education %in% c("Elementary school","I don't have any") ~ "Below_high_school",
@@ -1044,7 +1067,7 @@ BTS_edu_list[[8]] <- BTS_edu_list[[8]] %>%
 
 
 ## BTS_Hoogeveen_et_al_2022
-BTS_edu_list[10] <- BTS_edu_list[[10]] %>% 
+BTS_edu_list[[10]] <- BTS_edu_list[[10]] %>% 
   dplyr::mutate(Highschool = case_when(Education %in% c("primary school") ~ 
                                          "Below_high_school",
                                        Education %in% c("completed a postgraduate degree",
