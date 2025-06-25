@@ -172,10 +172,16 @@ I began by analyzing the basic case of the two data sets (BTS and Chinese journa
 ```{r warning=FALSE}
 Journal <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) ## valid 1569 rows
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>%  ## valid 1569 rows
+  dplyr::filter(Article_IDs_N != "20082359")
+
 
 Journal_articles_num <- Journal %>% 
-  dplyr::distinct(Article_IDs) ## A total 963 articles
+  dplyr::distinct(Article_IDs) ## A total 962 articles
+
+
+# Journal_articles_title <- Journal %>% 
+#   dplyr::distinct(Article_Title)
 
 
 # ## output `Journal` to help download bibliographic data from CNKI
@@ -197,14 +203,14 @@ table(Journal_simple_info_articles$Remark1)
 
 
 Journal_study_num <- Journal %>% 
-  dplyr::distinct(Article_IDs,Study_Number) ## A total 1219 studies
+  dplyr::distinct(Article_IDs,Study_Number) ## A total 1218 studies
 
 Journal_sample_size <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size) %>% 
   dplyr::mutate(Sample_Size = as.numeric(Sample_Size),
                 Sample_Size = ifelse(Article_IDs == "20185082",33,Sample_Size))
 
-# sum(Journal_sample_size$Sample_Size,na.rm = TRUE)  ## 538,949
+sum(Journal_sample_size$Sample_Size,na.rm = TRUE)  ## 538,937
 
 
 ## Here, I remove some data sets to reduce data set clutter.
@@ -271,6 +277,15 @@ BTS_Overview2 <- BTS_Overview %>%
                 Proportion_adjust = Proportion / Proportion_sum,
                 Proportion_sum_adjust = sum(Proportion_adjust),
                 Site = "BTS")
+
+
+## n < 100 countries
+BTS_n100 <- BTS_Overview2 %>% 
+  dplyr::filter(n < 100)
+
+## n < 1000
+BTS_n1000 <- BTS_Overview2 %>% 
+  dplyr::filter(n < 1000)
 ```
 
 
@@ -400,6 +415,9 @@ Journal_age_fuzzy_report <- Journal_age_report_detail %>%
 
 Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>% 
   dplyr::distinct(Article_IDs) ## 116-6=110
+
+## the above "-6" means aticles Mage coded in other_age, these articles are 20183340, 20183097, 20082227, 20214027, 20083017, 20181065
+
 
 ## Here, I remove some data sets to reduce data set clutter.
 # rm(Journal_age_report_detail,Journal_age_report_detail_study_num,
@@ -1833,7 +1851,7 @@ H2_age_Psystages_bayes_general <- bind_rows(BTS_age_PsyStages_CHN_general,Sim_Jo
 sum(H2_age_Psystages_bayes_general$`Chinese subjects`) ## 100
 
 ## interval10
-Sim_Journal_age_interval103_general_prop <-  Sim_Journal_age_interval103_general_prop %>% 
+Sim_Journal_age_interval103_general_prop <-  Sim_Journal_age_interval103_general %>% 
   dplyr::rename(n = 2)
 
 H2_age_inteval10_bayes_general <- bind_rows(BTS_age_interval10_CHN_general,Sim_Journal_age_interval103_general_prop) %>% 
@@ -2065,6 +2083,7 @@ H2_BF_edu_highschool_CFPS2018 <- BayesMultiNomial(dataset = H2_edu_highschool_ba
                                           expected = "CFPS2018")
 
 ```
+I found the Bayesian multinomial test shows strong evidence for comparing them in general population. PsyStages and interval10 are $Log(BF_{10})$ = `r H2_BF_age_Psystages_general$BF$LogBF10` and interval10: $Log(BF_{10})$ = `r H2_BF_age_interval10_general$BF$LogBF10` respectively.
 
 
 Note, there is not results description.
@@ -2446,6 +2465,11 @@ H3_Fig_gender
 # BRG  and SRP from Ruggeri_et_al_2022
 
 # bts1 <- BTS[[23]]
+
+## How many countries more than China
+H3_gender_more_China <- H3_gender %>% 
+  dplyr::filter(Gender == "Female") %>%  ## the prop female of China is 53.54
+  dplyr::filter(Proportion > 53.54)
 ```
 
 
@@ -2478,14 +2502,11 @@ BTS_Psystages_allcountry_sum_prop <- BTS_Psystages_allcountry %>%
 
 
 ## Add Chinese data
-Journal_BTS_PsyStages_CHN <- Sim_Journal_age_PsyStages3_general_prop %>% 
-  # dplyr::bind_rows(BTS_age_PsyStages_CHN_total) %>%  
-  dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(n=sum(n)) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                ISO3 = "CHN")
+Journal_BTS_PsyStages_CHN <- H2_age_Psystages_bayes_general %>% 
+  dplyr::mutate(ISO3 = "CHN") %>% 
+  dplyr::rename(Proportion = `Chinese subjects`)
 
-sum(Journal_BTS_PsyStages_CHN$Proportion)  ## 100
+sum(Journal_BTS_PsyStages_CHN$Proportion)  ## 100.01
 
 
 ## Combine data
@@ -2505,10 +2526,16 @@ H3_PsyStages2 <- H3_PsyStages %>%
   dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>%
   dplyr::mutate(ISO3 = factor(ISO3, levels = H3_PsyStages_factor)) %>% 
   dplyr::filter(!is.na(ageBins))
+
+
+## The prop of 18~25 more than China (60.72)
+H3_PsyStages2_more_China <- H3_PsyStages2 %>% 
+  dplyr::filter(ageBins == "18~25") %>% 
+  dplyr::filter(Proportion > 60.72)
 ```
 
-And I visualized age data (PsyStages) for all countries in BTS.
 
+And I visualized age data (PsyStages) for all countries in BTS.
 ```{r}
 H3_Fig_PsyStages <- ggplot(H3_PsyStages2, aes(x=Proportion, y=ISO3, fill=ageBins)) +
   geom_col(alpha = .75)+
@@ -2558,13 +2585,9 @@ BTS_interval10_allcountry_sum_prop <- BTS_interval10_allcountry %>%
 
 
 ## Add Chinese data
-Journal_BTS_interval10_CHN <- Sim_Journal_age_interval103_general_prop %>% 
-  dplyr::rename(n = 2) %>% 
-  # bind_rows(BTS_age_interval10_CHN_total) %>% 
-  dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(n=sum(n)) %>% 
-  dplyr::mutate(Proportion = round((n/sum(n))*100,2),
-                ISO3 = "CHN")
+Journal_BTS_interval10_CHN <- H2_age_inteval10_bayes_general %>%
+  dplyr::mutate(ISO3 = "CHN") %>% 
+  dplyr::rename(Proportion = `Chinese subjects`)
 
 
 ## Combine data
@@ -2587,6 +2610,14 @@ H3_interval10 <- H3_interval10 %>%
   dplyr::mutate(ISO3 = factor(ISO3, levels = H3_interval10_factor)) %>% 
   dplyr::filter(!is.na(ageBins) & !is.na(ISO3)) 
 
+
+## each countries the max agebins
+H3_interval10_max_agebins <-  H3_interval10 %>% 
+  dplyr::group_by(ISO3) %>% 
+  dplyr::mutate(Rank = dense_rank(desc(Proportion))) %>% 
+  dplyr::filter(Rank == 1) 
+
+table(H3_interval10_max_agebins$ageBins)
 ```
 
 and I visualized age data (interval10) of all countries in BTS.
@@ -2715,17 +2746,19 @@ H3_Fig_BF_gender
 Third, I calculted age BF in two classification. In this part, I calculated BF for this two categories.
 ```{r}
 ## PsyStages
-H3_BF_PsyStages <- H3_PsyStages %>% 
+H3_BF_PsyStages <- H3_PsyStages2 %>% 
   dplyr::select(ISO3,ageBins,Proportion) %>%
   dplyr::filter(!is.na(ISO3)) %>% 
   dplyr::rename(Countries = 1)
 
-# table(H3_BF_PsyStages$ageBins)
+table(H3_BF_PsyStages$ageBins)
 
 H3_BF_PsyStages_factor <- H3_BF_PsyStages %>% 
-  dplyr::filter(ageBins == "<=17") %>%
+  dplyr::filter(ageBins == "18~25") %>%
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(Countries)
+
+
  
 H3_BF_PsyStages <- H3_BF_PsyStages %>%  
   dplyr::mutate(Countries = factor(Countries, levels = H3_BF_PsyStages_factor)) %>%  
@@ -2748,6 +2781,9 @@ H3_BF_interval10_factor <- H3_BF_interval10 %>%
   dplyr::pull(Countries)
 
 
+table(H3_BF_interval10$ageBins)
+
+
 H3_BF_interval10 <- H3_BF_interval10 %>% 
   dplyr::mutate(Countries = factor(Countries, levels = H3_BF_interval10_factor)) %>% 
   tidyr::pivot_wider(names_from = "Countries",values_from = "Proportion") %>%
@@ -2762,7 +2798,7 @@ and I visualized PsyStages BF at first.
 H3_Fig_BF_PsyStages <- ggplot(H3_BF_PsyStages, aes( x = `Log(BF10)_NonInform`, y = Countries)) +
   geom_point() +
   scale_color_grey() +
-  xlim(-15,125) +
+  xlim(-15,150) +
   scale_y_discrete(limits=rev) +
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
              colour = c("red", "tomato", "black", "deepskyblue","blue"), 
@@ -2803,7 +2839,7 @@ H3_Fig_BF_interval10 <- ggplot(H3_BF_interval10,
                             aes( x = `Log(BF10)_NonInform`, y = Countries)) +
   geom_point() +
   scale_color_grey() +
-  xlim(-15,125) +
+  xlim(-15,150) +
   scale_y_discrete(limits=rev) +
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
              colour = c("red", "tomato", "black", "deepskyblue","blue"), 
@@ -2861,12 +2897,12 @@ H3_Fig_age
 
 
 ## suppl
-H3_Fig_gender_age_suppl <- H3_Fig_BF_interval10 + H3_Fig_interval10 +
+H3_Fig_age_suppl <- H3_Fig_BF_interval10 + H3_Fig_interval10 +
    plot_annotation(tag_levels =list(c("S3a","S3b")))  & 
   theme(plot.tag = element_text(size = 18, face = "bold"))
 
 
-ggsave("H3_Fig_gender_age_suppl .pdf", H3_Fig_gender_age_suppl , device = "pdf", width=18, height = 18)
+ggsave("H3_Fig_age_suppl .pdf", H3_Fig_age_suppl , device = "pdf", width=18, height = 18)
 
 
 H3_Fig_gender_age_suppl 
