@@ -2154,9 +2154,18 @@ Journal_region_single <- Journal %>%
  # Journal_region_single_studies_num <- Journal_region_single %>% 
  #   dplyr::distinct(Article_IDs,Study_Number)  ## single 592 studies + multiple 10
  # 
- # ## papers
- # Journal_region_single_papers_num <- Journal_region_single %>% 
- #   dplyr::distinct(Article_IDs) ## single 519 papers + multiple 10
+ ## papers
+ Journal_region_single_papers_num <- Journal_region_single %>%
+   dplyr::filter(Subjects_Recruitment_Area %in% c("新疆","西藏","甘肃","青海","内蒙古",
+                                                 "宁夏","四川","重庆","陕西","贵州","云南",
+                                                 "北京","山西","河北","河南","湖北","湖南",
+                                                 "广西","广东","香港","澳门","台湾","海南",
+                                                 "黑龙江","吉林","辽宁","天津","山东","江苏",
+                                                 "安徽","上海","浙江","江西","福建")) %>% 
+   dplyr::distinct(Article_IDs) ## single 498 papers + multiple 9
+ 
+ table( Journal_region_single_papers_num$Subjects_Recruitment_Area)
+ 
  
  
  Journal_region_single_general_tab <- Journal_region_single %>% 
@@ -2417,7 +2426,7 @@ H2_region_seven <- ggplot(data = H2_region_seven2, aes(x = `Data Source`, y = Pr
         legend.title = element_text(size = 20, family = "serif"),
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))+
-  guides(fill = guide_legend(ncol = 2))
+  guides(fill = guide_legend(ncol = 3))
                              # title.position = "top",
                              # label.position = "bottom"))
 
@@ -2481,13 +2490,13 @@ H2_Fig_region_general <- ggplot() +
   labs(title = "Journal") +
   theme(plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.title = element_blank(),
-        legend.position = c(0.2, 0.2),
+        legend.position = "none",
         panel.grid = element_blank(),
         panel.background = element_blank(),
         axis.text = element_blank(),
         axis.ticks = element_blank(),
         axis.title = element_blank())
+
 
 ## CFPS2018
 H2_Fig_CFPS2018_region <- ggplot() +
@@ -2499,8 +2508,8 @@ H2_Fig_CFPS2018_region <- ggplot() +
   labs(title = "CFPS2018") +
   theme(plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.position = "none",
-        panel.grid = element_blank(),
+        legend.title = element_blank(),
+        legend.position = c(0.2, 0.2),
         panel.background = element_blank(),
         axis.text = element_blank(),
         axis.ticks = element_blank(),
@@ -2563,9 +2572,9 @@ H2_region_four_bayes <- bind_rows(Journal_region_four,
   tidyr::pivot_wider(id_cols = Region_four,
                      names_from = Data_source, 
                      values_from = n) %>% 
-  dplyr::mutate(Journal = Journal/sum(Journal),
-                Census7 = Census7/sum(Census7),
-                CFPS2018 = CFPS2018/sum(CFPS2018)) %>%  
+  dplyr::mutate(Journal = Journal/sum(Journal)*100,
+                Census7 = Census7/sum(Census7)*100,
+                CFPS2018 = CFPS2018/sum(CFPS2018)*100) %>%  
   dplyr::mutate(across(everything(),~ifelse(is.na(.),1,.)))
 
 
@@ -2603,9 +2612,9 @@ H2_region_seven_bayes <- bind_rows(Journal_region_seven,
   tidyr::pivot_wider(id_cols = Region_seven,
                      names_from = Data_source, 
                      values_from = n) %>% 
-  dplyr::mutate(Journal = Journal/sum(Journal),
-                Census7 = Census7/sum(Census7),
-                CFPS2018 = CFPS2018/sum(CFPS2018)) %>%  
+  dplyr::mutate(Journal = Journal/sum(Journal)*100,
+                Census7 = Census7/sum(Census7)*100,
+                CFPS2018 = CFPS2018/sum(CFPS2018)*100) %>%  
   dplyr::mutate(across(everything(),~ifelse(is.na(.),1,.)))
 
 
