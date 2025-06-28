@@ -1099,6 +1099,7 @@ BTS_age_interval10_list[[BTS_name]] <- BTS_age
 BTS_age_interval10 <-  do.call(rbind,BTS_age_interval10_list)
 ```
 
+
 And then, I filtered BTS CHN data.
 
 ```{r}
@@ -1122,6 +1123,7 @@ BTS_age_interval10_CHN_general <- BTS_age_interval10 %>%
 
 sum(BTS_age_interval10_CHN_general$Proportion) ## 100.01
 ```
+
 
 Next, I Combined two CHN data to Bayesian multinomial test in two different classifications (PsyStages and 10-year-old). One is PsyStages.
 ```{r}
@@ -2092,6 +2094,44 @@ Note, there is not results description.
 ### Region
 As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals.
 
+
+Create a vector of China's four economic regions, with data sourced from the National Bureau of Statistics of China. The four regions are Central, Eastern, Western, and Northeastern.
+```{r}
+Central_China4 <- c("山西","安徽","江西","河南","湖北","湖南")
+
+East_China4 <- c("北京","天津","河北","上海","江苏","浙江","福建","山东","广东","海南")
+
+West_China4 <- c("内蒙古","广西","重庆","四川","贵州","云南","西藏","陕西","甘肃","青海","宁夏","新疆")
+
+Northeast_China4 <- c("辽宁","吉林","黑龙江")
+
+China_region_four <- tibble(Region = c(Central_China4, East_China4, 
+                                        West_China4, Northeast_China4),
+                             Region_four = c(rep("Central China", 6), rep("East China", 10),
+                                        rep("West China", 12),rep("Northeast China", 3)))
+```
+
+
+We also create a vector of China's seven regions.
+```{r}
+China_region_seven <-  tibble(
+  Region = c("北京", "天津", "河北", "山西", "内蒙古",
+              "上海", "江苏", "浙江", "安徽", "福建", "江西", "山东",
+              "河南", "湖北", "湖南",
+              "广东", "广西", "海南",
+              "重庆", "四川", "贵州", "云南", "西藏",
+              "陕西", "甘肃", "青海", "宁夏", "新疆",
+              "辽宁", "吉林", "黑龙江"),
+  Region_seven = c(rep("North China", 5), 
+             rep("East China", 7),
+             rep("Central China", 3),
+             rep("South China", 3),
+             rep("Southwest China", 5),
+             rep("Northwest China", 5),
+             rep("Northeast China", 3)))
+```
+
+
 The data is processed when the target population is the general population.
 
 single region
@@ -2190,6 +2230,24 @@ sum(Journal_region_general_tab2$n) #43009
 ```
 
 
+convert Journal data into four regions and seven regions
+```{r}
+## four regions
+Journal_region_four <- merge(Journal_region_general_tab2,China_region_four,
+                              by = "Region") %>% 
+  dplyr::select(1,2,6) %>% 
+  dplyr::group_by(Region_four) %>% 
+  dplyr::summarise(Journal_n=sum(n)) 
+
+## seven regions
+Journal_region_seven <- merge(Journal_region_general_tab2,China_region_seven,
+                               by = "Region")%>% 
+  dplyr::select(1,2,6) %>% 
+  dplyr::group_by(Region_seven) %>% 
+  dplyr::summarise(Journal_n=sum(n)) 
+```
+
+
 The second step, I processed of provincial distribution of population for census7.
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 Census7_region <- readxl::read_xls("A0101.xls") %>% 
@@ -2215,10 +2273,28 @@ Census7_region$Region <- gsub(" ", "", Census7_region$Region)
 
 # sum(Census7_region$n) 1,441,497,378
 # sum(Census7_region$Proportion) ## 100
+
 ```
 
-The third step, I processed of provincial distribution of population for CFPS2018.
 
+convert Census7 data into four regions and seven regions
+```{r}
+## four regions
+Census7_region_four <- merge(Census7_region,China_region_four,by = "Region") %>%
+  dplyr::select(1,2,6) %>% 
+  dplyr::group_by(Region_four) %>% 
+  dplyr::summarise(Census7_n=sum(n))
+
+
+## seven regions
+Census7_region_seven <- merge(Census7_region,China_region_seven,by= "Region") %>% 
+  dplyr::select(1,2,6) %>% 
+  dplyr::group_by(Region_seven) %>% 
+  dplyr::summarise(Census7_n=sum(n)) 
+```
+
+
+The third step, I processed of provincial distribution of population for CFPS2018.
 ```{r}
 ## process CFPS2018 province data
 CFPS2018_region <- data.frame(table(df_CFPS2018$PROVCD18)) %>% 
@@ -2235,10 +2311,125 @@ CFPS2018_region <- data.frame(table(df_CFPS2018$PROVCD18)) %>%
                 Data_Source = "CFPS2018")
 
 # sum(CFPS2018_region$Proportion) ## 100.0001 fill to percent 100?
+
 ```
 
-Combine all region data and load color data
 
+Convert CFPS2018 into four regions and seven regions
+```{r}
+## four regions
+CFPS2018_region_four <- merge(CFPS2018_region,China_region_four,by = "Region") %>%
+  dplyr::select(1,2,6) %>% 
+  dplyr::group_by(Region_four) %>% 
+  dplyr::summarise(CFPS2018_n=sum(n)) 
+
+
+## seven regions
+CFPS2018_region_seven <- merge(CFPS2018_region,China_region_seven,by = "Region") %>% 
+  dplyr::select(1,2,6) %>% 
+  dplyr::group_by(Region_seven) %>% 
+  dplyr::summarise(CFPS2018_n=sum(n))
+```
+
+
+Visualize four region
+```{r}
+H2_region_four <- full_join(Journal_region_four,Census7_region_four,
+                            by = "Region_four") %>% 
+  dplyr::full_join(CFPS2018_region_four,by = "Region_four") %>% 
+  dplyr::mutate(Journal_Prop = Journal_n / sum(Journal_n)*100,
+                   Census7_Prop = Census7_n / sum(Census7_n)*100,
+                   CFPS2018_Prop = CFPS2018_n /sum(CFPS2018_n)*100) %>% 
+  dplyr::select(1,5:7)
+
+
+H2_region_four2 <- H2_region_four %>% 
+  pivot_longer(cols = -Region_four,
+             names_to = "Data Source",
+             values_to = "Proportion") %>% 
+  dplyr::mutate(Region_four = factor(Region_four,
+                                     levels = c("East China","Central China",
+                                                "West China","Northeast China")))
+                # Data_source = factor(Data_source,
+                #                      levels = c("Journal","Census7","CFPS2018")))
+
+
+## Visualization
+H2_region_four <- ggplot(data = H2_region_four2, aes(x = `Data Source`, y = Proportion, fill = Region_four)) +
+  geom_col(position = "stack")+
+  labs(fill = "Region")+
+  scale_x_discrete(labels =c("Journal_Prop" = "Journal",
+                              "CFPS2018_Prop" = "CFPS2018",
+                              "Census7_Prop" = "Census7"))+
+  theme_classic()+
+  theme(legend.box.spacing = unit(2,"pt"),
+        legend.position = "bottom",
+        legend.text = element_text(size = 20, family = "serif"),
+        legend.title = element_text(size = 20, family = "serif"),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))+
+  guides(fill = guide_legend(ncol = 2))
+                             # title.position = "top",
+                             # label.position = "bottom"))
+
+
+ggsave("H2_region_four.pdf",H2_region_four, device = "pdf", width= 12, height = 9)
+
+H2_region_four
+```
+
+
+Visualize seven region
+```{r}
+H2_region_seven <- full_join(Journal_region_seven,Census7_region_seven,
+                             by = "Region_seven") %>% 
+  dplyr::full_join(CFPS2018_region_seven,by = "Region_seven") %>% 
+  dplyr::mutate(Journal_Prop = Journal_n / sum(Journal_n)*100,
+                   Census7_Prop = Census7_n / sum(Census7_n)*100,
+                   CFPS2018_Prop = CFPS2018_n /sum(CFPS2018_n)*100) %>% 
+  dplyr::select(1,5:7)
+
+
+H2_region_seven2 <- H2_region_seven %>% 
+  pivot_longer(cols = -Region_seven,
+             names_to = "Data Source",
+             values_to = "Proportion") %>% 
+  dplyr::mutate(Region_seven = factor(Region_seven,
+                                     levels = c("East China","Central China",
+                                                "North China","South China",
+                                                "Southwest China","Northwest China",
+                                                "Northeast China")))
+                # Data_source = factor(Data_source,
+                #                      levels = c("Journal","Census7","CFPS2018")))
+levels(H2_region_seven2$Region_seven)
+
+## Visualization
+H2_region_seven <- ggplot(data = H2_region_seven2, aes(x = `Data Source`, y = Proportion, fill = Region_seven)) +
+  geom_col(position = "stack")+
+  labs(fill = "Region")+
+  scale_x_discrete(labels =c("Journal_Prop" = "Journal",
+                              "CFPS2018_Prop" = "CFPS2018",
+                              "Census7_Prop" = "Census7"))+
+  theme_classic()+
+  theme(legend.box.spacing = unit(2,"pt"),
+        legend.position = "bottom",
+        legend.text = element_text(size = 20, family = "serif"),
+        legend.title = element_text(size = 20, family = "serif"),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))+
+  guides(fill = guide_legend(ncol = 2))
+                             # title.position = "top",
+                             # label.position = "bottom"))
+
+
+ggsave("H2_region_seven.pdf",H2_region_seven, device = "pdf", width= 12, height = 9)
+
+H2_region_seven
+```
+
+
+And then, I will visualize the map for the region data of Chinese subjects
+Combine all region data and load color data
 ```{r}
 ## combine region data
 Region_map_data <-  bind_rows(Census7_region,CFPS2018_region,
@@ -2263,7 +2454,6 @@ Region_data <- dplyr::left_join(Region_map_data,Region_map_color,by = join_by(Re
 
 
 Finally, I visualized geographic distribution and calculated Bayesian multinomial test for region.
-
 ```{r}
 API_pre <-  "http://xzqh.mca.gov.cn/data/"
 ## 读取全国数据
@@ -2288,7 +2478,7 @@ H2_Fig_region_general <- ggplot() +
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
   geom_sf(data = gjx) +
-  labs(title = "Journal general population region distribution (42,890 subjects)") +
+  labs(title = "Journal") +
   theme(plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
         legend.title = element_blank(),
@@ -2306,7 +2496,7 @@ H2_Fig_CFPS2018_region <- ggplot() +
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
   geom_sf(data = gjx) +
-  labs(title = "CFPS2018 subjects recruitment region distribution (37,104 subjects)") +
+  labs(title = "CFPS2018") +
   theme(plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
         legend.position = "none",
@@ -2324,7 +2514,7 @@ H2_Fig_Census7_region <- ggplot() +
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
   geom_sf(data = gjx) +
-  labs(title = "Census7 population region distribution (1,441,497,378 people)") +
+  labs(title = "Census7") +
   theme(plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
         legend.position = "none",
@@ -2334,13 +2524,15 @@ H2_Fig_Census7_region <- ggplot() +
         axis.ticks = element_blank(),
         axis.title = element_blank())+
   annotation_north_arrow(location = 'tl',which_north = 'false',
-                         style = north_arrow_orienteering())
+                         style = north_arrow_orienteering(),
+                         height = unit(0.8, "cm"),
+                         width = unit(0.6, "cm") )
 
 
 
-H2_region <- H2_Fig_Census7_region + H2_Fig_CFPS2018_region + H2_Fig_region_general +
+H2_region <- H2_Fig_Census7_region  + H2_Fig_region_general + H2_Fig_CFPS2018_region +
   plot_layout(ncol = 1, nrow = 3, heights = c(4,4))+
-  plot_annotation(tag_levels = 'A', title = "Area distribution",
+  plot_annotation(tag_levels = 'A',
                   theme = theme(plot.title = element_text(size = 24))) + 
   theme(plot.tag = element_text(size = 20))
 
@@ -2350,27 +2542,85 @@ ggsave("H2_region .pdf", H2_region , device = "pdf", width=10, height = 15)
 H2_region 
 ```
 
+BF four region
 ```{r}
-## combine three source data
-H2_region_bayes <- bind_rows(Journal_region_general_tab2,Census7_region,CFPS2018_region) %>% 
-  dplyr::select(1,3,5) %>% 
-  dplyr::mutate(Data_Source = ifelse(Data_Source == "Journal_region_total","Journal",Data_Source)) %>% 
-  tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion) %>% 
+Journal_region_four <- Journal_region_four %>% 
+  dplyr::rename(n = 2) %>% 
+  dplyr::mutate(Data_source = "Journal")
+
+Census7_region_four <- Census7_region_four %>% 
+  dplyr::rename(n = 2)%>% 
+  dplyr::mutate(Data_source = "Census7")
+
+CFPS2018_region_four <- CFPS2018_region_four %>% 
+  dplyr::rename(n = 2)%>% 
+  dplyr::mutate(Data_source = "CFPS2018")
+
+
+H2_region_four_bayes <- bind_rows(Journal_region_four,
+                                  Census7_region_four,
+                                  CFPS2018_region_four) %>%
+  tidyr::pivot_wider(id_cols = Region_four,
+                     names_from = Data_source, 
+                     values_from = n) %>% 
+  dplyr::mutate(Journal = Journal/sum(Journal),
+                Census7 = Census7/sum(Census7),
+                CFPS2018 = CFPS2018/sum(CFPS2018)) %>%  
   dplyr::mutate(across(everything(),~ifelse(is.na(.),1,.)))
 
 
-
-## different target population compared
-H2_BF_Journal_Census7_region_general <- BayesMultiNomial(dataset = H2_region_bayes,
-                                          factor = "Region",
-                                          observed = "Journal_region_general_population",
+## BF
+H2_BF_Journal_Census7_region_four <- BayesMultiNomial(dataset = H2_region_four_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal",
                                           expected = "Census7")
 
-H2_BF_Journal_CFPS2018_region_general <- BayesMultiNomial(dataset = H2_region_bayes,
-                                          factor = "Region",
-                                          observed = "Journal_region_general_population",
+H2_BF_Journal_CFPS2018_region_four <- BayesMultiNomial(dataset = H2_region_four_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal",
                                           expected = "CFPS2018")
 ```
+
+
+BF seven region
+```{r}
+Journal_region_seven <- Journal_region_seven %>% 
+  dplyr::rename(n = 2) %>% 
+  dplyr::mutate(Data_source = "Journal")
+
+Census7_region_seven <- Census7_region_seven %>% 
+  dplyr::rename(n = 2)%>% 
+  dplyr::mutate(Data_source = "Census7")
+
+CFPS2018_region_seven <- CFPS2018_region_seven %>% 
+  dplyr::rename(n = 2)%>% 
+  dplyr::mutate(Data_source = "CFPS2018")
+
+
+H2_region_seven_bayes <- bind_rows(Journal_region_seven,
+                                  Census7_region_seven,
+                                  CFPS2018_region_seven) %>%
+  tidyr::pivot_wider(id_cols = Region_seven,
+                     names_from = Data_source, 
+                     values_from = n) %>% 
+  dplyr::mutate(Journal = Journal/sum(Journal),
+                Census7 = Census7/sum(Census7),
+                CFPS2018 = CFPS2018/sum(CFPS2018)) %>%  
+  dplyr::mutate(across(everything(),~ifelse(is.na(.),1,.)))
+
+
+## BF
+H2_BF_Journal_Census7_region_seven <- BayesMultiNomial(dataset = H2_region_seven_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal",
+                                          expected = "Census7")
+
+H2_BF_Journal_CFPS2018_region_seven <- BayesMultiNomial(dataset = H2_region_seven_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal",
+                                          expected = "CFPS2018")
+```
+
 
 
 ## Test the 3st hypothesis
