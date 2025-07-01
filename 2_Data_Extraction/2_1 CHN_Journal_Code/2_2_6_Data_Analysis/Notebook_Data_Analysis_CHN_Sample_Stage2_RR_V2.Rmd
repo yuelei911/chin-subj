@@ -629,7 +629,7 @@ H1_Fig_gender_general <- ggplot(data = H1_gender_general,aes(Data_Source,Proport
         legend.title = element_blank(),
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))+
-  xlab("Data Source")
+  xlab("Data source")
 
 H1_Fig_gender_general 
 ```
@@ -1408,6 +1408,21 @@ BTS_highschool_CHN <- BTS_edu_CHN %>%
 H1_edu_college <- rbind(Journal_college2,BTS_college_CHN)
 
 H1_edu_highschool <- rbind(Journal_high_school2,BTS_highschool_CHN)
+
+
+## set factor 
+H1_edu_college <- H1_edu_college %>% 
+  dplyr::mutate(Educational_attainment = ifelse(Educational_attainment == "Below_college",
+                                                "Below college","College and above"),
+                Educational_attainment = factor(Educational_attainment,
+                                                levels = c("College and above","Below college")))
+
+
+H1_edu_highschool <- H1_edu_highschool %>% 
+  dplyr::mutate(Educational_attainment = ifelse(Educational_attainment == "Below_high_school","Below high school","High school and above"),
+                Educational_attainment = factor(Educational_attainment,
+                                                levels = c( "High school and above",
+                                                            "Below high school")))
 ```
 
 
@@ -1425,17 +1440,11 @@ H1_Fig_college <- ggplot(data = H1_edu_college,aes(Data_source,Proportion,fill =
         strip.text = element_text(size = 16,family = "serif"),
         strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black"))+
-  # scale_fill_manual(values = c("Below_college" = "#F8766D",
-  #                              "College_and_above" = "#00BFC4",
-  #                              "Below_high_school"= "#7cae00",
-  #                              "High_school_and_above" = "#619CFF"))+
-  # guides(fill = guide_legend(nrow = 2, byrow = TRUE)) + 
-  xlab("Data Source")
+  xlab("Data source")
 
 H1_Fig_college
 
 ## highschool
-## college
 H1_Fig_highschool <- ggplot(data = H1_edu_highschool,aes(Data_source,Proportion,fill =Educational_attainment))+
   geom_col()+
   theme_classic()+ 
@@ -1447,12 +1456,7 @@ H1_Fig_highschool <- ggplot(data = H1_edu_highschool,aes(Data_source,Proportion,
         strip.text = element_text(size = 16,family = "serif"),
         strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black"))+
-  # scale_fill_manual(values = c("Below_college" = "#F8766D",
-  #                              "College_and_above" = "#00BFC4",
-  #                              "Below_high_school"= "#7cae00",
-  #                              "High_school_and_above" = "#619cff"))+
-  # guides(fill = guide_legend(nrow = 2, byrow = TRUE)) + 
-  xlab("Data Source")
+  xlab("Data source")
 
 H1_Fig_highschool
 
@@ -1562,7 +1566,7 @@ And then, I combined all Chinese gender data and visualized them.
 H2_Fig_gender_general <- ggplot(H2_gender_general,aes(Data_source,Proportion,fill= Gender))+
   geom_col()+
   geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
-  labs(y="Proportion",x = "Data Source")+
+  labs(y="Proportion",x = "Data source")+
   theme_classic()+
   theme(panel.border =element_rect(fill=NA,color="black"),
         legend.position = "bottom",
@@ -1773,9 +1777,9 @@ H2_Fig_age_general <- ggplot(data= Census7_age_five5,
        aes(x=ageBins, y = Proportion, fill="Census7")) +
   geom_col(alpha=0.5, width = 1) +
   geom_line(data = H2_age_general, aes(x=ageBins, 
-                y = Proportion,group = 1,color = "Chinese Subjects"),size =1)+
+                y = Proportion,group = 1,color = "Chinese subjects"),size =1)+
   scale_fill_manual(values=c("Census7"="#00BFC4")) +  
-  scale_color_manual(values=c("Chinese Subjects" = "red")) +
+  scale_color_manual(values=c("Chinese subjects" = "red")) +
   scale_y_continuous(limits = c(0,50))+
   coord_flip() +
   labs(y="Proportion", x = "Age bins")+
@@ -1903,8 +1907,8 @@ Census7_edu_adults <- Census7_edu %>%
 
 
 Census7_college <- Census7_edu_adults %>% 
-  dplyr::summarise(Below_college = sum(across(3:7)),
-                   College_and_above = sum(across(8:11))) %>% 
+  dplyr::summarise(`Below college` = sum(across(3:7)),
+                   `College and above` = sum(across(8:11))) %>% 
   tidyr::pivot_longer(cols = c(1,2),
                       names_to = "Educational_attainment",
                       values_to = "Num") %>% 
@@ -1915,8 +1919,8 @@ sum(Census7_college$Proportion) ## 100
 
 
 Census7_high_school <- Census7_edu_adults %>% 
-  dplyr::summarise(Below_high_school = sum(across(3:6)),
-                   High_school_and_above = sum(across(7:11))) %>% 
+  dplyr::summarise(`Below high school` = sum(across(3:6)),
+                   `High school and above` = sum(across(7:11))) %>% 
   tidyr::pivot_longer(cols = c(1,2),
                       names_to = "Educational_attainment",
                       values_to = "Num") %>% 
@@ -1947,7 +1951,7 @@ CFPS2018_edu <- df_CFPS2018 %>%
                                 TRUE ~ W01))
 
 
-CFPS2018_edu_college <- data.frame(Educational_attainment = c("Below_college","College_and_above"),
+CFPS2018_edu_college <- data.frame(Educational_attainment = c("Below college","College and above"),
                                    Num = c(2846+756+3598+5273,3058+1648+1335+112+7)) %>% 
   dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
                 Data_source = "CFPS2018")
@@ -1955,10 +1959,11 @@ CFPS2018_edu_college <- data.frame(Educational_attainment = c("Below_college","C
 sum(CFPS2018_edu_college$Proportion) ## 100
 
 
-CFPS2018_edu_high_school <- data.frame(Educational_attainment = c("Below_high_school","High_school_and_above"),
+CFPS2018_edu_high_school <- data.frame(Educational_attainment = c("Below high school","High school and above"),
                                    Num = c(2846+756+3598+5273+3058,1648+1335+112+7)) %>% 
   dplyr::mutate(Proportion = round((Num/sum(Num))*100,2),
                 Data_source = "CFPS2018")
+
 
 sum(CFPS2018_edu_high_school$Proportion) ## 100
 ```
@@ -1995,7 +2000,7 @@ Chinese_subjects_pools_edu_highschool <- H1_edu_highschool %>%
 
 H2_edu_highschool <- bind_rows(Chinese_subjects_pools_edu_highschool,Census7_high_school,CFPS2018_edu_high_school)  %>%
   dplyr::mutate(Data_source = factor(Data_source,
-                                     levels = c("CFPS2018","Census7","Chinese subjects")))
+                                     levels = c("Census7","CFPS2018","Chinese subjects")))
 ```
 
 
@@ -2004,7 +2009,7 @@ And visualization
 ## college
 H2_Fig_college <- ggplot(data = H2_edu_college,aes(Data_source,Proportion,fill = Educational_attainment))+
   geom_col()+
-  xlab("Data Source")+
+  xlab("Data source")+
   theme_classic()+ 
   theme(legend.position = "bottom", 
         legend.text = element_text(size = 16, family = "serif"),
@@ -2023,7 +2028,7 @@ H2_Fig_highschool <- ggplot(data = H2_edu_highschool,aes(Data_source,Proportion,
   geom_col()+
   theme_classic()+ 
   ylab("")+
-  xlab("Data Source")+
+  xlab("Data source")+
   theme(legend.position = "bottom", 
         legend.text = element_text(size = 16, family = "serif"), 
         legend.title = element_blank(),
@@ -3177,7 +3182,9 @@ world_map <- ggplot2::map_data(map = "world") %>%
                 long = ifelse(long >= -180 & long <= -30, long + 360, long),
                 region = ifelse(region == "TW","CN",region))  
 
-H3_sample_region <- BTS_Overview2 %>%  ## 按照scheme,这里应该是BTS + Jounal，但是这可能歪曲数据
+H3_sample_region <- BTS_Overview2 %>% 
+  dplyr::filter(ISO2 != "--") %>% 
+  ## 按照scheme,这里应该是BTS + Jounal，但是这可能歪曲数据
   dplyr::mutate(Proportion = Proportion * 0.01) %>% 
   dplyr::mutate(Proportion_bins = if_else(Proportion >= 0.16, "0.16-1",
                                           if_else(Proportion < 0.16 & Proportion >= 0.08, "0.08-0.16" ,
@@ -3199,17 +3206,12 @@ H3_Fig_sample_region <- ggplot(H3_sample_region)+
   theme_void() + 
   xlim(c(-30, 329)) + 
   ylim(c(-60, 90)) +
-  scale_fill_manual(name = "Sample Proportion",
+  scale_fill_manual(name = "Proportion",
                     values = c("#CCE5FF","#99CCFF", "#66B2FF","#3399FF","#0080FF" ,"#0066CC","#004C99","#003366"),
                     limits = c("0-0.0025", "0.0025-0.005", "0.005-0.01", "0.01-0.02", "0.02-0.04", "0.04-0.08","0.08-0.16", "0.16-1")) +
 ggtitle("Geographical distribution of sample")+
   theme(plot.title = element_text(hjust = 0.5, size = 15),
-        legend.text = element_text(size = 10),  
-        legend.title = element_text(size = 12),  
-        legend.key.size = unit(3, "pt"),  
-        legend.key.height = unit(3, "pt"), 
-        legend.key.width = unit(15, "pt")  
-        )
+        legend.position = "none")
 
 H3_Fig_sample_region
 ```
@@ -3256,7 +3258,7 @@ world_population_map <- ggplot2::ggplot(wppdata4) +
   theme_void() + 
    xlim(c(-30, 329)) + 
   ylim(c(-60, 90)) + 
-  scale_fill_manual(name = "World People Proportion",
+  scale_fill_manual(name = "Proportion",
                     values = c("#CCE5FF","#99CCFF", "#66B2FF","#3399FF","#0080FF" ,"#0066CC","#004C99","#003366"),
                     limits = c("0-0.0025", "0.0025-0.005", "0.005-0.01", "0.01-0.02", "0.02-0.04", "0.04-0.08","0.08-0.16", "0.16-1"),
                     drop = FALSE) +
