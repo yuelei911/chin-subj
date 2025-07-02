@@ -3219,36 +3219,43 @@ In this part, I analysed and visualized all countries in our study. Firstly, I p
 ## creat a world map
 world_map <- ggplot2::map_data(map = "world") %>% 
   dplyr::mutate(region = iso.alpha(region),
-                long = ifelse(long >= -180 & long <= -30, long + 360, long),
-                region = ifelse(region == "TW","CN",region))  
+                region = ifelse(region == "TW","CN",region)) %>% 
+  dplyr::filter(region != "AQ")
+
+
+# ,
+#                 long = ifelse(long >= -180 & long <= -30, long + 360, long),
+#                 ))  
 
 H3_sample_region <- BTS_Overview2 %>% 
   dplyr::filter(ISO2 != "--") %>% 
-  ## 按照scheme,这里应该是BTS + Jounal，但是这可能歪曲数据
-  dplyr::mutate(Proportion = Proportion * 0.01) %>% 
-  dplyr::mutate(Proportion_bins = if_else(Proportion >= 0.16, "0.16-1",
-                                          if_else(Proportion < 0.16 & Proportion >= 0.08, "0.08-0.16" ,
-                                                  if_else(Proportion < 0.08 & Proportion >= 0.04, "0.04-0.08" , 
-                                                          if_else(Proportion < 0.04 & Proportion >= 0.02, "0.02-0.04" , 
-                                                                  if_else(Proportion < 0.02 & Proportion >= 0.01, "0.01-0.02" , 
-                                                                          if_else(Proportion < 0.01 & Proportion >= 0.005, "0.005-0.01" ,         
-                                                                                  if_else(Proportion < 0.005 & Proportion >= 0.0025, "0.0025-0.005", "0-0.0025"))))))))
+  dplyr::mutate(ISO2 = case_when(ISO2 %in% c("TW","MO","HK") ~ "CN",
+                                 TRUE ~ ISO2)) %>% 
+  dplyr::select(-Proportion) %>% 
+  dplyr::mutate(Proportion = n/sum(n)*100) %>%  ## I am not adding Journal data
+  dplyr::mutate(Proportion_bins = if_else(Proportion >= 16, ">=16%",
+                                          if_else(Proportion < 16 & Proportion >= 8, "8%-16%" ,
+                                                  if_else(Proportion < 8 & Proportion >= 4, "4%-8%" , 
+                                                          if_else(Proportion < 4 & Proportion >= 2, "2%-4%" , 
+                                                                  if_else(Proportion < 0.02 & Proportion >= 1, "1%-2%" , 
+                                                                          if_else(Proportion < 1 & Proportion >= 0.5, "0.5%-1%" ,         
+                                                                                  if_else(Proportion < 0.5 & Proportion >= 0.25, "0.25%-0.5%", "0%-0.25%"))))))))
 ```
 
 
 And I visualized geographic distribution of BTS.
 ```{r}
-H3_Fig_sample_region <- ggplot(H3_sample_region)+
+H3_Fig_sample_region <- H3_sample_region %>% 
+  ggplot()+
   geom_map(aes(map_id = ISO2, fill = Proportion_bins), map = world_map,show.legend = TRUE) +
   geom_polygon(data = world_map, 
                aes(x = long, y = lat, group = group), 
                colour = 'black', size=0.1, fill = NA) + 
   theme_void() + 
-  xlim(c(-30, 329)) + 
-  ylim(c(-60, 90)) +
   scale_fill_manual(name = "Proportion",
                     values = c("#CCE5FF","#99CCFF", "#66B2FF","#3399FF","#0080FF" ,"#0066CC","#004C99","#003366"),
-                    limits = c("0-0.0025", "0.0025-0.005", "0.005-0.01", "0.01-0.02", "0.02-0.04", "0.04-0.08","0.08-0.16", "0.16-1")) +
+                    limits = c("0%-0.25%", "0.25%-0.5%", "0.5%-1%", "1%-2%", "2%-4%", "4%-8%","8%-16%", "16%-1%"),
+                    drop = FALSE) +
 ggtitle("Geographical distribution of sample")+
   theme(plot.title = element_text(hjust = 0.5, size = 15),
         legend.position = "none")
@@ -3269,18 +3276,21 @@ wppdata3 <- dplyr::mutate(.data = wppdata1, percentage_pop = pop/7909295.151)
 sum_of_cn <- sum(wppdata3$percentage_pop[wppdata3$country_map %in% c("CN", "TW")])
 
 wppdata3$percentage_pop[wppdata3$country_map %in% c("CN", "TW")] <- sum_of_cn
-wppdata3$percentage_pop[wppdata3 $country_map == "GL"] <- NA
+# wppdata3$percentage_pop[wppdata3 $country_map == "GL"] <- NA
 
+
+wppdata3 <- wppdata3 %>% 
+  dplyr::mutate(percentage_pop = percentage_pop *100)
 
 wppdata3$n_binned <- 
-  if_else(wppdata3$percentage_pop >= 0.16, "0.16-1",
-  if_else(wppdata3$percentage_pop < 0.16 & wppdata3$percentage_pop >= 0.08, "0.08-0.16" , 
-   if_else(wppdata3$percentage_pop < 0.08 & wppdata3$percentage_pop >= 0.04, "0.04-0.08" , 
-  if_else(wppdata3$percentage_pop < 0.04 & wppdata3$percentage_pop >= 0.02, "0.02-0.04" , 
-   if_else(wppdata3$percentage_pop < 0.02 & wppdata3$percentage_pop >= 0.01, "0.01-0.02" , 
-   if_else(wppdata3$percentage_pop < 0.01 & wppdata3$percentage_pop >= 0.005, "0.005-0.01" ,         
-  if_else(wppdata3$percentage_pop < 0.005 & wppdata3$percentage_pop >= 0.0025, "0.0025-0.005",
-      "0-0.0025"
+  if_else(wppdata3$percentage_pop >= 16, "16%-19%",
+  if_else(wppdata3$percentage_pop < 16 & wppdata3$percentage_pop >= 8, "8%-16%" , 
+   if_else(wppdata3$percentage_pop < 8 & wppdata3$percentage_pop >= 4, "4%-8%" , 
+  if_else(wppdata3$percentage_pop < 4 & wppdata3$percentage_pop >= 2, "2%-4%" , 
+   if_else(wppdata3$percentage_pop < 2 & wppdata3$percentage_pop >= 1, "1%-2%" , 
+   if_else(wppdata3$percentage_pop < 1 & wppdata3$percentage_pop >= 0.5, "0.5%-1%" ,         
+  if_else(wppdata3$percentage_pop < 0.5 & wppdata3$percentage_pop >= 0.25, "0.25%-0.5%",
+      "0%-0.25%"
     )
   )
  )
@@ -3296,11 +3306,9 @@ world_population_map <- ggplot2::ggplot(wppdata4) +
                aes(x = long, y = lat, group = group), 
                colour = 'black', size=0.1, fill = NA) + 
   theme_void() + 
-   xlim(c(-30, 329)) + 
-  ylim(c(-60, 90)) + 
   scale_fill_manual(name = "Proportion",
                     values = c("#CCE5FF","#99CCFF", "#66B2FF","#3399FF","#0080FF" ,"#0066CC","#004C99","#003366"),
-                    limits = c("0-0.0025", "0.0025-0.005", "0.005-0.01", "0.01-0.02", "0.02-0.04", "0.04-0.08","0.08-0.16", "0.16-1"),
+                    limits = c("0%-0.25%", "0.25%-0.5%", "0.5%-1%", "1%-2%", "2%-4%", "4%-8%","8%-16%", "16%-19%"),
                     drop = FALSE) +
 ggtitle("Geographical distribution of world population")+
   theme(plot.title = element_text(hjust = 0.5, size = 15),
