@@ -2405,7 +2405,7 @@ H2_region_four2 <- H2_region_four %>%
 
 
 ## Visualization
-H2_region_four <- ggplot(data = H2_region_four2, aes(x = `Data Source`, y = Proportion, fill = Region_four)) +
+H2_Fig_region_four <- ggplot(data = H2_region_four2, aes(x = `Data Source`, y = Proportion, fill = Region_four)) +
   geom_col(position = "stack")+
   labs(fill = "Region")+
   scale_x_discrete(labels =c("Journal_Prop" = "Journal",
@@ -2423,9 +2423,9 @@ H2_region_four <- ggplot(data = H2_region_four2, aes(x = `Data Source`, y = Prop
                              # label.position = "bottom"))
 
 
-ggsave("H2_region_four.pdf",H2_region_four, device = "pdf", width= 12, height = 9)
+ggsave("H2_Fig_region_four.pdf",H2_Fig_region_four, device = "pdf", width= 12, height = 9)
 
-H2_region_four
+H2_Fig_region_four
 ```
 
 
@@ -2454,7 +2454,7 @@ H2_region_seven2 <- H2_region_seven %>%
 levels(H2_region_seven2$Region_seven)
 
 ## Visualization
-H2_region_seven <- ggplot(data = H2_region_seven2, aes(x = `Data Source`, y = Proportion, fill = Region_seven)) +
+H2_Fig_region_seven <- ggplot(data = H2_region_seven2, aes(x = `Data Source`, y = Proportion, fill = Region_seven)) +
   geom_col(position = "stack")+
   labs(fill = "Region")+
   scale_x_discrete(labels =c("Journal_Prop" = "Journal",
@@ -2472,9 +2472,9 @@ H2_region_seven <- ggplot(data = H2_region_seven2, aes(x = `Data Source`, y = Pr
                              # label.position = "bottom"))
 
 
-ggsave("H2_region_seven.pdf",H2_region_seven, device = "pdf", width= 12, height = 9)
+ggsave("H2_Fig_region_seven.pdf",H2_Fig_region_seven, device = "pdf", width= 12, height = 9)
 
-H2_region_seven
+H2_Fig_region_seven
 ```
 
 
@@ -2580,16 +2580,16 @@ H2_Fig_Census7_region <- ggplot() +
 
 
 
-H2_region <- H2_Fig_Census7_region  + H2_Fig_region_general + H2_Fig_CFPS2018_region +
+H2_Fig_region <- H2_Fig_Census7_region  + H2_Fig_region_general + H2_Fig_CFPS2018_region +
   plot_layout(ncol = 1, nrow = 3, heights = c(4,4))+
   plot_annotation(tag_levels = 'A',
                   theme = theme(plot.title = element_text(size = 24))) + 
   theme(plot.tag = element_text(size = 20))
 
 
-ggsave("H2_region .pdf", H2_region , device = "pdf", width=10, height = 15)
+ggsave("H2_Fig_region .pdf", H2_Fig_region , device = "pdf", width=10, height = 15)
 
-H2_region 
+H2_Fig_region 
 ```
 
 BF four region
@@ -3359,6 +3359,8 @@ H3_region
 
 
 I analysis region data of BTS based on different region cutoff.
+
+The first cutoff is WEIRD and non-WEIRD
 ```{r}
 H3_BTS_region_WEIRD_general <- H3_BTS_region_general2 %>% 
   dplyr::left_join(WEIRD, by = c("ISO2" = "iso2c")) %>% 
@@ -3368,10 +3370,97 @@ H3_BTS_region_WEIRD_general <- H3_BTS_region_general2 %>%
   dplyr::group_by(WEIRD) %>% 
   dplyr::summarise(n = sum(n)) %>% 
   dplyr::ungroup() %>% 
-  dplyr::mutate(Proportion = n/sum(n),
+  dplyr::mutate(Proportion = n/sum(n)*100,
                 `Data source` = "BTS")
 
+## load the world population data
+load("WPP2021_gender_age.Rdata")
 
 
+## Divide all country into WERID and non-WEIRD
+H3_World_region_WERID <- WPP2021_gender_prop %>% 
+  dplyr::mutate(ISO2 = ifelse(ISO3 == "NAM","NA",ISO2)) %>% 
+  dplyr::left_join(WEIRD, by = c("ISO2" = "iso2c"))
+
+
+## filter data those exist in BTS 
+H3_BTS_region_general2_factor  <-  H3_BTS_region_general2$ISO2
+
+H3_World_region_WERID2 <- H3_World_region_WERID %>% 
+  dplyr::filter(ISO2 %in% H3_BTS_region_general2_factor) %>% 
+  dplyr::mutate(WEIRD = ifelse(ISO2 == "XK","WEIRD",WEIRD))
+
+## calculate the WERID prop of all the wolrd population
+H3_World_region_WERID_prop <- H3_World_region_WERID2 %>% 
+  dplyr::group_by(WEIRD) %>% 
+  dplyr::summarise(n=sum(Population)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Proportion = n/sum(n)*100,
+                `Data source` = "World population")
+
+```
+
+
+visualize the first cutoff and calculate its BF
+```{r}
+## combine BTS data and world data
+H3_region_WEIRD <- bind_rows(H3_BTS_region_WEIRD_general,H3_World_region_WERID_prop) %>% 
+  dplyr::mutate(WEIRD = ifelse(WEIRD == "Non_WEIRD","Non-WEIRD",WEIRD))
+
+
+## ggplot
+H3_Fig_region_WEIRD <- ggplot(data = H3_region_WEIRD, aes(x = `Data source`, y = Proportion, fill = WEIRD)) +
+  geom_col(position = "stack")+
+  labs(fill = "Region")+
+  theme_classic()+
+  theme(legend.box.spacing = unit(2,"pt"),
+        legend.position = "bottom",
+        legend.text = element_text(size = 20, family = "serif"),
+        legend.title = element_text(size = 20, family = "serif"),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))+
+  guides(fill = guide_legend(ncol = 2))
+
+
+ggsave("H3_Fig_region_WEIRD .pdf",H3_Fig_region_WEIRD , device = "pdf", width= 12, height = 9)
+
+H3_Fig_region_WEIRD 
+
+
+## BF
+H3_region_WEIRD_bayes <- H3_region_WEIRD %>% 
+  dplyr::select(-n) %>% 
+  tidyr::pivot_wider(names_from = `Data source`,
+                     values_from = Proportion)
+
+
+H3_BF_region_WEIRD <- BayesMultiNomial(dataset = H3_region_WEIRD_bayes,
+                                       factor = "WEIRD",
+                                       observed = "BTS",
+                                       expected = "World population")
+```
+
+
+
+In psychological research, the representativeness of a participant sample is determined by the population characteristics of the country it belongs to. Merely comparing it with China’s demographic patterns cannot determine whether a country’s sample is representative in terms of demographics. Next, I will compare data from each country in the BTS with global population data.
+
+First of all, I will compare the gender data between the two data source
+```{r}
+H3_gender_ISO2 <- H3_gender$ISO3
+
+H3_gender_WPP2021 <- WPP2021_gender_prop %>% 
+  dplyr::filter(ISO3 %in% H3_gender_ISO2) %>% 
+  dplyr::select(ISO3,Male_proportion,Female_proportion) %>% 
+  tidyr::pivot_longer(cols = c(Male_proportion,Female_proportion),
+                      names_to = "Gender",
+                      values_to = "Proportion_World") %>% 
+  dplyr::mutate(Gender = ifelse(Gender == "Male_proportion", "Male","Female"),
+                `World population` = "World population")
+
+##combine two data source
+H3_gender_world_BTS <- H3_gender %>% 
+  dplyr::select(ISO3,Gender,Data_Source,Proportion,WEIRD) %>% 
+  dplyr::rename(`BTS` = 3,Proportion_BTS = 4) %>% 
+  dplyr::left_join(H3_gender_WPP2021, by = c("ISO3","Gender"))
 ```
 
