@@ -51,17 +51,17 @@ WPP2021_single_year <- WPP2024_single_year %>%
                 ISO3.Alpha.code,ISO2.Alpha.code,12:112) %>% 
   dplyr::rename(Region = 1, ISO3 = 4, ISO2 = 5) %>% 
   dplyr::mutate(Total_population = rowSums(across(X0:`X100.`)),
-                `0-17` = rowSums(across(X0:X17))/Total_population*100,
-                `18-25` = rowSums(across(X18:X25))/Total_population*100,
-                `26-40` = rowSums(across(X26:X40))/Total_population*100,
-                `41-59` = rowSums(across(X41:X59))/Total_population*100,
-                `>=60` = rowSums(across(X60:`X100.`))/Total_population*100) %>% 
-  dplyr::mutate(`0-10` = rowSums(across(X0:X10))/Total_population*100,
-                `11-20` = rowSums(across(X11:X20))/Total_population*100,
-                `21-30` = rowSums(across(X21:X30))/Total_population*100,
-                `31-40` = rowSums(across(X31:X40))/Total_population*100,
-                `41-50` = rowSums(across(X41:X50))/Total_population*100,
-                `51-60` = rowSums(across(X51:X60))/Total_population*100,
+                `0~17` = rowSums(across(X0:X17))/Total_population*100,
+                `18~25` = rowSums(across(X18:X25))/Total_population*100,
+                `26~40` = rowSums(across(X26:X40))/Total_population*100,
+                `41~60` = rowSums(across(X41:X60))/Total_population*100,
+                `>=61` = rowSums(across(X61:`X100.`))/Total_population*100) %>% 
+  dplyr::mutate(`0~10` = rowSums(across(X0:X10))/Total_population*100,
+                `11~20` = rowSums(across(X11:X20))/Total_population*100,
+                `21~30` = rowSums(across(X21:X30))/Total_population*100,
+                `31~40` = rowSums(across(X31:X40))/Total_population*100,
+                `41~50` = rowSums(across(X41:X50))/Total_population*100,
+                `51~60` = rowSums(across(X51:X60))/Total_population*100,
                 `>=61` = rowSums(across(X61:`X100.`))/Total_population*100)
 
 
@@ -69,13 +69,13 @@ WPP2021_single_year <- WPP2024_single_year %>%
 WPP2021_PsyStages <- WPP2021_single_year %>% 
   dplyr::select(Region,ISO3,ISO2,Type,Year,
                 Total_population,
-                `0-17`,`18-25`,`26-40`,`41-59`,`>=60`)
+                `0~17`,`18~25`,`26~40`,`41~60`,`>=61`)
 
 ## interval10
 WPP2021_interval10 <- WPP2021_single_year %>% 
   dplyr::select(Region,ISO3,ISO2,Type,Year,
                 Total_population,
-                `0-10`,`11-20`,`21-30`,`31-40`,`41-50`,`51-60`,`>=61`)
+                `0~10`,`11~20`,`21~30`,`31~40`,`41~50`,`51~60`,`>=61`)
 ```
 
 
