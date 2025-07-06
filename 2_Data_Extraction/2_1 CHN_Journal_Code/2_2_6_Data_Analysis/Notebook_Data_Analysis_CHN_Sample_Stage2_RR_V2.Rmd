@@ -3216,6 +3216,33 @@ H3_Fig_age_suppl
 ### Region
 In this part, I analysed and visualized all countries in our study. Firstly, I processed region data of BTS.
 ```{r}
+H3_BTS_region <- BTS[names(BTS) != "BTS_Lucca_et_al_2024"]
+
+
+H3_BTS_region_general <- lapply(H3_BTS_region,function(df){
+  
+  df <- df %>% 
+    dplyr::select(Article_Id,ISO3,ISO2)
+  
+  return(df)
+})
+
+H3_BTS_region_general <- do.call(rbind,H3_BTS_region_general)
+
+
+H3_BTS_region_general2 <- H3_BTS_region_general %>% 
+  dplyr::filter(!is.na(ISO2)) %>%   ## ISO2 is used to subsequent visualize the spatial distribution in and filter out the data with countries as NA.
+  dplyr::group_by(ISO2) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::mutate(Proportion = n/sum(n)*100,
+                Site = "BTS")
+
+sum(H3_BTS_region_general2$Proportion)
+```
+
+
+
+```{r}
 ## creat a world map
 world_map <- ggplot2::map_data(map = "world") %>% 
   dplyr::mutate(region = iso.alpha(region),
@@ -3227,7 +3254,7 @@ world_map <- ggplot2::map_data(map = "world") %>%
 #                 long = ifelse(long >= -180 & long <= -30, long + 360, long),
 #                 ))  
 
-H3_sample_region <- BTS_Overview2 %>% 
+H3_sample_region <- H3_BTS_region_general2 %>% 
   dplyr::filter(ISO2 != "--") %>% 
   dplyr::mutate(ISO2 = case_when(ISO2 %in% c("TW","MO","HK") ~ "CN",
                                  TRUE ~ ISO2)) %>% 
@@ -3329,3 +3356,22 @@ ggsave("H3_region.pdf",H3_region, device = "pdf", width=18, height = 9)
 
 H3_region
 ```
+
+
+I analysis region data of BTS based on different region cutoff.
+```{r}
+H3_BTS_region_WEIRD_general <- H3_BTS_region_general2 %>% 
+  dplyr::left_join(WEIRD, by = c("ISO2" = "iso2c")) %>% 
+  dplyr::filter(ISO2 != "--") %>% 
+  dplyr::select(ISO2,n,WEIRD) %>% 
+  dplyr::mutate(WEIRD = ifelse(ISO2 == "XK","WEIRD",WEIRD)) %>%
+  dplyr::group_by(WEIRD) %>% 
+  dplyr::summarise(n = sum(n)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Proportion = n/sum(n),
+                `Data source` = "BTS")
+
+
+
+```
+
