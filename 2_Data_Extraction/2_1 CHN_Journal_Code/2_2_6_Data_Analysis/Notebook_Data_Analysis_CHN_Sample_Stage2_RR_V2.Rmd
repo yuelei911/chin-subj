@@ -41,7 +41,7 @@ if (!require("pacman")) install.packages("pacman")
 
 # use package "pacman" as loading R packages tools
 
-pacman::p_load("tidyverse","here","rio")
+pacman::p_load("tidyverse","here","rio","purrr")
 pacman::p_load("geojsonsf","sf","RColorBrewer","ggspatial","patchwork","ggrepel","maps")
 pacman::p_load("truncnorm","BayesFactor", "gtools", "bruceR")
 ```
@@ -1196,7 +1196,7 @@ Meanwhile, I found strong evidence support $H_1$ for another age category,the Ba
 
 ### attainment education
 Try to process educational attainment data from Chinese journal.
-```{r eval=FALSE, include=FALSE}
+```{r}
 # Journal_edu <- Journal %>% 
 #   dplyr::filter(Educational_Attainment_N == 1) %>% 
 #   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,M_age,SD_age,
@@ -1242,7 +1242,7 @@ Journal_edu2_tab <- Journal_edu_general %>%
 
 
 In our study, we have three categories of educational attainments. I process three class data respectively. The first category is education years. I will use M and SD in the paper to simulate the number of subjects with the latter two categories of education level, and then combine them with the latter two categories respectively, and finally complete the subsequent analysis and visualization.
-```{r eval=FALSE, include=FALSE}
+```{r}
 ## I found there is no data for simul
 
 Journal_edu2_year <- Journal_edu_general %>% 
@@ -2844,7 +2844,7 @@ And I visualized age data (PsyStages) for all countries in BTS.
 H3_Fig_PsyStages <- ggplot(H3_PsyStages2, aes(x=Proportion, y=ISO3, fill=ageBins)) +
   geom_col(alpha = .75)+
   labs(y="Countries") + 
-  scale_fill_discrete(label=c("0~17", "18~25", "26~40", "41~59",">=60" )) +
+  scale_fill_discrete(label=c("0~17", "18~25", "26~40", "41~60",">=61" )) +
   theme_classic()+
   #guides(y="axis_nested") +
   theme(legend.title = element_text(size = 15,family = "serif"),
@@ -3348,13 +3348,13 @@ ggtitle("Geographical distribution of world population")+
 
 world_population_map
 
-H3_region <- H3_Fig_sample_region + world_population_map + 
+H3_Fig_region <- H3_Fig_sample_region + world_population_map + 
   plot_layout(ncol = 2, heights = c(4,4))+
   patchwork::plot_annotation(tag_levels = 'A')
 
 ggsave("H3_region.pdf",H3_region, device = "pdf", width=18, height = 9)
 
-H3_region
+H3_Fig_region
 ```
 
 
@@ -3422,7 +3422,7 @@ H3_Fig_region_WEIRD <- ggplot(data = H3_region_WEIRD, aes(x = `Data source`, y =
   guides(fill = guide_legend(ncol = 2))
 
 
-ggsave("H3_Fig_region_WEIRD .pdf",H3_Fig_region_WEIRD , device = "pdf", width= 12, height = 9)
+ggsave("H3_Fig_region_WEIRD.pdf",H3_Fig_region_WEIRD, device = "pdf", width= 12, height = 9)
 
 H3_Fig_region_WEIRD 
 
@@ -3458,9 +3458,508 @@ H3_gender_WPP2021 <- WPP2021_gender_prop %>%
                 `World population` = "World population")
 
 ##combine two data source
-H3_gender_world_BTS <- H3_gender %>% 
+H3_gender_World_Psysample <- H3_gender %>% 
   dplyr::select(ISO3,Gender,Data_Source,Proportion,WEIRD) %>% 
   dplyr::rename(`BTS` = 3,Proportion_BTS = 4) %>% 
-  dplyr::left_join(H3_gender_WPP2021, by = c("ISO3","Gender"))
+  dplyr::left_join(H3_gender_WPP2021, by = c("ISO3","Gender")) %>% 
+  dplyr::select(ISO3,Gender,Proportion_BTS,Proportion_World,WEIRD) %>% 
+  dplyr::filter(ISO3 != "PCN") 
+```
+
+
+Calculate BF
+```{r}
+groups <- unique(H3_gender_World_Psysample[, c("ISO3", "WEIRD")])
+
+
+# create data.frame
+H3_BF_gender_World_Psysample <- data.frame(ISO3 = character(),
+                      WEIRD = character(),
+                      LogBF10 = numeric(),
+                      BF10 = numeric(),
+                      BF01 = numeric(),
+                      stringsAsFactors = FALSE)
+
+
+# lappy iso and WEIRD
+for (i in 1:nrow(groups)) {
+  current_iso <- groups$ISO3[i]
+  current_weird <- groups$WEIRD[i]
+  
+
+  group_data <- H3_gender_World_Psysample[H3_gender_World_Psysample$ISO3 == current_iso & H3_gender_World_Psysample$WEIRD == current_weird, ]
+  
+
+  if (nrow(group_data) == 0) next
+  
+
+  bayes_result <- BayesMultiNomial(
+    dataset = group_data,
+    factor = "Gender",
+    observed = "Proportion_BTS",
+    expected = "Proportion_World")
+  
+  H3_BF_gender_World_Psysample <- rbind(H3_BF_gender_World_Psysample, data.frame(
+    ISO3 = current_iso,
+    WEIRD = current_weird,
+    LogBF10 = bayes_result$BF$LogBF10,
+    BF10 = bayes_result$BF$BF10,
+    BF01 = bayes_result$BF$BF01))
+}
+
+
+## set factor
+H3_BF_gender_World_Psysample_factor <- H3_BF_gender_World_Psysample %>%
+  dplyr::arrange(WEIRD,LogBF10) %>%
+  dplyr::pull(ISO3)
+
+# H3_BF_gender_world_BTS_factor <- H3_BF_gender_world_BTS_factor[-6]
+
+H3_BF_gender_World_Psysample <- H3_BF_gender_World_Psysample %>%
+  dplyr::mutate(ISO3 = factor(ISO3,
+                              levels = H3_BF_gender_World_Psysample_factor),
+                WEIRD = ifelse(WEIRD == "Non_WEIRD","Non-WEIRD","WEIRD"))
+
+## divide WEIRD
+H3_BF_gender_World_Psysample_WEIRD <- H3_BF_gender_World_Psysample %>%
+  dplyr::filter(WEIRD == "WEIRD")
+
+H3_BF_gender_World_Psysample_nonWEIRD <- H3_BF_gender_World_Psysample %>%
+  dplyr::filter(WEIRD == "Non-WEIRD")
+```
+
+
+visualize BF
+```{r warning=FALSE}
+H3_Fig_BF_gender_World_Psysample_WEIRD <- ggplot(H3_BF_gender_World_Psysample_WEIRD, 
+                                           aes(x = LogBF10, y = ISO3)) +
+  geom_point() +
+  scale_x_continuous(breaks = seq(-5, 15, by = 5), limits = c(-5, 15))+
+  geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
+             colour = c("red", "tomato", "black", "deepskyblue","blue"), 
+             linetype=c("longdash", "longdash", "solid", "longdash","longdash"))+
+  geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="tomato", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7,
+            angle=90, size=3)+
+  theme_classic()+
+  theme(legend.position = "none",
+        axis.title= element_text(size = 6,family = "serif"),
+        axis.text = element_text(size = 6,family = "serif"),
+        strip.text = element_text(size = 6,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black")) +
+  ylab("WEIRD countries")
+  
+
+H3_Fig_BF_gender_World_Psysample_WEIRD
+
+
+
+H3_Fig_BF_gender_World_Psysample_nonWEIRD <- ggplot(H3_BF_gender_World_Psysample_nonWEIRD, 
+                                           aes(x = LogBF10, y = ISO3)) +
+  geom_point() +
+  scale_x_continuous(breaks = seq(-5, 15, by = 5), limits = c(-5, 15))+
+  geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
+             colour = c("red", "tomato", "black", "deepskyblue","blue"), 
+             linetype=c("longdash", "longdash", "solid", "longdash","longdash"))+
+  geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="tomato", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7,
+            angle=90, size=3)+
+  theme_classic()+
+  theme(legend.position = "none",
+        axis.title= element_text(size = 6,family = "serif"),
+        axis.text = element_text(size = 6,family = "serif"),
+        strip.text = element_text(size = 6,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black")) +
+  ylab("Non-WEIRD countries")
+  
+
+H3_Fig_BF_gender_World_Psysample_nonWEIRD
+```
+
+
+And then, I will calculate age data.
+PsyStages
+```{r}
+H3_PsyStages2_factor <-  H3_PsyStages2$ISO3
+
+H3_PsyStages_WPP2021 <-  WPP2021_PsyStages %>% 
+  dplyr::filter(ISO3 %in% H3_PsyStages2_factor) %>% 
+  dplyr::select(ISO3,7:11) %>% 
+  tidyr::pivot_longer(cols = c("0~17","18~25","26~40","41~60",">=61"),
+                      names_to = "ageBins",
+                      values_to = "Proportion_World") %>% 
+  dplyr::mutate(ageBins = ifelse(ageBins == "0~17","<=17",ageBins))
+
+
+## fill BTS ageBins
+
+# Define the full list of age bins
+PsyStages_ageBins <- c("<=17", "18~25", "26~40", "41~60", ">=61")  
+
+
+# Generate all possible combinations of ISO3 and age bins
+# Extract unique ISO3 codes from the original dataset
+unique_iso3 <- H3_PsyStages2 %>% 
+  distinct(ISO3) %>% 
+  pull(ISO3)  
+
+# Create a tibble with all combinations (cross join)
+full_combinations <- crossing(
+  ISO3 = unique_iso3, 
+  ageBins = PsyStages_ageBins
+)  
+
+# Left join with original data and fill missing values
+H3_PsyStages3 <- full_combinations %>% 
+  dplyr::left_join(H3_PsyStages2, by = c("ISO3", "ageBins")) %>%  # Merge with original data
+  tidyr::replace_na(list(Proportion = 0)) %>%  # Fill missing Prop values with 0 
+  dplyr::group_by(ISO3) %>% 
+  tidyr::fill(WEIRD, .direction = "downup") %>% 
+  dplyr::ungroup()
+
+## combine two data source
+H3_PsyStages_World_Psysample <- H3_PsyStages3 %>% 
+  dplyr::select(ISO3,ageBins,Proportion,WEIRD) %>% 
+  dplyr::rename(Proportion_Psysample = 3) %>% 
+  dplyr::left_join(H3_PsyStages_WPP2021, by = c("ISO3","ageBins")) %>% 
+  dplyr::filter(ISO3 != "PCN")
+```
+
+
+calculate PsyStages BF
+```{r}
+# Extract unique combinations of country, age group, and WEIRD status
+groups <- unique(H3_PsyStages_World_Psysample[, c("ISO3","WEIRD")])
+
+# Initialize results data frame
+H3_BF_PsyStages_World_Psysample <- data.frame(
+  ISO3 = character(),
+  WEIRD = character(),
+  LogBF10 = numeric(),
+  BF10 = numeric(),
+  BF01 = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Loop through each unique group combination
+for (i in 1:nrow(groups)) {
+  current_iso <- groups$ISO3[i]
+  current_weird <- groups$WEIRD[i]
+  
+  # Filter data for current group
+  group_data <- H3_PsyStages_World_Psysample[
+    H3_PsyStages_World_Psysample$ISO3 == current_iso & 
+    H3_PsyStages_World_Psysample$WEIRD == current_weird, 
+  ]
+  
+  # Skip if no data found for this group
+  if (nrow(group_data) == 0) next
+  
+  # Calculate Bayes Factor using BayesMultiNomial function
+  bayes_result <- BayesMultiNomial(
+    dataset = group_data,
+    factor = "ageBins",
+    observed = "Proportion_Psysample",
+    expected = "Proportion_World"
+  )
+  
+  # Append results to the results data frame
+  H3_BF_PsyStages_World_Psysample <- rbind(H3_BF_PsyStages_World_Psysample, data.frame(
+    ISO3 = current_iso,  # Fixed missing comma here
+    WEIRD = current_weird,
+    LogBF10 = bayes_result$BF$LogBF10,
+    BF10 = bayes_result$BF$BF10,
+    BF01 = bayes_result$BF$BF01
+  ))
+}
+
+
+## set factor
+H3_BF_PsyStages_World_Psysample_factor <- H3_BF_PsyStages_World_Psysample %>% 
+  dplyr::arrange(WEIRD,LogBF10) %>% 
+  dplyr::pull(ISO3)
+
+
+H3_BF_PsyStages_World_Psysample <- H3_BF_PsyStages_World_Psysample %>% 
+  dplyr::mutate(ISO3 = factor(ISO3,
+                              levels = H3_BF_PsyStages_World_Psysample_factor),
+                WEIRD = ifelse(WEIRD == "Non_WEIRD","Non-WEIRD","WEIRD"))
+
+
+## divide WEIRD
+H3_BF_PsyStages_World_Psysample_WERID <- H3_BF_PsyStages_World_Psysample %>% 
+  dplyr::filter(WEIRD == "WEIRD")
+
+H3_BF_PsyStages_World_Psysample_nonWERID <- H3_BF_PsyStages_World_Psysample %>% 
+  dplyr::filter(WEIRD == "Non-WEIRD")
+```
+
+
+visualize PsyStages BF
+```{r warning=FALSE}
+H3_Fig_BF_PsyStages_World_Psysample_WERID <- ggplot(data = H3_BF_PsyStages_World_Psysample_WERID,aes(x = LogBF10, y = ISO3)) +
+  geom_point() +
+  scale_x_continuous(breaks = seq(-15, 160, by = 20), limits = c(-15, 160))+
+  geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
+             colour = c("red", "tomato", "black", "deepskyblue","blue"), 
+             linetype=c("longdash", "longdash", "solid", "longdash","longdash"))+
+  geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="tomato", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7,
+            angle=90, size=3)+
+  theme_classic()+
+  theme(legend.position = "none",
+        axis.title= element_text(size = 6,family = "serif"),
+        axis.text = element_text(size = 6,family = "serif"),
+        strip.text = element_text(size = 6,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black")) +
+  # facet_wrap(~ WEIRD, scales = "free", ncol = 2) +
+  ylab("WEIRD countries")
+  
+
+H3_Fig_BF_PsyStages_World_Psysample_WERID
+
+
+H3_Fig_BF_PsyStages_World_Psysample_nonWERID <- ggplot(data = H3_BF_PsyStages_World_Psysample_WERID,aes(x = LogBF10, y = ISO3)) +
+  geom_point() +
+  scale_x_continuous(breaks = seq(-15, 160, by = 20), limits = c(-15, 160))+
+  geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
+             colour = c("red", "tomato", "black", "deepskyblue","blue"), 
+             linetype=c("longdash", "longdash", "solid", "longdash","longdash"))+
+  geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="tomato", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7,
+            angle=90, size=3)+
+  theme_classic()+
+  theme(legend.position = "none",
+        axis.title= element_text(size = 6,family = "serif"),
+        axis.text = element_text(size = 6,family = "serif"),
+        strip.text = element_text(size = 6,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black")) +
+  ylab("Non-WEIRD countries")
+
+
+H3_Fig_BF_PsyStages_World_Psysample_nonWERID
+
+
+H3_Fig_BF_Gender_PsyStages <- H3_Fig_BF_gender_World_Psysample_nonWEIRD + 
+  H3_Fig_BF_gender_World_Psysample_WEIRD + 
+  H3_Fig_BF_PsyStages_World_Psysample_nonWERID + 
+  H3_Fig_BF_PsyStages_World_Psysample_WERID +
+  plot_layout(ncol = 2, heights = c(4,4))+
+  patchwork::plot_annotation(tag_levels = 'A')
+
+ggsave("H3_Fig_BF_Gender_PsyStages.pdf",
+       H3_Fig_BF_Gender_PsyStages, device = "pdf", width=18, height = 18)
+
+H3_Fig_BF_Gender_PsyStages
+```
+
+
+interval10
+```{r}
+H3_interval10_factor <-  H3_interval10$ISO3
+
+H3_interval10_WPP2021 <-  WPP2021_interval10 %>% 
+  dplyr::filter(ISO3 %in% H3_interval10_factor) %>% 
+  dplyr::select(ISO3,7:13) %>% 
+  tidyr::pivot_longer(cols = c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"),
+                      names_to = "ageBins",
+                      values_to = "Proportion_World") %>% 
+  dplyr::mutate(ageBins = ifelse(ageBins == "0~10","<=10",ageBins))
+
+
+## fill BTS ageBins
+
+# Define the full list of age bins
+interval10_ageBins <- c("<=10", "11~20","21~30", "31~40", "41~50", "51~60", ">=61")  
+
+
+# Generate all possible combinations of ISO3 and age bins
+# Extract unique ISO3 codes from the original dataset
+unique_iso3 <- H3_interval10 %>% 
+  distinct(ISO3) %>% 
+  pull(ISO3)  
+
+# Create a tibble with all combinations (cross join)
+full_combinations <- crossing(
+  ISO3 = unique_iso3, 
+  ageBins = interval10_ageBins
+)  
+
+# Left join with original data and fill missing values
+H3_interval102 <- full_combinations %>% 
+  dplyr::left_join(H3_interval10, by = c("ISO3", "ageBins")) %>%  # Merge with original data
+  tidyr::replace_na(list(Proportion = 0)) %>%  # Fill missing Prop values with 0 
+  dplyr::group_by(ISO3) %>% 
+  tidyr::fill(WEIRD, .direction = "downup") %>% 
+  dplyr::ungroup()
+
+## combine two data source
+H3_interval10_World_Psysample <- H3_interval102 %>% 
+  dplyr::select(ISO3,ageBins,Proportion,WEIRD) %>% 
+  dplyr::rename(Proportion_Psysample = 3) %>% 
+  dplyr::left_join(H3_interval10_WPP2021, by = c("ISO3","ageBins")) %>% 
+  dplyr::filter(ISO3 != "PCN")
+```
+
+
+calculate interval10 BF
+```{r}
+# Extract unique combinations of country, age group, and WEIRD status
+groups <- unique(H3_interval10_World_Psysample[, c("ISO3","WEIRD")])
+
+# Initialize results data frame
+H3_BF_interval10_World_Psysample <- data.frame(
+  ISO3 = character(),
+  WEIRD = character(),
+  LogBF10 = numeric(),
+  BF10 = numeric(),
+  BF01 = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Loop through each unique group combination
+for (i in 1:nrow(groups)) {
+  current_iso <- groups$ISO3[i]
+  current_weird <- groups$WEIRD[i]
+  
+  # Filter data for current group
+  group_data <- H3_interval10_World_Psysample[
+    H3_interval10_World_Psysample$ISO3 == current_iso & 
+    H3_interval10_World_Psysample$WEIRD == current_weird, 
+  ]
+  
+  # Skip if no data found for this group
+  if (nrow(group_data) == 0) next
+  
+  # Calculate Bayes Factor using BayesMultiNomial function
+  bayes_result <- BayesMultiNomial(
+    dataset = group_data,
+    factor = "ageBins",
+    observed = "Proportion_Psysample",
+    expected = "Proportion_World"
+  )
+  
+  # Append results to the results data frame
+  H3_BF_interval10_World_Psysample <- rbind(H3_BF_interval10_World_Psysample, data.frame(
+    ISO3 = current_iso,  # Fixed missing comma here
+    WEIRD = current_weird,
+    LogBF10 = bayes_result$BF$LogBF10,
+    BF10 = bayes_result$BF$BF10,
+    BF01 = bayes_result$BF$BF01
+  ))
+}
+
+
+## set factor
+H3_BF_interval10_World_Psysample_factor <- H3_BF_interval10_World_Psysample %>% 
+  dplyr::arrange(WEIRD,LogBF10) %>% 
+  dplyr::pull(ISO3)
+
+
+H3_BF_interval10_World_Psysample <- H3_BF_interval10_World_Psysample %>% 
+  dplyr::mutate(ISO3 = factor(ISO3,
+                              levels = H3_BF_interval10_World_Psysample_factor),
+                WEIRD = ifelse(WEIRD == "Non_WEIRD","Non-WEIRD","WEIRD"))
+
+
+## divide WEIRD
+H3_BF_interval10_World_Psysample_WERID <- H3_BF_interval10_World_Psysample %>% 
+  dplyr::filter(WEIRD == "WEIRD")
+
+H3_BF_interval10_World_Psysample_nonWERID <- H3_BF_interval10_World_Psysample %>% 
+  dplyr::filter(WEIRD == "Non-WEIRD")
+```
+
+
+visualize interval10 BF
+```{r warning=FALSE}
+H3_Fig_BF_interval10_World_Psysample_WERID <- ggplot(data = H3_BF_PsyStages_World_Psysample_WERID,aes(x = LogBF10, y = ISO3)) +
+  geom_point() +
+  scale_x_continuous(breaks = seq(-15, 100, by = 20), limits = c(-15, 100))+
+  geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
+             colour = c("red", "tomato", "black", "deepskyblue","blue"), 
+             linetype=c("longdash", "longdash", "solid", "longdash","longdash"))+
+  geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="tomato", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7,
+            angle=90, size=3)+
+  theme_classic()+
+  theme(legend.position = "none",
+        axis.title= element_text(size = 6,family = "serif"),
+        axis.text = element_text(size = 6,family = "serif"),
+        strip.text = element_text(size = 6,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black")) +
+  # facet_wrap(~ WEIRD, scales = "free", ncol = 2) +
+  ylab("WEIRD countries")
+  
+
+H3_Fig_BF_interval10_World_Psysample_WERID
+
+
+H3_Fig_BF_interval10_World_Psysample_nonWERID <- ggplot(data = H3_BF_PsyStages_World_Psysample_WERID,aes(x = LogBF10, y = ISO3)) +
+  geom_point() +
+  scale_x_continuous(breaks = seq(-15, 100, by = 20), limits = c(-15, 100))+
+  geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
+             colour = c("red", "tomato", "black", "deepskyblue","blue"), 
+             linetype=c("longdash", "longdash", "solid", "longdash","longdash"))+
+  geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="tomato", alpha = 0.7,
+            angle=90, size=3) +
+  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7,
+            angle=90, size=3)+
+  theme_classic()+
+  theme(legend.position = "none",
+        axis.title= element_text(size = 6,family = "serif"),
+        axis.text = element_text(size = 6,family = "serif"),
+        strip.text = element_text(size = 6,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black")) +
+  ylab("Non-WEIRD countries")
+
+
+H3_Fig_BF_interval10_World_Psysample_nonWERID
+
+
+H3_Fig_BF_interval10 <- H3_Fig_BF_interval10_World_Psysample_nonWERID + 
+  H3_Fig_BF_interval10_World_Psysample_WERID +
+  plot_layout(ncol = 2, heights = c(4,4))+
+  patchwork::plot_annotation(tag_levels = 'A')
+
+ggsave("H3_Fig_BF_interval10.pdf",
+       H3_Fig_BF_interval10, device = "pdf", width=18, height = 9)
+
+H3_Fig_BF_interval10
 ```
 
