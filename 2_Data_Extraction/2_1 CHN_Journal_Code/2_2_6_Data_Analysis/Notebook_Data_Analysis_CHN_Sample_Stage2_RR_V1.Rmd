@@ -3582,10 +3582,65 @@ Journal_otherage <- data.frame(Article_IDs = c(20082227,20082227,20082227,
 ```
 
 
+modif some article IDs
+```{r}
+# class(df_stage2_Journal_Code2$Article_IDs_N)
+## 大学生大五人格与学习适应性的关系研究
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "大学生大五人格与学习适应性的关系研究","20083067",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "大学生大五人格与学习适应性的关系研究","20083067",Article_IDs))
+
+
+## 大学生手机依赖量表的编制
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "大学生手机依赖量表的编制","20083009",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "大学生手机依赖量表的编制","20083009",Article_IDs))
+
+
+## 大学生的同伴依恋与心理健康关系的性别角色效应
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "大学生的同伴依恋与心理健康关系的性别角色效应","20083060",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "大学生的同伴依恋与心理健康关系的性别角色效应","20083060",Article_IDs))
+
+
+## 大学生社交效能感与网络关系成瘾倾向的关系初探
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "大学生社交效能感与网络关系成瘾倾向的关系初探","20083029",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "大学生社交效能感与网络关系成瘾倾向的关系初探","20083029",Article_IDs))
+
+
+## 大学生社会支持、心理控制源与主观幸福感的关系
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "大学生社会支持、心理控制源与主观幸福感的关系","20083065",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "大学生社会支持、心理控制源与主观幸福感的关系","20083065",Article_IDs))
+
+
+## 基层组织领导人格特质研究
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "基层组织领导人格特质研究","20082324",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "基层组织领导人格特质研究","20082324",Article_IDs))
+
+
+## 在读护生的职业认同研究
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "在读护生的职业认同研究","20082280",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "在读护生的职业认同研究","20082280",Article_IDs))
+
+
+## delete dupli article
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!(Article_IDs == "20082280" & Article_Title == "图形视觉与心理表象眼动模式的比较研究"))
+
+
+## 大学生经济自我的时间态度差异研究
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "大学生经济自我的时间态度差异研究","20082370",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "大学生经济自我的时间态度差异研究","20082370",Article_IDs))
+```
+
 
 ## Save Rdata again
 ```{r}
-save(df,df_stage2_Journal_Code,df_stage2_Journal_Code2,
-     Group1_bind,Group24567_bind,Group3_bind,Journal_otherage,
+save(df_stage2_Journal_Code2,Journal_otherage,
      file = "df_Pre_Stage2_Journal_Code.Rdata")
 ```
