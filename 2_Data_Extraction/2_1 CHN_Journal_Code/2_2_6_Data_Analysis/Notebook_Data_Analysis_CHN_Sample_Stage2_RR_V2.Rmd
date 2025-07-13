@@ -64,7 +64,7 @@ BTS_coding <- BTS_coding %>%
   dplyr::filter(Coder == "final")
 
 ## Here, I remove some data sets to reduce data set clutter.
-rm(df,df_PSA001,df_stage2_Journal_Code,Group1_bind,Group24567_bind,Group3_bind,df_regionCode)
+rm(df_regionCode)
 ```
 
 
@@ -172,16 +172,24 @@ I began by analyzing the basic case of the two data sets (BTS and Chinese journa
 ```{r warning=FALSE}
 Journal <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) %>%  ## valid 1569 rows
-  dplyr::filter(Article_IDs_N != "20082359")
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) ## valid 1568 rows
 
 
 Journal_articles_num <- Journal %>% 
   dplyr::distinct(Article_IDs) ## A total 962 articles
 
 
-# Journal_articles_title <- Journal %>% 
-#   dplyr::distinct(Article_Title)
+## invalid papers
+# Journal_invalid <- df_stage2_Journal_Code2 %>% 
+#   dplyr::filter(!is.na(Remark1)) %>% 
+#   dplyr::select(Article_IDs_N,Study_Number_N,Subjects_Group_N,
+#                 Article_Title,Journal,Remark1,Remark2) %>% 
+#   dplyr::filter(grepl("2018",Article_IDs_N))
+# 
+# 
+# writexl::write_xlsx(Journal_invalid,"Journal_invalid.xlsx")
+# # Journal_articles_title <- Journal %>% 
+# #   dplyr::distinct(Article_Title)
 
 
 # ## output `Journal` to help download bibliographic data from CNKI
