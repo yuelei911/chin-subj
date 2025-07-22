@@ -3639,8 +3639,62 @@ df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>%
 ```
 
 
+
+We replaced those articles that only require brief information coding with empirical articles needed for our research and analysis (i.e., articles that require detailed information coding). Therefore, I need to process this part of the data next.
+
+```{r}
+library(openxlsx)
+
+Journal_articles_replace <- read.xlsx("Chin_Subj_articles_replaced_CE.xlsx") %>%
+  dplyr::filter(Coder == "final")
+
+
+# names(df_stage2_Journal_Code2)
+# names(Journal_articles_replace)
+
+
+Journal_articles_replace2 <- Journal_articles_replace %>% 
+  dplyr::mutate(Coder_N = Coder,Coder2_N = Coder,
+                Article_IDs_N = Article_IDs,
+                Study_Number_N = Study_Number,
+                Subjects_Group_N = Subjects_Group,
+                Remark1_N =Remark1,
+                Remark2_N =Remark2,
+                Remark3_N = Remark3,
+                Subjects_Area = NA,
+                Subjects_Area_info = NA) %>% 
+  dplyr::select(Coder,Coder_N,
+                Article_IDs,Article_IDs_N,
+                Study_Number,Study_Number_N,
+                Subjects_Group,Subjects_Group_N,
+                Article_Title,First_Author,Journal,
+                Abstract1,Abstract2,
+                Remark1,Study_Type,Sample_Size,
+                Gender,Male_Num,Female_Num,
+                Age,M_age,SD_age,Other_age,
+                Ethnicity,Ethnicity_info,
+                Religious,Religious_info,
+                Subjects_Area,Subjects_Area_info,
+                Subjects_Recruitment_Area,Sampling_Method,
+                Remark2,Remark3, Remark2_N,Remark3_N,
+                Coder2_N,Target_Population_N,Coding_Basis_N,Remark1_N,
+                Sample_Type_N,Sample_Type_info_N,
+                Educational_Attainment_N,Educational_Attainment_info_N,Occupation_N,SES_N,SES_info_N,
+                Subjects_Recruitment_Method_N,Subjects_Recruitment_Method_info_N) %>% 
+  dplyr::mutate(across(everything(),as.character))
+
+
+
+## combine journal replace and the first coding
+df_stage2_Journal_Code2 <-  bind_rows(df_stage2_Journal_Code2,Journal_articles_replace2)
+
+## after func `distinct` 1000 atircles 
+# str(df_stage2_Journal_Code2)
+```
+
+
 ## Save Rdata again
 ```{r}
-save(df_stage2_Journal_Code2,Journal_otherage,
+save(df_stage2_Journal_Code2,Journal_otherage,Journal_articles_replace2,
      file = "df_Pre_Stage2_Journal_Code.Rdata")
 ```
