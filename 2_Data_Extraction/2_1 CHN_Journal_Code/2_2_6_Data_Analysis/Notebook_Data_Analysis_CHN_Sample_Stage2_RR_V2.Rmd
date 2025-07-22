@@ -172,11 +172,15 @@ I began by analyzing the basic case of the two data sets (BTS and Chinese journa
 ```{r warning=FALSE}
 Journal <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) ## valid 1568 rows
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) ## valid 1628 rows
 
 
 Journal_articles_num <- Journal %>% 
-  dplyr::distinct(Article_IDs) ## A total 962 articles
+  dplyr::distinct(Article_IDs) ## A total 1000 articles
+
+
+Journal_study_num <- Journal %>% 
+  dplyr::distinct(Article_IDs,Study_Number) ## A total 1265 studies
 
 
 ## invalid papers
@@ -203,23 +207,20 @@ Journal_articles_num <- Journal %>%
 
 # calculate exclude articles that only need code simple info
 Journal_simple_info_articles <- df_stage2_Journal_Code2 %>% 
-  dplyr::select(Article_IDs,Remark1,Remark2,Remark3,Subjects_Recruitment_Area) %>% 
-  dplyr::filter(!Article_IDs %in% Journal_articles_num$Article_IDs) %>% 
-  dplyr::distinct(Article_IDs,.keep_all = TRUE)  
+  dplyr::filter(!is.na(Remark1)) %>% 
+  dplyr::distinct(Article_IDs,Remark1)
 
 table(Journal_simple_info_articles$Remark1)
 
 
-Journal_study_num <- Journal %>% 
-  dplyr::distinct(Article_IDs,Study_Number) ## A total 1218 studies
-
+## sample size sum
 Journal_sample_size <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size) %>% 
   dplyr::mutate(Sample_Size = as.numeric(Sample_Size),
                 Sample_Size = ifelse(Article_IDs == "20185082",33,Sample_Size))
 
-sum(Journal_sample_size$Sample_Size,na.rm = TRUE)  ## 538,937
 
+sum(Journal_sample_size$Sample_Size,na.rm = TRUE)  ## 555,098
 
 ## Here, I remove some data sets to reduce data set clutter.
 # rm(Journal_articles_num,Journal_study_num,df_stage2_Journal_Code2)
@@ -232,6 +233,7 @@ save(Journal, file ="Journal.Rdata")
 
 Meanwhile, we process the special target population
 ```{r}
+
 Journal_special_target_population <- Journal %>% 
   dplyr::select(Article_IDs,Article_Title,Target_Population_N,Coding_Basis_N,Sample_Type_N) %>% 
   dplyr::filter(Target_Population_N == 1) %>% 
@@ -241,8 +243,9 @@ Journal_special_target_population <- Journal %>%
 # writexl::write_xlsx(Journal_special_target_population,"Journal_special_target_populationk.xlsx")
 
 Journal_special_target_population2 <- readxl::read_xlsx("Journal_special_target_population.xlsx") %>% 
-  dplyr::select(20,22,7,19,23,24,28) %>% 
+  dplyr::select(Article_IDs,Article_Title,`Summary-摘要`,`Disscu & Conclu`,Target_Population_N,Coding_Basis_N,Recode_target_population) %>% 
   dplyr::rename(Abstract = 3)
+
 ```
 
 
@@ -349,24 +352,28 @@ Journal_education_occupation <- Journal %>%
   dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
   dplyr::group_by(Article_IDs,Study_Number) %>% 
   dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
-                   Occupation_N = max(Occupation_N) > 0,.groups = "drop")   ### 294 studies
+                   Occupation_N = max(Occupation_N) > 0,.groups = "drop")   ### 306 studies
 
-# table(Educational_Occupation$Educational_Attainment_N) ## FALSE 162 TRUE 132
-# table(Educational_Occupation$Occupation_N)  ## FALSE 193 TRUE 101
+## 20215075 need process
+
+table(Journal_education_occupation $Educational_Attainment_N) ## FALSE 165 TRUE 141
+table(Journal_education_occupation $Occupation_N)  ## FALSE 201 TRUE 105
+
 
 Journal_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
                                                             "Unreported","Reported"),
-                                                   Freq = c(162,132,193,101),
+                                                   Freq = c(165,141,201,105),
                                                    col_names= c("Educational_Attainment",
                                                                 "Educational_Attainment",
                                                                 "Occupation","Occupation"),
-                                                   proportion = c(0.55,0.45,0.66,0.34))
+                                                   proportion = c(0.54,0.46,0.66,0.34))
+
 
 Journal_report <- rbind(Journal_report,Journal_education_occupation_table) %>%
   dplyr::mutate(col_names = factor(col_names, 
-                                   labels = c("Gender","Age","Recruitment Method",
-                                              "Recruitment Area","Educational Attainment",
-                                              "Occupation","Sampling Method",
+                                   labels = c("Gender","Age","Recruitment method",
+                                              "Recruitment area","Educational attainment",
+                                              "Occupation","Sampling method",
                                               "SES","Ethnicity","Religious"),
                                    levels = c("Gender","Age","Recruitment_Method",
                                               "Recruitment_Area","Educational_Attainment",
@@ -417,18 +424,18 @@ Journal_age_report_detail <- Journal %>%
 
 ### Age report studies num
 Journal_age_report_detail_study_num <- Journal_age_report_detail %>%
-    dplyr::distinct(Article_IDs,Study_Number) ## 991 studies
+    dplyr::distinct(Article_IDs,Study_Number) ## 1034 studies
 
 ### Age report papers num
 Journal_age_report_detail_papers_num <- Journal_age_report_detail_study_num %>% 
-  dplyr::distinct(Article_IDs) ## 793 articles
+  dplyr::distinct(Article_IDs) ## 829 articles
   
 ### Age fuzzy report studies num
 Journal_age_fuzzy_report <- Journal_age_report_detail %>% 
   dplyr::filter(is.na(M_age)) 
 
 Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>% 
-  dplyr::distinct(Article_IDs) ## 116-6=110
+  dplyr::distinct(Article_IDs) ## 121-6=115
 
 ## the above "-6" means aticles Mage coded in other_age, these articles are 20183340, 20183097, 20082227, 20214027, 20083017, 20181065
 
@@ -436,6 +443,9 @@ Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>%
 ## Here, I remove some data sets to reduce data set clutter.
 # rm(Journal_age_report_detail,Journal_age_report_detail_study_num,
 #    Journal_age_fuzzy_report,Journal_age_fuzzy_report_study_num)
+
+
+# writexl::write_xlsx(Journal, "Chin_Subj_articles_replaced.xlsx")
 ```
 
 
@@ -471,6 +481,7 @@ Journal_gender_integer <- Journal_gender %>%
   dplyr::filter(Male_Num > 1 | Female_Num > 1) %>% 
   dplyr::mutate_at(vars(4:9),as.numeric)
 
+
 ## Multiple groups of data are removed during processing, so re-create the data.frame and then merge them.
 Journal_gender_integer_add <- data.frame(Article_IDs = c("20185082","20213045","20213048","20213048"),
                                          Study_Number = c("1","1","1","2"),
@@ -484,6 +495,7 @@ Journal_gender_integer_add <- data.frame(Article_IDs = c("20185082","20213045","
 
 Journal_gender_integer2 <- bind_rows(Journal_gender_integer,Journal_gender_integer_add) 
 
+
 ## Process decimal
 Journal_gender_decimal2 <- Journal_gender_decimal %>% 
   dplyr::mutate_at(vars(4:9),as.numeric) %>%
@@ -496,41 +508,40 @@ Journal_gender2 <- bind_rows(Journal_gender_integer2,Journal_gender_decimal2)%>%
 
 
 ## general
-Target_population_general_gender <- Journal_gender2 %>% 
+Journal_gender_general <- Journal_gender2 %>% 
   dplyr::filter(Target_Population_N != 1) %>% 
   dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
                    Female_Num = sum(Female_Num,na.rm = TRUE),
                    Male_Proportion = Male_Num/(Male_Num + Female_Num)*100,
-                   Female_Proportion = Female_Num/(Male_Num + Female_Num)*100,
-                   Data_Source = "Target_population_general")
+                   Female_Proportion = Female_Num/(Male_Num + Female_Num)*100)
 
-sum(Target_population_general_gender$Male_Proportion)+sum(Target_population_general_gender$Female_Proportion)
+sum(Journal_gender_general$Male_Proportion)+sum(Journal_gender_general$Female_Proportion)
+
 
 ## special
-Target_population_special_gender <- Journal_gender2 %>% 
+Journal_gender_special <- Journal_gender2 %>% 
   dplyr::filter(Target_Population_N == 1) %>% 
   dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
                    Female_Num = sum(Female_Num,na.rm = TRUE),
                    Male_Proportion = Male_Num/(Male_Num + Female_Num)*100,
-                   Female_Proportion = Female_Num/(Male_Num + Female_Num)*100,
-                   Data_Source = "Target_population_special")
+                   Female_Proportion = Female_Num/(Male_Num + Female_Num)*100)
 
-sum(Target_population_special_gender$Male_Proportion)+sum(Target_population_special_gender$Female_Proportion)
-
-
-table(Target_population_special_gender$Sample_Type_N)
-
-# ## combine tow target population
-# Journal_gender_different_categories <- bind_rows(Target_population_general_gender,
-#                                                  Target_population_special_gender)
+sum(Journal_gender_special$Male_Proportion)+sum(Journal_gender_special$Female_Proportion)
 
 
-## infants and toddlers & special target population
+table(Journal_gender_special$Sample_Type_N)
+```
+
+
+infants and toddlers & special target population
+
+```{r}
 ## Filter studies targeting infants/toddlers from "Journal_special_target_population2"
+
 Journal_gender_Infants_toddlers_TP <- Journal_special_target_population2 %>% 
   dplyr::select(Article_IDs,Article_Title,Recode_target_population) %>% 
   dplyr::filter(grepl("幼儿|岁儿童|学步儿|学前|学龄|低龄", Recode_target_population)) %>% 
-  dplyr::filter(!grepl("幼儿父亲|幼儿教师|母亲|8|10|11|12",Recode_target_population))
+  dplyr::filter(!grepl("幼儿父亲|幼儿教师|母亲|学前儿童父母|8|10|11|12",Recode_target_population))
   
 
 ## merge the above data.frame with "Journal" data.frame
@@ -617,10 +628,11 @@ BTS_gender_CHN_general <- BTS_gender_CHN %>%
 
 sum(BTS_gender_CHN_general$Proportion)  
 
+
 ## Combine CHN journal data and set factor
 H1_gender_general <- BTS_gender_CHN_general %>% 
-  dplyr::add_row(Gender = c("Female","Male"), n = c(55366,45480),
-                 Proportion = c(54.90,45.10),Data_Source = "Journal")   ## Here, enter data manually.
+  dplyr::add_row(Gender = c("Female","Male"), n = c(57570,48059),
+                 Proportion = c(54.50,45.50),Data_Source = "Journal")   ## Here, enter data manually.
 
 
 H1_gender_factor_general <- H1_gender_general %>% 
@@ -692,7 +704,7 @@ sum(Lucca_gender_special$Porportion)
 ## create a data.frame that include two data.source
 H1_gender_bayes_special <- data.frame(Gender = c("Female","Male"),
            Lucca = c(49.36,50.64),
-           Journal = c(48.42,51.58))
+           Journal = c(53.62,46.38))
 
 ## calculate BF
 H1_BF_gender_special <-  BayesMultiNomial(dataset = H1_gender_bayes_special,
@@ -726,16 +738,16 @@ Journal_strings_age <- Journal_age %>%
                 SD_age = gsub("[;；]",";",SD_age)) %>% 
   tidyr::separate_rows(c(M_age,SD_age),sep = ";") %>% 
   dplyr::mutate(M_age = str_extract(M_age,"\\d+\\.\\d+|\\d+"),
-                SD_age = str_extract(SD_age,"\\d+\\.\\d+|\\d+")) %>% 
-  dplyr::slice(1:39,46:60) %>% 
-  dplyr::mutate(Sample_Size = c(8,9,201,201,380,380,109,109,258,258,199,346,404,341,
-                                166,265,174,35,30,25,24,30,31,30,30,29,30,15,11,
-                                9,17,30,30,280,280,106,106,572,572,821,748,102,116,
-                                62,68,213,192,14,19,27,27,27,169,135)) %>% 
+                SD_age = str_extract(SD_age,"\\d+\\.\\d+|\\d+")) 
+
+## save `Journal_strings_age` and return to the original papers to re-enter and verify the data.
+# writexl::write_xlsx(Journal_strings_age,"Journal_strings_age.xlsx")
+
+Journal_strings_age_newdata <- read.xlsx("Journal_strings_age.xlsx") %>% 
+  dplyr::filter(!is.na(Sample_Size)) %>% 
   dplyr::mutate_at(vars(4:9),as.numeric)
 
 
-Journal_strings_age$M_age[40:41] <- c(15.36,16.35)
 
 ## Filter M_age only have single values data
 Journal_single_age <- Journal_age %>% 
@@ -751,9 +763,9 @@ Journal_otherage <- Journal_otherage %>%
   dplyr::filter(!is.na(SD_age))
 
 ## Combining journal age data for three categories 
-Journal_age2 <- bind_rows(Journal_strings_age,Journal_single_age,Journal_otherage)
+Journal_age2 <- bind_rows(Journal_strings_age_newdata,Journal_single_age,Journal_otherage)
 
-sum(Journal_age2$Sample_Size)  ## 359176
+sum(Journal_age2$Sample_Size)  ## 370426
 ```
 
 
