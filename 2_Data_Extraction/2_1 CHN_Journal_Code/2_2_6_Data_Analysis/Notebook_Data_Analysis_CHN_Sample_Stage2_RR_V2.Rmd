@@ -743,10 +743,9 @@ Journal_strings_age <- Journal_age %>%
 ## save `Journal_strings_age` and return to the original papers to re-enter and verify the data.
 # writexl::write_xlsx(Journal_strings_age,"Journal_strings_age.xlsx")
 
-Journal_strings_age_newdata <- read.xlsx("Journal_strings_age.xlsx") %>% 
+Journal_strings_age_newdata <- readxl::read_xlsx("Journal_strings_age.xlsx") %>% 
   dplyr::filter(!is.na(Sample_Size)) %>% 
   dplyr::mutate_at(vars(4:9),as.numeric)
-
 
 
 ## Filter M_age only have single values data
@@ -1039,6 +1038,42 @@ H1_age_general <- H1_age_general %>%
                                  "25~29","30~34","35~39","40~44","45~49",
                                  "50~54","55~59","60~64","65~69","70~74",
                                  "75~79","80~84","85~89", "90~94",">=95" )))
+
+# ## skewness
+# BTS_age_skewness_list <- list()
+# 
+# for(i in seq_along(BTS)){
+#   
+#   BTS_name_skewness <- names(BTS)[i]
+#   
+#   if("Age" %in% names(BTS[[i]])){
+#     
+#     BTS_age_skewness <- BTS[[i]] %>% 
+#       dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
+#       dplyr::select(Article_Id,Age,Target_Population,ISO3) %>% 
+#       dplyr::mutate(Age = as.numeric(Age)) %>% 
+#       dplyr::filter(ISO3 == "CHN")
+#     
+#     BTS_age_skewness_list[[BTS_name_skewness]] <- BTS_age_skewness
+#   
+# } else {  
+#  
+#     cat(sprintf("Skipping '%s' because it does not contain a 'Age' column.\n", BTS_name_skewness))  
+#   } 
+# }
+# ## merge data.frame in list
+# BTS_age_skewness <-  bind_rows(BTS_age_skewness_list)
+# 
+# library(psych)
+# ##BTS
+# BTS_stats <- describe(BTS_age_skewness$Age, na.rm = TRUE)
+# 
+# BTS_stats$skew
+# 
+# ## Journal
+# Journal_stats <- describe(Journal_age2$M_age, na.rm = TRUE)
+# 
+# Journal_stats$skew
 ```
 
 
@@ -2180,6 +2215,16 @@ China_region_seven <-  tibble(
              rep("Northeast China", 3)))
 ```
 
+Create a vector of all China' province
+```{r}
+China_province <- c("新疆","西藏","甘肃","青海","内蒙古",
+                    "宁夏","四川","重庆","陕西","贵州","云南",
+                    "北京","山西","河北","河南","湖北","湖南",
+                    "广西","广东","香港","澳门","台湾","海南",
+                    "黑龙江","吉林","辽宁","天津","山东","江苏",
+                    "安徽","上海","浙江","江西","福建")
+```
+
 
 The data is processed when the target population is the general population.
 
@@ -2193,6 +2238,11 @@ Journal_region_single <- Journal %>%
    dplyr::filter(Subjects_Recruitment_Area != "0" & !grepl(";",Subjects_Recruitment_Area)) 
  
  
+# Journal_major_region_single <- Journal_region_single %>% 
+#   dplyr::filter(!Subjects_Recruitment_Area %in% China_province)
+
+# table(Journal_major_region_single$Subjects_Recruitment_Area)
+
  # sum(Journal_region_single$Sample_Size,na.rm = TRUE)+33
  # 
  # table(Journal_region_single$Subjects_Recruitment_Area)
@@ -2205,28 +2255,19 @@ Journal_region_single <- Journal %>%
  # 
  ## papers
  Journal_region_single_papers_num <- Journal_region_single %>%
-   dplyr::filter(Subjects_Recruitment_Area %in% c("新疆","西藏","甘肃","青海","内蒙古",
-                                                 "宁夏","四川","重庆","陕西","贵州","云南",
-                                                 "北京","山西","河北","河南","湖北","湖南",
-                                                 "广西","广东","香港","澳门","台湾","海南",
-                                                 "黑龙江","吉林","辽宁","天津","山东","江苏",
-                                                 "安徽","上海","浙江","江西","福建")) %>% 
-   dplyr::distinct(Article_IDs) ## single 498 papers + multiple 9
+   dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
+   dplyr::distinct(Article_IDs) ## single 521 papers + multiple 11
  
- table( Journal_region_single_papers_num$Subjects_Recruitment_Area)
+ table(Journal_region_single_papers_num$Subjects_Recruitment_Area)
  
  
  
  Journal_region_single_general_tab <- Journal_region_single %>% 
    dplyr::select(Article_IDs,Target_Population_N,Sample_Size,Subjects_Recruitment_Area) %>%
    dplyr::filter(Target_Population_N != 1) %>% 
-   dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == "内蒙古自治区", "内蒙古",Subjects_Recruitment_Area)) %>% 
-   dplyr::filter(Subjects_Recruitment_Area %in% c("新疆","西藏","甘肃","青海","内蒙古",
-                                                 "宁夏","四川","重庆","陕西","贵州","云南",
-                                                 "北京","山西","河北","河南","湖北","湖南",
-                                                 "广西","广东","香港","澳门","台湾","海南",
-                                                 "黑龙江","吉林","辽宁","天津","山东","江苏",
-                                                 "安徽","上海","浙江","江西","福建")) %>% 
+   dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == "内蒙古自治区", "内蒙古",Subjects_Recruitment_Area),
+                 Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == "广州","广东",Subjects_Recruitment_Area)) %>% 
+   dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
    dplyr::group_by(Subjects_Recruitment_Area) %>% 
    dplyr::summarise(n = sum(Sample_Size))
 ```
@@ -2252,12 +2293,7 @@ Journal_region_multiple_general_tab <-   Journal_region_multiple %>%
   dplyr::filter(Target_Population_N != 1) %>% 
   tidyr::separate_rows(True_Value,sep = ";") %>% 
   tidyr::separate(True_Value,c("Subjects_Recruitment_Area","Sample_Size"),sep = ":") %>% 
-   dplyr::filter(Subjects_Recruitment_Area %in% c("新疆","西藏","甘肃","青海","内蒙古",
-                                                 "宁夏","四川","重庆","陕西","贵州","云南",
-                                                 "北京","山西","河北","河南","湖北","湖南",
-                                                 "广西","广东","香港","澳门","台湾","海南",
-                                                 "黑龙江","吉林","辽宁","天津","山东","江苏",
-                                                 "安徽","上海","浙江","江西","福建")) %>% 
+   dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
   dplyr::mutate(Sample_Size  = as.numeric(Sample_Size),
                 Sample_Size = ifelse(Article_IDs == "20213104",ceiling(Sample_Size*2500),Sample_Size)) %>% 
   dplyr::select(Sample_Size,Subjects_Recruitment_Area) %>% 
@@ -2296,6 +2332,7 @@ Journal_region_four <- merge(Journal_region_general_tab2,China_region_four,
   dplyr::select(1,2,6) %>% 
   dplyr::group_by(Region_four) %>% 
   dplyr::summarise(Journal_n=sum(n)) 
+
 
 ## seven regions
 Journal_region_seven <- merge(Journal_region_general_tab2,China_region_seven,
@@ -2422,8 +2459,9 @@ H2_Fig_region_four <- ggplot(data = H2_region_four2, aes(x = `Data Source`, y = 
   theme_classic()+
   theme(legend.box.spacing = unit(2,"pt"),
         legend.position = "bottom",
-        legend.text = element_text(size = 20, family = "serif"),
-        legend.title = element_text(size = 20, family = "serif"),
+        legend.key.size = unit(0.5, "cm"),
+        legend.text = element_text(size = 15, family = "serif"),
+        legend.title = element_text(size = 15, family = "serif"),
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))+
   guides(fill = guide_legend(ncol = 2))
@@ -2431,7 +2469,7 @@ H2_Fig_region_four <- ggplot(data = H2_region_four2, aes(x = `Data Source`, y = 
                              # label.position = "bottom"))
 
 
-ggsave("H2_Fig_region_four.pdf",H2_Fig_region_four, device = "pdf", width= 12, height = 9)
+# ggsave("H2_Fig_region_four.pdf",H2_Fig_region_four, device = "pdf", width= 12, height = 9)
 
 H2_Fig_region_four
 ```
@@ -2471,8 +2509,9 @@ H2_Fig_region_seven <- ggplot(data = H2_region_seven2, aes(x = `Data Source`, y 
   theme_classic()+
   theme(legend.box.spacing = unit(2,"pt"),
         legend.position = "bottom",
-        legend.text = element_text(size = 20, family = "serif"),
-        legend.title = element_text(size = 20, family = "serif"),
+        legend.key.size = unit(0.5, "cm"),
+        legend.text = element_text(size = 15, family = "serif"),
+        legend.title = element_text(size = 15, family = "serif"),
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))+
   guides(fill = guide_legend(ncol = 3))
@@ -2480,9 +2519,18 @@ H2_Fig_region_seven <- ggplot(data = H2_region_seven2, aes(x = `Data Source`, y 
                              # label.position = "bottom"))
 
 
-ggsave("H2_Fig_region_seven.pdf",H2_Fig_region_seven, device = "pdf", width= 12, height = 9)
-
 H2_Fig_region_seven
+
+
+H2_Fig_major_region <- H2_Fig_region_four + H2_Fig_region_seven +
+plot_annotation(tag_levels = 'A',
+                  theme = theme(plot.title = element_text(size = 24))) + 
+  theme(plot.tag = element_text(size = 20))
+
+H2_Fig_major_region
+
+ggsave("H2_Fig_major_region.pdf",H2_Fig_major_region, device = "pdf", width= 15, height = 9)
+
 ```
 
 
@@ -2840,10 +2888,10 @@ H3_PsyStages2 <- H3_PsyStages %>%
   dplyr::filter(!is.na(ageBins))
 
 
-## The prop of 18~25 more than China (60.72)
+## The prop of 18~25 more than China (61.08)
 H3_PsyStages2_more_China <- H3_PsyStages2 %>% 
   dplyr::filter(ageBins == "18~25") %>% 
-  dplyr::filter(Proportion > 60.72)
+  dplyr::filter(Proportion > 61.08)
 ```
 
 
