@@ -2175,6 +2175,17 @@ I found the Bayesian multinomial test shows strong evidence for comparing them i
 Note, there is not results description.
 
 
+Save the data so that I can compare the data from large-scale international cooperation projects and Chinese journals respectively with the census data and data from CFPS.
+```{r}
+save(H1_age_general,H1_PsyStages_bayes_general,H1_interval10_bayes_general,
+     H1_edu_college_bayes,H1_edu_highschool_bayes,
+     H2_edu_college_bayes,H2_edu_highschool_bayes,
+     Census7_age_five5,Census7_age_interval10,Census7_age_PsyStages,
+     Census7_high_school,Census7_college,CFPS2018_edu_high_school,CFPS2018_edu_college,
+     file = "H2_BTS_Journal_age_edu.RData")
+```
+
+
 ### Region
 As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals.
 
@@ -3258,7 +3269,7 @@ H3_Fig_age
 
 ## suppl
 H3_Fig_age_suppl <- H3_Fig_BF_interval10 + H3_Fig_interval10 +
-   plot_annotation(tag_levels =list(c("S3a","S3b")))  & 
+   plot_annotation(tag_levels =list(c("S2a","S2b")))  & 
   theme(plot.tag = element_text(size = 18, face = "bold"))
 
 
