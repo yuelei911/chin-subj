@@ -1,0 +1,207 @@
+---
+title: "Notebook_Chi_Square_BF_CHN_Sample_Stage2_RR_V1"
+author: "Lei Yue"
+date: "2024-04-20"
+output:
+  prettydoc::html_pretty:
+  theme: cayman
+  highlight: github
+---
+
+In this document, I use Chi-Square bayes analysis to enhance the robustness of the Bayesian multinomial test results. The naming of data variables is consistent with "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2".
+
+
+Now, I start to analysis data. and the first thing is load library.
+
+
+# Install and Load packages
+```{r message=FALSE, warning=FALSE}
+rm(list = ls())
+
+if (!require("pacman")) install.packages("pacman")
+
+# use package "pacman" as loading R packages tools
+
+pacman::p_load("tidyverse","here","rio")
+pacman::p_load("geojsonsf","sf","RColorBrewer","ggspatial","patchwork","ggrepel","maps")
+pacman::p_load("truncnorm","BayesFactor", "gtools", "bruceR")
+```
+
+
+And then, I loaded the data. The data includes data from the first Stage 1 of the pre-registration report (primarily Census data and CFPS2018 data), Chinese journal coding data, and data from large-scale international collaboration projects (BTS).
+
+
+# Load data
+
+```{r}
+load("Chi_Square_bayes.RData")
+```
+
+
+Here, I define the function for converting chi square values and df to Bayesian factors.
+
+The purpose of subtracting thresh in the froot() function is to compute the optimal noncentral parameter lambda. To calculate the Bayes factor, use the front_bf() function.
+
+
+```{r}
+froot_bf <- function(x, lambda, df){
+ dchisq(x, df, ncp = lambda)/dchisq(x, df)
+}
+
+froot <- function(x, lambda, thresh, df){
+ dchisq(x, df, ncp = lambda)/dchisq(x, df) - thresh
+ }
+
+ f1 <- function(lambda, thresh, df){
+ r <- uniroot(froot, lambda = lambda, thresh = thresh, df = df, c(0.01, 1000))$root
+ }
+ vf1 <- Vectorize(f1)
+ 
+ UMPBT <- function(df, thresh){
+ optout <- optimize(vf1, c(0, 100),thresh = thresh, df = df)
+ z <- optout$minimum
+ return(z)
+ }
+```
+ 
+ 
+And then, I test three hypothesis respectively.
+
+# Test three hypotheses
+## Test the 1st hypothesis
+### Gender
+
+Here I tested whether the gender proportion distribution from Chinese five journal data are similar to that of the BTS data. I used the self-define func to calculate.
+
+$H_0$: $\theta = c$, where $c$ is defined by Chinese five journal data; $H_1$: $\theta$ is free to vary.
+
+I compared the general population between the two.
+
+
+The target population is genderal
+```{r}
+## convert data
+H1_gender_bayes_general <- H1_gender_general %>% 
+  dplyr::filter(Data_Source == "BTS Chinese") %>% 
+  dplyr::select(Gender, `BTS Chinese` = n) %>% 
+  dplyr::left_join(H1_gender_general %>% 
+                     filter(Data_Source == "Journal") %>% 
+                     select(Gender, Journal = Proportion),
+                   by = "Gender") %>% 
+  dplyr::mutate(Journal = Journal*0.01)
+
+
+## trans 2000
+H1_gender_bayes_general <- H1_gender_bayes_general %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(`BTS Chinese`),
+                `BTS Chinese New` = floor(Scaling_factor *`BTS Chinese`),
+                Dif = 2000 - sum(`BTS Chinese New`),
+                `BTS Chinese New` = ifelse(row_number() == 1, `BTS Chinese New` + Dif, `BTS Chinese New`))
+
+
+## calculate Chi-square
+observed1 <- H1_gender_bayes_general$`BTS Chinese New`
+expected1 <- H1_gender_bayes_general$Journal
+
+H1_Chi_gender_general <- chisq.test(x = observed1, p = expected1)
+H1_Chi_gender_general
+
+
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_gender_general$parameter,thresh = 4^10)
+
+BF1 <- froot_bf(x = H1_Chi_gender_general$statistic, lambda = lambda, df = H1_Chi_gender_general$parameter)
+
+H1_BF_gender_general <- log(BF1)
+
+H1_BF_gender_general 
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+The target population is special
+```{r}
+H1_gender_bayes_special <- Lucca_gender_special %>% 
+  dplyr::select(Gender,n) %>% 
+  dplyr::rename(Lucca = 2) %>% 
+  dplyr::mutate(Journal = c(Journal_gender_special$Female_Proportion,
+                            Journal_gender_special$Male_Proportion)) %>% 
+  dplyr::mutate(Journal = Journal * 0.01)
+
+
+## calculate Chi-square
+observed1 <- H1_gender_bayes_special$Lucca
+expected1 <- H1_gender_bayes_special$Journal
+
+
+H1_Chi_gender_special <- chisq.test(x = observed1, p = expected1)
+H1_Chi_gender_special
+
+
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_gender_special$parameter,thresh = 4^10)
+
+BF1 <- froot_bf(x = H1_Chi_gender_special$statistic, lambda = lambda, df = H1_Chi_gender_special$parameter)
+
+H1_BF_gender_special <- log(BF1)
+
+H1_BF_gender_special 
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+### age
+PsyStages
+```{r}
+## convert data 
+H1_PsyStages_bayes_general <- Sim_Journal_age_PsyStages3_general %>% 
+  dplyr::mutate(Journal = sim1/sum(sim1)) %>% 
+  dplyr::left_join(BTS_age_PsyStages_CHN_general %>% 
+                     select(ageBins,n),
+                   by = "ageBins") %>% 
+  dplyr::rename(`BTS Chinese` = 4) %>% 
+  dplyr::select(ageBins,Journal,`BTS Chinese`)
+
+
+## trans 2000
+H1_PsyStages_bayes_general <- H1_PsyStages_bayes_general %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(`BTS Chinese`),
+                `BTS Chinese New` = floor(Scaling_factor * `BTS Chinese`),
+                Dif = 2000 - sum( `BTS Chinese New`),
+                 `BTS Chinese New` = ifelse(row_number() == 1,
+                                             `BTS Chinese New` + Dif,
+                                             `BTS Chinese New`))
+
+
+## calculate Chi-square
+observed1 <- H1_PsyStages_bayes_general$`BTS Chinese New`
+expected1 <- H1_PsyStages_bayes_general$Journal
+
+
+H1_Chi_PsyStages_general <- chisq.test(x = observed1, p = expected1)
+H1_Chi_PsyStages_general
+
+
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_PsyStages_general$parameter,thresh = 4^20)
+
+BF1 <- froot_bf(x = H1_Chi_PsyStages_general$statistic, lambda = lambda, df = H1_Chi_PsyStages_general$parameter)
+
+H1_BF_PsyStages_general <- log(BF1)
+
+H1_BF_gender_general 
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+interval10
+```{r}
+
+```
+

@@ -240,11 +240,10 @@ Journal_special_target_population <- Journal %>%
   dplyr::group_by(Article_IDs) %>% 
   dplyr::slice(1)
 
-# writexl::write_xlsx(Journal_special_target_population,"Journal_special_target_populationk.xlsx")
+# writexl::write_xlsx(Journal_special_target_population,"Journal_special_target_population.xlsx")
 
 Journal_special_target_population2 <- readxl::read_xlsx("Journal_special_target_population.xlsx") %>% 
-  dplyr::select(Article_IDs,Article_Title,`Summary-摘要`,`Disscu & Conclu`,Target_Population_N,Coding_Basis_N,Recode_target_population) %>% 
-  dplyr::rename(Abstract = 3)
+  dplyr::select(Article_IDs,Article_Title,`Disscu.&.Conclu`, ,Target_Population_N,Coding_Basis_N,Recode_target_population)
 
 ```
 
@@ -688,22 +687,21 @@ However, I found there no different between BTS data and the general population 
 
 In this part, I will analysis gender based on the special target population. For the first research question, only Lucca et al.(2024)' target population is special target population Specifically, it focuses on infants. Therefore, in specila target population, I will compare Lucca et al..(2024) with Chinese journal studies targeting infants/toddlers.
 ```{r}
-Lucca_gender_special <- BTS[[21]] %>% 
+Lucca_gender_special <- BTS[[22]] %>% 
   dplyr::filter(ISO2 == "CN") %>% 
   dplyr::group_by(Gender) %>% 
-  dplyr::summarise(n = n()) %>% ## Male 79, Female 77
+  dplyr::summarise(n = n()) %>% ## Male 40, Female 53
   dplyr::ungroup() %>% 
   dplyr::filter(!is.na(Gender)) %>% 
-  dplyr::mutate(Porportion = n/sum(n)*100, ## Male 50.64, Female 49.36
-                Data_Source = "Lucca") %>% 
-  dplyr::select(1,3,4)
+  dplyr::mutate(Porportion = n/sum(n)*100, ## Male 56.99, Female 43.01
+                Data_Source = "Lucca")
 
 sum(Lucca_gender_special$Porportion)
 
 
 ## create a data.frame that include two data.source
 H1_gender_bayes_special <- data.frame(Gender = c("Female","Male"),
-           Lucca = c(49.36,50.64),
+           Lucca = c(43.01,56.99),
            Journal = c(53.62,46.38))
 
 ## calculate BF
@@ -1686,14 +1684,14 @@ H2_gender_preschool_special <- data.frame(Gender = c("Female","Male","Female","M
 
 
 ## calculate Prop
-H2_gender_preschool_special <- H2_gender_preschool_special %>% 
+H2_gender_preschool_special_prop <- H2_gender_preschool_special %>% 
   dplyr::group_by(Gender) %>% 
   dplyr::summarise(n=sum(n)) %>% 
   dplyr::mutate(Proportion = n/sum(n)*100,
                  Data_source = "Chinese subjects")
 
-sum(H2_gender_preschool_special$`Chinese subjects`)
-sum(H2_gender_preschool_special$Census7)
+# sum(H2_gender_preschool_special_prop$`Chinese subjects`)
+# sum(H2_gender_preschool_special$Census7)
 
 
 ## Census7th preschool (under 6 years old)
@@ -1713,7 +1711,7 @@ sum(Census7_gender_preschool_special$Proportion)
 
 
 ## combine tow data 
-H2_gender_preschool_special <- bind_rows(H2_gender_preschool_special,
+H2_gender_preschool_bayes_special <- bind_rows(H2_gender_preschool_special_prop,
                                          Census7_gender_preschool_special) %>% 
   dplyr::select(1,3:4) %>% 
   tidyr::pivot_wider(names_from = Data_source, values_from = Proportion)
@@ -1721,7 +1719,7 @@ H2_gender_preschool_special <- bind_rows(H2_gender_preschool_special,
 
 
 ## bayes 
-H2_BF_gender_preschool_Census <- BayesMultiNomial(dataset = H2_gender_preschool_special,
+H2_BF_gender_preschool_Census <- BayesMultiNomial(dataset = H2_gender_preschool_bayes_special,
                                                 factor = "Gender",
                                                 observed = "Chinese subjects",
                                                 expected = "Census7")
@@ -3277,6 +3275,22 @@ ggsave("H3_Fig_age_suppl .pdf", H3_Fig_age_suppl , device = "pdf", width=18, hei
 
 
 H3_Fig_age_suppl 
+```
+
+
+I save multi data for bayes analysis based on chi-square.
+```{r}
+save(H1_gender_general,Lucca_gender_special,Journal_gender_special,
+     Sim_Journal_age_PsyStages3_general,BTS_age_PsyStages_CHN_general,
+     Sim_Journal_age_interval103_general,BTS_age_interval10_CHN_general,
+     H1_edu_college,H1_edu_highschool,
+     H2_gender_general,H2_gender_preschool_special_prop,Census7_gender_preschool_special,
+     Journal_gender_college_sepcial2,
+     Census7_age_PsyStages,Census7_age_interval10,
+     H2_edu_college,H2_edu_highschool,
+     H2_region_four,H2_region_seven,H2_region_four_bayes,H2_region_seven_bayes,
+     H3_gender,H3_PsyStages2,H3_interval10,
+    file = "Chi_Square_bayes.RData")
 ```
 
 
