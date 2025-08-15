@@ -193,7 +193,7 @@ BF1 <- froot_bf(x = H1_Chi_PsyStages_general$statistic, lambda = lambda, df = H1
 
 H1_BF_PsyStages_general <- log(BF1)
 
-H1_BF_gender_general 
+H1_BF_PsyStages_general 
 
 ## rm 
 rm(observed1,expected1,BF1)
@@ -202,6 +202,723 @@ rm(observed1,expected1,BF1)
 
 interval10
 ```{r}
+## convert data
+H1_interval10_bayes_general <- Sim_Journal_age_interval103_general %>% 
+  dplyr::mutate(Journal = sim1/sum(sim1)) %>% 
+  dplyr::left_join(BTS_age_interval10_CHN_general %>% 
+                     select(ageBins,n),
+                   by = "ageBins") %>% 
+  dplyr::rename(`BTS Chinese` = 4) %>% 
+  dplyr::select(ageBins,Journal,`BTS Chinese`)
+
+
+## trans 2000
+H1_interval10_bayes_general <- H1_interval10_bayes_general %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(`BTS Chinese`),
+                `BTS Chinese New` = floor(Scaling_factor * `BTS Chinese`),
+                Dif = 2000 - sum( `BTS Chinese New`),
+                `BTS Chinese New` = ifelse(row_number() == 1,
+                                             `BTS Chinese New` + Dif,
+                                             `BTS Chinese New`))
+
+
+## calculate Chi-square
+observed1 <- H1_interval10_bayes_general$`BTS Chinese New`
+expected1 <- H1_interval10_bayes_general$Journal
+
+
+H1_Chi_interval10_general <- chisq.test(x = observed1, p = expected1)
+H1_Chi_interval10_general
+
+
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_interval10_general$parameter,thresh = 4^20)
+
+BF1 <- froot_bf(x = H1_Chi_interval10_general$statistic, lambda = lambda, df = H1_Chi_interval10_general$parameter)
+
+H1_BF_interval10_general <- log(BF1)
+
+H1_BF_interval10_general 
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+### Edu
+college
+```{r}
+## convert data
+H1_edu_college_bayes <- H1_edu_college %>% 
+  dplyr::filter(Data_source == "Journal") %>% 
+  dplyr::select(Educational_attainment,Proportion) %>% 
+  dplyr::rename(Journal = 2) %>% 
+  dplyr::mutate(Journal = Journal * 0.01) %>% 
+  dplyr::left_join(H1_edu_college %>% 
+                     filter(Data_source == "BTS Chinese") %>% 
+                     select(Educational_attainment,Num) %>% 
+                     rename(`BTS Chinese` = 2),
+                   by = "Educational_attainment")
+
+
+## trans 2000
+H1_edu_college_bayes <- H1_edu_college_bayes %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(`BTS Chinese`),
+                `BTS Chinese New` = floor(Scaling_factor * `BTS Chinese`),
+                Dif = 2000 - sum( `BTS Chinese New`),
+                `BTS Chinese New` = ifelse(row_number() == 1,
+                                             `BTS Chinese New` + Dif,
+                                             `BTS Chinese New`))
+
+## calculate Chi-square
+observed1 <- H1_edu_college_bayes$`BTS Chinese New`
+expected1 <- H1_edu_college_bayes$Journal
+
+
+H1_Chi_college <- chisq.test(x = observed1, p = expected1)
+H1_Chi_college
+
+
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_college$parameter,thresh = 4^10)
+
+BF1 <- froot_bf(x = H1_Chi_college$statistic, lambda = lambda, df = H1_Chi_college$parameter)
+
+H1_BF_college <- log(BF1)
+
+H1_BF_college 
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+high school
+```{r}
+## convert data
+H1_edu_highschool_bayes <- H1_edu_highschool %>% 
+  dplyr::filter(Data_source == "Journal") %>% 
+  dplyr::select(Educational_attainment,Proportion) %>% 
+  dplyr::rename(Journal = 2) %>% 
+  dplyr::mutate(Journal = Journal * 0.01) %>% 
+  dplyr::left_join(H1_edu_highschool %>% 
+                     filter(Data_source == "BTS Chinese") %>% 
+                     select(Educational_attainment,Num) %>% 
+                     rename(`BTS Chinese` = 2),
+                   by = "Educational_attainment")
+
+
+## trans 2000
+H1_edu_highschool_bayes <- H1_edu_highschool_bayes %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(`BTS Chinese`),
+                `BTS Chinese New` = floor(Scaling_factor * `BTS Chinese`),
+                Dif = 2000 - sum( `BTS Chinese New`),
+                `BTS Chinese New` = ifelse(row_number() == 1,
+                                             `BTS Chinese New` + Dif,
+                                             `BTS Chinese New`))
+
+## calculate Chi-square
+observed1 <- H1_edu_highschool_bayes$`BTS Chinese New`
+expected1 <- H1_edu_highschool_bayes$Journal
+
+
+H1_Chi_highschool <- chisq.test(x = observed1, p = expected1)
+H1_Chi_highschool 
+
+
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_highschool$parameter,thresh = 4^10)
+
+BF1 <- froot_bf(x = H1_Chi_highschool$statistic, lambda = lambda, df = H1_Chi_highschool$parameter)
+
+H1_BF_highschool <- log(BF1)
+
+H1_BF_highschool 
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+## Test the 2ed hypothesis
+### Gender
+First, process Data for the General Population.
+```{r}
+H2_gender_bayes_general <- H2_gender_general %>% 
+  dplyr::filter(Data_source == "Chinese subjects") %>% 
+  dplyr::select(Gender,n) %>% 
+  dplyr::rename(`Chinese subjects` = 2) %>% 
+  dplyr::left_join(H2_gender_general %>% 
+                     filter(Data_source == "Census7") %>% 
+                     select(Gender,Proportion) %>% 
+                     rename(Census7 = 2) %>% 
+                     mutate(Census7 = Census7 * 0.01),
+                   by = "Gender") %>% 
+  dplyr::left_join(H2_gender_general %>% 
+                     filter(Data_source == "CFPS2018") %>% 
+                     select(Gender,Proportion) %>% 
+                     rename(CFPS2018 = 2) %>% 
+                     mutate(CFPS2018 = CFPS2018 * 0.01),
+                   by = "Gender")
+
+
+## trans 2000
+H2_gender_bayes_general <- H2_gender_bayes_general %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(`Chinese subjects`),
+                `Chinese subjects New` = floor(Scaling_factor * `Chinese subjects`),
+                Dif = 2000 - sum( `Chinese subjects New`),
+                `Chinese subjects New` = ifelse(row_number() == 1,
+                                             `Chinese subjects New` + Dif,
+                                             `Chinese subjects New`))
 
 ```
 
+
+Census 7 vs Chinese subjects
+```{r}
+## calculate Chi-square
+observed1 <- H2_gender_bayes_general$`Chinese subjects New`
+expected1 <- H2_gender_bayes_general$Census7
+
+
+H1_Chi_gender_bayes_general <- chisq.test(x = observed1, p = expected1)
+H1_Chi_gender_bayes_general 
+
+
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_gender_bayes_general$parameter,thresh = 4^10)
+
+BF1 <- froot_bf(x = H1_Chi_gender_bayes_general$statistic, lambda = lambda, df = H1_Chi_gender_bayes_general$parameter)
+
+H1_BF_gender_bayes_general <- log(BF1)
+
+H1_BF_gender_bayes_general
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+CFPS2018 vs Chinese sujects
+```{r}
+rm(H1_Chi_gender_bayes_general,H1_BF_gender_bayes_general)
+## calculate Chi-square
+observed1 <- H2_gender_bayes_general$`Chinese subjects New`
+expected1 <- H2_gender_bayes_general$CFPS2018
+
+
+H1_Chi_gender_bayes_general <- chisq.test(x = observed1, p = expected1)
+H1_Chi_gender_bayes_general 
+
+
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_gender_bayes_general$parameter,thresh = 4^10)
+
+BF1 <- froot_bf(x = H1_Chi_gender_bayes_general$statistic, lambda = lambda, df = H1_Chi_gender_bayes_general$parameter)
+
+H1_BF_gender_bayes_general <- log(BF1)
+
+H1_BF_gender_bayes_general
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+And, process the data for the special population
+the special population is preschool children
+```{r}
+## convert data
+H2_gender_bayes_preschool <- H2_gender_preschool_special_prop %>% 
+  dplyr::select(Gender,n) %>% 
+  dplyr::rename(`Chinese subjects` = 2) %>% 
+  dplyr::left_join(Census7_gender_preschool_special %>% 
+                     select(Gender,Proportion) %>% 
+                     rename(Census7 = 2) %>% 
+                     mutate(Census7 = Census7 * 0.01),
+                   by = "Gender")
+
+
+## trans 2000
+H2_gender_bayes_preschool <- H2_gender_bayes_preschool %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(`Chinese subjects`),
+                `Chinese subjects New` = floor(Scaling_factor *`Chinese subjects`),
+                Dif = 2000 - sum(`Chinese subjects New`),
+                `Chinese subjects New` = ifelse(row_number() == 1, `Chinese subjects New` + Dif, `Chinese subjects New`))
+
+
+## calculate Chi-square
+observed1 <- H2_gender_bayes_preschool$`Chinese subjects`
+expected1 <- H2_gender_bayes_preschool$Census7
+
+H2_Chi_gender_bayes_preschool <- chisq.test(x = observed1, p = expected1)
+H2_Chi_gender_bayes_preschool
+
+
+## calculate BF
+lambda <- UMPBT(df = H2_Chi_gender_bayes_preschool$parameter,thresh = 4^10)
+
+BF1 <- froot_bf(x = H2_Chi_gender_bayes_preschool$statistic, lambda = lambda, df = H2_Chi_gender_bayes_preschool$parameter)
+
+H2_BF_gender_bayes_preschool <- log(BF1)
+
+H2_BF_gender_bayes_preschool 
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+the special population is college
+```{r}
+## convert data
+H2_gender_bayes_college <- Journal_gender_college_sepcial2 %>% 
+  dplyr::select(Gender,n) %>% 
+  dplyr::rename(Journal = 2) %>% 
+  dplyr::mutate(Outline_Women = c(0.5,0.5))
+
+
+## trans 2000
+H2_gender_bayes_college <- H2_gender_bayes_college %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(Journal),
+                `Journal New` = floor(Scaling_factor * Journal),
+                Dif = 2000 - sum(`Journal New`),
+                `Journal New` = ifelse(row_number() == 1, `Journal New` + Dif, `Journal New`))
+
+
+## calculate Chi-square
+observed1 <- H2_gender_bayes_college$Journal
+expected1 <- H2_gender_bayes_college$Outline_Women
+
+H2_Chi_gender_bayes_college <- chisq.test(x = observed1, p = expected1)
+H2_Chi_gender_bayes_college
+
+
+## calculate BF
+lambda <- UMPBT(df = H2_Chi_gender_bayes_college$parameter,thresh = 4^10)
+
+BF1 <- froot_bf(x = H2_Chi_gender_bayes_college$statistic, lambda = lambda, df = H2_Chi_gender_bayes_college$parameter)
+
+H2_BF_gender_bayes_college <- log(BF1)
+
+H2_BF_gender_bayes_college 
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+### age
+PsyStages
+```{r}
+## convert data
+H2_PsyStages_bayes_general <- BTS_age_PsyStages_CHN_general %>% 
+  dplyr::select(ageBins,n) %>% 
+  dplyr::left_join(Sim_Journal_age_PsyStages3_general,
+                   by = "ageBins") %>% 
+  dplyr::mutate(`Chinese subjects` = n + sim1) %>% 
+  dplyr::select(ageBins,`Chinese subjects`) %>% 
+  dplyr::left_join(Census7_age_PsyStages %>% 
+                     select(ageBins,Proportion) %>% 
+                     rename(Census7 = 2) %>% 
+                     mutate(Census7 = Census7 * 0.01),
+                   by = "ageBins")
+
+
+## trans 2000
+H2_PsyStages_bayes_general <- H2_PsyStages_bayes_general %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(`Chinese subjects`),
+                `Chinese subjects New` = floor(Scaling_factor * `Chinese subjects`),
+                Dif = 2000 - sum( `Chinese subjects New`),
+                `Chinese subjects New` = ifelse(row_number() == 1,
+                                             `Chinese subjects New` + Dif,
+                                             `Chinese subjects New`))
+
+
+## calculate Chi-square
+observed1 <- H2_PsyStages_bayes_general$`Chinese subjects`
+expected1 <- H2_PsyStages_bayes_general$Census7
+
+
+H1_Chi_PsyStages_bayes_general <- chisq.test(x = observed1, p = expected1)
+H1_Chi_PsyStages_bayes_general
+
+
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_PsyStages_bayes_general$parameter,thresh = 4^20)
+
+BF1 <- froot_bf(x = H1_Chi_PsyStages_bayes_general$statistic, lambda = lambda, df = H1_Chi_PsyStages_bayes_general$parameter)
+
+H1_BF_PsyStages_bayes_general <- log(BF1)
+
+H1_BF_PsyStages_bayes_general 
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+interval10
+```{r}
+## convert data
+H2_interval10_bayes_general <- BTS_age_interval10_CHN_general %>% 
+  dplyr::select(ageBins,n) %>% 
+  dplyr::left_join(Sim_Journal_age_interval103_general,
+                   by = "ageBins") %>% 
+  dplyr::mutate(`Chinese subjects` = n + sim1) %>% 
+  dplyr::select(ageBins,`Chinese subjects`) %>% 
+  dplyr::left_join(Census7_age_interval10 %>% 
+                     select(ageBins,Proportion) %>% 
+                     rename(Census7 = 2) %>% 
+                     mutate(Census7 = Census7 * 0.01),
+                   by = "ageBins")
+
+
+## trans 2000
+H2_interval10_bayes_general <- H2_interval10_bayes_general %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(`Chinese subjects`),
+                `Chinese subjects New` = floor(Scaling_factor * `Chinese subjects`),
+                Dif = 2000 - sum( `Chinese subjects New`),
+                `Chinese subjects New` = ifelse(row_number() == 1,
+                                             `Chinese subjects New` + Dif,
+                                             `Chinese subjects New`))
+
+
+## calculate Chi-square
+observed1 <- H2_interval10_bayes_general$`Chinese subjects`
+expected1 <- H2_interval10_bayes_general$Census7
+
+
+H1_Chi_interval10_bayes_general <- chisq.test(x = observed1, p = expected1)
+H1_Chi_interval10_bayes_general
+
+
+## calculate BF
+lambda <- UMPBT(df = H1_Chi_interval10_bayes_general$parameter,thresh = 4^20)
+
+BF1 <- froot_bf(x = H1_Chi_interval10_bayes_general$statistic, lambda = lambda, df = H1_Chi_interval10_bayes_general$parameter)
+
+H1_BF_interval10_bayes_general <- log(BF1)
+
+H1_BF_interval10_bayes_general 
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+### edu
+the first edu cutoff is college
+```{r}
+H2_college_bayes_general <- H2_edu_college %>% 
+  dplyr::filter(Data_source == "Chinese subjects") %>% 
+  dplyr::select(Educational_attainment,Num) %>% 
+  dplyr::rename(`Chinese subjects` = 2) %>% 
+  dplyr::left_join(H2_edu_college %>% 
+                     filter(Data_source == "Census7") %>% 
+                     select(Educational_attainment,Proportion) %>% 
+                     rename(Census7 = 2) %>% 
+                     mutate(Census7 = Census7 * 0.01),
+                   by = "Educational_attainment") %>% 
+  dplyr::left_join(H2_edu_college %>% 
+                     filter(Data_source == "CFPS2018") %>% 
+                     select(Educational_attainment,Proportion) %>% 
+                     rename(CFPS2018 = 2) %>% 
+                     mutate(CFPS2018 = CFPS2018 * 0.01),
+                   by = "Educational_attainment")
+
+
+## trans 2000
+H2_college_bayes_general <- H2_college_bayes_general %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(`Chinese subjects`),
+                `Chinese subjects New` = floor(Scaling_factor * `Chinese subjects`),
+                Dif = 2000 - sum( `Chinese subjects New`),
+                `Chinese subjects New` = ifelse(row_number() == 1,
+                                             `Chinese subjects New` + Dif,
+                                             `Chinese subjects New`))
+```
+
+
+Chinese subjects vs Census7
+```{r}
+## calculate Chi-square
+observed1 <- H2_college_bayes_general$`Chinese subjects New`
+expected1 <- H2_college_bayes_general$Census7
+
+
+H2_Chi_college_bayes_general <- chisq.test(x = observed1, p = expected1)
+H2_Chi_college_bayes_general 
+
+
+## calculate BF
+lambda <- UMPBT(df = H2_Chi_college_bayes_general$parameter,thresh = 4^10)
+
+BF1 <- froot_bf(x = H2_Chi_college_bayes_general$statistic, lambda = lambda, df = H2_Chi_college_bayes_general$parameter)
+
+H2_BF_college_bayes_general <- log(BF1)
+
+H2_BF_college_bayes_general
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+Chinese subjects vs CFPS2018
+```{r}
+rm(H2_Chi_college_bayes_general,H2_BF_college_bayes_general)
+## calculate Chi-square
+observed1 <- H2_college_bayes_general$`Chinese subjects New`
+expected1 <- H2_college_bayes_general$CFPS2018
+
+
+H2_Chi_college_bayes_general <- chisq.test(x = observed1, p = expected1)
+H2_Chi_college_bayes_general 
+
+
+## calculate BF
+lambda <- UMPBT(df = H2_Chi_college_bayes_general$parameter,thresh = 4^10)
+
+BF1 <- froot_bf(x = H2_Chi_college_bayes_general$statistic, lambda = lambda, df = H2_Chi_college_bayes_general$parameter)
+
+H2_BF_college_bayes_general <- log(BF1)
+
+H2_BF_college_bayes_general
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+the second edu cutoff is high school
+```{r}
+H2_highschool_bayes_general <- H2_edu_highschool %>% 
+  dplyr::filter(Data_source == "Chinese subjects") %>% 
+  dplyr::select(Educational_attainment,Num) %>% 
+  dplyr::rename(`Chinese subjects` = 2) %>% 
+  dplyr::left_join(H2_edu_highschool %>% 
+                     filter(Data_source == "Census7") %>% 
+                     select(Educational_attainment,Proportion) %>% 
+                     rename(Census7 = 2) %>% 
+                     mutate(Census7 = Census7 * 0.01),
+                   by = "Educational_attainment") %>% 
+  dplyr::left_join(H2_edu_highschool %>% 
+                     filter(Data_source == "CFPS2018") %>% 
+                     select(Educational_attainment,Proportion) %>% 
+                     rename(CFPS2018 = 2) %>% 
+                     mutate(CFPS2018 = CFPS2018 * 0.01),
+                   by = "Educational_attainment")
+
+
+## trans 2000
+H2_highschool_bayes_general <- H2_highschool_bayes_general %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(`Chinese subjects`),
+                `Chinese subjects New` = floor(Scaling_factor * `Chinese subjects`),
+                Dif = 2000 - sum( `Chinese subjects New`),
+                `Chinese subjects New` = ifelse(row_number() == 1,
+                                             `Chinese subjects New` + Dif,
+                                             `Chinese subjects New`))
+```
+
+
+Chinese subjects vs Census7
+```{r}
+## calculate Chi-square
+observed1 <- H2_highschool_bayes_general$`Chinese subjects New`
+expected1 <- H2_highschool_bayes_general$Census7
+
+
+H2_Chi_highschool_bayes_general <- chisq.test(x = observed1, p = expected1)
+H2_Chi_highschool_bayes_general 
+
+
+## calculate BF
+lambda <- UMPBT(df = H2_Chi_highschool_bayes_general$parameter,thresh = 4^10)
+
+BF1 <- froot_bf(x = H2_Chi_highschool_bayes_general$statistic, lambda = lambda, df = H2_Chi_highschool_bayes_general$parameter)
+
+H2_BF_highschool_bayes_general <- log(BF1)
+
+H2_BF_highschool_bayes_general
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+Chinese subjects vs CFPS2018
+```{r}
+rm(H2_Chi_highschool_bayes_general,H2_BF_highschool_bayes_general)
+## calculate Chi-square
+observed1 <- H2_highschool_bayes_general$`Chinese subjects New`
+expected1 <- H2_highschool_bayes_general$CFPS2018
+
+
+H2_Chi_highschool_bayes_general <- chisq.test(x = observed1, p = expected1)
+H2_Chi_highschool_bayes_general 
+
+
+## calculate BF
+lambda <- UMPBT(df = H2_Chi_highschool_bayes_general$parameter,thresh = 4^10)
+
+BF1 <- froot_bf(x = H2_Chi_highschool_bayes_general$statistic, lambda = lambda, df = H2_Chi_highschool_bayes_general$parameter)
+
+H2_BF_highschool_bayes_general <- log(BF1)
+
+H2_BF_highschool_bayes_general
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+### region
+the first region cutoff is four region
+```{r}
+## convert data
+H2_region_four_bayes2 <- Journal_region_four %>% 
+  dplyr::select(Region_four,n) %>% 
+  dplyr::rename(Journal = 2) %>% 
+  dplyr::left_join(H2_region_four_bayes %>% 
+                     select(Region_four,Census7,CFPS2018),
+                   by = "Region_four") %>% 
+  dplyr::mutate(Census7 = Census7 * 0.01,
+                CFPS2018 = CFPS2018 * 0.01)
+
+
+## trans 2000
+H2_region_four_bayes2 <- H2_region_four_bayes2 %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(Journal),
+                `Journal New` = floor(Scaling_factor * Journal),
+                Dif = 2000 - sum( `Journal New`),
+                `Journal New` = ifelse(row_number() == 1,
+                                             `Journal New` + Dif,
+                                             `Journal New`))
+
+
+```
+
+
+Journal vs Census7
+```{r}
+## calculate Chi-square
+observed1 <- H2_region_four_bayes2$`Journal New`
+expected1 <- H2_region_four_bayes2$Census7
+
+
+H2_Chi_region_four_bayes <- chisq.test(x = observed1, p = expected1)
+H2_Chi_region_four_bayes
+
+
+## calculate BF
+lambda <- UMPBT(df = H2_Chi_region_four_bayes$parameter,thresh = 4^20)
+
+BF1 <- froot_bf(x = H2_Chi_region_four_bayes$statistic, lambda = lambda, df = H2_Chi_region_four_bayes$parameter)
+
+H2_BF_region_four_bayes <- log(BF1)
+
+H2_BF_region_four_bayes
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+Journal vs CFPS2018
+```{r}
+rm(H2_Chi_region_four_bayes,H2_BF_region_four_bayes)
+## calculate Chi-square
+observed1 <- H2_region_four_bayes2$`Journal New`
+expected1 <- H2_region_four_bayes2$CFPS2018
+
+
+H2_Chi_region_four_bayes <- chisq.test(x = observed1, p = expected1)
+H2_Chi_region_four_bayes
+
+
+## calculate BF
+lambda <- UMPBT(df = H2_Chi_region_four_bayes$parameter,thresh = 4^20)
+
+BF1 <- froot_bf(x = H2_Chi_region_four_bayes$statistic, lambda = lambda, df = H2_Chi_region_four_bayes$parameter)
+
+H2_BF_region_four_bayes <- log(BF1)
+
+H2_BF_region_four_bayes
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+the second region cutoff is seven region
+```{r}
+## convert data
+H2_region_seven_bayes2 <- Journal_region_seven %>% 
+  dplyr::select(Region_seven,n) %>% 
+  dplyr::rename(Journal = 2) %>% 
+  dplyr::left_join(H2_region_seven_bayes %>% 
+                     select(Region_seven,Census7,CFPS2018),
+                   by = "Region_seven") %>% 
+  dplyr::mutate(Census7 = Census7 * 0.01,
+                CFPS2018 = CFPS2018 * 0.01)
+
+
+## trans 2000
+H2_region_seven_bayes2 <- H2_region_seven_bayes2 %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(Journal),
+                `Journal New` = floor(Scaling_factor * Journal),
+                Dif = 2000 - sum( `Journal New`),
+                `Journal New` = ifelse(row_number() == 1,
+                                             `Journal New` + Dif,
+                                             `Journal New`))
+```
+
+
+Journal vs Census7
+```{r}
+## calculate Chi-square
+observed1 <- H2_region_seven_bayes2$`Journal New`
+expected1 <- H2_region_seven_bayes2$Census7
+
+
+H2_Chi_region_seven_bayes <- chisq.test(x = observed1, p = expected1)
+H2_Chi_region_seven_bayes
+
+
+## calculate BF
+lambda <- UMPBT(df = H2_Chi_region_seven_bayes$parameter,thresh = 4^20)
+
+BF1 <- froot_bf(x = H2_Chi_region_seven_bayes$statistic, lambda = lambda, df = H2_Chi_region_seven_bayes$parameter)
+
+H2_BF_region_seven_bayes <- log(BF1)
+
+H2_BF_region_seven_bayes
+
+## rm 
+rm(observed1,expected1,BF1)
+```
+
+
+Journal vs CFPS2018
+```{r}
+rm(H2_Chi_region_seven_bayes,H2_BF_region_seven_bayes)
+## calculate Chi-square
+observed1 <- H2_region_seven_bayes2$`Journal New`
+expected1 <- H2_region_seven_bayes2$CFPS2018
+
+
+H2_Chi_region_seven_bayes <- chisq.test(x = observed1, p = expected1)
+H2_Chi_region_seven_bayes
+
+
+## calculate BF
+lambda <- UMPBT(df = H2_Chi_region_seven_bayes$parameter,thresh = 4^20)
+
+BF1 <- froot_bf(x = H2_Chi_region_seven_bayes$statistic, lambda = lambda, df = H2_Chi_region_seven_bayes$parameter)
+
+H2_BF_region_seven_bayes <- log(BF1)
+
+H2_BF_region_seven_bayes
+
+## rm 
+rm(observed1,expected1,BF1)
+```
