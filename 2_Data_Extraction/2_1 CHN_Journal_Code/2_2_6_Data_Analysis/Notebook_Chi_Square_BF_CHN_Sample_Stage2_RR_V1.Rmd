@@ -922,3 +922,249 @@ H2_BF_region_seven_bayes
 ## rm 
 rm(observed1,expected1,BF1)
 ```
+
+
+## testing the 3rd hypothesis
+### gender
+reprocess the data
+```{r}
+H3_gender_nonCHN <- H3_gender %>% 
+  dplyr::filter(ISO3 != "CHN") %>%   
+  dplyr::select(ISO3,Gender,n,Proportion) %>% 
+  dplyr::mutate(Proportion = Proportion * 0.01)
+
+
+## process CHN data
+H3_gender_CHN <- H3_gender %>% 
+  dplyr::filter(ISO3 == "CHN") %>% 
+  dplyr::select(ISO3,Gender,n,Proportion) %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(n),
+                n_New = floor(Scaling_factor * n),
+                Dif = 2000 - sum(n_New),
+                n_New = ifelse(row_number() == 1,
+                                             n + Dif,
+                                             n_New)) %>% 
+  dplyr::select(ISO3,Gender,n_New,Proportion) %>% 
+  dplyr::rename(n = 3) %>% 
+  dplyr::mutate(Proportion = Proportion * 0.01)
+
+
+H3_gender_bayes <- H3_gender_nonCHN %>% 
+  dplyr::add_row(H3_gender_CHN)
+```
+
+
+calculate chi-square and BF
+```{r warning=FALSE}
+countries <- setdiff(unique(H3_gender_bayes$ISO3),"CHN")
+
+results_list <- list()
+
+for (ISO3 in countries) {
+  
+  country_data <- H3_gender_bayes %>% 
+    filter(ISO3 == !!ISO3)
+  
+  
+  ## calculate Chi-Sqaure
+  observed1 <- country_data$n 
+ 
+  expected1 <- H3_gender_bayes$Proportion[H3_gender_bayes$ISO3 == "CHN"]
+  
+  H3_Chi_gender <- chisq.test(x = observed1, p = expected1)
+
+  
+  ## calculate BF
+  lambda <- UMPBT(df = H3_Chi_gender$parameter,thresh = 4^10)
+  
+  BF1 <- froot_bf(x = H3_Chi_gender$statistic, lambda = lambda, df = H3_Chi_gender$parameter)
+  
+  
+  H3_BF_gender <- log(BF1)
+  
+  
+  # create data row
+  result_row <- data.frame(
+    observed = country_data$ISO3,  
+    expected = "CHN",  
+    X_squared = H3_Chi_gender$statistic,
+    df = H3_Chi_gender$parameter,
+    p_value = H3_Chi_gender$p.value,
+    BF_log =  H3_BF_gender
+  )
+  results_list[[ISO3]] <- result_row
+  
+
+}
+
+H3_BF_gender <- do.call(rbind, results_list) %>% 
+  dplyr::group_by(observed) %>% 
+  dplyr::slice(1)
+```
+
+
+### age
+the first age cutoff is PsyStages
+```{r}
+H3_PsyStages_nonCHN <- H3_PsyStages2 %>% 
+  dplyr::filter(ISO3 != "CHN") %>%   
+  dplyr::select(ISO3,ageBins,n,Proportion) %>% 
+  dplyr::mutate(Proportion = Proportion * 0.01)
+
+
+## process CHN data
+H3_PsyStages_CHN <- H3_PsyStages2 %>% 
+  dplyr::filter(ISO3 == "CHN") %>% 
+  dplyr::select(ISO3,ageBins,n,Proportion) %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(n),
+                n_New = floor(Scaling_factor * n),
+                Dif = 2000 - sum(n_New),
+                n_New = ifelse(row_number() == 1,
+                                             n + Dif,
+                                             n_New)) %>% 
+  dplyr::select(ISO3,ageBins,n_New,Proportion) %>% 
+  dplyr::rename(n = 3) %>% 
+  dplyr::mutate(Proportion = Proportion * 0.01)
+
+
+H3_PsyStages_bayes <- H3_PsyStages_nonCHN %>% 
+  dplyr::add_row(H3_PsyStages_CHN)
+```
+
+
+calculate chi-square and BF
+```{r warning=FALSE}
+full_bins <- c("<=17", "18~25", "26~40", "41~60", ">=61")
+
+countries <- setdiff(unique(H3_PsyStages_bayes$ISO3),"CHN")
+
+results_list <- list()
+
+for (ISO3 in countries) {
+  
+  country_data <- H3_PsyStages_bayes %>% 
+    filter(ISO3 == !!ISO3) %>% 
+    bind_rows(tibble(ISO3 = ISO3,
+                     ageBins = setdiff(full_bins, .$ageBins),
+                     n = 0,Proportion = 0)) %>%
+    arrange(match(ageBins, full_bins))
+  
+  
+  ## calculate Chi-Square
+  observed1 <- country_data$n 
+ 
+  expected1 <- H3_PsyStages_bayes$Proportion[H3_PsyStages_bayes$ISO3 == "CHN"]
+  
+  H3_Chi_PsyStages <- chisq.test(x = observed1, p = expected1)
+
+  
+  ## calculate BF
+  lambda <- UMPBT(df = H3_Chi_PsyStages$parameter,thresh = 4^20)
+  
+  BF1 <- froot_bf(x = H3_Chi_PsyStages$statistic, lambda = lambda, df = H3_Chi_PsyStages$parameter)
+  
+  
+  H3_BF_PsyStages <- log(BF1)
+  
+  
+  # create data row
+  result_row <- data.frame(
+    observed = country_data$ISO3,  
+    expected = "CHN",  
+    X_squared = H3_Chi_PsyStages$statistic,
+    df = H3_Chi_PsyStages$parameter,
+    p_value = H3_Chi_PsyStages$p.value,
+    BF_log =  H3_BF_PsyStages
+  )
+  results_list[[ISO3]] <- result_row
+  
+
+}
+
+H3_BF_PsyStages <- do.call(rbind, results_list) %>% 
+  dplyr::group_by(observed) %>% 
+  dplyr::slice(1)
+```
+
+
+The second cutoff is 7-bins(interval 10)
+```{r}
+H3_interval10_nonCHN <- H3_interval10 %>% 
+  dplyr::filter(ISO3 != "CHN") %>%   
+  dplyr::select(ISO3,ageBins,n,Proportion) %>% 
+  dplyr::mutate(Proportion = Proportion * 0.01)
+
+
+## process CHN data
+H3_interval10_CHN <- H3_interval10 %>% 
+  dplyr::filter(ISO3 == "CHN") %>% 
+  dplyr::select(ISO3,ageBins,n,Proportion) %>% 
+  dplyr::mutate(Scaling_factor = 2000/sum(n),
+                n_New = floor(Scaling_factor * n),
+                Dif = 2000 - sum(n_New),
+                n_New = ifelse(row_number() == 1,
+                                             n + Dif,
+                                             n_New)) %>% 
+  dplyr::select(ISO3,ageBins,n_New,Proportion) %>% 
+  dplyr::rename(n = 3) %>% 
+  dplyr::mutate(Proportion = Proportion * 0.01)
+
+
+H3_interval10_bayes <- H3_interval10_nonCHN %>% 
+  dplyr::add_row(H3_interval10_CHN)
+```
+
+
+calculate chi-square and BF
+```{r warning=FALSE}
+full_bins2 <- c("<=10","11~20","21~30", "31~40", "41~50", "51~60", ">=61")
+
+countries <- setdiff(unique(H3_interval10_bayes$ISO3),"CHN")
+
+results_list <- list()
+
+for (ISO3 in countries) {
+  
+  country_data <- H3_interval10_bayes %>% 
+    filter(ISO3 == !!ISO3) %>% 
+    bind_rows(tibble(ISO3 = ISO3,
+                     ageBins = setdiff(full_bins2, .$ageBins),
+                     n = 0,Proportion = 0)) %>%
+    arrange(match(ageBins, full_bins2))
+  
+  
+  ## calculate Chi-Square
+  observed1 <- country_data$n 
+ 
+  expected1 <- H3_interval10_bayes$Proportion[H3_interval10_bayes$ISO3 == "CHN"]
+  
+  H3_Chi_interval10 <- chisq.test(x = observed1, p = expected1)
+
+  
+  ## calculate BF
+  lambda <- UMPBT(df = H3_Chi_interval10$parameter,thresh = 4^20)
+  
+  BF1 <- froot_bf(x = H3_Chi_interval10$statistic, lambda = lambda, df = H3_Chi_interval10$parameter)
+  
+  
+  H3_BF_interval10 <- log(BF1)
+  
+  
+  # create data row
+  result_row <- data.frame(
+    observed = country_data$ISO3,  
+    expected = "CHN",  
+    X_squared = H3_Chi_interval10$statistic,
+    df = H3_Chi_interval10$parameter,
+    p_value = H3_Chi_interval10$p.value,
+    BF_log =  H3_BF_interval10
+  )
+  results_list[[ISO3]] <- result_row
+  
+
+}
+
+H3_BF_interval10 <- do.call(rbind, results_list) %>% 
+  dplyr::group_by(observed) %>% 
+  dplyr::slice(1)
+```
