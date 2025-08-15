@@ -1571,7 +1571,7 @@ H1_BF_edu_highschool <- BayesMultiNomial(dataset = H1_edu_highschool_bayes,
 Similarity, I also found strong evidence for the $H_1$ that the high schools proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_highschool$BF$LogBF10`.
 
 
-## Test the 2st hypothesis
+## Test the 2nd hypothesis
 
 
 For hypothesis 2, I first tried to analyze the data in general. I would then compare certain demographic characteristics of the Chinese subjects in studies (BTS and Chinese journals) with those corresponding to Census data or other representative large general social surveys (e.g., CFPS2018) based on the target population.
@@ -2738,7 +2738,7 @@ H2_BF_Journal_CFPS2018_region_seven <- BayesMultiNomial(dataset = H2_region_seve
 
 
 
-## Test the 3st hypothesis
+## Test the 3rd hypothesis
 ### Gender
 
 
@@ -3288,7 +3288,7 @@ save(H1_gender_general,Lucca_gender_special,Journal_gender_special,
      Journal_gender_college_sepcial2,
      Census7_age_PsyStages,Census7_age_interval10,
      H2_edu_college,H2_edu_highschool,
-     H2_region_four,H2_region_seven,H2_region_four_bayes,H2_region_seven_bayes,
+     Journal_region_four,Journal_region_seven,H2_region_four_bayes,H2_region_seven_bayes,
      H3_gender,H3_PsyStages2,H3_interval10,
     file = "Chi_Square_bayes.RData")
 ```
