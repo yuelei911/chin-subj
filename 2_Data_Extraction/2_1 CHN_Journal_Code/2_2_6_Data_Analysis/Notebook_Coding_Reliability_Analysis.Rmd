@@ -8,24 +8,16 @@ output: html_document
 ## Load packages
 ```{r}
 rm(list = ls())
+if (!require("pacman")) install.packages("pacman")
 
-if(!require("pacman"))install.packages("pacman")
+# use package "pacman" as loading R packages tools
 
-p_load("here","tidyverse","rio","readxl","irr")
-
+pacman::p_load("tidyverse","rio","here","tidyr","irr")
 ```
 
 
 ## Load data
 ```{r warning=FALSE}
-if (!require("pacman")) install.packages("pacman")
-
-# use package "pacman" as loading R packages tools
-
-pacman::p_load("tidyverse","rio","here")
-
-getwd()
-
 file_list <- list.files(
   here("C:/Users/ynian/Desktop/Stage_2_Code_Data"),
   pattern = ".xlsx",
@@ -235,5 +227,214 @@ Chin_Subj_CE <- bind_rows(Group24567_bind,Group1_bind,Group3_bind,Relaced_articl
 ```{r}
 Coder1 <- Chin_Subj_CE[seq(1, nrow(Chin_Subj_CE), by = 3), ]
 
-Coder2 <- Chin_Subj_CE[seq(1,nrow(Chin_Subj_CE), by = 3), ]
+Coder2 <- Chin_Subj_CE[seq(2,nrow(Chin_Subj_CE), by = 3), ]
+```
+
+
+## process Coder1 and  Coder NA
+```{r}
+Coder1 <- Coder1 %>%
+  dplyr::mutate(rownum = 1:1749) %>% 
+  dplyr::select(rownum,Coder,Article_IDs_N,Study_Number_N,Subjects_Group_N,
+                Abstract1,Abstract2,
+                Sample_Size,Gender,Male_Num,Female_Num,
+                Age,M_age,SD_age,
+                Educational_Attainment_N,Subjects_Recruitment_Method_N,
+                Sampling_Method,Target_Population_N,Subjects_Recruitment_Area,
+                Remark1_N,Remark2_N) %>% 
+  dplyr::mutate(across(everything(), ~ifelse(is.na(.) | as.character(.) %in% c("　", ""), "NA", as.character(.))))
+
+
+
+Coder2 <- Coder2 %>% 
+  dplyr::mutate(rownum = 1:1749) %>% 
+  dplyr::select(rownum,Coder,Article_IDs_N,Study_Number_N,Subjects_Group_N,
+                Abstract1,Abstract2, 
+                Sample_Size,Gender,Male_Num,Female_Num,
+                Age,M_age,SD_age,
+                Educational_Attainment_N,Subjects_Recruitment_Method_N,
+                Sampling_Method,Target_Population_N,Subjects_Recruitment_Area,
+                Remark1_N,Remark2_N) %>% 
+  dplyr::mutate(across(everything(), ~ifelse(is.na(.) | as.character(.) %in% c("　", ""), "NA", as.character(.))))
+```
+
+
+## convert variables type
+```{r warning=FALSE}
+## Abstract
+Coder1 <- Coder1 %>% 
+  dplyr::mutate(Abstract1 = case_when(Abstract1 == "0" ~ "0",
+                                      Abstract1 == "NA" ~ "NA",
+                                      TRUE ~  "1"),
+                Abstract1 = as.factor(Abstract1)) 
+  
+Coder2 <- Coder2 %>% 
+  dplyr::mutate(Abstract1 = case_when(Abstract1 == "0" ~ "0",
+                                      Abstract1 == "NA" ~ "NA",
+                                      TRUE ~  "1"),
+                Abstract1 = as.factor(Abstract1)) 
+
+
+Coder1$Abstract2 <- as.factor(Coder1$Abstract2)
+Coder2$Abstract2 <- as.factor(Coder2$Abstract2)
+
+## Target population
+Coder1$Target_Population_N <- as.factor(Coder1$Target_Population_N)
+Coder2$Target_Population_N <- as.factor(Coder2$Target_Population_N)
+
+## sample size, Mage, SDage, female & male number
+Coder1 <- Coder1 %>% 
+  mutate(across(c(Sample_Size, M_age, SD_age, Female_Num, Male_Num), 
+                ~replace(as.numeric(.), is.na(.), 0))) ## first replace na and then repalce 0
+
+Coder2 <- Coder2 %>% 
+  mutate(across(c(Sample_Size, M_age, SD_age, Female_Num, Male_Num), 
+                ~replace(as.numeric(.), is.na(.), 0)))
+
+## gender reported
+Coder1$Gender <- as.factor(Coder1$Gender)
+Coder2$Gender <- as.factor(Coder2$Gender)
+
+## age 
+Coder1$Age <- as.factor(Coder1$Age)
+Coder2$Age <- as.factor(Coder2$Age)
+
+## educational attainment
+table(Coder1$Educational_Attainment_N)
+Coder1$Educational_Attainment_N <- as.factor(Coder1$Educational_Attainment_N)
+Coder2$Educational_Attainment_N <- as.factor(Coder2$Educational_Attainment_N)
+
+## remark1 & 2
+Coder1 <- Coder1 %>% 
+  dplyr::mutate(Remark1_N = case_when(Remark1_N == "animal" ~ "1", 
+                                      Remark1_N == "mining" ~ "2",
+                                      Remark1_N == "qualitative" ~ "3", 
+                                      Remark1_N == "secondary" ~ "4",
+                                      Remark1_N == "NA" ~ "NA",
+                                      TRUE ~ "5"),  ## other inappropriate uses
+                Remark1_N = as.factor(Remark1_N))
+
+Coder2 <- Coder2 %>% 
+  dplyr::mutate(Remark1_N = case_when(Remark1_N == "animal" ~ "1", 
+                                      Remark1_N == "mining" ~ "2",
+                                      Remark1_N == "qualitative" ~ "3", 
+                                      Remark1_N == "secondary" ~ "4",
+                                      Remark1_N == "NA" ~ "NA",
+                                      TRUE ~ "5"),  ## other inappropriate uses
+                Remark1_N = as.factor(Remark1_N))
+
+
+Coder1 <- Coder1 %>%
+  dplyr::mutate(Remark2_N = case_when(
+      # Code as 3 if both "区" and "重复" are present
+      grepl("区", Remark2_N) & grepl("重复", Remark2_N) ~ "3",
+      # Code as 2 if only "区" is present
+      grepl("区", Remark2_N) ~ "2",
+      # Code as 1 if only "重复" is present
+      grepl("重复", Remark2_N) ~ "1",
+      # Code as NA for all other cases
+      TRUE ~ "NA"),
+      Remark2_N = as.factor(Remark2_N))
+
+Coder2 <- Coder2 %>%
+  dplyr::mutate(Remark2_N = case_when(
+      # Code as 3 if both "区" and "重复" are present
+      grepl("区", Remark2_N) & grepl("重复", Remark2_N) ~ "3",
+      # Code as 2 if only "区" is present
+      grepl("区", Remark2_N) ~ "2",
+      # Code as 1 if only "重复" is present
+      grepl("重复", Remark2_N) ~ "1",
+      # Code as NA for all other cases
+      TRUE ~ "NA"),
+      Remark2_N = as.factor(Remark2_N))
+  
+## subjects recruitment area
+Coder1 <- Coder1 %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = case_when(
+    Subjects_Recruitment_Area == "0" ~ "0",
+    Subjects_Recruitment_Area == "2" ~ "2",
+    Subjects_Recruitment_Area == "NA" ~ "NA",
+    TRUE ~ "1"),
+    Subjects_Recruitment_Area = as.factor(Subjects_Recruitment_Area))
+
+Coder2 <- Coder2 %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = case_when(
+    Subjects_Recruitment_Area == "0" ~ "0",
+    Subjects_Recruitment_Area == "2" ~ "2",
+    Subjects_Recruitment_Area == "NA" ~ "NA",
+    TRUE ~ "1"),
+    Subjects_Recruitment_Area = as.factor(Subjects_Recruitment_Area))
+
+## subjects recruitment method
+Coder1$Subjects_Recruitment_Method_N <- as.factor(Coder1$Subjects_Recruitment_Method_N)
+
+Coder2$Subjects_Recruitment_Method_N <- Coder2$Subjects_Recruitment_Method_N %>% 
+  recode("1;2" = "1")
+Coder2$Subjects_Recruitment_Method_N <- as.factor(Coder2$Subjects_Recruitment_Method_N)
+
+## sampling method
+Coder1$Sampling_Method <- as.factor(Coder1$Sampling_Method)
+Coder2$Sampling_Method <- as.factor(Coder2$Sampling_Method)
+```
+
+
+## Get Krippendorff’s alpha for continuous variables
+```{r}
+vars <- Coder1 %>% 
+  dplyr::select(Sample_Size,Male_Num,Female_Num,M_age,SD_age) %>% 
+  names() ## select calculated vars
+ 
+irrs_continuous <- data.frame(
+  IRR = sapply(vars, function(i) 
+    kripp.alpha(rbind(Coder1[[i]], Coder2[[i]]), "ratio")$value  ## value represent kripp.alpha
+  ),
+  check.names = FALSE
+)
+
+options(digits = 2)
+irrs_continuous
+```
+
+
+## Get Krippendorff’s alpha for categorical variables
+```{r}
+vars <- Coder1 %>% 
+  dplyr::select(Age, Gender , Educational_Attainment_N,
+                Sampling_Method, Subjects_Recruitment_Method_N,
+                Target_Population_N) %>% 
+  names() ## select calculated vars
+ 
+
+irrs_categorical <- data.frame(
+  IRR = sapply(vars, function(i) 
+    kripp.alpha(rbind(Coder1[[i]], Coder2[[i]]), "nominal")$value  ## value represent kripp.alpha
+  ),
+  check.names = FALSE
+)
+
+
+irrs_categorical
+```
+
+
+# Get percentage of agreement for categorical variables
+```{r}
+agreement_percent <- data.frame(
+  `percentage of agreement` = sapply(vars, function(i) {
+  
+    combined <- cbind(Coder1[[i]], Coder2[[i]])
+    agree(combined)$value/100
+
+  }),
+  check.names = FALSE
+)
+
+
+agreement_percent
+```
+
+```{r}
+merge_Age <- cbind(Coder1$Age,Coder2$Age)
+
+agree(merge_Age)
 ```
