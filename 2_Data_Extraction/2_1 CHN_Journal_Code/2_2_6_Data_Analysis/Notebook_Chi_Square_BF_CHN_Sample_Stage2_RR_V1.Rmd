@@ -10,6 +10,7 @@ output:
 
 In this document, I use Chi-Square bayes analysis to enhance the robustness of the Bayesian multinomial test results. The naming of data variables is consistent with "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2".
 
+The chi-square value-based bayes factor follow by Liu, Ghai, Azevedo, et al.(2025), https://sciety.org/articles/activity/10.31234/osf.io/kufbt_v6
 
 Now, I start to analysis data. and the first thing is load library.
 
@@ -169,9 +170,9 @@ H1_PsyStages_bayes_general <- Sim_Journal_age_PsyStages3_general %>%
 
 ## trans 2000
 H1_PsyStages_bayes_general <- H1_PsyStages_bayes_general %>% 
-  dplyr::mutate(Scaling_factor = 2000/sum(`BTS Chinese`),
+  dplyr::mutate(Scaling_factor = 400/sum(`BTS Chinese`),
                 `BTS Chinese New` = floor(Scaling_factor * `BTS Chinese`),
-                Dif = 2000 - sum( `BTS Chinese New`),
+                Dif = 400 - sum( `BTS Chinese New`),
                  `BTS Chinese New` = ifelse(row_number() == 1,
                                              `BTS Chinese New` + Dif,
                                              `BTS Chinese New`))
@@ -187,7 +188,7 @@ H1_Chi_PsyStages_general
 
 
 ## calculate BF
-lambda <- UMPBT(df = H1_Chi_PsyStages_general$parameter,thresh = 4^20)
+lambda <- UMPBT(df = H1_Chi_PsyStages_general$parameter,thresh = 4^4)
 
 BF1 <- froot_bf(x = H1_Chi_PsyStages_general$statistic, lambda = lambda, df = H1_Chi_PsyStages_general$parameter)
 
@@ -214,9 +215,9 @@ H1_interval10_bayes_general <- Sim_Journal_age_interval103_general %>%
 
 ## trans 2000
 H1_interval10_bayes_general <- H1_interval10_bayes_general %>% 
-  dplyr::mutate(Scaling_factor = 2000/sum(`BTS Chinese`),
+  dplyr::mutate(Scaling_factor = 200/sum(`BTS Chinese`),
                 `BTS Chinese New` = floor(Scaling_factor * `BTS Chinese`),
-                Dif = 2000 - sum( `BTS Chinese New`),
+                Dif = 200 - sum( `BTS Chinese New`),
                 `BTS Chinese New` = ifelse(row_number() == 1,
                                              `BTS Chinese New` + Dif,
                                              `BTS Chinese New`))
@@ -232,7 +233,7 @@ H1_Chi_interval10_general
 
 
 ## calculate BF
-lambda <- UMPBT(df = H1_Chi_interval10_general$parameter,thresh = 4^20)
+lambda <- UMPBT(df = H1_Chi_interval10_general$parameter,thresh = 4^2)
 
 BF1 <- froot_bf(x = H1_Chi_interval10_general$statistic, lambda = lambda, df = H1_Chi_interval10_general$parameter)
 
@@ -280,7 +281,7 @@ H1_Chi_college
 
 
 ## calculate BF
-lambda <- UMPBT(df = H1_Chi_college$parameter,thresh = 4^10)
+lambda <- UMPBT(df = H1_Chi_college$parameter,thresh = 4^40)
 
 BF1 <- froot_bf(x = H1_Chi_college$statistic, lambda = lambda, df = H1_Chi_college$parameter)
 
@@ -327,7 +328,7 @@ H1_Chi_highschool
 
 
 ## calculate BF
-lambda <- UMPBT(df = H1_Chi_highschool$parameter,thresh = 4^10)
+lambda <- UMPBT(df = H1_Chi_highschool$parameter,thresh = 4^40)
 
 BF1 <- froot_bf(x = H1_Chi_highschool$statistic, lambda = lambda, df = H1_Chi_highschool$parameter)
 
@@ -629,9 +630,9 @@ H2_college_bayes_general <- H2_edu_college %>%
 
 ## trans 2000
 H2_college_bayes_general <- H2_college_bayes_general %>% 
-  dplyr::mutate(Scaling_factor = 2000/sum(`Chinese subjects`),
+  dplyr::mutate(Scaling_factor = 600/sum(`Chinese subjects`),
                 `Chinese subjects New` = floor(Scaling_factor * `Chinese subjects`),
-                Dif = 2000 - sum( `Chinese subjects New`),
+                Dif = 600 - sum( `Chinese subjects New`),
                 `Chinese subjects New` = ifelse(row_number() == 1,
                                              `Chinese subjects New` + Dif,
                                              `Chinese subjects New`))
@@ -650,7 +651,7 @@ H2_Chi_college_bayes_general
 
 
 ## calculate BF
-lambda <- UMPBT(df = H2_Chi_college_bayes_general$parameter,thresh = 4^10)
+lambda <- UMPBT(df = H2_Chi_college_bayes_general$parameter,thresh = 4^12)
 
 BF1 <- froot_bf(x = H2_Chi_college_bayes_general$statistic, lambda = lambda, df = H2_Chi_college_bayes_general$parameter)
 
@@ -676,7 +677,7 @@ H2_Chi_college_bayes_general
 
 
 ## calculate BF
-lambda <- UMPBT(df = H2_Chi_college_bayes_general$parameter,thresh = 4^10)
+lambda <- UMPBT(df = H2_Chi_college_bayes_general$parameter,thresh = 4^12)
 
 BF1 <- froot_bf(x = H2_Chi_college_bayes_general$statistic, lambda = lambda, df = H2_Chi_college_bayes_general$parameter)
 
@@ -711,9 +712,9 @@ H2_highschool_bayes_general <- H2_edu_highschool %>%
 
 ## trans 2000
 H2_highschool_bayes_general <- H2_highschool_bayes_general %>% 
-  dplyr::mutate(Scaling_factor = 2000/sum(`Chinese subjects`),
+  dplyr::mutate(Scaling_factor = 350/sum(`Chinese subjects`),
                 `Chinese subjects New` = floor(Scaling_factor * `Chinese subjects`),
-                Dif = 2000 - sum( `Chinese subjects New`),
+                Dif = 350 - sum( `Chinese subjects New`),
                 `Chinese subjects New` = ifelse(row_number() == 1,
                                              `Chinese subjects New` + Dif,
                                              `Chinese subjects New`))
@@ -732,7 +733,7 @@ H2_Chi_highschool_bayes_general
 
 
 ## calculate BF
-lambda <- UMPBT(df = H2_Chi_highschool_bayes_general$parameter,thresh = 4^10)
+lambda <- UMPBT(df = H2_Chi_highschool_bayes_general$parameter,thresh = 4^21)
 
 BF1 <- froot_bf(x = H2_Chi_highschool_bayes_general$statistic, lambda = lambda, df = H2_Chi_highschool_bayes_general$parameter)
 
@@ -758,7 +759,7 @@ H2_Chi_highschool_bayes_general
 
 
 ## calculate BF
-lambda <- UMPBT(df = H2_Chi_highschool_bayes_general$parameter,thresh = 4^10)
+lambda <- UMPBT(df = H2_Chi_highschool_bayes_general$parameter,thresh = 4^7)
 
 BF1 <- froot_bf(x = H2_Chi_highschool_bayes_general$statistic, lambda = lambda, df = H2_Chi_highschool_bayes_general$parameter)
 
@@ -938,9 +939,9 @@ H3_gender_nonCHN <- H3_gender %>%
 H3_gender_CHN <- H3_gender %>% 
   dplyr::filter(ISO3 == "CHN") %>% 
   dplyr::select(ISO3,Gender,n,Proportion) %>% 
-  dplyr::mutate(Scaling_factor = 2000/sum(n),
+  dplyr::mutate(Scaling_factor = 200/sum(n),
                 n_New = floor(Scaling_factor * n),
-                Dif = 2000 - sum(n_New),
+                Dif = 200 - sum(n_New),
                 n_New = ifelse(row_number() == 1,
                                              n + Dif,
                                              n_New)) %>% 
@@ -975,7 +976,7 @@ for (ISO3 in countries) {
 
   
   ## calculate BF
-  lambda <- UMPBT(df = H3_Chi_gender$parameter,thresh = 4^10)
+  lambda <- UMPBT(df = H3_Chi_gender$parameter,thresh = 4^1)
   
   BF1 <- froot_bf(x = H3_Chi_gender$statistic, lambda = lambda, df = H3_Chi_gender$parameter)
   
@@ -1016,9 +1017,9 @@ H3_PsyStages_nonCHN <- H3_PsyStages2 %>%
 H3_PsyStages_CHN <- H3_PsyStages2 %>% 
   dplyr::filter(ISO3 == "CHN") %>% 
   dplyr::select(ISO3,ageBins,n,Proportion) %>% 
-  dplyr::mutate(Scaling_factor = 2000/sum(n),
+  dplyr::mutate(Scaling_factor = 100/sum(n),
                 n_New = floor(Scaling_factor * n),
-                Dif = 2000 - sum(n_New),
+                Dif = 100 - sum(n_New),
                 n_New = ifelse(row_number() == 1,
                                              n + Dif,
                                              n_New)) %>% 
@@ -1059,7 +1060,7 @@ for (ISO3 in countries) {
 
   
   ## calculate BF
-  lambda <- UMPBT(df = H3_Chi_PsyStages$parameter,thresh = 4^20)
+  lambda <- UMPBT(df = H3_Chi_PsyStages$parameter,thresh = 4^1)
   
   BF1 <- froot_bf(x = H3_Chi_PsyStages$statistic, lambda = lambda, df = H3_Chi_PsyStages$parameter)
   
