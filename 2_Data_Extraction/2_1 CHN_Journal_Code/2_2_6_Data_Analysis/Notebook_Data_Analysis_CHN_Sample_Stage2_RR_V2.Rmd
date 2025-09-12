@@ -2311,6 +2311,12 @@ Journal_region_multiple_general_tab <-   Journal_region_multiple %>%
 ```
 
 
+save single region and multiple region data for exploration analysis
+```{r}
+save(Journal_region_single,Journal_region_multiple,file = "Journal_region.RData")
+```
+
+
 combine two data
 ```{r}
 Journal_region_general_tab <-bind_rows(Journal_region_single_general_tab,

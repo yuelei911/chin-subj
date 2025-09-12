@@ -241,7 +241,8 @@ Coder1 <- Coder1 %>%
                 Age,M_age,SD_age,
                 Educational_Attainment_N,Subjects_Recruitment_Method_N,
                 Sampling_Method,Target_Population_N,Subjects_Recruitment_Area,
-                Remark1_N,Remark2_N) %>% 
+                Remark1_N,Remark2_N,
+                Study_Type) %>% 
   dplyr::mutate(across(everything(), ~ifelse(is.na(.) | as.character(.) %in% c("　", ""), "NA", as.character(.))))
 
 
@@ -254,7 +255,8 @@ Coder2 <- Coder2 %>%
                 Age,M_age,SD_age,
                 Educational_Attainment_N,Subjects_Recruitment_Method_N,
                 Sampling_Method,Target_Population_N,Subjects_Recruitment_Area,
-                Remark1_N,Remark2_N) %>% 
+                Remark1_N,Remark2_N,
+                Study_Type) %>% 
   dplyr::mutate(across(everything(), ~ifelse(is.na(.) | as.character(.) %in% c("　", ""), "NA", as.character(.))))
 ```
 
@@ -375,6 +377,20 @@ Coder2$Subjects_Recruitment_Method_N <- as.factor(Coder2$Subjects_Recruitment_Me
 ## sampling method
 Coder1$Sampling_Method <- as.factor(Coder1$Sampling_Method)
 Coder2$Sampling_Method <- as.factor(Coder2$Sampling_Method)
+
+
+## study type
+Coder1 <- Coder1 %>% 
+  dplyr::mutate(Study_Type = case_when(Study_Type == "1" ~ "1",
+                                       Study_Type == "2" ~ "2",
+                                       Study_Type == "NA" ~ "NA",
+                                       TRUE ~ "3"))
+
+Coder2 <- Coder2 %>% 
+  dplyr::mutate(Study_Type = case_when(Study_Type == "1" ~ "1",
+                                       Study_Type == "2" ~ "2",
+                                       Study_Type == "NA" ~ "NA",
+                                       TRUE ~ "3"))
 ```
 
 
@@ -401,7 +417,7 @@ irrs_continuous
 vars <- Coder1 %>% 
   dplyr::select(Age, Gender , Educational_Attainment_N,
                 Sampling_Method, Subjects_Recruitment_Method_N,
-                Target_Population_N) %>% 
+                Target_Population_N,Study_Type) %>% 
   names() ## select calculated vars
  
 
@@ -431,10 +447,4 @@ agreement_percent <- data.frame(
 
 
 agreement_percent
-```
-
-```{r}
-merge_Age <- cbind(Coder1$Age,Coder2$Age)
-
-agree(merge_Age)
 ```
