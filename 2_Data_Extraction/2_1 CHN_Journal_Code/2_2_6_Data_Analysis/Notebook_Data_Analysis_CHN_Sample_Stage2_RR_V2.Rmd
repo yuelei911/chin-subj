@@ -2311,12 +2311,6 @@ Journal_region_multiple_general_tab <-   Journal_region_multiple %>%
 ```
 
 
-save single region and multiple region data for exploration analysis
-```{r}
-save(Journal_region_single,Journal_region_multiple,file = "Journal_region.RData")
-```
-
-
 combine two data
 ```{r}
 Journal_region_general_tab <-bind_rows(Journal_region_single_general_tab,
@@ -2743,11 +2737,19 @@ H2_BF_Journal_CFPS2018_region_seven <- BayesMultiNomial(dataset = H2_region_seve
 ```
 
 
+save region data for exploration analysis
+```{r}
+save(Journal_region_single,Journal_region_multiple,
+     Census7_region,Census7_region_four,Census7_region_seven,
+     CFPS2018_region,CFPS2018_region_four,CFPS2018_region_seven,
+     H2_region_four_bayes,H2_region_four_bayes,Region_map_color,
+     China_province,China_region_four,China_region_seven,
+     file = "Journal_region.RData")
+```
+
 
 ## Test the 3rd hypothesis
 ### Gender
-
-
 As with the first two hypotheses, I dealt with gender data first.
 ```{r}
 # H3_BTS_gender_list <- BTS_gender_list[-c(19)]
