@@ -2652,7 +2652,7 @@ H2_Fig_region <- H2_Fig_Census7_region  + H2_Fig_region_general + H2_Fig_CFPS201
   theme(plot.tag = element_text(size = 20))
 
 
-ggsave("H2_Fig_region .pdf", H2_Fig_region , device = "pdf", width=10, height = 15)
+ggsave("H2_Fig_region.pdf", H2_Fig_region, device = "pdf", width=10, height = 15)
 
 H2_Fig_region 
 ```
@@ -2742,8 +2742,9 @@ save region data for exploration analysis
 save(Journal_region_single,Journal_region_multiple,
      Census7_region,Census7_region_four,Census7_region_seven,
      CFPS2018_region,CFPS2018_region_four,CFPS2018_region_seven,
-     H2_region_four_bayes,H2_region_four_bayes,Region_map_color,
+     H2_region_four_bayes,H2_region_seven_bayes,Region_map_color,
      China_province,China_region_four,China_region_seven,
+     H2_region_four,H2_region_seven,Journal_region_general_tab2,
      file = "Journal_region.RData")
 ```
 
