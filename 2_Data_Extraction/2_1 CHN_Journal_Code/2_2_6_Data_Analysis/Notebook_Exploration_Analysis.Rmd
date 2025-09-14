@@ -741,7 +741,11 @@ table(Journal_subjects_recruitment2$Subjects_Recruitment_Method_N)
 
 
 ## sample size in different study type
-```{r}
+the sample size of different study type
+```{r} 
+load("Journal_region.RData")
+
+
 Journal_general_experi <- Journal %>% 
   dplyr::select(Article_IDs_N,Study_Number_N,Study_Type,Sample_Size,Target_Population_N) %>% 
   dplyr::mutate(Sample_Size = ifelse(Article_IDs_N == "20185082", 33, Sample_Size)) %>% 
@@ -784,96 +788,104 @@ sum(Journal_general_questionaire$Sample_Size)  ## 414319
 
 exploration analysis region data of Journal based on study type
 ```{r}
-load("Journal_region.RData")
-
-
 ## single region
-Journal_region_studytype <- Journal %>% 
+Journal_region_single_studytype <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Study_Type) %>% 
   dplyr::inner_join(Journal_region_single,
                     by = c("Article_IDs","Study_Number","Subjects_Group"))
 
-Journal_region_studytype2 <- Journal_region_studytype %>% 
+Journal_region_single_studytype2 <- Journal_region_single_studytype %>% 
   dplyr::filter(Target_Population_N != 1)
-
-
-
-Journal_region_experi <- Journal_region_studytype2 %>% 
-  dplyr::filter(Study_Type == 1)
-
-Journal_region_questionaire <- Journal_region_studytype2 %>% 
-  dplyr::filter(Study_Type == 2)
 
 
 ## multiple region
 Journal_region_multiple_IDs <- Journal_region_multiple %>% 
   dplyr::pull(Article_IDs)
 
-
-Journal_region_multiple_studytype <- Journal %>% 
+Journal_studytype <- Journal %>% 
   dplyr::filter(Article_IDs %in% Journal_region_multiple_IDs) %>% 
   dplyr::slice(-c(4,11)) %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Study_Type)
 
+Journal_region_multiple_studytype <- Journal_region_multiple %>% 
+  dplyr::inner_join(Journal_studytype, by = c("Article_IDs","Study_Number","Subjects_Group"))
 
-```
-
-
-Create a vector of China's four economic regions, with data sourced from the National Bureau of Statistics of China. The four regions are Central, Eastern, Western, and Northeastern.
-```{r}
-Central_China4 <- c("山西","安徽","江西","河南","湖北","湖南")
-
-East_China4 <- c("北京","天津","河北","上海","江苏","浙江","福建","山东","广东","海南")
-
-West_China4 <- c("内蒙古","广西","重庆","四川","贵州","云南","西藏","陕西","甘肃","青海","宁夏","新疆")
-
-Northeast_China4 <- c("辽宁","吉林","黑龙江")
-
-China_region_four <- tibble(Region = c(Central_China4, East_China4, 
-                                        West_China4, Northeast_China4),
-                             Region_four = c(rep("Central China", 6), rep("East China", 10),
-                                        rep("West China", 12),rep("Northeast China", 3)))
-```
-
-
-We also create a vector of China's seven regions.
-```{r}
-China_region_seven <-  tibble(
-  Region = c("北京", "天津", "河北", "山西", "内蒙古",
-              "上海", "江苏", "浙江", "安徽", "福建", "江西", "山东",
-              "河南", "湖北", "湖南",
-              "广东", "广西", "海南",
-              "重庆", "四川", "贵州", "云南", "西藏",
-              "陕西", "甘肃", "青海", "宁夏", "新疆",
-              "辽宁", "吉林", "黑龙江"),
-  Region_seven = c(rep("North China", 5), 
-             rep("East China", 7),
-             rep("Central China", 3),
-             rep("South China", 3),
-             rep("Southwest China", 5),
-             rep("Northwest China", 5),
-             rep("Northeast China", 3)))
-```
-
-
-Create a vector of all China' province
-```{r}
-China_province <- c("新疆","西藏","甘肃","青海","内蒙古",
-                    "宁夏","四川","重庆","陕西","贵州","云南",
-                    "北京","山西","河北","河南","湖北","湖南",
-                    "广西","广东","香港","澳门","台湾","海南",
-                    "黑龙江","吉林","辽宁","天津","山东","江苏",
-                    "安徽","上海","浙江","江西","福建")
-```
-
-
-continuing Journal region data 
-```{r}
-Journal_region_experi2 <- Journal_region_experi %>%
-  dplyr::filter(Subjects_Recruitment_Area %in% China_province)
-
-
-Journal_region_questionaire2 <- Journal_region_questionaire %>%
-  dplyr::filter(Subjects_Recruitment_Area %in% China_province)
+Journal_region_multiple_studytype2 <- Journal_region_multiple_studytype %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  tidyr::separate_rows(True_Value,sep = ";") %>% 
+  tidyr::separate(True_Value,c("Subjects_Recruitment_Area","Sample_Size"),sep = ":") %>% 
+  dplyr::mutate(Sample_Size = as.numeric(trimws(Sample_Size)),
+                Sample_Size = ceiling(2500 * Sample_Size)) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
+                Study_Type,Target_Population_N,Sample_Type_N,
+                Sample_Size,Subjects_Recruitment_Area)
   
+
+## combine single region data and multiple region data
+Journal_region <- bind_rows(Journal_region_single_studytype2,Journal_region_multiple_studytype2)
+
+
+## group by study type
+Journal_region_experi <- Journal_region %>% 
+  dplyr::filter(Study_Type == 1) %>% 
+  dplyr::group_by(Subjects_Recruitment_Area) %>% 
+  dplyr::summarise(Sample_Size = sum(Sample_Size)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
+  dplyr::mutate(Proportion = Sample_Size/sum(Sample_Size)*100,
+                Count_Bins = cut(Proportion,
+                                 breaks = c(-Inf,1,5,10,Inf),
+                labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "Journal experi") %>% 
+  dplyr::rename(Region = Subjects_Recruitment_Area)
+
+
+Journal_region_questionaire <- Journal_region %>% 
+  dplyr::filter(Study_Type == 2) %>% 
+  dplyr::group_by(Subjects_Recruitment_Area) %>% 
+  dplyr::summarise(Sample_Size = sum(Sample_Size)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
+  dplyr::mutate(Proportion = Sample_Size/sum(Sample_Size)*100,
+                Count_Bins = cut(Proportion,
+                                 breaks = c(-Inf,1,5,10,Inf),
+                labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "Journal questionaire") %>% 
+  dplyr::rename(Region = Subjects_Recruitment_Area)
 ```
+
+
+convert Journal data into four regions and seven regions
+```{r}
+## four regions & experi
+Journal_region_experi_four <- merge(Journal_region_experi,China_region_four,
+                              by = "Region") %>% 
+  dplyr::select(Region, Sample_Size, Data_Source, Region_four) %>% 
+  dplyr::group_by(Region_four) %>% 
+  dplyr::summarise(Regionfour_n=sum(Sample_Size)) 
+
+
+## seven regions & experi
+Journal_region_experi_seven <- merge(Journal_region_experi,China_region_seven,
+                              by = "Region") %>% 
+  dplyr::select(Region, Sample_Size, Data_Source, Region_seven) %>% 
+  dplyr::group_by(Region_seven) %>% 
+  dplyr::summarise(Regionseven_n=sum(Sample_Size)) 
+
+
+## four regions & questionaire
+Journal_region_questionaire_four <- merge(Journal_region_questionaire, China_region_four,
+                              by = "Region") %>% 
+  dplyr::select(Region, Sample_Size, Data_Source, Region_four) %>% 
+  dplyr::group_by(Region_four) %>% 
+  dplyr::summarise(Regionfour_n=sum(Sample_Size)) 
+
+##seven regions & questionaire
+Journal_region_questionaire_seven <- merge(Journal_region_questionaire, China_region_seven,
+                              by = "Region") %>% 
+  dplyr::select(Region, Sample_Size, Data_Source, Region_seven) %>% 
+  dplyr::group_by(Region_seven) %>% 
+  dplyr::summarise(Regionfour_n=sum(Sample_Size)) 
+```
+
+
