@@ -836,7 +836,7 @@ Journal_region_experi <- Journal_region %>%
                 Count_Bins = cut(Proportion,
                                  breaks = c(-Inf,1,5,10,Inf),
                 labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Journal experi") %>% 
+                Data_Source = "Journal_experi") %>% 
   dplyr::rename(Region = Subjects_Recruitment_Area)
 
 
@@ -850,7 +850,7 @@ Journal_region_questionaire <- Journal_region %>%
                 Count_Bins = cut(Proportion,
                                  breaks = c(-Inf,1,5,10,Inf),
                 labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Journal questionaire") %>% 
+                Data_Source = "Journal_questionaire") %>% 
   dplyr::rename(Region = Subjects_Recruitment_Area)
 ```
 
@@ -858,34 +858,403 @@ Journal_region_questionaire <- Journal_region %>%
 convert Journal data into four regions and seven regions
 ```{r}
 ## four regions & experi
-Journal_region_experi_four <- merge(Journal_region_experi,China_region_four,
+Journal_region_four_experi <- merge(Journal_region_experi,China_region_four,
                               by = "Region") %>% 
   dplyr::select(Region, Sample_Size, Data_Source, Region_four) %>% 
   dplyr::group_by(Region_four) %>% 
-  dplyr::summarise(Regionfour_n=sum(Sample_Size)) 
-
+  dplyr::summarise(n = sum(Sample_Size)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(experi_Prop = n / sum(n) * 100) 
 
 ## seven regions & experi
-Journal_region_experi_seven <- merge(Journal_region_experi,China_region_seven,
+Journal_region_seven_experi <- merge(Journal_region_experi,China_region_seven,
                               by = "Region") %>% 
   dplyr::select(Region, Sample_Size, Data_Source, Region_seven) %>% 
   dplyr::group_by(Region_seven) %>% 
-  dplyr::summarise(Regionseven_n=sum(Sample_Size)) 
+  dplyr::summarise(n = sum(Sample_Size)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(experi_Prop = n / sum(n) * 100) 
 
 
 ## four regions & questionaire
-Journal_region_questionaire_four <- merge(Journal_region_questionaire, China_region_four,
+Journal_region_four_questionaire <- merge(Journal_region_questionaire, China_region_four,
                               by = "Region") %>% 
   dplyr::select(Region, Sample_Size, Data_Source, Region_four) %>% 
   dplyr::group_by(Region_four) %>% 
-  dplyr::summarise(Regionfour_n=sum(Sample_Size)) 
+  dplyr::summarise(n = sum(Sample_Size)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(questionaire_Prop = n / sum(n) * 100)  
 
 ##seven regions & questionaire
-Journal_region_questionaire_seven <- merge(Journal_region_questionaire, China_region_seven,
+Journal_region_seven_questionaire <- merge(Journal_region_questionaire, China_region_seven,
                               by = "Region") %>% 
   dplyr::select(Region, Sample_Size, Data_Source, Region_seven) %>% 
   dplyr::group_by(Region_seven) %>% 
-  dplyr::summarise(Regionfour_n=sum(Sample_Size)) 
+  dplyr::summarise(n = sum(Sample_Size)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(questionaire_Prop = n / sum(n) * 100) 
 ```
 
 
+visualize the two cutoff regions
+first four region
+```{r}
+H2_region_four_studytype <- full_join(Journal_region_four_experi,
+                                      Journal_region_four_questionaire,
+                            by = "Region_four") %>% 
+  dplyr::select(-c(n.x,n.y)) %>% ## remove n cols
+  dplyr::full_join(H2_region_four,
+                   by = "Region_four")
+
+H2_region_four_studytype2 <- H2_region_four_studytype %>% 
+  pivot_longer(cols = -Region_four,
+             names_to = "Data Source",
+             values_to = "Proportion") %>% 
+  dplyr::mutate(Region_four = factor(Region_four,
+                                     levels = c("Northeast China","West China",
+                                                "Central China","East China")))
+
+
+## Visualization
+H2_Fig_region_four_studytype <- ggplot(data = H2_region_four_studytype2, aes(x = `Data Source`, y = Proportion, fill = Region_four)) +
+  geom_col(position = "stack")+
+  labs(fill = "Region")+
+  scale_x_discrete(labels =c("experi_Prop" = "Journal experiment study",
+                             "questionaire_Prop" = "Journal quantionaire study",
+                             "Journal_Prop" = "Journal",
+                              "CFPS2018_Prop" = "CFPS2018",
+                              "Census7_Prop" = "Census7"))+
+  coord_flip()+
+  theme_classic()+
+  theme(legend.box.spacing = unit(2,"pt"),
+        legend.position = "bottom",
+        legend.key.size = unit(0.5, "cm"),
+        legend.text = element_text(size = 15, family = "serif"),
+        legend.title = element_text(size = 15, family = "serif"),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))+
+  guides(fill = guide_legend(ncol = 3))
+
+
+H2_Fig_region_four_studytype 
+```
+
+second, seven region
+```{r}
+H2_region_seven_studytype <- full_join(Journal_region_seven_experi,
+                                      Journal_region_seven_questionaire,
+                            by = "Region_seven") %>% 
+  dplyr::select(-c(n.x,n.y)) %>% ## remove n cols
+  dplyr::full_join(H2_region_seven,
+                   by = "Region_seven")
+
+H2_region_seven_studytype2 <- H2_region_seven_studytype %>% 
+  pivot_longer(cols = -Region_seven,
+             names_to = "Data Source",
+             values_to = "Proportion") %>% 
+  dplyr::mutate(Region_seven = factor(Region_seven,
+                                     levels = c("Northeast China","Northwest China",
+                                                "Southwest China","South China",
+                                                "North China","Central China",
+                                                "East China")))
+
+
+## Visualization
+H2_Fig_region_seven_studytype <- ggplot(data = H2_region_seven_studytype2, aes(x = `Data Source`, y = Proportion, fill = Region_seven)) +
+  geom_col(position = "stack")+
+  labs(fill = "Region")+
+  scale_x_discrete(labels =c("experi_Prop" = "Journal experiment study",
+                             "questionaire_Prop" = "Journal quantionaire study",
+                             "Journal_Prop" = "Journal",
+                              "CFPS2018_Prop" = "CFPS2018",
+                              "Census7_Prop" = "Census7"))+
+  coord_flip()+
+  theme_classic()+
+  theme(legend.box.spacing = unit(2,"pt"),
+        legend.position = "bottom",
+        legend.key.size = unit(0.5, "cm"),
+        legend.text = element_text(size = 15, family = "serif"),
+        legend.title = element_text(size = 15, family = "serif"),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))+
+  guides(fill = guide_legend(ncol = 3))
+
+
+H2_Fig_region_seven_studytype 
+```
+
+
+To use func in main protocal 
+```{r}
+BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior = TRUE, prior = NA){
+  # datase - the input dataframe
+  # factor - column name of the factor,
+  # observed - column name of the column contains counts information for the observed,
+  # expected - column name of the column contains counts information for the expected,
+  # default_prior - whether use the default, defused prior
+  # prior - priors defined by users
+  
+  fact_level <- dataset %>% dplyr::select(all_of(factor)) %>% dplyr::pull()
+  observed_data <- dataset %>% dplyr::select(all_of(observed)) %>% dplyr::pull()
+  names(observed_data) <- fact_level
+  expected_data <- dataset %>% dplyr::select(all_of(expected)) %>% dplyr::pull()
+  n_levels <- length(observed_data)
+  
+  
+  if (default_prior & all(is.na(prior))) {
+    prior <- rep(1, n_levels)
+  } else{
+    if (is.character(prior)){
+      prior <- dataset %>% dplyr::select(all_of(prior)) %>% dplyr::pull()
+    } else if (is.array(prior)){
+      prior <-  prior
+    } else if (is.numeric(prior)){
+      prior <-  prior
+    } else{
+      print("prior much a column of the input data or a vector")
+    }
+  }
+  
+  alphas <- prior
+  counts <- observed_data
+  thetas <- expected_data
+  
+  if(sum(thetas) != 1) {
+    thetas <- thetas/sum(thetas)
+    }
+  
+  expected <- setNames(sum(counts)*thetas, names(counts))
+  
+  lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
+  lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
+
+  if (any(rowSums(cbind(thetas, counts)) == 0)) {
+    LogBF10 <- (lbeta.xa-lbeta.a)
+  } else {
+     LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+  }
+
+  BF <- data.frame(LogBF10 = LogBF10,
+                   BF10    = exp(LogBF10),
+                   BF01    = 1/exp(LogBF10))
+
+  return(list(BF       = BF,
+              expected = expected))
+  
+}
+```
+
+
+BF four experi region
+```{r}
+Journal_region_four_experi2 <- Journal_region_four_experi %>% 
+  dplyr::select(-n) %>% 
+  dplyr::rename(`Journal experiment study` = experi_Prop)
+
+H2_region_four_experi_bayes <- left_join(H2_region_four_bayes,Journal_region_four_experi2,
+                                            by = "Region_four")
+
+## BF
+## BF
+H2_BF_experi_Census7_region_four <- BayesMultiNomial(dataset = H2_region_four_experi_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal experiment study",
+                                          expected = "Census7")
+
+H2_BF_experi_CFPS2018_region_four <- BayesMultiNomial(dataset = H2_region_four_experi_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal experiment study",
+                                          expected = "CFPS2018")
+```
+
+
+BF seven experi region
+```{r}
+Journal_region_seven_experi2 <- Journal_region_seven_experi %>% 
+  dplyr::select(-n) %>% 
+  dplyr::rename(`Journal experiment study` = experi_Prop)
+
+H2_region_seven_experi_bayes <- left_join(H2_region_seven_bayes,
+                                             Journal_region_seven_experi2,
+                                            by = "Region_seven")
+
+## BF
+H2_BF_experi_Census7_region_seven <- BayesMultiNomial(dataset = H2_region_seven_experi_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal experiment study",
+                                          expected = "Census7")
+
+H2_BF_experi_CFPS2018_region_seven <- BayesMultiNomial(dataset = H2_region_seven_experi_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal experiment study",
+                                          expected = "CFPS2018")
+```
+
+
+BF four questionaire region
+```{r}
+Journal_region_four_questionaire2 <- Journal_region_four_questionaire %>% 
+  dplyr::select(-n) %>% 
+  dplyr::rename(`Journal questionaire study` = questionaire_Prop)
+
+
+H2_region_four_questionaire_bayes <- left_join(H2_region_four_bayes,
+                                               Journal_region_four_questionaire2,
+                                            by = "Region_four")
+
+## BF
+H2_BF_questionaire_Census7_region_four <- BayesMultiNomial(dataset = H2_region_four_questionaire_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal questionaire study",
+                                          expected = "Census7")
+
+H2_BF_questionaire_CFPS2018_region_four <- BayesMultiNomial(dataset = H2_region_four_questionaire_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal questionaire study",
+                                          expected = "CFPS2018")
+```
+
+
+BF seven questionaire region
+```{r}
+Journal_region_seven_questionaire2 <- Journal_region_seven_questionaire %>% 
+  dplyr::select(-n) %>% 
+  dplyr::rename(`Journal questionaire study` = questionaire_Prop)
+
+H2_region_seven_questionaire_bayes <- left_join(H2_region_seven_bayes,
+                                             Journal_region_seven_questionaire2,
+                                            by = "Region_seven")
+
+## BF
+H2_BF_questionaire_Census7_region_seven <- BayesMultiNomial(dataset = H2_region_seven_questionaire_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal questionaire study",
+                                          expected = "Census7")
+
+H2_BF_experi_CFPS2018_region_seven <- BayesMultiNomial(dataset = H2_region_seven_questionaire_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal questionaire study",
+                                          expected = "CFPS2018")
+```
+
+
+And then, I will visualize the map for the region data of Chinese subjects
+Combine all region data and load color data
+```{r}
+## combine region data
+Journal_region_experi2 <- Journal_region_experi %>% 
+  dplyr::rename(n = Sample_Size)
+Journal_region_questionaire <- Journal_region_questionaire %>% 
+  dplyr::rename(n = Sample_Size)
+
+Region_map_data <-  bind_rows(Journal_region_experi2,
+                              Journal_region_questionaire,
+                              Journal_region_general_tab2,
+                              Census7_region)
+
+## combine color data and region data
+Region_data <- dplyr::left_join(Region_map_data,Region_map_color,by = join_by(Region)) %>% 
+  dplyr::mutate(QUHUADAIMA = ifelse(Region == "重庆", "500000", QUHUADAIMA),
+                Color = ifelse(Count_Bins == "<1",1,
+                               ifelse(Count_Bins == "1~5",2,
+                                      ifelse(Count_Bins == "5~10",3,4))),
+                Color = factor(Color, levels = c("1", "2", "3", "4"))) %>% 
+  tidyr::pivot_wider(names_from = Data_Source,values_from = c(Proportion, Count_Bins,n,Color)) %>% 
+  dplyr::mutate(across(3:ncol(.),~ifelse(is.na(.),0,.)))
+```
+
+
+Finally, I visualized geographic distribution and calculated Bayesian multinomial test for region.
+```{r}
+API_pre <-  "http://xzqh.mca.gov.cn/data/"
+## 读取全国数据
+China <-  st_read(dsn = paste0(API_pre, "quanguo.json"), stringsAsFactors=FALSE) 
+## 使用 4326 地理坐标系
+st_crs(China) <-  4326
+
+# 读取国界线数据
+China_line <-  st_read(dsn = paste0(API_pre, "quanguo_Line.geojson"), stringsAsFactors=FALSE) 
+st_crs(China_line) <-  4326
+## 选择区划代码为国界线的区域
+gjx <- China_line[China_line$QUHUADAIMA == "guojiexian",]
+
+China <- dplyr::left_join(China,Region_data,by= "QUHUADAIMA")
+
+
+
+## Chinese journal papers in general population
+H2_Fig_region_general <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_region_general_population))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "Journal") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5,
+                                  margin = margin(b = 5)),
+        legend.position = "none",
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())+
+  annotation_north_arrow(location = 'tl',which_north = 'false',
+                         style = north_arrow_orienteering(),
+                         height = unit(0.8, "cm"),
+                         width = unit(0.6, "cm") )
+
+
+
+## Journal experi
+H2_Fig_Journal_experi_region <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_experi))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "Journal experiment study") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5,
+                                  margin = margin(b = 5)),
+        legend.title = element_blank(),
+        legend.direction = "horizontal",
+        legend.position = "bottom",
+        legend.box = "horizontal",
+        legend.margin = margin(t = 5, b = 5), 
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())
+
+
+## questionaire
+H2_Fig_Journal_questionaire_region <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_questionaire))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "Journal questionaire study") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5,
+                                  margin = margin(b = 5)),
+        legend.title = element_blank(),
+        legend.position = "none",
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())
+
+
+H2_Fig_region_studytype <- H2_Fig_region_general + H2_Fig_Journal_experi_region + H2_Fig_Journal_questionaire_region +
+  plot_layout(ncol = 3, nrow = 1, heights = c(2,2))+
+  plot_annotation(tag_levels = 'A',
+                  theme = theme(plot.title = element_text(size = 16))) + 
+  theme(plot.tag = element_text(size = 16))
+
+
+ggsave("H2_Fig_region_studytype.pdf", H2_Fig_region_studytype, device = "pdf", width=10, height = 6)
+
+H2_Fig_region_studytype
+```
