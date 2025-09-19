@@ -1131,7 +1131,7 @@ H2_BF_questionaire_Census7_region_seven <- BayesMultiNomial(dataset = H2_region_
                                           observed = "Journal questionaire study",
                                           expected = "Census7")
 
-H2_BF_experi_CFPS2018_region_seven <- BayesMultiNomial(dataset = H2_region_seven_questionaire_bayes,
+H2_BF_questionaire_CFPS2018_region_seven <- BayesMultiNomial(dataset = H2_region_seven_questionaire_bayes,
                                           factor = "Region_seven",
                                           observed = "Journal questionaire study",
                                           expected = "CFPS2018")

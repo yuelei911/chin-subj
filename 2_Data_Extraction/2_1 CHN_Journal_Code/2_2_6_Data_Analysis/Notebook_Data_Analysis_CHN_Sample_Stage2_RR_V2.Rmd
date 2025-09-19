@@ -287,6 +287,7 @@ BTS_Overview2 <- BTS_Overview %>%
 
 sum(BTS_Overview2$Proportion)
 
+writexl::write_xlsx(BTS_Overview2,"BTS_samples.xlsx")
 
 ## n < 100 countries
 BTS_n100 <- BTS_Overview2 %>% 
@@ -448,6 +449,27 @@ Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>%
 ```
 
 
+## the reporting situation of BTS
+```{r}
+BTS_colnames_list <- lapply(names(BTS), function(name) {
+  data.frame(
+    source_dataframe = name,
+    column_name = colnames(BTS[[name]])
+  )
+})
+
+# merge into one dataframe
+BTS_colnames <- do.call(rbind, BTS_colnames_list)
+
+
+## exclude our add colnames
+BTS_colnames2 <- BTS_colnames %>% 
+  dplyr::filter(!column_name %in% c("ISO2","ISO3","Target_Population","Coding_Basis",
+                                 "Countrycode","Countryfullname","Coder")) %>% 
+  dplyr::count(column_name)
+```
+
+
 In this section, I began by testing and analyzing three main hypotheses.
 
 # Test three hypotheses
@@ -507,6 +529,10 @@ Journal_gender2 <- bind_rows(Journal_gender_integer2,Journal_gender_decimal2)%>%
 
 
 ## general
+Journal_gender_general_papernum <- Journal_gender2 %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  dplyr::distinct(Article_IDs)
+
 Journal_gender_general <- Journal_gender2 %>% 
   dplyr::filter(Target_Population_N != 1) %>% 
   dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
@@ -518,6 +544,10 @@ sum(Journal_gender_general$Male_Proportion)+sum(Journal_gender_general$Female_Pr
 
 
 ## special
+Journal_gender_special_papernum <-  Journal_gender2 %>% 
+  dplyr::filter(Target_Population_N == 1) %>% 
+  dplyr::distinct(Article_IDs)
+
 Journal_gender_special <- Journal_gender2 %>% 
   dplyr::filter(Target_Population_N == 1) %>% 
   dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
@@ -577,7 +607,7 @@ rm(Journal_gender_decimal,Journal_gender_decimal2,
 
 
 Process gender data from BTS.
-```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r message=FALSE, warning=FALSE, paged.print=FALSE}
 BTS_gender_list <- list()
 
 for(i in seq_along(BTS)) {
@@ -614,7 +644,6 @@ BTS_gender_CHN <- lapply(BTS_gender_list, function(df){
 })
 
 BTS_gender_CHN <- do.call(rbind,BTS_gender_CHN)
-
 
 ## General population
 BTS_gender_CHN_general <- BTS_gender_CHN %>%
@@ -866,7 +895,9 @@ In the following part, I will calculate other age data based on different target
 Journal_age_general <-  Journal_age2 %>%
   dplyr::filter(Target_Population_N != 1)
 
-
+Journal_age_general_papernum <- Journal_age2 %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  dplyr::distinct(Article_IDs)
 ## simulate different categories age data
 ### five-year-old
 Sim_Journal_age_five1_general <- lapply(1:nrow(Journal_age_general),function(i){
@@ -1279,6 +1310,9 @@ Journal_edu_general_article <- Journal_key_variable %>%
 Journal_edu_general <- Journal_edu %>% 
   dplyr::filter(Article_IDs %in% Journal_edu_general_article$Article_IDs) %>% 
   dplyr::mutate(Sample_Size = as.numeric(Sample_Size))
+
+Journal_edu_general_papersnum <- Journal_edu_general %>% 
+  dplyr::distinct(Article_IDs)
 ```
 
 
@@ -1351,6 +1385,10 @@ Journal_college <- Journal_edu_general %>%
   dplyr::select(-c(5:9,12:15)) %>% 
   dplyr::filter(!is.na(College_and_above) & !is.na(Below_college))
 
+## paper num
+Journal_college_papernum <- Journal_college %>% 
+  dplyr::distinct(Article_IDs)
+
 ##  both > 1
 Journal_college_integer <- Journal_college  %>%
   dplyr::filter(College_and_above > 1 & Below_college > 1) %>%
@@ -1375,6 +1413,11 @@ The third category is 'high shcool and above' and 'below high school'
 Journal_high_school <- Journal_edu_general %>% 
   dplyr::select(4,12:13) %>% 
   dplyr::filter(!is.na(High_school_and_above) & !is.na(Below_high_school))
+
+## papers num
+Journal_highschool_papernum <- Journal_edu_general %>% 
+  dplyr::filter(!is.na(High_school_and_above) & !is.na(Below_high_school)) %>% 
+  dplyr::distinct(Article_IDs)
 
 ##  both > 1
 Journal_high_school_integer <- Journal_high_school %>%
@@ -1429,7 +1472,7 @@ sum(Journal_high_school2$Proportion)
 Now, in this part, I process chinese subjects' edu data of BTS
 ```{r}
 # names(BTS_edu_list)
-BTS_edu_list2 <- BTS_edu_list[-c(8,12)]
+BTS_edu_list2 <- BTS_edu_list[names(BTS_edu_list) != "BTS_Hall_et_al_2018"]
 
 BTS_edu_CHN <- lapply(BTS_edu_list2,function(df_edu){
   
@@ -3284,6 +3327,13 @@ ggsave("H3_Fig_age_suppl .pdf", H3_Fig_age_suppl , device = "pdf", width=18, hei
 
 
 H3_Fig_age_suppl 
+```
+
+
+In this part, I Will compare the special subpopulation. as above description, only Lucca et al.(2018).
+```{r}
+H3_Lucca_gender_noCHN <- do.call(rbind, (BTS[names(BTS) == "BTS_Lucca_et_al_2024"])) %>% 
+  dplyr::filter(ISO3 != "CHN")
 ```
 
 
