@@ -15,8 +15,8 @@ if (!require("pacman")) install.packages("pacman")
 pacman::p_load("tidyverse","rio","here","tidyr","irr")
 ```
 
-
-## Load data
+First, I calculated the consistency of Chinese journal coding, and then the consistency of BTS coding.
+## Load Chinese Journal data
 ```{r warning=FALSE}
 file_list <- list.files(
   here("C:/Users/ynian/Desktop/Stage_2_Code_Data"),
@@ -219,21 +219,21 @@ Relaced_articles <- Relaced_articles %>%
 
 ## Combine all data
 ```{r message=FALSE, warning=FALSE}
-Chin_Subj_CE <- bind_rows(Group24567_bind,Group1_bind,Group3_bind,Relaced_articles)
+Journal_CE <- bind_rows(Group24567_bind,Group1_bind,Group3_bind,Relaced_articles)
 ```
 
 
 ## divide two data.frame for the subsequent analysis
 ```{r}
-Coder1 <- Chin_Subj_CE[seq(1, nrow(Chin_Subj_CE), by = 3), ]
+Journal_Coder1 <- Journal_CE[seq(1, nrow(Journal_CE), by = 3), ]
 
-Coder2 <- Chin_Subj_CE[seq(2,nrow(Chin_Subj_CE), by = 3), ]
+Journal_Coder2 <- Journal_CE[seq(2,nrow(Journal_CE), by = 3), ]
 ```
 
 
-## process Coder1 and  Coder NA
+## process Coder NA
 ```{r}
-Coder1 <- Coder1 %>%
+Journal_Coder1 <- Journal_Coder1 %>%
   dplyr::mutate(rownum = 1:1749) %>% 
   dplyr::select(rownum,Coder,Article_IDs_N,Study_Number_N,Subjects_Group_N,
                 Abstract1,Abstract2,
@@ -247,7 +247,7 @@ Coder1 <- Coder1 %>%
 
 
 
-Coder2 <- Coder2 %>% 
+Journal_Coder2 <- Journal_Coder2 %>% 
   dplyr::mutate(rownum = 1:1749) %>% 
   dplyr::select(rownum,Coder,Article_IDs_N,Study_Number_N,Subjects_Group_N,
                 Abstract1,Abstract2, 
@@ -264,50 +264,50 @@ Coder2 <- Coder2 %>%
 ## convert variables type
 ```{r warning=FALSE}
 ## Abstract
-Coder1 <- Coder1 %>% 
+Journal_Coder1 <- Journal_Coder1 %>% 
   dplyr::mutate(Abstract1 = case_when(Abstract1 == "0" ~ "0",
                                       Abstract1 == "NA" ~ "NA",
                                       TRUE ~  "1"),
                 Abstract1 = as.factor(Abstract1)) 
   
-Coder2 <- Coder2 %>% 
+Journal_Coder2 <- Journal_Coder2 %>% 
   dplyr::mutate(Abstract1 = case_when(Abstract1 == "0" ~ "0",
                                       Abstract1 == "NA" ~ "NA",
                                       TRUE ~  "1"),
                 Abstract1 = as.factor(Abstract1)) 
 
 
-Coder1$Abstract2 <- as.factor(Coder1$Abstract2)
-Coder2$Abstract2 <- as.factor(Coder2$Abstract2)
+Journal_Coder1$Abstract2 <- as.factor(Journal_Coder1$Abstract2)
+Journal_Coder2$Abstract2 <- as.factor(Journal_Coder2$Abstract2)
 
 ## Target population
-Coder1$Target_Population_N <- as.factor(Coder1$Target_Population_N)
-Coder2$Target_Population_N <- as.factor(Coder2$Target_Population_N)
+Journal_Coder1$Target_Population_N <- as.factor(Journal_Coder1$Target_Population_N)
+Journal_Coder2$Target_Population_N <- as.factor(Journal_Coder2$Target_Population_N)
 
 ## sample size, Mage, SDage, female & male number
-Coder1 <- Coder1 %>% 
+Journal_Coder1 <- Journal_Coder1 %>% 
   mutate(across(c(Sample_Size, M_age, SD_age, Female_Num, Male_Num), 
                 ~replace(as.numeric(.), is.na(.), 0))) ## first replace na and then repalce 0
 
-Coder2 <- Coder2 %>% 
+Journal_Coder2 <- Journal_Coder2 %>% 
   mutate(across(c(Sample_Size, M_age, SD_age, Female_Num, Male_Num), 
                 ~replace(as.numeric(.), is.na(.), 0)))
 
 ## gender reported
-Coder1$Gender <- as.factor(Coder1$Gender)
-Coder2$Gender <- as.factor(Coder2$Gender)
+Journal_Coder1$Gender <- as.factor(Journal_Coder1$Gender)
+Journal_Coder2$Gender <- as.factor(Journal_Coder2$Gender)
 
 ## age 
-Coder1$Age <- as.factor(Coder1$Age)
-Coder2$Age <- as.factor(Coder2$Age)
+Journal_Coder1$Age <- as.factor(Journal_Coder1$Age)
+Journal_Coder2$Age <- as.factor(Journal_Coder2$Age)
 
 ## educational attainment
-table(Coder1$Educational_Attainment_N)
-Coder1$Educational_Attainment_N <- as.factor(Coder1$Educational_Attainment_N)
-Coder2$Educational_Attainment_N <- as.factor(Coder2$Educational_Attainment_N)
+table(Journal_Coder1$Educational_Attainment_N)
+Journal_Coder1$Educational_Attainment_N <- as.factor(Journal_Coder1$Educational_Attainment_N)
+Journal_Coder2$Educational_Attainment_N <- as.factor(Journal_Coder2$Educational_Attainment_N)
 
 ## remark1 & 2
-Coder1 <- Coder1 %>% 
+Journal_Coder1 <- Journal_Coder1 %>% 
   dplyr::mutate(Remark1_N = case_when(Remark1_N == "animal" ~ "1", 
                                       Remark1_N == "mining" ~ "2",
                                       Remark1_N == "qualitative" ~ "3", 
@@ -316,7 +316,7 @@ Coder1 <- Coder1 %>%
                                       TRUE ~ "5"),  ## other inappropriate uses
                 Remark1_N = as.factor(Remark1_N))
 
-Coder2 <- Coder2 %>% 
+Journal_Coder2 <- Journal_Coder2 %>% 
   dplyr::mutate(Remark1_N = case_when(Remark1_N == "animal" ~ "1", 
                                       Remark1_N == "mining" ~ "2",
                                       Remark1_N == "qualitative" ~ "3", 
@@ -326,7 +326,7 @@ Coder2 <- Coder2 %>%
                 Remark1_N = as.factor(Remark1_N))
 
 
-Coder1 <- Coder1 %>%
+Journal_Coder1 <- Journal_Coder1 %>%
   dplyr::mutate(Remark2_N = case_when(
       # Code as 3 if both "区" and "重复" are present
       grepl("区", Remark2_N) & grepl("重复", Remark2_N) ~ "3",
@@ -338,7 +338,7 @@ Coder1 <- Coder1 %>%
       TRUE ~ "NA"),
       Remark2_N = as.factor(Remark2_N))
 
-Coder2 <- Coder2 %>%
+Journal_Coder2 <- Journal_Coder2 %>%
   dplyr::mutate(Remark2_N = case_when(
       # Code as 3 if both "区" and "重复" are present
       grepl("区", Remark2_N) & grepl("重复", Remark2_N) ~ "3",
@@ -351,7 +351,7 @@ Coder2 <- Coder2 %>%
       Remark2_N = as.factor(Remark2_N))
   
 ## subjects recruitment area
-Coder1 <- Coder1 %>% 
+Journal_Coder1 <- Journal_Coder1 %>% 
   dplyr::mutate(Subjects_Recruitment_Area = case_when(
     Subjects_Recruitment_Area == "0" ~ "0",
     Subjects_Recruitment_Area == "2" ~ "2",
@@ -359,7 +359,7 @@ Coder1 <- Coder1 %>%
     TRUE ~ "1"),
     Subjects_Recruitment_Area = as.factor(Subjects_Recruitment_Area))
 
-Coder2 <- Coder2 %>% 
+Journal_Coder2 <- Journal_Coder2 %>% 
   dplyr::mutate(Subjects_Recruitment_Area = case_when(
     Subjects_Recruitment_Area == "0" ~ "0",
     Subjects_Recruitment_Area == "2" ~ "2",
@@ -368,25 +368,25 @@ Coder2 <- Coder2 %>%
     Subjects_Recruitment_Area = as.factor(Subjects_Recruitment_Area))
 
 ## subjects recruitment method
-Coder1$Subjects_Recruitment_Method_N <- as.factor(Coder1$Subjects_Recruitment_Method_N)
+Journal_Coder1$Subjects_Recruitment_Method_N <- as.factor(Journal_Coder1$Subjects_Recruitment_Method_N)
 
-Coder2$Subjects_Recruitment_Method_N <- Coder2$Subjects_Recruitment_Method_N %>% 
+Journal_Coder2$Subjects_Recruitment_Method_N <- Journal_Coder2$Subjects_Recruitment_Method_N %>% 
   recode("1;2" = "1")
-Coder2$Subjects_Recruitment_Method_N <- as.factor(Coder2$Subjects_Recruitment_Method_N)
+Journal_Coder2$Subjects_Recruitment_Method_N <- as.factor(Journal_Coder2$Subjects_Recruitment_Method_N)
 
 ## sampling method
-Coder1$Sampling_Method <- as.factor(Coder1$Sampling_Method)
-Coder2$Sampling_Method <- as.factor(Coder2$Sampling_Method)
+Journal_Coder1$Sampling_Method <- as.factor(Journal_Coder1$Sampling_Method)
+Journal_Coder2$Sampling_Method <- as.factor(Journal_Coder2$Sampling_Method)
 
 
 ## study type
-Coder1 <- Coder1 %>% 
+Journal_Coder1 <- Journal_Coder1 %>% 
   dplyr::mutate(Study_Type = case_when(Study_Type == "1" ~ "1",
                                        Study_Type == "2" ~ "2",
                                        Study_Type == "NA" ~ "NA",
                                        TRUE ~ "3"))
 
-Coder2 <- Coder2 %>% 
+Journal_Coder2 <- Journal_Coder2 %>% 
   dplyr::mutate(Study_Type = case_when(Study_Type == "1" ~ "1",
                                        Study_Type == "2" ~ "2",
                                        Study_Type == "NA" ~ "NA",
@@ -396,49 +396,49 @@ Coder2 <- Coder2 %>%
 
 ## Get Krippendorff’s alpha for continuous variables
 ```{r}
-vars <- Coder1 %>% 
+Journal_vars <- Journal_Coder1 %>% 
   dplyr::select(Sample_Size,Male_Num,Female_Num,M_age,SD_age) %>% 
   names() ## select calculated vars
  
-irrs_continuous <- data.frame(
-  IRR = sapply(vars, function(i) 
-    kripp.alpha(rbind(Coder1[[i]], Coder2[[i]]), "ratio")$value  ## value represent kripp.alpha
+Journal_irrs_continuous <- data.frame(
+  IRR = sapply(Journal_vars, function(i) 
+    kripp.alpha(rbind(Journal_Coder1[[i]], Journal_Coder2[[i]]), "ratio")$value  ## value represent kripp.alpha
   ),
   check.names = FALSE
 )
 
 options(digits = 2)
-irrs_continuous
+Journal_irrs_continuous
 ```
 
 
 ## Get Krippendorff’s alpha for categorical variables
 ```{r}
-vars <- Coder1 %>% 
+Journal_vars <- Journal_Coder1 %>% 
   dplyr::select(Age, Gender , Educational_Attainment_N,
                 Sampling_Method, Subjects_Recruitment_Method_N,
                 Target_Population_N,Study_Type) %>% 
   names() ## select calculated vars
  
 
-irrs_categorical <- data.frame(
-  IRR = sapply(vars, function(i) 
-    kripp.alpha(rbind(Coder1[[i]], Coder2[[i]]), "nominal")$value  ## value represent kripp.alpha
+Journal_irrs_categorical <- data.frame(
+  IRR = sapply(Journal_vars, function(i) 
+    kripp.alpha(rbind(Journal_Coder1[[i]], Journal_Coder2[[i]]), "nominal")$value  ## value represent kripp.alpha
   ),
   check.names = FALSE
 )
 
 
-irrs_categorical
+Journal_irrs_categorical
 ```
 
 
 # Get percentage of agreement for categorical variables
 ```{r}
-agreement_percent <- data.frame(
-  `percentage of agreement` = sapply(vars, function(i) {
+Journal_agreement_percent <- data.frame(
+  `percentage of agreement` = sapply(Journal_vars, function(i) {
   
-    combined <- cbind(Coder1[[i]], Coder2[[i]])
+    combined <- cbind(Journal_Coder1[[i]], Journal_Coder2[[i]])
     agree(combined)$value/100
 
   }),
@@ -446,5 +446,52 @@ agreement_percent <- data.frame(
 )
 
 
-agreement_percent
+Journal_agreement_percent
 ```
+
+
+The above is the consistency calculation for the Chinese journal coding data; now I will calculate the consistency for the BTS coding.
+
+## load BTS data
+```{r}
+BTS_CE <-  readxl::read_xlsx("D://chin-subj//2_Data_Extraction//2_2_BTS//Chin_Subj_Proofreading_BTS_Target_Population.xlsx")
+
+BTS_Coder1 <- BTS_CE[seq(1, nrow(BTS_CE), by = 4), ]
+
+BTS_Coder2 <- BTS_CE[seq(2,nrow(BTS_CE), by = 4), ]
+```
+
+
+## Get Krippendorff’s alpha for categorical variables
+```{r}
+BTS_vars <- BTS_Coder1 %>% 
+  dplyr::select(Target_Population) %>% 
+  names() ## select calculated vars
+ 
+BTS_irrs_categorical <- data.frame(
+  IRR = sapply(BTS_vars, function(i) 
+    kripp.alpha(rbind(BTS_Coder1[[i]], BTS_Coder2[[i]]), "nominal")$value  ## value represent kripp.alpha
+  ),
+  check.names = FALSE
+)
+
+
+BTS_irrs_categorical
+```
+# Get percentage of agreement for categorical variables
+```{r}
+BTS_agreement_percent <- data.frame(
+  `percentage of agreement` = sapply(BTS_vars , function(i) {
+  
+    combined <- cbind(BTS_Coder1[[i]], BTS_Coder2[[i]])
+    agree(combined)$value/100
+
+  }),
+  check.names = FALSE
+)
+
+
+BTS_agreement_percent
+```
+
+

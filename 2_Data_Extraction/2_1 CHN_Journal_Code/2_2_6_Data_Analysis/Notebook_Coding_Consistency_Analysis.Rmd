@@ -12,7 +12,7 @@ rm(list = ls())
 
 if (!require("pacman")) install.packages("pacman")
 
-p_load("tidyverse")
+p_load("tidyverse" <- <- <- <- <- <- )
 ```
 
 
