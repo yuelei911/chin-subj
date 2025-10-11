@@ -1258,3 +1258,26 @@ ggsave("H2_Fig_region_studytype.pdf", H2_Fig_region_studytype, device = "pdf", w
 
 H2_Fig_region_studytype
 ```
+
+
+## Bibliometric Analysis
+```{r}
+## load BTS data
+BTS_keywords <- readxl::read_xlsx("D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_keywords.xlsx")
+
+## split keyword
+BTS_keywords_split_rows <- BTS_keywords %>% 
+  dplyr::filter(!is.na(Article_Keywords)) %>% 
+  tidyr::separate_rows(Article_Keywords,sep = ";") %>% 
+  dplyr::mutate(Article_Keywords =  str_to_title(Article_Keywords),
+                Article_Keywords = ifelse(Article_Keywords == "Covid-19", "COVID-19",
+                                          Article_Keywords))
+
+                
+## tab
+BTS_keywords_tab <- BTS_keywords_split_rows %>% 
+  dplyr::group_by(Article_Keywords) %>% 
+  dplyr::summarise(n = n())
+
+sum(BTS_keywords_tab$n)
+```
