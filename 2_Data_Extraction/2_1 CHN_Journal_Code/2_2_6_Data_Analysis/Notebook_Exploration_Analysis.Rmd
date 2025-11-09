@@ -13,7 +13,7 @@ rm(list = ls())
 
 if (!require("pacman")) install.packages("pacman")
 
-p_load("tidyverse","ggplot2")
+p_load("tidyverse","ggplot2","ggwordcloud","ggrepel","xlsx","patchwork")
 ```
 
 
@@ -1261,6 +1261,7 @@ H2_Fig_region_studytype
 
 
 ## Bibliometric Analysis
+BTS data
 ```{r}
 ## load BTS data
 BTS_keywords <- readxl::read_xlsx("D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_keywords.xlsx")
@@ -1280,4 +1281,147 @@ BTS_keywords_tab <- BTS_keywords_split_rows %>%
   dplyr::summarise(n = n())
 
 sum(BTS_keywords_tab$n)
+```
+
+
+BTS wordcloud
+```{r}
+Fig_BTS_wordcloud <- ggplot(BTS_keywords_tab, 
+                        aes(label = Article_Keywords, 
+                            size = n, 
+                            color = Article_Keywords)) +
+  geom_text_wordcloud(shape = "square", 
+                      alpha = 0.8) +
+  scale_size_area(max_size = 8) +
+  theme_void()
+
+ggsave("Fig_BTS_wordcloud.pdf", Fig_BTS_wordcloud, device = "pdf", width=10, height = 6)
+
+Fig_BTS_wordcloud
+```
+
+
+Journal data
+```{r}
+Journal_keywords <- read.xlsx("C://Users//ynian//Desktop//cnki//Chin_Subj_Journal_Keywords.xlsx",
+                              sheetIndex = 1)
+
+
+Journal_keywords2 <- Journal_keywords %>% 
+  dplyr::select(Article_IDs,Article_Title,`Keyword.关键词`,`Year.年`) %>% 
+  dplyr::rename(Keywords = 3 , Year = 4) %>% 
+  tidyr::separate_rows(3, sep = "[;,.\\s|]+") %>% 
+  group_by(Keywords) %>%
+  summarise(tab = n(), .groups = "drop") %>%
+  arrange(desc(tab))
+
+
+## split year
+Journal_keywords_tab <- Journal_keywords %>% 
+  dplyr::select(Article_IDs,Article_Title,`Keyword.关键词`,`Year.年`) %>% 
+  dplyr::rename(Keywords = 3 , Year = 4) %>% 
+  tidyr::separate_rows(3, sep = "[;,.\\s|]+") %>% 
+  dplyr::mutate(Year = case_when(Year %in% c("2017","2018") ~ "2018",
+                                 Year %in% c("2020","2021") ~ "2021",
+                                 TRUE ~ Year)) %>% 
+  group_by(Year, Keywords) %>%
+  summarise(tab = n(), .groups = "drop") %>%
+  arrange(Year, desc(tab))
+
+
+## filter 71
+## total
+Journal_keywords_tab71 <- Journal_keywords_tab %>% 
+  arrange(desc(tab)) %>% 
+  select(Keywords,tab) %>% 
+  slice(1:71)
+
+## different period
+Journal_keywords_tab2008 <- Journal_keywords_tab %>% 
+  dplyr::filter(Year == "2008") %>% 
+  select(Keywords,tab) %>% 
+  arrange(desc(tab)) %>% 
+  slice(1:71)
+
+
+Journal_keywords_tab2018 <- Journal_keywords_tab %>% 
+  dplyr::filter(Year == "2018") %>% 
+  select(Keywords,tab) %>% 
+  arrange(desc(tab)) %>% 
+  slice(1:71)
+
+
+Journal_keywords_tab2021 <- Journal_keywords_tab %>% 
+  dplyr::filter(Year == "2021") %>% 
+  select(Keywords,tab) %>% 
+  arrange(desc(tab)) %>% 
+  slice(1:71)
+```
+
+
+Journal wordcloud
+```{r}
+## total
+Journal_wordcloud_total <- Journal_keywords2 %>% 
+  arrange(desc(tab)) %>% 
+  slice(1:71) %>% 
+  ggplot(aes(label = Keywords, 
+             size = tab, 
+             color = Keywords)) +
+  geom_text_wordcloud(shape = "square", 
+                      alpha = 0.8) +
+  scale_size_area(max_size = 8) +
+  theme_void()
+
+Journal_wordcloud_total 
+
+# ## 2008
+# Journal_wordcloud2008 <- ggplot(Journal_keywords_tab2008, 
+#                                   aes(label = Keywords, 
+#                             size = tab, 
+#                             color = Keywords)) +
+#   geom_text_wordcloud(shape = "square", 
+#                       alpha = 0.8) +
+#   scale_size_area(max_size = 8) +
+#   theme_void()
+# 
+# Journal_wordcloud2008
+# 
+# ## 2018
+# Journal_wordcloud2018 <- ggplot(Journal_keywords_tab2018, 
+#                                   aes(label = Keywords, 
+#                             size = tab, 
+#                             color = Keywords)) +
+#   geom_text_wordcloud(shape = "square", 
+#                       alpha = 0.8) +
+#   scale_size_area(max_size = 8) +
+#   theme_void()
+# 
+# Journal_wordcloud2018 
+# 
+# ## 2021
+# Journal_wordcloud2021 <- ggplot(Journal_keywords_tab2021, 
+#                                   aes(label = Keywords, 
+#                             size = tab, 
+#                             color = Keywords)) +
+#   geom_text_wordcloud(shape = "square", 
+#                       alpha = 0.8) +
+#   scale_size_area(max_size = 8) +
+#   theme_void()
+# 
+# Journal_wordcloud2021
+```
+
+
+```{r}
+# Fig_Journal_wordcloud <-  Journal_wordcloud_total + Journal_wordcloud2008 + 
+#   Journal_wordcloud2018 + Journal_wordcloud2021 +
+#   plot_layout(ncol = 2, nrow = 2, heights = c(2,2))+
+#   plot_annotation(tag_levels = 'A',
+#                   theme = theme(plot.title = element_text(size = 16))) + 
+#   theme(plot.tag = element_text(size = 16))
+# 
+# # ggsave("Fig_Journal_wordcloud.pdf", Fig_Journal_wordcloud, device = "pdf", width=10, height = 6)
+# 
+# Fig_Journal_wordcloud
 ```

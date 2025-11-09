@@ -1,0 +1,208 @@
+---
+title: "H3_age_exploration_analysis"
+author: "Lei Yue"
+date: "2025-10-22"
+output: html_document
+---
+
+load data
+```{r}
+rm(list = ls())
+
+library(tidyverse)
+library(ggplot2)
+
+load("H3_age_exploration.RData")
+```
+
+
+Then, I continued to use the same steps to divide age into four age group.
+```{r}
+Sim_Sens_mult_age_four <- function(Mean1, diff_age, SD1, sample_N=Sample_Size){
+  
+  
+  ageData_age_four <-  c(pnorm(17, mean = Mean1, sd = SD1) * sample_N,
+                          (pnorm(41, mean = Mean1, sd = SD1) - pnorm(17, mean = Mean1, sd = SD1)) *sample_N,
+                          (pnorm(61, mean = Mean1, sd = SD1) - pnorm(41, mean = Mean1, sd = SD1)) *sample_N,
+                          (1 - pnorm(61, mean = Mean1, sd = SD1)) * sample_N)
+  
+    
+  # create a dataframe with ageData_Fourage
+  Sim_age_four_df <- setNames(data.frame(matrix(ncol = 2, nrow = 4)), c("ageBins", "sim1"))
+  Sim_age_four_df$ageBins <- c("<=17", "18~40", "41~60",">=61")
+  Sim_age_four_df$sim1[1:4] <- ageData_age_four
+  
+
+  return(Sim_age_four_df)
+}
+```
+
+
+
+```{r}
+Journal_age_four_general <- Journal_age2 %>% 
+  dplyr::filter(Target_Population_N != 1)
+
+
+Sim_Journal_age_four_general <- lapply(1:nrow(Journal_age_four_general),function(i){
+  
+  Sim_Sens_mult_age_four(Mean1 = Journal_age_four_general$M_age[i],
+                diff_age = 0,
+                SD1 = Journal_age_four_general$SD_age[i],
+                sample_N = Journal_age_four_general$Sample_Size[i])
+  
+  })
+
+
+Sim_Journal_age_four2_general <- do.call(rbind,Sim_Journal_age_four_general)
+
+
+Sim_Journal_age_four3_general <- Sim_Journal_age_four2_general %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(ageBins =factor(ageBins,
+                                levels = c("<=17","18~40", "41~60", ">=61")))
+
+
+## Calculate the sample difference between the coded data and the simulated data
+# sum(Journal_age_four_general$Sample_Size)-sum(Sim_Journal_age_four3_general$sim1,na.rm = TRUE)
+```
+
+
+```{r}
+BTS_age_four_list <- list()
+
+for(i in seq_along(BTS)){
+  
+  BTS_name <- names(BTS)[i]
+  
+  if("Age" %in% names(BTS[[i]])){
+    
+    BTS_age <- BTS[[i]] %>% 
+      dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
+      dplyr::mutate(Age = as.numeric(Age)) %>% 
+      dplyr::select(Article_Id,Age,Target_Population,ISO3) %>% 
+      #dplyr::group_by(ISO3) %>% 
+      dplyr::mutate(ageBins = cut(Age,
+                                breaks = c(0, 17.5, 40.5, 60.5, Inf),
+                                labels = c("<=17","18~40", "41~60", ">=61"),
+                                levels = c("<=17","18~40","41~60", ">=61")))
+  
+    
+BTS_age_four_list[[BTS_name]] <- BTS_age
+  
+} else {  
+ 
+    cat(sprintf("Skipping '%s' because it does not contain a 'Age' column.\n", BTS_name))  
+  } 
+}
+
+
+## merge data.frame in list
+BTS_age_four <-  do.call(rbind,BTS_age_four_list)
+```
+
+
+```{r}
+## filter > 30
+BTS_age_four_allcountry_filter <-  BTS_age_four %>% 
+  dplyr::filter(Article_Id != "Lucca_et_al_2024") %>%  ## filter target population is a and 3
+  dplyr::group_by(ISO3) %>% 
+  dplyr::summarise(n=n()) %>% 
+  dplyr::filter(n > 30) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::pull(ISO3)
+
+
+BTS_age_four_allcountry <- BTS_age_four %>% 
+  dplyr::filter(ISO3 %in% BTS_age_four_allcountry_filter) %>% 
+  dplyr::filter(ISO3 != "CHN") %>% ## drop Chinese data
+  dplyr::group_by(ISO3,ageBins) %>% 
+  dplyr::summarise(n=n()) %>% 
+  dplyr::mutate(Proportion = n/sum(n)*100) %>% 
+  dplyr::ungroup()
+
+
+## calculate total sum
+BTS_age_four_allcountry_sum_prop <- BTS_age_four_allcountry %>% 
+  dplyr::group_by(ISO3) %>% 
+  dplyr::summarise(sum = sum(Proportion)) %>% 
+  dplyr::ungroup()
+
+
+## Add Chinese data
+BTS_age_four_CHN <- BTS_age_four %>% 
+  dplyr::filter(ISO3 == "CHN") %>% 
+  dplyr::group_by(ISO3,ageBins) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::ungroup()
+
+
+## combine CHN data
+Journal_age_four <- Sim_Journal_age_four3_general %>% 
+  dplyr::mutate(ISO3 = "CHN") %>% 
+  dplyr::rename(n =sim1)
+
+  
+Journal_BTS_age_four_CHN <- bind_rows(BTS_age_four_CHN, Journal_age_four)
+
+
+Journal_BTS_age_four_CHN2 <- Journal_BTS_age_four_CHN %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(n = sum(n)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(ISO3 = "CHN") %>% 
+  dplyr::mutate(Proportion = n/sum(n)*100)
+  
+
+## Combine data
+H3_age_four <- dplyr::bind_rows(BTS_age_four_allcountry, Journal_BTS_age_four_CHN2)
+
+
+# table(H3_PsyStages$ageBins)
+
+## Set factor
+H3_age_four_factor <- H3_age_four %>%
+  dplyr::filter(ageBins == "18~40") %>%
+  dplyr::arrange(Proportion) %>%
+  dplyr::pull(ISO3)
+
+
+
+## Process WEIRD
+H3_age_four2 <- H3_age_four %>%
+  dplyr::left_join(WEIRD, by = c("ISO3" = "iso3c")) %>%
+  dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>%
+  dplyr::mutate(ISO3 = factor(ISO3, levels = H3_age_four_factor)) %>%
+  dplyr::filter(!is.na(ageBins))
+
+
+## 18~40 age 
+H3_age_four2_1840 <- H3_age_four2 %>% 
+  dplyr::filter(ageBins == "18~40") %>% 
+  dplyr::filter(Proportion > 60)   ## 123 
+```
+
+
+```{r}
+H3_Fig_age_four <- ggplot(H3_age_four2, aes(x=Proportion, y=ISO3, fill=ageBins)) +
+  geom_col(alpha = .75)+
+  labs(y="Countries") + 
+  scale_fill_discrete(label=c("0~17", "18~40", "41~60",">=61")) +
+  theme_classic()+
+  #guides(y="axis_nested") +
+  theme(legend.title = element_text(size = 15,family = "serif"),
+        axis.title= element_text(size = 15,family = "serif"),
+        axis.text = element_text(size = 10,family = "serif"),
+        strip.text = element_text(size = 15,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black")) +
+  scale_x_continuous(breaks = seq(0, 100, by = 10)) +
+  facet_wrap(~ WEIRD, scales = "free") 
+
+
+H3_Fig_age_four
+
+ggsave("H3_Fig_age_four.pdf",H3_Fig_age_four,device = "pdf", width=18, height = 18)
+```

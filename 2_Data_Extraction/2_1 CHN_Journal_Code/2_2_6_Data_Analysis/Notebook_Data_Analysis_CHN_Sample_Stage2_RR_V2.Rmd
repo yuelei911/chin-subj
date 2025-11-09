@@ -984,7 +984,7 @@ Sim_Journal_age_PsyStages3_general <- Sim_Journal_age_PsyStages2_general %>%
   dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
   dplyr::ungroup() %>% 
   dplyr::mutate(ageBins =factor(ageBins,
-                                levels = c("<=17","18~25", "26~40", "41~60", ">=61")))
+                                levels = c("<=17","18~40", "41~60", "41~60", ">=61")))
 
 
 ## Calculate the sample difference between the coded data and the simulated data
@@ -1310,6 +1310,12 @@ For different target population, I compared general population for them firstly,
 
 
 Meanwhile, I found strong evidence support $H_1$ for another age category,the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_interval10_general$BF$LogBF10`.
+
+
+In addition, I attempt to conduct an exploratory analysis on Hypothesis 3 using four age groups (<18, 18~40, 41~60, >61). Therefore, I will save the following age data.
+```{r}
+save(Journal_age2,BTS,WEIRD,file = "H3_age_exploration.RData")
+```
 
 
 ### attainment education
@@ -2360,6 +2366,8 @@ Journal_region_single <- Journal %>%
    dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
    dplyr::group_by(Subjects_Recruitment_Area) %>% 
    dplyr::summarise(n = sum(Sample_Size))
+ 
+
 ```
 
 
