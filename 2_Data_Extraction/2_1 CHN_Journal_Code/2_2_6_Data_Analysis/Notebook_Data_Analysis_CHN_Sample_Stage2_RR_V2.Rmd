@@ -1718,6 +1718,12 @@ The calculation results show that there is no significant difference between the
 for general population, I also found similar results. Census7: $Log(BF_{10})$ = `r H2_BF_gender_Census7_general$BF$LogBF10` , CFPS2018: $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_general$BF$LogBF10`
 
 
+save gender data for exploration analyse
+```{r}
+save(H1_gender_general,H2_gender_general,file = "H2_gender_exploration.Rdata") ## data include papers, projects, and Census data.
+```
+
+
 In this part, I calculate data based on special target population
 I calculate preschool children.
 ```{r}
