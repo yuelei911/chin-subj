@@ -302,6 +302,7 @@ Journal_report_year
 load data
 ```{r}
 load("H2_BTS_Journal_age_edu.RData")
+load("H2_gender_exploration.Rdata")
 ```
 
 
@@ -365,9 +366,76 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 }
 ```
 
-and then, I process the data of age and edu
-## age
+and then, I process the data of gender, age and edu.
 
+## gender
+process data
+```{r}
+SupplH2_gender_general <- H2_gender_general %>% 
+  dplyr::rename(Data_Source = Data_source) %>% 
+  rbind(H1_gender_general) %>% 
+  dplyr::filter(Data_Source != "Chinese subjects") %>% 
+  dplyr::mutate(Data_Source = factor(Data_Source,
+                                     levels = c("Census7","CFPS2018",
+                                                "BTS Chinese", "Journal")))
+```
+
+
+visulize
+```{r}
+Suppl_Fig_H2_gender_general <- ggplot(SupplH2_gender_general,aes(Data_Source,Proportion,fill= Gender))+
+  geom_col()+
+  geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
+  labs(y="Proportion",x = "Data source")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 20, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))
+
+
+ggsave("Suppl_Fig_H2_gender_general.pdf",Suppl_Fig_H2_gender_general, device = "pdf", width=18, height = 9)
+Suppl_Fig_H2_gender_general
+
+```
+
+
+BF calculate
+```{r}
+SupplH2_gender_general_bayes <- SupplH2_gender_general %>% 
+  dplyr::select(Gender,Data_Source,Proportion) %>% 
+  pivot_wider(names_from = Data_Source,values_from = Proportion)
+
+## Journal VS Census7
+SupplH2_BF_gender_Journal_Census <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+                                             factor = "Gender",
+                                             observed = "Journal",
+                                             expected = "Census7")
+
+## Journal VS CFPS2018
+SupplH2_BF_gender_Journal_CFPS <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+                                             factor = "Gender",
+                                             observed = "Journal",
+                                             expected = "CFPS2018")
+
+## BTS VS Census7
+SupplH2_BF_gender_BTS_Census <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+                                             factor = "Gender",
+                                             observed = "BTS Chinese",
+                                             expected = "Census7")
+
+## BTS VS CFPS2018
+SupplH2_BF_gender_BTS_CFPS <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+                                             factor = "Gender",
+                                             observed = "BTS Chinese",
+                                             expected = "CFPS2018")
+```
+
+
+## age
 visualize
 ```{r}
 ## BTS
@@ -401,14 +469,6 @@ S3_age_general <- ggplot(data= Census7_age_five5,
         legend.title = element_blank(),
         axis.title = element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"))
-
-
-S3_age_general
-
-
-
-
-
 
 ggsave("S3_age_general.pdf",S3_age_general, device = "pdf", width=18, height = 9)
 
@@ -449,14 +509,14 @@ S3_BF_Psystages_BTS_Census <- BayesMultiNomial(dataset = S_BF_PsyStages,
 
 
 ## BTS interval10
-S3_BF_interval10_BTS_Census <- BayesMultiNomial(dataset = S_BF_PsyStages,
+S3_BF_interval10_BTS_Census <- BayesMultiNomial(dataset = S_BF_interval10,
                                              factor = "ageBins",
                                              observed = "BTS Chinese",
                                              expected = "Census7")
 
 
 ## Journal PsyStages
-S3_BF_Psystages_Journal_Census <- BayesMultiNomial(dataset = S_BF_interval10,
+S3_BF_Psystages_Journal_Census <- BayesMultiNomial(dataset = S_BF_PsyStages,
                                              factor = "ageBins",
                                              observed = "Journal",
                                              expected = "Census7")
@@ -1410,18 +1470,4 @@ Journal_wordcloud_total
 #   theme_void()
 # 
 # Journal_wordcloud2021
-```
-
-
-```{r}
-# Fig_Journal_wordcloud <-  Journal_wordcloud_total + Journal_wordcloud2008 + 
-#   Journal_wordcloud2018 + Journal_wordcloud2021 +
-#   plot_layout(ncol = 2, nrow = 2, heights = c(2,2))+
-#   plot_annotation(tag_levels = 'A',
-#                   theme = theme(plot.title = element_text(size = 16))) + 
-#   theme(plot.tag = element_text(size = 16))
-# 
-# # ggsave("Fig_Journal_wordcloud.pdf", Fig_Journal_wordcloud, device = "pdf", width=10, height = 6)
-# 
-# Fig_Journal_wordcloud
 ```
