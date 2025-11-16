@@ -24,16 +24,15 @@ H3\_: This indicates data use to test hypothesis 3.
 
 Census\_: This prefix represents Census data published by the National Bureau of Statistics of China.
 
-CFPS2018\_: This signifies data from the 2018 Chinese Family Panel Study.
+CFPS2018\_: This signifies data from the 2018 Chinese Family Panel Studies.
 
 The majority of data adhere to these naming conventions, with the prefixes typically followed by descriptive and comprehensible demographic variable names or other relevant terms to clarify the data content.
 
-Furthermore, if "Fig" appears in the data name, it signifies that the content represents a data visualization result. Similarly, the presence of "bayes" indicates that the data or result pertains to the calculation of the Bayes factor.
+Furthermore, if "Fig" appears in the data name, it signifies that the content represents a data visualization result. Similarly, the presence of "bayes" or "BF" indicates that the data or result pertains to the calculation of the Bayes factor.
 
-Now, I start to analysis data. and the first thing is load library.
+Now, I start to analysis data. and the first thing is load packages.
 
 # Install and Load packages
-
 ```{r message=FALSE, warning=FALSE}
 rm(list = ls())
 
@@ -46,12 +45,12 @@ pacman::p_load("geojsonsf","sf","RColorBrewer","ggspatial","patchwork","ggrepel"
 pacman::p_load("truncnorm","BayesFactor", "gtools", "bruceR")
 ```
 
-And then, I loaded the data. The data includes data from the first Stage 1 of the pre-registration report (primarily Census data and CFPS2018 data), Chinese journal coding data, and data from Big Team Science (BTS).
+
+And then, I loaded the data. The data primarily includes Census data, CFPS2018 data, Chinese journal coding data, and BTS data.
+
 
 # Load data
-
 ## Load the data of stage 1, Chinese journals coding data, and BTS data
-
 ```{r}
 load("df_Pre_Stage2_Journal_Code.Rdata")
 
@@ -164,8 +163,8 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 ```
 
 
-At this point, I have finished loading the package and data. Next, I analyzed the data and visualized it according to the logic of the written protocal.
-I began by analyzing the basic case of the two data sets (BTS and Chinese journals).
+At this point, I have finished loading the package and data. Next, I analyzed the data and visualized it according to the logic of the written protocol.
+
 
 # Overview of participants
 ## The basic situation of Chinese journals coding data
@@ -248,15 +247,14 @@ Journal_special_target_population2 <- readxl::read_xlsx("Journal_special_target_
 ```
 
 
-Next, I try to classify special target population
+I try to classify special target population
 ```{r}
 ## college
-
 Journal_college_TP <- Journal_special_target_population2 %>% 
   dplyr::filter(grepl("大学生|研究生",Recode_target_population)) %>% 
   dplyr::filter(!Recode_target_population %in% c("大学生和青少年罪犯","女大学生","中学生和大学生"))
 
-table(Journal_college_TP$Recode_target_population)
+# table(Journal_college_TP$Recode_target_population)
 
 
 ## children and adolenscent
@@ -285,36 +283,29 @@ BTS_Overview2 <- BTS_Overview %>%
   dplyr::mutate(Proportion = n/sum(n)*100,
                 Site = "BTS")
 
-sum(BTS_Overview2$Proportion)
-sum(BTS_Overview2$n)
 
-writexl::write_xlsx(BTS_Overview2,"BTS_samples.xlsx")
+sum(BTS_Overview2$Proportion) ## 100
+sum(BTS_Overview2$n) ## 1367084
+Chinese_sum <- BTS_Overview2 %>% 
+  dplyr::filter(ISO2 %in% c("TW","HK","MO","CN")) %>% 
+  dplyr::summarise(n=sum(n)) ## 29006
+29006/1367084
 
-## n < 100 countries
-BTS_n100 <- BTS_Overview2 %>% 
-  dplyr::filter(n < 100)
 
-## n < 1000
-BTS_n1000 <- BTS_Overview2 %>% 
-  dplyr::filter(n < 1000)
+writexl::write_xlsx(BTS_Overview2,"D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_participants.xlsx")
+
+# ## n < 100 countries
+# BTS_n100 <- BTS_Overview2 %>% 
+#   dplyr::filter(n < 100)
+# 
+# ## n < 1000
+# BTS_n1000 <- BTS_Overview2 %>% 
+#   dplyr::filter(n < 1000)
 ```
 
 
 ## The reported situation of Chinese Journals
 ```{r}
-## calculate region data
-# Journal_region_detail_tab <- Journal %>% 
-#   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Subjects_Recruitment_Area) %>% 
-#   dplyr::filter(Subjects_Recruitment_Area != 0)
-# 
-# ## studies
-# Journal_region_detail_study_num <- Journal_region_detail_tab %>% 
-#   dplyr::distinct(Article_IDs,Study_Number) ## 680 studies
-# 
-# ## papers
-# Journal_region_detail_papers_num <- Journal_region_detail_tab %>% 
-#   dplyr::distinct(Article_IDs) ## 601 papers
-
 Journal_report <- Journal %>% 
   dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
                 Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
@@ -332,6 +323,7 @@ Journal_report <- Journal %>%
                    .groups = "drop") %>% 
   dplyr::select(3:last_col())
 
+
 report_list <- list()
 
 for (i in names(Journal_report)){
@@ -339,7 +331,7 @@ for (i in names(Journal_report)){
   
   report_table <- data.frame(table(Journal_report[[i]])) %>% 
     dplyr::mutate(col_names = names(Journal_report[i]),
-                  proportion = round(Freq / sum(Freq),4))
+                  proportion = Freq / sum(Freq))
   
   report_list[[i]] <- report_table
   
@@ -349,16 +341,14 @@ Journal_report <- do.call(rbind, report_list) %>%
   dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
 
 ### Calculate reported status of Educational_Attainment and Occupation
-Journal_education_occupation <- Journal %>% 
+Journal_education_occupation_report <- Journal %>% 
   dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
   dplyr::group_by(Article_IDs,Study_Number) %>% 
   dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
                    Occupation_N = max(Occupation_N) > 0,.groups = "drop")   ### 306 studies
 
-## 20215075 need process
-
-table(Journal_education_occupation $Educational_Attainment_N) ## FALSE 165 TRUE 141
-table(Journal_education_occupation $Occupation_N)  ## FALSE 201 TRUE 105
+table(Journal_education_occupation_report$Educational_Attainment_N) ## FALSE 165 TRUE 141
+table(Journal_education_occupation_report$Occupation_N)  ## FALSE 201 TRUE 105
 
 
 Journal_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
@@ -367,7 +357,7 @@ Journal_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported
                                                    col_names= c("Educational_Attainment",
                                                                 "Educational_Attainment",
                                                                 "Occupation","Occupation"),
-                                                   proportion = c(0.54,0.46,0.66,0.34))
+                                                   proportion = c(165/(165+141),141/(165+141),201/(201+105),105/(201+105)))
 
 
 Journal_report <- rbind(Journal_report,Journal_education_occupation_table) %>%
@@ -375,7 +365,7 @@ Journal_report <- rbind(Journal_report,Journal_education_occupation_table) %>%
                                    labels = c("Sex","Age","Recruitment method",
                                               "Recruitment area","Educational attainment",
                                               "Occupation","Sampling method",
-                                              "SES","Ethnicity","Religion"),
+                                              "Socioeconomic status","Ethnicity","Religious belief"),
                                    levels = c("Sex","Age","Recruitment_Method",
                                               "Recruitment_Area","Educational_Attainment",
                                               "Occupation","Sampling_Method",
@@ -413,7 +403,7 @@ Fig_Journal_report
 ggsave("Fig_Journal_report.pdf", Fig_Journal_report, device = "pdf", width=16, height = 9)
 
 ## Here, I remove some data sets to reduce data set clutter.
-rm(report_list,report_table,i,Journal_education_occupation,Journal_education_occupation_table)
+rm(report_list,report_table,i,Journal_education_occupation_report,Journal_education_occupation_table)
 ```
 
 

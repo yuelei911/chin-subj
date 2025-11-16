@@ -3343,7 +3343,8 @@ df_stage2_Journal_Code2$Female_Num[1419] <- 0
 df_stage2_Journal_Code2$M_age[1419] <- 36.11
 df_stage2_Journal_Code2$SD_age[1419] <- 4.91
 df_stage2_Journal_Code2$Sample_Type_N[1419] <- 4
-
+df_stage2_Journal_Code2$Educational_Attainment_N[1419] <- 0
+df_stage2_Journal_Code2$Occupation_N[1419] <- 0
 
 ## 20182003
 df_stage2_Journal_Code2$M_age[322] <- "男生:21.63;女生:21.89"
