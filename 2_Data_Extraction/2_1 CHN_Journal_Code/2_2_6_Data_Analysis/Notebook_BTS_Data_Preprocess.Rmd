@@ -21,13 +21,12 @@ pacman::p_load("tidyverse","here","rio")
 
 # Load the data of BTS
 ```{r}
-load("BTS_dupli.Rdata")
+load("BTS_dupli.Rdata") ## A total of 27 projects were included
 ```
 
 
-all data.frame merge into one list
+Convert data format from data.frame to list
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-## trans data.frame to list
 current_data_frame <- ls()[sapply(ls(), function(x) is.data.frame(get(x)))]
 BTS0 <-  mget(current_data_frame)
 BTS <- BTS0
@@ -66,33 +65,6 @@ WEIRD <- codelist %>%
 ```
 
 
-As the data for the large-scale international collaboration project is constantly updated, recording the names and order of data frames in the list here will facilitate the subsequent improvement of the code.
-```{r}
-names(BTS)
-## save each data.frame colnames
-colname_list <- list()
-
-# Loop through each dataframe in the list
-for (name in names(BTS)) {
-  
-  df <- BTS[[name]]
-  col_names <- colnames(df)
-  
-  temp_df <- data.frame(
-    data_source = name,
-    column_name = col_names
-  )
-  colname_list[[name]] <- temp_df
-}
-
-
-# Combine the result list into a single data.frame
-BTS_colnames <- do.call(rbind, colname_list)
-rm(colname_list,temp_df,col_names,name,df)
-```
-
-
-
 In this part, I tried to batch country code.
 ```{r}
 # str(BTS)
@@ -100,8 +72,6 @@ In this part, I tried to batch country code.
 names(BTS[[16]])[names(BTS[[16]]) == "Country_now"] <- "Country"  ## BTS_Klein 2018 Slate1
 
 names(BTS[[17]])[names(BTS[[17]]) == "Country_now"] <- "Country"  ## BTS_Klein 2018 Slate2
-
-names(BTS[[18]])[names(BTS[[18]]) == "Country_now"] <- "Country"  ## BTS_Kowal 2018
 
 names(BTS[[28]])[names(BTS[[28]]) == "Country_now"] <- "Country"  ## BTS_Wang 2021
 
@@ -111,7 +81,7 @@ names(BTS[[25]])[names(BTS[[25]]) == "Country_ID"]  <-  "Country" ## BTS_Tybur 2
 BTS[[28]]$Country <- trimws(sub(".*-(\\s*)", "", BTS[[28]]$Country))  ## BTS_Wang 2021
 
 
-## process abnormal Countrycode
+## process abnormal/informal Countrycode
 ## BTS_Anllo_et_al_2023
 BTS[[1]] <- BTS[[1]] %>% 
   dplyr::mutate(Country = ifelse(Country == "USA", "United States",Country))
@@ -205,7 +175,7 @@ BTS[[12]] <- BTS[[12]] %>%
     Country = ifelse(Country == "CHN", "China", Country),
     Country = ifelse(Country == "UK", "United Kingdom", Country))
                 
-  
+ 
 ### BTS_Hu_et_al_2019
 ## I converted the country codes based on the information in the IJzerman et al (2018), https://doi.org/10.1525/collabra.165.
 BTS[[13]] <- BTS[[13]] %>% 
@@ -229,7 +199,7 @@ BTS[[13]] <- BTS[[13]] %>%
 BTS[[15]] <- BTS[[15]] %>% 
    dplyr::mutate(Country = case_when(Country %in% c("Canada_EN","Canada_FR") ~ "Canada",
                                     Country %in% "CHN" ~ "China",
-                                    Country %in% "Hong Kong" ~ "China",
+                                    Country %in% "Hong Kong" ~ "Hong Kong SAR China",
                                     Country %in% c("Northern Ireland","Scotland","Wales","England") ~ "United Kingdom",
                                     Country %in% c("USA_North","USA_South") ~ "United States",
                                     Country == "Macedonia" ~ "North Macedonia",
@@ -400,7 +370,7 @@ BTS[[28]] <- BTS[[28]] %>%
 ```
 
 
-Process countrycode to following analyse
+Unify the column name of country code
 ```{r}
 ## Create CountryCode line
 BTS <- lapply(BTS, function(df){
@@ -499,7 +469,7 @@ BTS <- lapply(BTS,function(df){
 ```
 
 
-process gender data of BTS
+Process gender data of BTS
 ```{r}
 ## Batch processing of gender for different data sources
 BTS <- lapply(BTS,function(df){
@@ -538,7 +508,7 @@ BTS[[12]] <- BTS[[12]] %>%
 ```
 
 
-process age data of BTS
+Process age data of BTS
 ```{r}
 ## BTS_Awad_et_al_2018
 ## According to the document "MMdata_Readme.txt" by Awad et al (2018), the section "- Review_age: answer to the question 'How old are you?' Age is collected via an empty box (users can input numbers). Only data corresponding to age between 18 and 75 is included." indicates that we have decided to set the age range for this project as 18 to 75.
@@ -569,7 +539,7 @@ BTS[[27]] <- BTS[[27]] %>%
 ```
 
 
-process attainment education of BTS
+Process attainment education of BTS
 ```{r}
 ## BTS_Arechar_et_al_2023
 BTS[[2]] <- BTS[[2]] %>% 
@@ -594,7 +564,6 @@ BTS[[5]] <- BTS[[5]] %>%
                                       Education == "6" ~  "Completed undergrad degree (~3-5 years higher education)",
                                       Education == "7" ~ "Some graduate school",
                                       Education == "8" ~ "Completed graduate school"))
-
 
 ## BTS_Eriksson_et_al_2021
 BTS[[8]] <- BTS[[8]] %>% 
@@ -669,7 +638,7 @@ BTS[[27]] <- BTS[[27]] %>%
 ```
 
 
-Process edu of BTS data to the formal analysis
+Create edu list
 ```{r}
 
 BTS_edu_list <- list()
@@ -695,7 +664,11 @@ cat(sprintf("Skipping '%s' because it does not contain a 'Education' column.\n",
 
 
 names(BTS_edu_list)
+```
 
+
+Convert edu data into two cutoff
+```{r}
 ## BTS_Arechar_et_al_2023
 BTS_edu_list[[1]] <- BTS_edu_list[[1]] %>% 
   dplyr::mutate(Highschool = case_when(Education == "None" ~ "Below_high_school",
@@ -718,7 +691,6 @@ BTS_edu_list[[2]] <- BTS_edu_list[[2]] %>%
 
 
 ## BTS_Bertolo_et_al_2023
-
 BTS_edu_list[[3]] <- BTS_edu_list[[3]] %>% 
   dplyr::mutate(Highschool = case_when(Education %in% c("Completed elementary/middle school (primary school)", 
                                                         "Some elementary/middle school (primary school)") ~ "Below_high_school",
@@ -738,14 +710,12 @@ BTS_edu_list[[3]] <- BTS_edu_list[[3]] %>%
                                                      "Some graduate school") ~ "College_and_above"))
 
 
-
 ## BTS_Bosson_et_al_2021
 BTS_edu_list[[4]] <- BTS_edu_list[[4]] %>% 
   dplyr::mutate(Highschool = case_when(Education %in% c("Elementary school","I don't have any") ~ "Below_high_school",
                                        Education %in% c("Bachelor","Masters","Doctoral","Secondary school") ~ "High_school_and_above"),
                 College = case_when(Education %in% c("Elementary school","I don't have any","Secondary school") ~ "Below_college",
                                     Education %in% c("Bachelor","Masters","Doctoral") ~ "College_and_above"))
-
 
 
 ## BTS_Dorison_et_al_2020
@@ -756,7 +726,6 @@ BTS_edu_list[[5]] <- BTS_edu_list[[5]] %>%
                                     Education %in% c("Doctorate","Four year degree","Professional degree","Some college","Two year degree") ~ "College_and_above"))
 
 
-
 ## BTS_Eriksson_et_al_2021
 BTS_edu_list[[6]] <- BTS_edu_list[[6]] %>% 
   dplyr::mutate(Highschool = case_when(Education == "Less than high school degree" ~ "Below_high_school",
@@ -765,14 +734,12 @@ BTS_edu_list[[6]] <- BTS_edu_list[[6]] %>%
                                     Education %in% c("Bachelor's/Associate degree","Doctoral degree","Master's degree","Some college but no degree") ~ "College_and_above"))
 
 
-
 ## BTS_Everett_et_al_2021
 BTS_edu_list[[7]] <- BTS_edu_list[[7]] %>% 
   dplyr::mutate(Highschool = case_when(Education %in% c("Completed elementary school","Some elementary school") ~ "Below_high_school",
                                        Education %in% c("Completed advanced postgraduate degree","Completed college","Completed high school","Completed some postgraduate study","Some college","Some high school") ~ "High_school_and_above"),
                 College = case_when(Education %in% c("Completed elementary school","Some elementary school","Completed high school","Some high school") ~ "Below_college",
                                     Education %in% c("Completed advanced postgraduate degree","Completed college","Completed some postgraduate study","Some college") ~ "College_and_above"))
-
 
 
 ## BTS_Fernandez_Velasco_et_al_2023
@@ -907,8 +874,6 @@ BTS_edu_list[[18]] <- BTS_edu_list[[18]] %>%
 # Save Rdata
 ```{r}
 save(BTS, WEIRD, BTS_edu_list, Countrycodelist_iso2_iso3,file = "BTS.Rdata")
-
-## Hong Kong, Macao and Taiwan are inalienable parts of China. The data analysis in this ## paper does not combine them into one dataset because the survey data will be compared ## with the seventh national population census data released by China's National Bureau of ## Statistics, which does not include data from Hong Kong, Macao and Taiwan.
 ```
 
 
