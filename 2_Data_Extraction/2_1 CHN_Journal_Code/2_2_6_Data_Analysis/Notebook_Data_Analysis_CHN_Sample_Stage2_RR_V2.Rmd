@@ -717,7 +717,7 @@ H1_BF_gender_general <- BayesMultiNomial(dataset = H1_gender_bayes_general,
                                              expected = "Journal")
 ```
 
-However, within the general population, I found there no different between BTS Chinese data and Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_general$BF$LogBF10`.
+However, within the general population, I found there is no difference between BTS Chinese data and Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_general$BF$LogBF10`.
 
 
 In this part, I will analysis gender based on the special target population. For the first research question, only Lucca et al.(2024)' target population is special target population Specifically, it focuses on infants. Therefore, in specila target population, I will compare Lucca et al..(2024) with Chinese journal studies targeting infants/toddlers.
@@ -725,7 +725,7 @@ In this part, I will analysis gender based on the special target population. For
 Lucca_gender_special <- BTS[[19]] %>% 
   dplyr::filter(ISO2 == "CN") %>% 
   dplyr::group_by(Gender) %>% 
-  dplyr::summarise(n = n()) %>% ## Male 40, Female 53
+  dplyr::summarise(n = n()) %>% ## Female 40, Male 53
   dplyr::ungroup() %>% 
   dplyr::filter(!is.na(Gender)) %>% 
   dplyr::mutate(Porportion = n/sum(n)*100, 
@@ -1438,7 +1438,7 @@ BTS_edu_list2 <- BTS_edu_list[names(BTS_edu_list) != "BTS_Hall_et_al_2018"]
 BTS_edu_CHN <- lapply(BTS_edu_list2,function(df_edu){
   
   df_edu <- df_edu %>% 
-    dplyr::filter(Country == "CHN" | Country == "CN" | Country == "China")
+    dplyr::filter(ISO3 == "CHN")
   
   return(df_edu)
 })
@@ -1556,10 +1556,10 @@ H1_BF_edu_college <- BayesMultiNomial(dataset = H1_edu_college_bayes,
                                       expected = "Journal")
 ```
 
-I found strong evidence for the $H_1$ that the college proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_college$BF$LogBF10`.
+I found moderate evidence for the $H_1$ that the college proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_college$BF$LogBF10`.
+
 
 and then, I continue processing the second category: high school.
-
 ```{r}
 H1_edu_highschool_bayes <- H1_edu_highschool %>% 
   dplyr::select(1,3:4) %>% 
@@ -1572,7 +1572,7 @@ H1_BF_edu_highschool <- BayesMultiNomial(dataset = H1_edu_highschool_bayes,
                                       expected = "Journal")
 ```
 
-Similarity, I also found strong evidence for the $H_1$ that the high schools proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_highschool$BF$LogBF10`.
+Similarity, I also found very strong evidence for the $H_1$ that the high schools proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_highschool$BF$LogBF10`.
 
 
 ## Test the 2nd hypothesis
@@ -1582,9 +1582,8 @@ For hypothesis 2, I first tried to analyze the data in general. I would then com
 
 Firstly, I analyzed data in general.
 
-
 ### Gender
-In this part, first of all, I processed gender data of the Census 7th data and the CFPS2018 data.
+In this part, I processed gender data of the Census 7th data and the CFPS2018 data.
 ```{r}
 ## Process the gender data of census 7
 Census7_gender <- df_census7 %>%
@@ -1596,7 +1595,7 @@ Census7_gender <- df_census7 %>%
   tidyr::pivot_longer(c(Male, Female), 
                       names_to = "Gender",
                       values_to = "Proportion") %>%
-  dplyr::mutate(Proportion = round(as.numeric(Proportion), 0))
+  dplyr::mutate(Proportion = as.numeric(Proportion))
 
 ## Process the gender data of CFPS2018
 CFPS2018_gender <- df_CFPS2018 %>%
@@ -1620,7 +1619,7 @@ H1_gender_general2 <- H1_gender_general %>%
   dplyr::group_by(Gender) %>% 
   dplyr::summarise(n = sum(n)) %>% 
   dplyr::mutate(Proportion = n/sum(n)*100,
-                Data_source = "Chinese subjects") %>% 
+                Data_source = "Chinese participants") %>% 
   dplyr::ungroup()
 
 sum(H1_gender_general2$Proportion)
@@ -1659,20 +1658,18 @@ H2_gender_bayes_general <- H2_gender_general %>%
 
 H2_BF_gender_Census7_general <- BayesMultiNomial(dataset = H2_gender_bayes_general,
                                           factor = "Gender",
-                                          observed = "Chinese subjects",
+                                          observed = "Chinese participants",
                                           expected = "Census7")
 
 
 H2_BF_gender_CFPS2018_general <- BayesMultiNomial(dataset = H2_gender_bayes_general,
                                           factor = "Gender",
-                                          observed = "Chinese subjects",
+                                          observed = "Chinese participants",
                                           expected = "CFPS2018")
 ```
 
 
-The calculation results show that there is no significant difference between the data in Chinese subjects pool and Census7 and CFPS2018, and the calculation results are $Log(BF_{10})$ = `r H2_BF_gender_Census7_total$BF$LogBF10` and $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_total$BF$LogBF10` respectively.
-
-for general population, I also found similar results. Census7: $Log(BF_{10})$ = `r H2_BF_gender_Census7_general$BF$LogBF10` , CFPS2018: $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_general$BF$LogBF10`
+The calculation results show that there is no difference between the data in Chinese participants and Census7 and CFPS2018, and the calculation results are: Census7 VS Chinese participants: $Log(BF_{10})$ = `r H2_BF_gender_Census7_general$BF$LogBF10` , CFPS2018 VS Chinese participants: $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_general$BF$LogBF10`
 
 
 save gender data for exploration analyse
@@ -1685,11 +1682,11 @@ In this part, I calculate data based on special target population
 I calculate preschool children.
 ```{r}
 Journal_gender_preschool <- Journal_gender_Infants_toddlers_TP_IDs %>% 
-  dplyr::summarise(Male_Num = sum(as.numeric(Male_Num)), ## 3825
-                   Female_Num = sum(as.numeric(Female_Num))) ## 3590
+  dplyr::summarise(Male_Num = sum(as.numeric(Male_Num)), ## 3832
+                   Female_Num = sum(as.numeric(Female_Num))) ## 3598
 
 H2_gender_preschool_special <- data.frame(Gender = c("Female","Male","Female","Male"),
-                                          n = c(3825,3590,79,77),
+                                          n = c(3598,3832,40,53),
                                           Data_source = c("Journal","Journal","Lucca","Lucca"))
 
 
@@ -1698,10 +1695,10 @@ H2_gender_preschool_special_prop <- H2_gender_preschool_special %>%
   dplyr::group_by(Gender) %>% 
   dplyr::summarise(n=sum(n)) %>% 
   dplyr::mutate(Proportion = n/sum(n)*100,
-                 Data_source = "Chinese subjects")
+                 Data_source = "Chinese participants")
 
-# sum(H2_gender_preschool_special_prop$`Chinese subjects`)
-# sum(H2_gender_preschool_special$Census7)
+# sum(H2_gender_preschool_special_prop$Proportion) ## 100
+# sum(H2_gender_preschool_special$n) ## 7523
 
 
 ## Census7th preschool (under 6 years old)
@@ -1717,7 +1714,7 @@ Census7_gender_preschool_special <- df_census7 %>%
   dplyr::mutate(Proportion = n/sum(n)*100,
                 Data_source = "Census7")
 
-sum(Census7_gender_preschool_special$Proportion)
+# sum(Census7_gender_preschool_special$Proportion) ## 100
 
 
 ## combine tow data 
@@ -1731,7 +1728,7 @@ H2_gender_preschool_bayes_special <- bind_rows(H2_gender_preschool_special_prop,
 ## bayes 
 H2_BF_gender_preschool_Census <- BayesMultiNomial(dataset = H2_gender_preschool_bayes_special,
                                                 factor = "Gender",
-                                                observed = "Chinese subjects",
+                                                observed = "Chinese participants",
                                                 expected = "Census7")
 ```
 
@@ -1751,7 +1748,7 @@ Journal_gender_college_sepcial <-  Journal %>%
                 Sample_Size = as.numeric(Sample_Size),
                 Female_Num = as.numeric(Female_Num),
                 Male_Num = ifelse(Male_Num < 1 & Female_Num < 1,
-                                  round(Male_Num * Sample_Size),Male_Num),
+                                  floor(Male_Num * Sample_Size),Male_Num),
                 Female_Num = ifelse(Female_Num < 1 & Female_Num > 0,
                                     Sample_Size - Male_Num,Female_Num))
 
@@ -1762,15 +1759,15 @@ Journal_gender_college_sepcial2 <- Journal_gender_college_sepcial %>%
   tidyr::pivot_longer(cols = c("Male","Female"),
                       names_to = "Gender",
                       values_to = "n") %>% 
-  dplyr::mutate(Proportion = n/sum(n)*100) ## Male 44.84 / Female 55.16
+  dplyr::mutate(Proportion = n/sum(n)*100) 
 
 sum(Journal_gender_college_sepcial2$Proportion)
 
 
-## The total data we compared is from *the Outline for Women's Development in China (2021-2030)* released by the National Bureau of Statistics of China in 2022.
+## The total data we compared is from *the Outline for Women's Development in China (2021-2030)* released by the National Bureau of Statistics of China in 2022. website:https://www.stats.gov.cn/sj/zxfb/202312/t20231229_1946062.html
 
 H2_gender_college_bayes_special <- data.frame(Gender = c("Male","Female"),
-                                              Journal = c(44.84,55.16),
+                                              Journal = c(45.4552,54.5448),
                                               Outline_Women = c(50,50))
 
 H2_BF_gender_college_special <- BayesMultiNomial(dataset = H2_gender_college_bayes_special,
