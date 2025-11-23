@@ -163,9 +163,7 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 ```
 
 
-At this point, I have finished loading the package and data. Next, I analyzed the data and visualized it according to the logic of the written protocol.
-
-
+At this point, I have completed the loading packages and data. Next, I conducted data analysis and visualization according to the logic of the written protocol.
 # Overview of participants
 ## The basic situation of Chinese journals coding data
 ```{r warning=FALSE}
@@ -230,7 +228,7 @@ save(Journal, file ="Journal.Rdata")
 ```
 
 
-Meanwhile, we process the special target population
+Meanwhile, I process the special target population
 ```{r}
 
 Journal_special_target_population <- Journal %>% 
@@ -251,15 +249,10 @@ I try to classify special target population
 ```{r}
 ## college
 Journal_college_TP <- Journal_special_target_population2 %>% 
-  dplyr::filter(grepl("大学生|研究生",Recode_target_population)) %>% 
-  dplyr::filter(!Recode_target_population %in% c("大学生和青少年罪犯","女大学生","中学生和大学生"))
+  dplyr::filter(grepl("大学生|研究生|大学新生",Recode_target_population)) %>% 
+  dplyr::filter(Recode_target_population == "大学生" | Recode_target_population == "研究生")
 
-# table(Journal_college_TP$Recode_target_population)
-
-
-## children and adolenscent
-Journal_children_adolenscent_TP <- Journal_special_target_population2 %>% 
-  dplyr::filter(grepl("儿童|幼儿|青少年|初中生|高中生|小学生|中学生|中职|婴儿|学龄|学前",Recode_target_population))
+table(Journal_college_TP$Recode_target_population)
 ```
 
 
@@ -432,7 +425,7 @@ Journal_age_fuzzy_report_article_num <- Journal_age_fuzzy_report %>%
 
 ## study
 Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>% 
-  dplyr::distinct(Article_IDs,Study_Number)
+  dplyr::distinct(Article_IDs,Study_Number)  ## 142-6=136
 
 ## the above "-6" means aticles Mage coded in other_age, these articles are 20183340, 20183097, 20082227, 20214027, 20083017, 20181065
 
@@ -455,8 +448,8 @@ Journal_SES_report <- Journal %>%
 
 Journal_SES_report_studynum <- Journal_SES_report %>% 
   dplyr::distinct(Article_IDs,Study_Number,SES_N) %>% 
-  dplyr::filter(Article_IDs != "20081025" & Article_IDs != "20183264") %>% 
-  dplyr::mutate(ses_reported_ceta = ifelse(grepl(";",SES_N),1,0))
+  dplyr::filter(Article_IDs != "20081025" & Article_IDs != "20183264") %>%  ## 2
+  dplyr::mutate(ses_reported_ceta = ifelse(grepl(";",SES_N),1,0))  ## 339+2=341
 
 
 ## SES information is 5
@@ -471,31 +464,29 @@ table(Journal_SES_report_studynum$ses_reported_ceta)
 
 ## the reporting situation of BTS
 ```{r}
-BTS_colnames_list <- lapply(names(BTS), function(name) {
-  data.frame(
-    source_dataframe = name,
-    column_name = colnames(BTS[[name]])
-  )
-})
-
-# merge into one dataframe
-BTS_colnames <- do.call(rbind, BTS_colnames_list)
-
-
-## exclude our add colnames
-BTS_colnames2 <- BTS_colnames %>% 
-  dplyr::filter(!column_name %in% c("ISO2","ISO3","Target_Population","Coding_Basis",
-                                 "Countrycode","Countryfullname","Coder")) %>% 
-  dplyr::count(column_name)
+# BTS_colnames_list <- lapply(names(BTS), function(name) {
+#   data.frame(
+#     source_dataframe = name,
+#     column_name = colnames(BTS[[name]])
+#   )
+# })
+# 
+# # merge into one dataframe
+# BTS_colnames <- do.call(rbind, BTS_colnames_list)
+# 
+# 
+# ## exclude our add colnames
+# BTS_colnames2 <- BTS_colnames %>% 
+#   dplyr::filter(!column_name %in% c("ISO2","ISO3","Target_Population","Coding_Basis",
+#                                  "Countrycode","Countryfullname","Coder")) %>% 
+#   dplyr::count(column_name)
 ```
 
 
-In this section, I began by testing and analyzing three main hypotheses.
-
+In this section, I tested the three main hypotheses of this study.
 # Test three hypotheses
 ## Test the 1st hypothesis
 ### Gender
-
 
 Process gender data from Chinese journals.
 ```{r warning=FALSE}
@@ -506,14 +497,14 @@ Journal_key_variable <- Journal %>%
                 Gender,Male_Num,Female_Num,Age,M_age,SD_age,Other_age,
                 Subjects_Recruitment_Area,Remark1,Remark2,Remark3)
 
-# names(Journal_key_variable)
+names(Journal_key_variable)
 
 ## Filter gender related variables
 Journal_gender <- Journal_key_variable %>% 
-  dplyr::select(-c(10:17)) %>% 
+  dplyr::select(-c(10:17)) %>% ## not select age, remake and subjects recruitment area
   dplyr::filter(Gender == 1)
 
-## Part of the gender data is the proportion recorded, and part is the number of people, so I deal with it separately.
+## Given that gender-related data includes both proportion-based records and headcount figures, these two types of data were processed separately.
 
 Journal_gender_decimal <- Journal_gender %>% 
   dplyr::filter(Male_Num < 1 & Female_Num < 1)
@@ -564,10 +555,6 @@ sum(Journal_gender_general$Male_Proportion)+sum(Journal_gender_general$Female_Pr
 
 
 ## special
-Journal_gender_special_papernum <-  Journal_gender2 %>% 
-  dplyr::filter(Target_Population_N == 1) %>% 
-  dplyr::distinct(Article_IDs)
-
 Journal_gender_special <- Journal_gender2 %>% 
   dplyr::filter(Target_Population_N == 1) %>% 
   dplyr::summarise(Male_Num = sum(Male_Num,na.rm = TRUE),
@@ -576,9 +563,6 @@ Journal_gender_special <- Journal_gender2 %>%
                    Female_Proportion = Female_Num/(Male_Num + Female_Num)*100)
 
 sum(Journal_gender_special$Male_Proportion)+sum(Journal_gender_special$Female_Proportion)
-
-
-table(Journal_gender_special$Sample_Type_N)
 ```
 
 
@@ -586,10 +570,9 @@ infants and toddlers & special target population
 
 ```{r}
 ## Filter studies targeting infants/toddlers from "Journal_special_target_population2"
-
 Journal_gender_Infants_toddlers_TP <- Journal_special_target_population2 %>% 
   dplyr::select(Article_IDs,Article_Title,Recode_target_population) %>% 
-  dplyr::filter(grepl("幼儿|岁儿童|学步儿|学前|学龄|低龄", Recode_target_population)) %>% 
+  dplyr::filter(grepl("幼儿|岁儿童|学步儿|学前|学龄|低龄|婴儿", Recode_target_population)) %>% 
   dplyr::filter(!grepl("幼儿父亲|幼儿教师|母亲|学前儿童父母|8|10|11|12",Recode_target_population))
   
 
@@ -618,7 +601,7 @@ Journal_gender_Infants_toddlers <- Journal_gender_Infants_toddlers_TP_IDs %>%
   dplyr::summarise(Male_Num = sum(as.numeric(Male_Num)),
                    Female_Num = sum(as.numeric(Female_Num)),
                    Male_Proportion = Male_Num/(Male_Num+Female_Num)*100,
-                   Female_Proportion = Female_Num/(Male_Num+Female_Num)*100) ## Male 51.58, Female 48.42
+                   Female_Proportion = Female_Num/(Male_Num+Female_Num)*100) ## Male 51.57, Female 48.43
 sum(Journal_gender_Infants_toddlers$Male_Proportion)+sum(Journal_gender_Infants_toddlers$Female_Proportion)
 ```
 
@@ -663,7 +646,7 @@ Combine gender data from Chinese Journal and BTS.
 BTS_gender_CHN <- lapply(BTS_gender_list, function(df){
   
   df %>% 
-    dplyr::filter(grepl("CHN", ISO3, ignore.case = TRUE)) %>% 
+    dplyr::filter(grepl("CHN|TWN|MAC|HKG", ISO3, ignore.case = TRUE)) %>% 
     dplyr::select(ISO3,Data_Source,Gender,Target_Population) 
 
 })
@@ -682,10 +665,10 @@ BTS_gender_CHN_general <- BTS_gender_CHN %>%
 sum(BTS_gender_CHN_general$Proportion)  
 
 
-## Combine CHN journal data and set factor
+## Combine Chinese journal data and set factor
 H1_gender_general <- BTS_gender_CHN_general %>% 
   dplyr::add_row(Gender = c("Female","Male"), n = c(57570,48059),
-                 Proportion = c(54.50,45.50),Data_Source = "Journal")   ## Here, enter data manually.
+                 Proportion = c(54.50,45.50),Data_Source = "Journal")   ## Here, enter data manually, data from data.frame "Journal_gender_general".
 
 
 H1_gender_factor_general <- H1_gender_general %>% 
@@ -736,7 +719,7 @@ H1_BF_gender_general <- BayesMultiNomial(dataset = H1_gender_bayes_general,
                                              expected = "Journal")
 ```
 
-However, I found there no different between BTS data and the general population of Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_general$BF$LogBF10`.
+However, within the general population, I found there no different between BTS Chinese data and Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_general$BF$LogBF10`.
 
 
 In this part, I will analysis gender based on the special target population. For the first research question, only Lucca et al.(2024)' target population is special target population Specifically, it focuses on infants. Therefore, in specila target population, I will compare Lucca et al..(2024) with Chinese journal studies targeting infants/toddlers.
