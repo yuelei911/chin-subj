@@ -469,6 +469,22 @@ BTS <- lapply(BTS,function(df){
 ```
 
 
+Taiwan, Hong Kong and Macao are all incorporated into China's data.
+```{r}
+BTS <- lapply(BTS,function(df){
+  
+  df <- df %>% 
+    dplyr::mutate(ISO3 = case_when(ISO3 %in% c("HKG","TWN","MAC") ~ "CHN",
+                                   TRUE ~ ISO3),
+                  ISO2 = case_when(ISO2 %in% c("HK","TW","MO") ~ "CN",
+                                   TRUE ~ ISO2)) %>% 
+    dplyr::select(-c(Country,Countrycode,Countryfullname))
+  return(df)
+  
+})
+```
+
+
 Process gender data of BTS
 ```{r}
 ## Batch processing of gender for different data sources
@@ -650,7 +666,7 @@ for (i in seq_along(BTS)) {
   if("Education" %in% names(BTS[[i]])){
    
     BTS_edu <- BTS[[i]] %>% 
-      dplyr::select(Article_Id,Country,Education)
+      dplyr::select(Article_Id,ISO3,Education)
     
     BTS_edu_list[[BTS_name]] <- BTS_edu
     
@@ -875,6 +891,3 @@ BTS_edu_list[[18]] <- BTS_edu_list[[18]] %>%
 ```{r}
 save(BTS, WEIRD, BTS_edu_list, Countrycodelist_iso2_iso3,file = "BTS.Rdata")
 ```
-
-
-
