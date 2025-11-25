@@ -2794,15 +2794,16 @@ H3_gender <- BTS_gender_allcountry_prop %>%
   dplyr::left_join(WEIRD_gender,by = c("ISO3" = "iso3c")) %>% 
   dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>% 
   dplyr::mutate(ISO3 = factor(ISO3,levels = BTS_gender_allcountry_factor)) %>% 
-  dplyr::filter(!is.na(ISO3))
+  dplyr::filter(!is.na(ISO3)) %>% 
+  dplyr::rename(Sex = 2)
 ```
 
 and I visualized gender data.
 
 ```{r}
-H3_Fig_gender <- ggplot(H3_gender, aes(x=Proportion, y=ISO3,fill=Gender)) +
+H3_Fig_gender <- ggplot(H3_gender, aes(x=Proportion, y=ISO3,fill=Sex)) +
   geom_col(alpha = .75)+
-  labs(y="Countries") + 
+  labs(y="Countries/Regions") + 
   scale_fill_discrete(label=c("Female","Male")) +
   theme_classic()+
   theme(legend.title = element_text(size = 15,family = "serif"),
@@ -2812,7 +2813,8 @@ H3_Fig_gender <- ggplot(H3_gender, aes(x=Proportion, y=ISO3,fill=Gender)) +
         strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black")) +
   scale_x_continuous(breaks = seq(0, 100, by = 10)) +
-  facet_wrap(~ WEIRD, scales = "free")
+  facet_wrap(~ WEIRD, scales = "free",
+              labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD")))
 
 
 H3_Fig_gender
@@ -2823,14 +2825,14 @@ H3_Fig_gender
 
 
 ## How many countries more than China
-H3_female_more_China <- H3_gender %>% 
-  dplyr::filter(Gender == "Female") %>%  ## the prop female of China is 53.5293
-  dplyr::filter(Proportion > 53.5293)
+H3_female_more60 <- H3_gender %>% 
+  dplyr::filter(Sex == "Female") %>%  
+  dplyr::filter(Proportion > 60)
 
 
-H3_male_more_China <- H3_gender %>% 
-  dplyr::filter(Gender == "Male") %>%  ## the prop male of China is 46.4707
-  dplyr::filter(Proportion > 46.4707)
+H3_male_more60 <- H3_gender %>% 
+  dplyr::filter(Sex == "Male") %>% 
+  dplyr::filter(Proportion > 60)
 ```
 
 
@@ -2865,7 +2867,7 @@ BTS_Psystages_allcountry_sum_prop <- BTS_Psystages_allcountry %>%
 ## Add Chinese data
 Journal_BTS_PsyStages_CHN <- H2_age_Psystages_bayes_general %>% 
   dplyr::mutate(ISO3 = "CHN") %>% 
-  dplyr::rename(Proportion = `Chinese subjects`)
+  dplyr::rename(Proportion = `Chinese participants`)
 
 sum(Journal_BTS_PsyStages_CHN$Proportion)
 
@@ -2886,21 +2888,22 @@ H3_PsyStages2 <- H3_PsyStages %>%
   dplyr::left_join(WEIRD, by = c("ISO3" = "iso3c")) %>% 
   dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>%
   dplyr::mutate(ISO3 = factor(ISO3, levels = H3_PsyStages_factor)) %>% 
-  dplyr::filter(!is.na(ageBins))
+  dplyr::filter(!is.na(ageBins)) %>% 
+  dplyr::rename(`Age bins` = 2)
 
 
-## The prop of 18~25 more than China (62.7359) 
-H3_PsyStages2_more_China <- H3_PsyStages2 %>% 
-  dplyr::filter(ageBins == "18~25") %>% 
-  dplyr::filter(Proportion > 62.73596)
+## The prop of 18~25 more than 60%
+H3_PsyStages2_more60 <- H3_PsyStages2 %>% 
+  dplyr::filter(`Age bins` == "18~25") %>% 
+  dplyr::filter(Proportion > 60)
 ```
 
 
 And I visualized age data (PsyStages) for all countries in BTS.
 ```{r}
-H3_Fig_PsyStages <- ggplot(H3_PsyStages2, aes(x=Proportion, y=ISO3, fill=ageBins)) +
+H3_Fig_PsyStages <- ggplot(H3_PsyStages2, aes(x=Proportion, y=ISO3, fill=`Age bins`)) +
   geom_col(alpha = .75)+
-  labs(y="Countries") + 
+  labs(y="Countries/Regions") + 
   scale_fill_discrete(label=c("0~17", "18~25", "26~40", "41~60",">=61" )) +
   theme_classic()+
   #guides(y="axis_nested") +
@@ -2911,13 +2914,11 @@ H3_Fig_PsyStages <- ggplot(H3_PsyStages2, aes(x=Proportion, y=ISO3, fill=ageBins
         strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black")) +
   scale_x_continuous(breaks = seq(0, 100, by = 10)) +
-  facet_wrap(~ WEIRD, scales = "free") 
+  facet_wrap(~ WEIRD, scales = "free",
+             labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD"))) 
 
 
 H3_Fig_PsyStages
-
-ggsave("H3_Fig_PsyStages.pdf",H3_Fig_PsyStages,device = "pdf", width=18, height = 18)
-
 ```
 
 
@@ -2951,7 +2952,7 @@ BTS_interval10_allcountry_sum_prop <- BTS_interval10_allcountry %>%
 ## Add Chinese data
 Journal_BTS_interval10_CHN <- H2_age_inteval10_bayes_general %>%
   dplyr::mutate(ISO3 = "CHN") %>% 
-  dplyr::rename(Proportion = `Chinese subjects`)
+  dplyr::rename(Proportion = `Chinese participants`)
 
 
 ## Combine data
@@ -2960,8 +2961,6 @@ H3_interval10 <- bind_rows(BTS_interval10_allcountry,Journal_BTS_interval10_CHN)
 
 ## Set factor
 H3_interval10_factor <- H3_interval10 %>%
-  # dplyr::add_row(ISO3 = "CUB",ageBins = "11~20",n = 0, Proportion =0) %>%
-  ##add data to visualization 
   dplyr::filter(ageBins == "11~20") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(ISO3)
@@ -2972,7 +2971,8 @@ H3_interval10 <- H3_interval10 %>%
   dplyr::left_join(WEIRD, by = c("ISO3" = "iso3c")) %>% 
   dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>%
   dplyr::mutate(ISO3 = factor(ISO3, levels = H3_interval10_factor)) %>% 
-  dplyr::filter(!is.na(ageBins) & !is.na(ISO3)) 
+  dplyr::filter(!is.na(ageBins) & !is.na(ISO3)) %>% 
+  dplyr::rename(`Age bins` = 2)
 
 
 ## each countries the max agebins
@@ -2981,15 +2981,15 @@ H3_interval10_max_agebins <-  H3_interval10 %>%
   dplyr::mutate(Rank = dense_rank(desc(Proportion))) %>% 
   dplyr::filter(Rank == 1) 
 
-table(H3_interval10_max_agebins$ageBins)
+# table(H3_interval10_max_agebins$ageBins)
 ```
 
 and I visualized age data (interval10) of all countries in BTS.
 
 ```{r}
-H3_Fig_interval10 <- ggplot(H3_interval10, aes(x=Proportion, y=ISO3, fill=ageBins)) +
+H3_Fig_interval10 <- ggplot(H3_interval10, aes(x=Proportion, y=ISO3, fill=`Age bins`)) +
   geom_col(alpha = .75)+
-  labs(y="Countries") + 
+  labs(y="Countries/Regions") + 
   scale_fill_discrete(label=c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61")) +
   theme_classic()+
   #guides(y="axis_nested") +
@@ -3000,7 +3000,8 @@ H3_Fig_interval10 <- ggplot(H3_interval10, aes(x=Proportion, y=ISO3, fill=ageBin
         strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black")) +
   scale_x_continuous(breaks = seq(0, 100, by = 10)) +
-  facet_wrap(~ WEIRD, scales = "free") 
+  facet_wrap(~ WEIRD, scales = "free",
+              labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD"))) 
 
 
 H3_Fig_interval10
@@ -3049,12 +3050,12 @@ Func_BFpairs <- function(df, countries_order, prop_name){
 Secondly , I calculated gender BF and visualized gender BF.
 ```{r message=FALSE, warning=FALSE}
 H3_BF_gender <- H3_gender %>% 
-  dplyr::select(ISO3,Gender,Proportion) %>% 
+  dplyr::select(ISO3,Sex,Proportion) %>% 
   dplyr::rename(Countries = 1)
 
 
 H3_BF_gender_factor <- H3_BF_gender %>% 
-  dplyr::filter(Gender == "Female") %>% 
+  dplyr::filter(Sex == "Female") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(Countries)
 
@@ -3063,12 +3064,26 @@ H3_BF_gender <- H3_BF_gender  %>%
   dplyr::mutate(Countries = factor(Countries, levels = H3_BF_gender_factor)) %>% 
   tidyr::pivot_wider(names_from = "Countries",values_from = "Proportion") %>% 
   Func_BFpairs(countries_order = H3_BF_gender_factor,
-               prop_name = "Gender")
+               prop_name = "Sex") %>% 
+  dplyr::rename("Countries/Regions" = "Countries")
+
+## moderate evidence support H0
+H3_BF_gender_supportH0 <- H3_BF_gender %>% 
+  dplyr::filter(`Log(BF10)_NonInform` < log(1/6))
+
+## moderate evidence support H1
+H3_BF_gender_supportH1 <- H3_BF_gender %>% 
+  dplyr::filter(`Log(BF10)_NonInform` > log(6))
+
+## female and male
+H3_gender_different <- H3_gender %>% 
+  dplyr::filter(ISO3 %in% H3_BF_gender_supportH1$Observed) %>% 
+  dplyr::filter(Sex == "Female")
 ```
 
 
 ```{r warning=FALSE}
-H3_Fig_BF_gender <- ggplot(H3_BF_gender, aes( x = `Log(BF10)_NonInform`, y = Countries)) +
+H3_Fig_BF_gender <- ggplot(H3_BF_gender, aes( x = `Log(BF10)_NonInform`, y = `Countries/Regions`)) +
   geom_point() +
   scale_color_grey() +
   xlim(-3, 20) +
@@ -3084,7 +3099,6 @@ H3_Fig_BF_gender <- ggplot(H3_BF_gender, aes( x = `Log(BF10)_NonInform`, y = Cou
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  ggtitle("Gender Proportion") + 
   xlab("Log(BF10)")+
   theme_bw() +
         theme(panel.grid.major = element_blank(),
@@ -3108,61 +3122,81 @@ H3_Fig_BF_gender
 
 
 Third, I calculted age BF in two classification. In this part, I calculated BF for this two categories.
+
+PsyStages
 ```{r}
 ## PsyStages
 H3_BF_PsyStages <- H3_PsyStages2 %>% 
-  dplyr::select(ISO3,ageBins,Proportion) %>%
+  dplyr::select(ISO3,`Age bins`,Proportion) %>%
   dplyr::filter(!is.na(ISO3)) %>% 
   dplyr::rename(Countries = 1)
 
-table(H3_BF_PsyStages$ageBins)
+table(H3_BF_PsyStages$`Age bins`)
 
 H3_BF_PsyStages_factor <- H3_BF_PsyStages %>% 
-  dplyr::filter(ageBins == "18~25") %>%
+  dplyr::filter(`Age bins` == "18~25") %>%
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(Countries)
 
 
  
 H3_BF_PsyStages <- H3_BF_PsyStages %>%  
-  dplyr::mutate(Countries = factor(Countries, levels = H3_BF_PsyStages_factor)) %>%  
+  dplyr::mutate(Countries = factor(Countries, 
+                                             levels = H3_BF_PsyStages_factor)) %>%  
   tidyr::pivot_wider(names_from = "Countries",values_from = "Proportion") %>%
   dplyr::mutate(across(2:last_col(), ~ifelse(is.na(.), 0, .))) %>%
   Func_BFpairs(countries_order = H3_BF_PsyStages_factor,
-               prop_name = "ageBins")
+               prop_name = "Age bins") %>% 
+  dplyr::rename("Countries/Regions" = "Countries")
 
 # sum(H3_BF_PsyStages$AGO,na.rm = TRUE) ## 0
 
-## interval10
+## moderate evidence support H0
+H3_BF_PsyStages_supportH0 <- H3_BF_PsyStages %>% 
+  dplyr::filter(`Log(BF10)_NonInform` < log(1/6))
+```
+
+
+interval10
+```{r}
 H3_BF_interval10  <- H3_interval10 %>% 
-  dplyr::select(ISO3,ageBins,Proportion) %>% 
+  dplyr::select(ISO3,`Age bins`,Proportion) %>% 
   dplyr::rename(Countries = 1)
 
 
 H3_BF_interval10_factor <- H3_BF_interval10 %>% 
-  dplyr::filter(ageBins == "11~20") %>%
+  dplyr::filter(`Age bins` == "11~20") %>%
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(Countries)
 
 
-table(H3_BF_interval10$ageBins)
+table(H3_BF_interval10$`Age bins`)
 
 
 H3_BF_interval10 <- H3_BF_interval10 %>% 
-  dplyr::mutate(Countries = factor(Countries, levels = H3_BF_interval10_factor)) %>% 
+  dplyr::mutate(Countries = factor(Countries, 
+                                   levels = H3_BF_interval10_factor)) %>% 
   tidyr::pivot_wider(names_from = "Countries",values_from = "Proportion") %>%
   dplyr::mutate(across(2:last_col(), ~ifelse(is.na(.), 1, .))) %>%
   Func_BFpairs(countries_order = H3_BF_PsyStages_factor,
-               prop_name = "ageBins")
+               prop_name = "Age bins")%>% 
+  dplyr::rename("Countries/Regions" = "Countries")
+
+
+## moderate evidence support H0
+H3_BF_interval10_supportH0 <- H3_BF_interval10 %>% 
+  dplyr::filter(`Log(BF10)_NonInform` < log(1/6))
+
 ```
 
 
 and I visualized PsyStages BF at first.
 ```{r warning=FALSE}
-H3_Fig_BF_PsyStages <- ggplot(H3_BF_PsyStages, aes( x = `Log(BF10)_NonInform`, y = Countries)) +
+H3_Fig_BF_PsyStages <- ggplot(H3_BF_PsyStages, aes( x = `Log(BF10)_NonInform`, 
+                                                    y = `Countries/Regions`)) +
   geom_point() +
   scale_color_grey() +
-  xlim(-15,150) +
+  xlim(-15,80) +
   scale_y_discrete(limits=rev) +
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
              colour = c("red", "tomato", "black", "deepskyblue","blue"), 
@@ -3175,7 +3209,6 @@ H3_Fig_BF_PsyStages <- ggplot(H3_BF_PsyStages, aes( x = `Log(BF10)_NonInform`, y
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7, 
             angle=90, text=element_text(size=10))  +
-  ggtitle("Age distribution") +
   xlab("Log(BF10)")+
   theme_bw() +
         theme(panel.grid.major = element_blank(),
@@ -3200,10 +3233,10 @@ H3_Fig_BF_PsyStages
 Then I visualized another category.
 ```{r warning=FALSE}
 H3_Fig_BF_interval10 <- ggplot(H3_BF_interval10, 
-                            aes( x = `Log(BF10)_NonInform`, y = Countries)) +
+                            aes( x = `Log(BF10)_NonInform`, y = `Countries/Regions`)) +
   geom_point() +
   scale_color_grey() +
-  xlim(-15,150) +
+  xlim(-15,80) +
   scale_y_discrete(limits=rev) +
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
              colour = c("red", "tomato", "black", "deepskyblue","blue"), 
@@ -3216,7 +3249,6 @@ H3_Fig_BF_interval10 <- ggplot(H3_BF_interval10,
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7, 
             angle=90, text=element_text(size=10))  +
-  ggtitle("Age distribution") +
   xlab("Log(BF10)")+
   theme_bw() +
         theme(panel.grid.major = element_blank(),
@@ -3321,19 +3353,20 @@ H3_Lucca_gender_Journal_factor <- H3_Lucca_gender_Journal %>%
 #   dplyr::filter(iso3c %in% H3_Lucca_gender_Journal_factor)
 
 H3_Lucca_gender_Journal2 <- H3_Lucca_gender_Journal %>% 
-  dplyr::mutate(ISO3 = factor(ISO3, levels = H3_Lucca_gender_Journal_factor))
+  dplyr::mutate(ISO3 = factor(ISO3, levels = H3_Lucca_gender_Journal_factor)) %>% 
+  dplyr::rename("Sex" = "Gender")
 
 
 ## How many countries more than China
 H3_Lucca_gender_Journal2_more_China <- H3_Lucca_gender_Journal2 %>% 
-  dplyr::filter(Gender == "Female") %>%  ## the prop female of China is 53.54
+  dplyr::filter(Sex == "Female") %>%  ## the prop female of China is 53.54
   dplyr::filter(Proportion > 48.34843)
 ```
 
 
 and then,we visualzie the prop data
 ```{r}
-H3_Fig_Lucca_gender <- ggplot(H3_Lucca_gender_Journal2,aes(x=Proportion, y=ISO3, fill = Gender))+
+H3_Fig_Lucca_gender <- ggplot(H3_Lucca_gender_Journal2,aes(x=Proportion, y=ISO3, fill = Sex))+
   geom_col(alpha = 0.75)+
   labs(y="Countries/Regions") + 
   scale_fill_discrete(label=c("Female","Male")) +
@@ -3382,7 +3415,6 @@ H3_Fig_BF_Lucca_gender <- ggplot(H3_BF_Lucca_gender2,
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 5), colour="red", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  ggtitle("Gender Proportion") + 
   xlab("Log(BF10)")+
   theme_bw() +
         theme(panel.grid.major = element_blank(),
@@ -3398,7 +3430,8 @@ H3_Fig_BF_Lucca_gender <- ggplot(H3_BF_Lucca_gender2,
               axis.title.x = element_text (size = 16),
               axis.title.y = element_text( size = 16),
               axis.line.x = element_line(color='black', size = 1),
-              axis.line.y = element_line(color='black', size = 1))
+              axis.line.y = element_line(color='black', size = 1))+
+    ylab("Countries/Regions")
 
 
 H3_Fig_BF_Lucca_gender
