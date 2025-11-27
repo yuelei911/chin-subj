@@ -52,7 +52,7 @@ for (i in names(Journal_year2008_report )){
   
   report_table <- data.frame(table(Journal_year2008_report [[i]])) %>% 
     dplyr::mutate(col_names = names(Journal_year2008_report [i]),
-                  proportion = round(Freq / sum(Freq),4))
+                  proportion = Freq / sum(Freq))
   
   report_list[[i]] <- report_table
   
@@ -130,7 +130,7 @@ for (i in names(Journal_year2018_report )){
   
   report_table <- data.frame(table(Journal_year2018_report [[i]])) %>% 
     dplyr::mutate(col_names = names(Journal_year2018_report [i]),
-                  proportion = round(Freq / sum(Freq),4))
+                  proportion = Freq / sum(Freq))
   
   report_list[[i]] <- report_table
   
@@ -208,7 +208,7 @@ for (i in names(Journal_year2021_report )){
   
   report_table <- data.frame(table(Journal_year2021_report [[i]])) %>% 
     dplyr::mutate(col_names = names(Journal_year2021_report [i]),
-                  proportion = round(Freq / sum(Freq),4))
+                  proportion = Freq / sum(Freq))
   
   report_list[[i]] <- report_table
   
@@ -272,10 +272,10 @@ Journal_report <- bind_rows(Journal_year2008_report2,Journal_year2018_report2,Jo
                                               "Age","Educational Attainment","Occupation",
                                               "Sampling Method","SES","Ethnicity",
                                               "Religious"),
-                                   labels = c("Gender","Recruitment Method","Recruitment Area",
-                                              "Age","Educational Attainment","Occupation",
-                                              "Sampling Method","SES","Ethnicity",
-                                              "Religious")))
+                                   labels = c("Sex","Recruitment method","Recruitment area",
+                                              "Age","Educational attainment","Occupation",
+                                              "Sampling method","Socioeconomic status","Ethnicity",
+                                              "Religious belief")))
 
 Journal_report_year <- Journal_report %>% 
   ggplot(aes(x = Year, y = proportion, color = col_names, group = col_names))+
@@ -374,7 +374,7 @@ process data
 SupplH2_gender_general <- H2_gender_general %>% 
   dplyr::rename(Data_Source = Data_source) %>% 
   rbind(H1_gender_general) %>% 
-  dplyr::filter(Data_Source != "Chinese subjects") %>% 
+  dplyr::filter(Data_Source != "Chinese participants") %>% 
   dplyr::mutate(Data_Source = factor(Data_Source,
                                      levels = c("Census7","CFPS2018",
                                                 "BTS Chinese", "Journal")))
@@ -447,7 +447,7 @@ H1_age_general_Journal <- H1_age_general %>%
   dplyr::filter(Data_Source == "Journal")
 
 
-S3_age_general <- ggplot(data= Census7_age_five5, 
+SupplH3_age_general <- ggplot(data= Census7_age_five5, 
        aes(x=ageBins, y = Proportion, fill="Census7")) +
   geom_col(alpha=0.5, width = 1) +
   geom_line(data = H1_age_general_BTS, 
@@ -470,59 +470,62 @@ S3_age_general <- ggplot(data= Census7_age_five5,
         axis.title = element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"))
 
-ggsave("S3_age_general.pdf",S3_age_general, device = "pdf", width=18, height = 9)
+ggsave("SupplH3_age_general.pdf",SupplH3_age_general, device = "pdf", width=18, height = 9)
 
-S3_age_general
+SupplH3_age_general
 ```
 
 
 BF
 ```{r}
 ## PsyStages
-S_Census7_age_PsyStages <- Census7_age_PsyStages %>% 
+Suppl_Census7_age_PsyStages <- Census7_age_PsyStages %>% 
   dplyr::select(ageBins,Proportion) %>% 
   dplyr::rename(Census7 = 2)
 
 
 ## interval10
-S_Census7_age_interval10 <- Census7_age_interval10 %>% 
+Suppl_Census7_age_interval10 <- Census7_age_interval10 %>% 
   dplyr::select(ageBins,Proportion) %>% 
   dplyr::rename(Census7 = 2)
 
 
 ## combine data
 ## PsyStages
-S_BF_PsyStages <- left_join(H1_PsyStages_bayes_general,S_Census7_age_PsyStages,by = "ageBins")
+Suppl_BF_PsyStages <- left_join(H1_PsyStages_bayes_general,
+                                Suppl_Census7_age_PsyStages,
+                                by = "ageBins")
 
 
 ## interval10
-S_BF_interval10 <- left_join(H1_interval10_bayes_general,S_Census7_age_interval10,
+Suppl_BF_interval10 <- left_join(H1_interval10_bayes_general,
+                                 Suppl_Census7_age_interval10,
                              by = "ageBins")
 
 
 ## BF
 ## BTS PsyStages
-S3_BF_Psystages_BTS_Census <- BayesMultiNomial(dataset = S_BF_PsyStages,
+SupplH3_BF_Psystages_BTS_Census <- BayesMultiNomial(dataset = Suppl_BF_PsyStages,
                                              factor = "ageBins",
                                              observed = "BTS Chinese",
                                              expected = "Census7")
 
 
 ## BTS interval10
-S3_BF_interval10_BTS_Census <- BayesMultiNomial(dataset = S_BF_interval10,
+SupplH3_BF_interval10_BTS_Census <- BayesMultiNomial(dataset = Suppl_BF_interval10,
                                              factor = "ageBins",
                                              observed = "BTS Chinese",
                                              expected = "Census7")
 
 
 ## Journal PsyStages
-S3_BF_Psystages_Journal_Census <- BayesMultiNomial(dataset = S_BF_PsyStages,
+SupplH3_BF_Psystages_Journal_Census <- BayesMultiNomial(dataset = Suppl_BF_PsyStages,
                                              factor = "ageBins",
                                              observed = "Journal",
                                              expected = "Census7")
 
 ## Journal interval10
-S3_BF_interval10_Journal_Census <- BayesMultiNomial(dataset = S_BF_interval10,
+SupplH3_BF_interval10_Journal_Census <- BayesMultiNomial(dataset = Suppl_BF_interval10,
                                              factor = "ageBins",
                                              observed = "Journal",
                                              expected = "Census7")
@@ -533,57 +536,62 @@ S3_BF_interval10_Journal_Census <- BayesMultiNomial(dataset = S_BF_interval10,
 process data
 ```{r}
 ## Census
-S_Census7_college <- Census7_college %>% 
+Suppl_Census7_college <- Census7_college %>% 
   dplyr::select(Educational_attainment,Proportion) %>% 
   dplyr::rename(Census7 = 2)
 
-S_Census7_high_school <- Census7_high_school %>% 
+Suppl_Census7_high_school <- Census7_high_school %>% 
   dplyr::select(Educational_attainment,Proportion) %>% 
   dplyr::rename(Census7 = 2)
 
 
 ## CFPS
-S_CFPS2018_edu_college <- CFPS2018_edu_college %>%
+Suppl_CFPS2018_edu_college <- CFPS2018_edu_college %>%
   dplyr::select(Educational_attainment,Proportion) %>% 
   dplyr::rename(CFPS2018 = 2)
 
 
-S_CFPS2018_edu_high_school <- CFPS2018_edu_high_school %>% 
+Suppl_CFPS2018_edu_high_school <- CFPS2018_edu_high_school %>% 
   dplyr::select(Educational_attainment,Proportion) %>% 
   dplyr::rename(CFPS2018 = 2)
 
 
 ## combine all data
-S_college <- left_join(H1_edu_college_bayes, S_Census7_college, by = "Educational_attainment") %>% 
-  left_join(S_CFPS2018_edu_college,by = "Educational_attainment")
+Suppl_college <- left_join(H1_edu_college_bayes, 
+                           Suppl_Census7_college, 
+                           by = "Educational_attainment") %>%
+  left_join(Suppl_CFPS2018_edu_college,
+            by = "Educational_attainment")
 
 
-S_highschool <- left_join(H1_edu_highschool_bayes, S_Census7_high_school, by = "Educational_attainment") %>% 
-  left_join(S_CFPS2018_edu_high_school,by = "Educational_attainment")
+Suppl_highschool <- left_join(H1_edu_highschool_bayes, 
+                              Suppl_Census7_high_school, 
+                              by = "Educational_attainment") %>% 
+  left_join(Suppl_CFPS2018_edu_high_school,by = "Educational_attainment")
 ```
 
 
 BF
 ```{r}
 ## College
-S_BF_college_BTS_Census <-  BayesMultiNomial(dataset = S_college,
+Suppl_BF_college_BTS_Census <-  BayesMultiNomial(dataset = Suppl_college,
                                              factor = "Educational_attainment",
                                              observed = "BTS Chinese",
                                              expected = "Census7")
 
-S_BF_college_Journal_Census <-  BayesMultiNomial(dataset = S_college,
+Suppl_BF_college_Journal_Census <-  BayesMultiNomial(dataset = Suppl_college,
                                              factor = "Educational_attainment",
                                              observed = "Journal",
                                              expected = "Census7")
 
 
 ## high school
-S_BF_highschool_BTS_Census <-  BayesMultiNomial(dataset = S_highschool,
+Suppl_BF_highschool_BTS_Census <-  BayesMultiNomial(dataset = Suppl_highschool,
                                              factor = "Educational_attainment",
                                              observed = "BTS Chinese",
                                              expected = "Census7")
 
-S_BF_highschool_Journal_Census <-  BayesMultiNomial(dataset = S_highschool,
+Suppl_BF_highschool_Journal_Census <-  BayesMultiNomial(dataset = Suppl_highschool,
                                              factor = "Educational_attainment",
                                              observed = "Journal",
                                              expected = "Census7")

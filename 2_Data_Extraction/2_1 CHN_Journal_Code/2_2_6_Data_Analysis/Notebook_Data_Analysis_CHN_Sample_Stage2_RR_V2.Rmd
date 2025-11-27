@@ -252,7 +252,7 @@ Journal_college_TP <- Journal_special_target_population2 %>%
   dplyr::filter(grepl("大学生|研究生|大学新生",Recode_target_population)) %>% 
   dplyr::filter(Recode_target_population == "大学生" | Recode_target_population == "研究生")
 
-table(Journal_college_TP$Recode_target_population)
+# table(Journal_college_TP$Recode_target_population)
 ```
 
 
@@ -645,15 +645,12 @@ BTS_gender_CHN <- lapply(BTS_gender_list, function(df){
   
   df %>% 
     dplyr::filter(grepl("CHN", ISO3, ignore.case = TRUE)) %>% 
+    dplyr::filter(Data_Source != "BTS_Lucca_et_al_2024") %>%  ## no select special population
     dplyr::select(ISO3,Data_Source,Gender,Target_Population) 
 
 })
 
-BTS_gender_CHN <- do.call(rbind,BTS_gender_CHN)
-
-## General population
-BTS_gender_CHN_general <- BTS_gender_CHN %>%
-  dplyr::filter(Target_Population == 2 | Target_Population == 3) %>% 
+BTS_gender_CHN_general <- do.call(rbind,BTS_gender_CHN) %>% 
   dplyr::group_by(Gender) %>% 
   dplyr::summarise(n = n()) %>% 
   dplyr::mutate(Proportion = n/sum(n)*100) %>% 
@@ -2741,10 +2738,10 @@ BTS_gender_allcountry <- lapply(BTS_gender_list, function(df){
   
 })
 
-BTS_gender_allcountry <- do.call(rbind, BTS_gender_allcountry) %>% 
-  dplyr::filter(Data_Source != "BTS_Lucca_et_al_2024")
+BTS_gender_allcountry <- do.call(rbind, BTS_gender_allcountry) 
 
-## Filter n > 30
+
+## filter > 30
 BTS_gender_allcountry_filter <- BTS_gender_allcountry %>% 
   dplyr::group_by(ISO3) %>% 
   dplyr::summarise(n=n()) %>% 
@@ -2752,33 +2749,35 @@ BTS_gender_allcountry_filter <- BTS_gender_allcountry %>%
   dplyr::pull(ISO3)
 
 
-BTS_gender_allcountry <- BTS_gender_allcountry %>% 
-  dplyr::filter(ISO3 %in% BTS_gender_allcountry_filter) %>% 
-  dplyr::group_by(ISO3,Gender) %>%
-  dplyr::summarise(n = n()) %>%
-  dplyr::ungroup() %>%
+H3_BTS_gender <- BTS_gender_allcountry %>% 
+  dplyr::filter(ISO3 %in% BTS_gender_allcountry_filter) %>% ## filter > 30
+  dplyr::filter(Data_Source != "BTS_Lucca_et_al_2024") %>% ## remove special target population
+  dplyr::group_by(ISO3,Gender) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::ungroup() %>% 
   dplyr::mutate(Data_Source = "BTS")
 
+
 ## Add journal gender data
-## Chinese journal data please see data.frame ""
-BTS_gender_allcountry <- BTS_gender_allcountry %>% 
+## Chinese journal data please see data.frame "H1_gender_general"
+H3_BTS_Journal_gender  <- H3_BTS_gender  %>% 
   dplyr::mutate(n = ifelse(ISO3 == "CHN" & Gender == "Male", 13833 + 48059,n),
                 n = ifelse(ISO3 == "CHN" & Gender == "Female", 13723 + 57570,n))
 
-BTS_gender_allcountry_prop <- BTS_gender_allcountry %>% 
+H3_BTS_Journal_gender_prop <- H3_BTS_Journal_gender %>% 
   dplyr::group_by(ISO3) %>% 
   dplyr::mutate(Proportion = n/sum(n)*100) %>%
   dplyr::ungroup()
 
 
-BTS_gender_allcountry_sum_prop <- BTS_gender_allcountry_prop %>% 
+H3_BTS_Journal_gender_sum_prop <- H3_BTS_Journal_gender_prop %>% 
   dplyr::group_by(ISO3) %>% 
   dplyr::mutate(sum = sum(Proportion)) %>% 
   dplyr::ungroup()
 
 
 ## Set factor levels according to gender proportion
-BTS_gender_allcountry_factor <- BTS_gender_allcountry_prop %>% 
+H3_BTS_Journal_gender_factor <- H3_BTS_Journal_gender_prop %>% 
   dplyr::filter(Gender == "Female") %>% 
   dplyr::arrange(Proportion) %>% 
   dplyr::pull(ISO3)
@@ -2787,13 +2786,13 @@ BTS_gender_allcountry_factor <- BTS_gender_allcountry_prop %>%
 ## combine WEIRD data to visualization
 WEIRD_gender <- WEIRD %>% 
   dplyr::filter(!is.na(iso3c)) %>% 
-  dplyr::filter(iso3c %in% BTS_gender_allcountry_factor)
+  dplyr::filter(iso3c %in% H3_BTS_Journal_gender_factor)
 
 
-H3_gender <- BTS_gender_allcountry_prop %>% 
+H3_gender <- H3_BTS_Journal_gender_prop %>% 
   dplyr::left_join(WEIRD_gender,by = c("ISO3" = "iso3c")) %>% 
   dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>% 
-  dplyr::mutate(ISO3 = factor(ISO3,levels = BTS_gender_allcountry_factor)) %>% 
+  dplyr::mutate(ISO3 = factor(ISO3,levels = H3_BTS_Journal_gender_factor)) %>% 
   dplyr::filter(!is.na(ISO3)) %>% 
   dplyr::rename(Sex = 2)
 ```
@@ -2867,7 +2866,8 @@ BTS_Psystages_allcountry_sum_prop <- BTS_Psystages_allcountry %>%
 ## Add Chinese data
 Journal_BTS_PsyStages_CHN <- H2_age_Psystages_bayes_general %>% 
   dplyr::mutate(ISO3 = "CHN") %>% 
-  dplyr::rename(Proportion = `Chinese participants`)
+  dplyr::rename(Proportion = `Chinese participants`) %>% 
+  dplyr::select(-Census7)
 
 sum(Journal_BTS_PsyStages_CHN$Proportion)
 
@@ -2952,7 +2952,8 @@ BTS_interval10_allcountry_sum_prop <- BTS_interval10_allcountry %>%
 ## Add Chinese data
 Journal_BTS_interval10_CHN <- H2_age_inteval10_bayes_general %>%
   dplyr::mutate(ISO3 = "CHN") %>% 
-  dplyr::rename(Proportion = `Chinese participants`)
+  dplyr::rename(Proportion = `Chinese participants`) %>% 
+  dplyr::select(-Census7)
 
 
 ## Combine data
