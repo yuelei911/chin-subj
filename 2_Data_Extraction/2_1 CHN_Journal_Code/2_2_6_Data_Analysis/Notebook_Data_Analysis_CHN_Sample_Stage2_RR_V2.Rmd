@@ -1580,8 +1580,21 @@ For hypothesis 2, I first tried to analyze the data in general. I would then com
 Firstly, I analyzed data in general.
 
 ### Gender
-In this part, I processed gender data of the Census 7th data and the CFPS2018 data.
+In this part, I processed gender data of the Census 6th, the Census 7th data, and the CFPS2018 data.
 ```{r}
+## Process the gender data of census6
+Census6_gender <- df_census6 %>%
+  dplyr::select(6:7) %>% 
+  dplyr::slice(5)%>%
+  dplyr::rename(Male=1, 
+                Female=2) %>%
+  dplyr::mutate(Data_source = "Census6") %>%
+  tidyr::pivot_longer(c(Male, Female), 
+                      names_to = "Gender",
+                      values_to = "Proportion") %>%
+  dplyr::mutate(Proportion = as.numeric(Proportion))
+
+
 ## Process the gender data of census 7
 Census7_gender <- df_census7 %>%
   dplyr::select(c(6,7)) %>%        
@@ -1593,6 +1606,7 @@ Census7_gender <- df_census7 %>%
                       names_to = "Gender",
                       values_to = "Proportion") %>%
   dplyr::mutate(Proportion = as.numeric(Proportion))
+
 
 ## Process the gender data of CFPS2018
 CFPS2018_gender <- df_CFPS2018 %>%
@@ -1671,7 +1685,7 @@ The calculation results show that there is no difference between the data in Chi
 
 save gender data for exploration analyse
 ```{r}
-save(H1_gender_general,H2_gender_general,file = "H2_gender_exploration.Rdata") ## data include papers, projects, and Census data.
+save(H1_gender_general,H2_gender_general,Census6_gender,file = "H2_gender_exploration.Rdata") ## data include papers, projects, and Census data.
 ```
 
 
@@ -1873,15 +1887,60 @@ H2_Fig_age_general
 
 
 In addition, I calculated the bayes factor.
+process the data of Census 6th for exploration analyse.
+```{r}
+Census6_age <- df_census6 %>% 
+  dplyr::rename(Age = 1, n = 2) %>% 
+  dplyr::select(Age,n) %>% 
+  dplyr::slice(7:126) %>%  ## select agebins rows
+  dplyr::filter(!grepl("岁",Age)) %>% 
+  dplyr::mutate(Age = as.numeric(Age),
+                n = as.numeric(n),
+                n = ifelse(Age == "99",n+35934,n))  ## include 100 years old and above
+
+
+## PsyStages
+Census6_age_PsyStages <- Census6_age %>% 
+  dplyr::mutate(ageBins = cut(Age,
+                                breaks = c(-Inf, 17.5, 25.5, 40.5, 60.5, Inf),
+                                labels = c("<=17","18~25","26~40", "41~60", ">=61"),
+                                levels = c("<=17","18~25","26~40", "41~60", ">=61"))) %>%
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(n = sum(n)) %>%
+  dplyr::mutate(Proportion = n/sum(n)*100) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Data_Source = "Census6")
+
+sum(Census6_age_PsyStages$Proportion)
+
+
+## interval10
+Census6_age_interval10 <- Census6_age %>% 
+  dplyr::mutate(ageBins = cut(Age,
+                              breaks = c(-Inf, 10.5, 20.5, 30.5, 40.5, 50.5, 60.5, Inf),
+                              labels = c("<=10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"),
+                              levels = c("<=10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"))) %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(n = sum(n)) %>%
+  dplyr::mutate(Proportion = n/sum(n)*100) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Data_Source = "Census6")
+
+sum(Census6_age_interval10$Proportion)
+
+```
+
+
 ```{r}
 # Firstly, I process Census data for the following analysis.
 ## process census data.
 Census7_age <- df_census7 %>%
-  dplyr::rename(ageBins = 1, n = 2, Proportion = 5) %>% 
+  dplyr::rename(ageBins = 1, n = 2) %>% 
   dplyr::slice(9:145) %>% 
   dplyr::filter(ageBins != "" & !grepl("岁",ageBins)) %>% 
-  dplyr::select(1:2,5) %>% 
-  dplyr::mutate_at(vars(1:3),as.numeric)
+  dplyr::select(1,2) %>% 
+  dplyr::mutate_at(vars(1:2),as.numeric) %>% 
+  dplyr::mutate(n = ifelse(ageBins == "99", n+118866,n))  ## include 100 years old and above
 
 ## PsyStages
 Census7_age_PsyStages <- Census7_age %>% 
@@ -1889,8 +1948,6 @@ Census7_age_PsyStages <- Census7_age %>%
                                 breaks = c(-Inf, 17.5, 25.5, 40.5, 60.5, Inf),
                                 labels = c("<=17","18~25","26~40", "41~60", ">=61"),
                                 levels = c("<=17","18~25","26~40", "41~60", ">=61"))) %>% 
-  dplyr::mutate(n  = ifelse(ageBins == ">61", n+118866,n)) %>% ## include 100 years old and above
-  dplyr::select(-Proportion) %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n = sum(n)) %>%
   dplyr::mutate(Proportion = n/sum(n)*100) %>% 
@@ -1906,8 +1963,6 @@ Census7_age_interval10 <- Census7_age %>%
                               breaks = c(-Inf, 10.5, 20.5, 30.5, 40.5, 50.5, 60.5, Inf),
                               labels = c("<=10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"),
                               levels = c("<=10","11~20","21~30", "31~40", "41~50", "51~60", ">=61"))) %>% 
-  dplyr::mutate(n  = ifelse(ageBins == ">61", n+118866,n)) %>% 
-  dplyr::select(-Proportion) %>% 
   dplyr::group_by(ageBins) %>% 
   dplyr::summarise(n = sum(n)) %>%
   dplyr::mutate(Proportion = n/sum(n)*100) %>% 
@@ -2184,6 +2239,7 @@ save(H1_age_general,H1_PsyStages_bayes_general,H1_interval10_bayes_general,
      H1_edu_college_bayes,H1_edu_highschool_bayes,
      H2_edu_college_bayes,H2_edu_highschool_bayes,
      Census7_age_five5,Census7_age_interval10,Census7_age_PsyStages,
+     Census6_age_five5,Census6_age_PsyStages,Census6_age_interval10,
      Census7_high_school,Census7_college,CFPS2018_edu_high_school,CFPS2018_edu_college,
      file = "H2_BTS_Journal_age_edu.RData")
 ```

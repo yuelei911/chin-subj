@@ -371,13 +371,21 @@ and then, I process the data of gender, age and edu.
 ## gender
 process data
 ```{r}
+## process census 6th
+Census6_gender2 <- Census6_gender %>% 
+  dplyr::rename(Data_Source = 1) %>% 
+  dplyr::mutate(n = NA)
+
+## combine data
 SupplH2_gender_general <- H2_gender_general %>% 
   dplyr::rename(Data_Source = Data_source) %>% 
   rbind(H1_gender_general) %>% 
   dplyr::filter(Data_Source != "Chinese participants") %>% 
+  rbind(Census6_gender2) %>% 
   dplyr::mutate(Data_Source = factor(Data_Source,
-                                     levels = c("Census7","CFPS2018",
-                                                "BTS Chinese", "Journal")))
+                                     levels = c("Census6","Census7",
+                                                "BTS Chinese","CFPS2018", 
+                                                "Journal")))
 ```
 
 
@@ -409,8 +417,21 @@ SupplH2_gender_general_bayes <- SupplH2_gender_general %>%
   dplyr::select(Gender,Data_Source,Proportion) %>% 
   pivot_wider(names_from = Data_Source,values_from = Proportion)
 
+
+## Journal VS Census6
+SupplH2_BF_gender_Journal_Census6 <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+                                             factor = "Gender",
+                                             observed = "Journal",
+                                             expected = "Census6")
+
+## BTS VS Census6
+SupplH2_BF_gender_BTS_Census6 <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+                                             factor = "Gender",
+                                             observed = "BTS Chinese",
+                                             expected = "Census6")
+
 ## Journal VS Census7
-SupplH2_BF_gender_Journal_Census <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+SupplH2_BF_gender_Journal_Census7 <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
                                              factor = "Gender",
                                              observed = "Journal",
                                              expected = "Census7")
@@ -422,7 +443,7 @@ SupplH2_BF_gender_Journal_CFPS <- BayesMultiNomial(dataset = SupplH2_gender_gene
                                              expected = "CFPS2018")
 
 ## BTS VS Census7
-SupplH2_BF_gender_BTS_Census <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+SupplH2_BF_gender_BTS_Census7 <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
                                              factor = "Gender",
                                              observed = "BTS Chinese",
                                              expected = "Census7")
@@ -436,7 +457,7 @@ SupplH2_BF_gender_BTS_CFPS <- BayesMultiNomial(dataset = SupplH2_gender_general_
 
 
 ## age
-visualize
+process data 
 ```{r}
 ## BTS
 H1_age_general_BTS <- H1_age_general %>% 
@@ -446,9 +467,17 @@ H1_age_general_BTS <- H1_age_general %>%
 H1_age_general_Journal <- H1_age_general %>% 
   dplyr::filter(Data_Source == "Journal")
 
+# ## combine census6 and census7
+# Census_age_five <- rbind(Census6_age_five5,Census7_age_five5)
 
-SupplH3_age_general <- ggplot(data= Census7_age_five5, 
-       aes(x=ageBins, y = Proportion, fill="Census7")) +
+```
+
+
+visualize Census7, BTS Chinese and Journal 
+```{r}
+SupplH2_Census7_age_general <- ggplot(data= Census7_age_five5,
+                              aes(x=ageBins, 
+                                  y= Proportion, fill=Data_Source)) +
   geom_col(alpha=0.5, width = 1) +
   geom_line(data = H1_age_general_BTS, 
             aes(x = ageBins, y = Proportion, group = 1, color = "BTS Chinese"), 
@@ -470,21 +499,63 @@ SupplH3_age_general <- ggplot(data= Census7_age_five5,
         axis.title = element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"))
 
-ggsave("SupplH3_age_general.pdf",SupplH3_age_general, device = "pdf", width=18, height = 9)
+ggsave("SupplH2_Census7_age_general.pdf",SupplH2_Census7_age_general, device = "pdf", width=18, height = 9)
 
-SupplH3_age_general
+SupplH2_Census7_age_general
 ```
 
 
-BF
+visualize Census6, BTS Chinese and Journal 
 ```{r}
-## PsyStages
+SupplH2_Census6_age_general <- ggplot(data= Census6_age_five5,
+                              aes(x=ageBins, 
+                                  y= Proportion, fill=Data_Source)) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = H1_age_general_BTS, 
+            aes(x = ageBins, y = Proportion, group = 1, color = "BTS Chinese"), 
+            size = 1) +
+  geom_line(data = H1_age_general_Journal, 
+            aes(x = ageBins, y = Proportion, group = 1, color = "Journal"), 
+            size = 1) +
+  scale_fill_manual(values = c("Census6" = "#00BFC4")) +  
+  scale_color_manual(values = c("BTS Chinese" = "blue", "Journal" = "red")) +
+  scale_y_continuous(limits = c(0,50))+
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+
+ggsave("SupplH2_Census6_age_general.pdf",SupplH2_Census6_age_general, device = "pdf", width=18, height = 9)
+
+SupplH2_Census6_age_general
+```
+
+
+BF data
+```{r}
+## Census6 PsyStages
+Suppl_Census6_age_PsyStages <- Census6_age_PsyStages %>% 
+  dplyr::select(ageBins,Proportion) %>% 
+  dplyr::rename(Census6 = 2)
+
+## Census7 PsyStages
 Suppl_Census7_age_PsyStages <- Census7_age_PsyStages %>% 
   dplyr::select(ageBins,Proportion) %>% 
   dplyr::rename(Census7 = 2)
 
 
-## interval10
+## Census6 interval10
+Suppl_Census6_age_interval10 <- Census6_age_interval10 %>% 
+  dplyr::select(ageBins,Proportion) %>% 
+  dplyr::rename(Census6 = 2)
+
+## Census7 interval10
 Suppl_Census7_age_interval10 <- Census7_age_interval10 %>% 
   dplyr::select(ageBins,Proportion) %>% 
   dplyr::rename(Census7 = 2)
@@ -492,40 +563,77 @@ Suppl_Census7_age_interval10 <- Census7_age_interval10 %>%
 
 ## combine data
 ## PsyStages
-Suppl_BF_PsyStages <- left_join(H1_PsyStages_bayes_general,
+Suppl_PsyStages_bayes <- left_join(H1_PsyStages_bayes_general,
                                 Suppl_Census7_age_PsyStages,
-                                by = "ageBins")
+                                by = "ageBins") %>% 
+  left_join(Suppl_Census6_age_PsyStages,
+            by = "ageBins")
 
 
 ## interval10
-Suppl_BF_interval10 <- left_join(H1_interval10_bayes_general,
+Suppl_interval10_bayes <- left_join(H1_interval10_bayes_general,
                                  Suppl_Census7_age_interval10,
-                             by = "ageBins")
+                             by = "ageBins") %>% 
+  left_join(Suppl_Census6_age_interval10,
+            by = "ageBins")
+
+```
 
 
-## BF
-## BTS PsyStages
-SupplH3_BF_Psystages_BTS_Census <- BayesMultiNomial(dataset = Suppl_BF_PsyStages,
+Census6, BTS Chinese, and Journal
+```{r}
+## BTS PsyStages VS Census6
+SupplH2_BF_Psystages_BTS_Census6 <- BayesMultiNomial(dataset = Suppl_PsyStages_bayes,
+                                             factor = "ageBins",
+                                             observed = "BTS Chinese",
+                                             expected = "Census6")
+
+
+## BTS interval10 VS Census6
+SupplH2_BF_interval10_BTS_Census6 <- BayesMultiNomial(dataset = Suppl_PsyStages_bayes,
+                                             factor = "ageBins",
+                                             observed = "BTS Chinese",
+                                             expected = "Census6")
+
+
+## Journal PsyStages VS Census6
+SupplH2_BF_Psystages_Journal_Census6 <- BayesMultiNomial(dataset = Suppl_PsyStages_bayes,
+                                             factor = "ageBins",
+                                             observed = "Journal",
+                                             expected = "Census6")
+
+## Journal interval10 VS Census6
+SupplH2_BF_interval10_Journal_Census6 <- BayesMultiNomial(dataset =Suppl_interval10_bayes,
+                                             factor = "ageBins",
+                                             observed = "Journal",
+                                             expected = "Census6")
+```
+
+
+Census7, BTS Chinese, and Journal
+```{r}
+## BTS PsyStages VS Census7
+SupplH2_BF_Psystages_BTS_Census7 <- BayesMultiNomial(dataset = Suppl_PsyStages_bayes,
                                              factor = "ageBins",
                                              observed = "BTS Chinese",
                                              expected = "Census7")
 
 
-## BTS interval10
-SupplH3_BF_interval10_BTS_Census <- BayesMultiNomial(dataset = Suppl_BF_interval10,
+## BTS interval10 VS Census7
+SupplH2_BF_interval10_BTS_Census7 <- BayesMultiNomial(dataset = Suppl_interval10_bayes,
                                              factor = "ageBins",
                                              observed = "BTS Chinese",
                                              expected = "Census7")
 
 
-## Journal PsyStages
-SupplH3_BF_Psystages_Journal_Census <- BayesMultiNomial(dataset = Suppl_BF_PsyStages,
+## Journal PsyStages VS Census7
+SupplH2_BF_Psystages_Journal_Census7 <- BayesMultiNomial(dataset = Suppl_PsyStages_bayes,
                                              factor = "ageBins",
                                              observed = "Journal",
                                              expected = "Census7")
 
-## Journal interval10
-SupplH3_BF_interval10_Journal_Census <- BayesMultiNomial(dataset = Suppl_BF_interval10,
+## Journal interval10 VS Census7
+SupplH2_BF_interval10_Journal_Census7 <- BayesMultiNomial(dataset =Suppl_interval10_bayes,
                                              factor = "ageBins",
                                              observed = "Journal",
                                              expected = "Census7")
@@ -533,7 +641,34 @@ SupplH3_BF_interval10_Journal_Census <- BayesMultiNomial(dataset = Suppl_BF_inte
 
 
 ## edu
-process data
+process Census6 data
+```{r}
+Census6_edu <- readxl::read_xlsx("Census6_edu.xlsx")
+
+Suppl_Census6_edu <- Census6_edu %>%
+  dplyr::select(1,2,5,8,11,14,17,20,23) %>%
+  dplyr::rename(Age = 1,n = 2,
+                Never_attended_school = 3,  Primary_school = 4,
+                Junior_high_school = 5, Senior_high_school = 6,
+                Junior_college = 7,Undergraduate_education = 8,
+                Graduate_education = 9) %>% 
+  dplyr::slice(21:101) %>% 
+  dplyr::filter(grepl("岁",Age))
+  
+  
+  
+  
+  dplyr::select(1,2,5,8,11,14,17,20,23,26,29) %>% 
+  dplyr::rename(Age = 1,Three_years_old_above = 2, Never_attended_school = 3,
+                Preschool_education = 4,Primary_school = 5,Middle_school = 6,
+                High_school = 7, Junior_college = 8, Undergraduate_education = 9,
+                Postgraduate_student = 10,Doctoral_student = 11) %>% 
+  dplyr::slice(-c(1:2)) %>% 
+  dplyr::mutate(across(-1,as.numeric)) 
+```
+
+
+process Census7 data
 ```{r}
 ## Census
 Suppl_Census7_college <- Census7_college %>% 
@@ -543,9 +678,11 @@ Suppl_Census7_college <- Census7_college %>%
 Suppl_Census7_high_school <- Census7_high_school %>% 
   dplyr::select(Educational_attainment,Proportion) %>% 
   dplyr::rename(Census7 = 2)
+```
 
 
-## CFPS
+process CFPS2018 data
+```{r}
 Suppl_CFPS2018_edu_college <- CFPS2018_edu_college %>%
   dplyr::select(Educational_attainment,Proportion) %>% 
   dplyr::rename(CFPS2018 = 2)
