@@ -642,29 +642,41 @@ SupplH2_BF_interval10_Journal_Census7 <- BayesMultiNomial(dataset =Suppl_interva
 
 ## edu
 process Census6 data
-```{r}
+```{r warning=FALSE}
 Census6_edu <- readxl::read_xlsx("Census6_edu.xlsx")
 
-Suppl_Census6_edu <- Census6_edu %>%
+Suppl_Census6_edu_adults <- Census6_edu %>%
   dplyr::select(1,2,5,8,11,14,17,20,23) %>%
   dplyr::rename(Age = 1,n = 2,
                 Never_attended_school = 3,  Primary_school = 4,
                 Junior_high_school = 5, Senior_high_school = 6,
                 Junior_college = 7,Undergraduate_education = 8,
                 Graduate_education = 9) %>% 
-  dplyr::slice(21:101) %>% 
-  dplyr::filter(grepl("岁",Age))
-  
-  
-  
-  
-  dplyr::select(1,2,5,8,11,14,17,20,23,26,29) %>% 
-  dplyr::rename(Age = 1,Three_years_old_above = 2, Never_attended_school = 3,
-                Preschool_education = 4,Primary_school = 5,Middle_school = 6,
-                High_school = 7, Junior_college = 8, Undergraduate_education = 9,
-                Postgraduate_student = 10,Doctoral_student = 11) %>% 
-  dplyr::slice(-c(1:2)) %>% 
+  dplyr::slice(21:22, seq(23,101,by = 6)) %>% 
   dplyr::mutate(across(-1,as.numeric)) 
+  
+ 
+## college
+Suppl_Census6_college <- Suppl_Census6_edu_adults %>% 
+  dplyr::summarise(`Below college` = sum(across(3:6)),
+                   `College and above` = sum(across(7:9))) %>% 
+  tidyr::pivot_longer(cols = c(1,2),
+                      names_to = "Educational_attainment",
+                      values_to = "Num") %>% 
+  dplyr::mutate(Proportion = Num/sum(Num)*100) %>% 
+  dplyr::select(-Num) %>% 
+  dplyr::rename(Census6 = 2)
+
+## high school
+Suppl_Census6_high_school <- Suppl_Census6_edu_adults %>% 
+  dplyr::summarise(`Below high school` = sum(across(3:5)),
+                   `High school and above` = sum(across(6:9))) %>% 
+  tidyr::pivot_longer(cols = c(1,2),
+                      names_to = "Educational_attainment",
+                      values_to = "Num") %>% 
+  dplyr::mutate(Proportion = Num/sum(Num)*100) %>% 
+  dplyr::select(-Num)%>% 
+  dplyr::rename(Census6 = 2)
 ```
 
 
@@ -691,44 +703,79 @@ Suppl_CFPS2018_edu_college <- CFPS2018_edu_college %>%
 Suppl_CFPS2018_edu_high_school <- CFPS2018_edu_high_school %>% 
   dplyr::select(Educational_attainment,Proportion) %>% 
   dplyr::rename(CFPS2018 = 2)
+```
 
 
-## combine all data
+combine all edu data
+```{r}
+## college
 Suppl_college <- left_join(H1_edu_college_bayes, 
                            Suppl_Census7_college, 
                            by = "Educational_attainment") %>%
   left_join(Suppl_CFPS2018_edu_college,
-            by = "Educational_attainment")
+            by = "Educational_attainment") %>% 
+  left_join(Suppl_Census6_college,
+             by = "Educational_attainment")
 
 
+## high school
 Suppl_highschool <- left_join(H1_edu_highschool_bayes, 
                               Suppl_Census7_high_school, 
                               by = "Educational_attainment") %>% 
-  left_join(Suppl_CFPS2018_edu_high_school,by = "Educational_attainment")
+  left_join(Suppl_CFPS2018_edu_high_school,by = "Educational_attainment") %>% 
+  left_join(Suppl_Census6_high_school,
+             by = "Educational_attainment")
 ```
 
 
-BF
+BF Journal, BTS and Census6
 ```{r}
 ## College
-Suppl_BF_college_BTS_Census <-  BayesMultiNomial(dataset = Suppl_college,
+Suppl_BF_college_BTS_Census6 <-  BayesMultiNomial(dataset = Suppl_college,
+                                             factor = "Educational_attainment",
+                                             observed = "BTS Chinese",
+                                             expected = "Census6")
+
+Suppl_BF_college_Journal_Census6 <-  BayesMultiNomial(dataset = Suppl_college,
+                                             factor = "Educational_attainment",
+                                             observed = "Journal",
+                                             expected = "Census6")
+
+
+## high school
+Suppl_BF_highschool_BTS_Census6 <-  BayesMultiNomial(dataset = Suppl_highschool,
+                                             factor = "Educational_attainment",
+                                             observed = "BTS Chinese",
+                                             expected = "Census6")
+
+Suppl_BF_highschool_Journal_Census6 <-  BayesMultiNomial(dataset = Suppl_highschool,
+                                             factor = "Educational_attainment",
+                                             observed = "Journal",
+                                             expected = "Census6")
+```
+
+
+BF Journal, BTS and Census7
+```{r}
+## College
+Suppl_BF_college_BTS_Census7 <-  BayesMultiNomial(dataset = Suppl_college,
                                              factor = "Educational_attainment",
                                              observed = "BTS Chinese",
                                              expected = "Census7")
 
-Suppl_BF_college_Journal_Census <-  BayesMultiNomial(dataset = Suppl_college,
+Suppl_BF_college_Journal_Census7 <-  BayesMultiNomial(dataset = Suppl_college,
                                              factor = "Educational_attainment",
                                              observed = "Journal",
                                              expected = "Census7")
 
 
 ## high school
-Suppl_BF_highschool_BTS_Census <-  BayesMultiNomial(dataset = Suppl_highschool,
+Suppl_BF_highschool_BTS_Census7 <-  BayesMultiNomial(dataset = Suppl_highschool,
                                              factor = "Educational_attainment",
                                              observed = "BTS Chinese",
                                              expected = "Census7")
 
-Suppl_BF_highschool_Journal_Census <-  BayesMultiNomial(dataset = Suppl_highschool,
+Suppl_BF_highschool_Journal_Census7 <-  BayesMultiNomial(dataset = Suppl_highschool,
                                              factor = "Educational_attainment",
                                              observed = "Journal",
                                              expected = "Census7")
@@ -737,9 +784,10 @@ Suppl_BF_highschool_Journal_Census <-  BayesMultiNomial(dataset = Suppl_highscho
 
 ## Abstract report
 Abstract1 subjects information reported of Chinese journal
+
+all data
 ```{r message=FALSE, warning=FALSE}
-## all data
-Journal_abstract1_report <- Journal %>% 
+Journal_abstract1_report_all <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,
                 Target_Population_N,Sample_Type_N,Abstract1) %>% 
   dplyr::filter(Sample_Type_N != 5) %>%
@@ -757,80 +805,27 @@ Journal_abstract1_report <- Journal %>%
 
 
 ## Chi
-matrix_Journal_abstract1_report <- matrix(c(223, 195), nrow = 1)
-colnames(matrix_Journal_abstract1_report) <- c("Sample not mentioned", "Samples mentioned")
-rownames(matrix_Journal_abstract1_report) <- "Only college students"
+matrix_Journal_abstract1_report_all <- matrix(c(33, 9, # College students & other populations
+                                            227, 204, # Only college students
+                                            434, 28), # Only sample outside colleges
+                                          nrow = 3,
+                                          byrow = TRUE,
+                                          dimnames = list(Study_Type = c("College students & other", "Only college students", "Only outside colleges"),
+                                                          Sample_Status = c("Sample not mentioned", "Samples mentioned")))
 
-matrix_Journal_abstract1_result <- chisq.test(matrix_Journal_abstract1_report)
-matrix_Journal_abstract1_result 
+# Chi test
+matrix_Journal_abstract1_result_all <- chisq.test(matrix_Journal_abstract1_report_all)
+matrix_Journal_abstract1_result_all
 ```
 
 
-I would like to explore whether there are differences in specific demographic information.
-
-Mention in sample type
+general population
 ```{r}
-## all data
-Journal_abstract1_sampletype_report <- Journal %>% 
+Journal_abstract1_report_general <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,
-                Target_Population_N,Sample_Type_N,Abstract1) %>% 
-  dplyr::filter(Sample_Type_N != 5) %>%
-  dplyr::group_by(Article_IDs) %>% 
-  dplyr::mutate(Study_Type = ifelse(all(Sample_Type_N == 1),"Only college students",ifelse(any(grepl("1",Sample_Type_N)) & any(Sample_Type_N !=1),"College students & other populations","Only sample outside colleges"))) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::group_by(Article_IDs) %>% 
-  dplyr::slice(1) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Sample_Mentioned = ifelse(grepl("1", Abstract1),"Samples mentioned", "Sample not mentioned")) %>% 
-  dplyr::group_by(Sample_Mentioned,Study_Type) %>% 
-  dplyr::count() %>% 
-  dplyr::ungroup() %>% 
-  tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
-```
-
-
-Chi-sqaure test
-```{r}
-## sample type mentioned for colleges
-matrix_abstract1_sampletype_report <- matrix(c(212, 206), nrow = 1)
-colnames(matrix_abstract1_sampletype_report) <- c("Sample not mentioned", "Samples mentioned")
-rownames(matrix_abstract1_sampletype_report) <- "Only college students"
-
-
-matrix_abstract1_sampletype_result <- chisq.test(matrix_abstract1_sampletype_report)
-matrix_abstract1_sampletype_result
-
-
-
-## I also try to analysis "Only sample outside colleges"
-matrix_outside_colleges_report <- matrix(c(43, 401), nrow = 1)
-colnames(matrix_outside_colleges_report) <- c("Sample not mentioned", "Samples mentioned")
-rownames(matrix_outside_colleges_report) <- "Only sample outside colleges"
-
-
-matrix_matrix_outside_colleges_result <- chisq.test(matrix_outside_colleges_report)
-matrix_matrix_outside_colleges_result
-
-
-## colleges and others samples
-matrix_colleges_andothers_report <- matrix(c(11, 30), nrow = 1)
-colnames(matrix_colleges_andothers_report) <- c("Sample not mentioned", "Samples mentioned")
-rownames(matrix_colleges_andothers_report) <- "College students & other populations"
-
-
-matrix_colleges_andothers_result <- chisq.test(matrix_colleges_andothers_report)
-matrix_colleges_andothers_result 
-```
-
-
-Filter  2021 article and analysis abstract1 report
-```{r} 
-## all data
-Journal_abstract1_year2021_report <- Journal %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
-                Target_Population_N,Sample_Type_N,Abstract1) %>% 
-  dplyr::filter(substr(Article_IDs,1,4) == "2021") %>% 
-  dplyr::filter(Sample_Type_N != 5) %>%
+                Target_Population_N,Sample_Type_N,Abstract1,Target_Population_N) %>% 
+  dplyr::filter(Sample_Type_N != 5) %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
   dplyr::group_by(Article_IDs) %>% 
   dplyr::mutate(Study_Type = ifelse(all(Sample_Type_N == 1),"Only college students",ifelse(any(grepl("1",Sample_Type_N)) & any(Sample_Type_N !=1),"College students & other populations","Only sample outside colleges"))) %>% 
   dplyr::ungroup() %>% 
@@ -844,84 +839,19 @@ Journal_abstract1_year2021_report <- Journal %>%
   tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
 
 
-## sample type
-Journal_abstract1_year2021_sampletype_report <- Journal %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
-                Target_Population_N,Sample_Type_N,Abstract1) %>% 
-  dplyr::filter(substr(Article_IDs,1,4) == "2021") %>% 
-  dplyr::filter(Sample_Type_N != 5) %>%
-  dplyr::group_by(Article_IDs) %>% 
-  dplyr::mutate(Study_Type = ifelse(all(Sample_Type_N == 1),"Only college students",ifelse(any(grepl("1",Sample_Type_N)) & any(Sample_Type_N !=1),"College students & other populations","Only sample outside colleges"))) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::group_by(Article_IDs) %>% 
-  dplyr::slice(1) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Sample_Mentioned = ifelse(grepl("1", Abstract1),"Samples mentioned", "Sample not mentioned")) %>% 
-  dplyr::group_by(Sample_Mentioned,Study_Type) %>% 
-  dplyr::count() %>% 
-  dplyr::ungroup() %>% 
-  tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
-```
-
-
-```{r}
-## sample type mentioned for colleges
-matrix_abstract1_sampletype_year2021_report <- matrix(c(62, 42), nrow = 1)
-colnames(matrix_abstract1_sampletype_year2021_report) <- c("Sample not mentioned", "Samples mentioned")
-rownames(matrix_abstract1_sampletype_year2021_report) <- "Only college students"
-
-
-matrix_abstract1_sampletype_year2021_result <- chisq.test(matrix_abstract1_sampletype_year2021_report)
-matrix_abstract1_sampletype_year2021_result
-
-
-
-## I also try to analysis "Only sample outside colleges"
-matrix_outside_colleges_year2021_report <- matrix(c(99, 4), nrow = 1)
-colnames(matrix_outside_colleges_year2021_report) <- c("Sample not mentioned", "Samples mentioned")
-rownames(matrix_outside_colleges_year2021_report) <- "Only sample outside colleges"
-
-
-matrix_matrix_outside_colleges_year2021_result <- chisq.test(matrix_outside_colleges_year2021_report)
-matrix_matrix_outside_colleges_year2021_result
-
-
-## colleges and others samples
-matrix_colleges_andothers_year2021_report <- matrix(c(16, 1), nrow = 1)
-colnames(matrix_colleges_andothers_year2021_report) <- c("Sample not mentioned", "Samples mentioned")
-rownames(matrix_colleges_andothers_year2021_report) <- "College students & other populations"
-
-
-matrix_colleges_andothers_year2021_result <- chisq.test(matrix_colleges_andothers_year2021_report)
-matrix_colleges_andothers_year2021_result 
-```
-
-
-Abstract2 report
-university students reported in abstract when sample type is 1
-```{r}
-Journal_abstract2_report <- Journal %>% 
-  dplyr::filter(grepl("1",Sample_Type_N)) %>% 
-  dplyr::group_by(Article_IDs) %>% 
-  dplyr::mutate(Abstract2_same = n_distinct(Abstract2) == 1) %>%  ## check multiple subjects group Abstract2 whether is consistent.
-  dplyr::slice(1) %>% ## for one articles have multiple rows, only save the first row
-  dplyr::ungroup() %>% 
-  dplyr::group_by(Abstract2) %>% 
-  dplyr::summarise(report = n()) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(proportion = round(report/sum(report),2),
-                Abstract2 = ifelse(Abstract2 == 0 ,"Unreported","Reported")) %>% 
-  dplyr::rename(n = 2)
-
-
 ## Chi
-matrix_abstract2_report <- matrix(c(241, 218), nrow = 1)
-colnames(matrix_abstract2_report) <- c("Unreported", "Reported")
+matrix_Journal_abstract1_report_general <- matrix(c(10, 7, # College students & other populations
+                                            91, 198, # Only college students
+                                            32, 11), # Only sample outside colleges
+                                          nrow = 3,
+                                          byrow = TRUE,
+                                          dimnames = list(Study_Type = c("College students & other", "Only college students", "Only outside colleges"),
+                                                          Sample_Status = c("Sample not mentioned", "Samples mentioned")))
 
-abstract2_result <- chisq.test(matrix_abstract2_report)
-abstract2_result
+# Chi test
+matrix_Journal_abstract1_result_general <- chisq.test(matrix_Journal_abstract1_report_general)
+matrix_Journal_abstract1_result_general
 ```
-
 
 
 ## Reason for current data pattern
@@ -931,7 +861,7 @@ Journal_subjects_recruitment <- Journal %>%
                 Target_Population_N,Sample_Type_N,Sampling_Method,Subjects_Recruitment_Method_N,
                 Subjects_Recruitment_Method_info_N)
 
-table(Journal_subjects_recruitment$Sampling_Method)  ## 0(1064),1(219),2(284)
+table(Journal_subjects_recruitment$Sampling_Method)  ## 0(1107),1(223),2(298)
 
 table(Journal_subjects_recruitment$Subjects_Recruitment_Method_N)
 ```
