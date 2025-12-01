@@ -1267,19 +1267,19 @@ SupplH2_region_seven_bayes <- H2_region_seven_bayes %>%
   dplyr::rename(Census6 = Census6_Prop)
 
 ## Census6
-SupplH2_BF_Journal_Census6_region_four <- BayesMultiNomial(dataset = SupplH2_region_seven_bayes,
+SupplH2_BF_Journal_Census6_region_seven <- BayesMultiNomial(dataset = SupplH2_region_seven_bayes,
                                           factor = "Region_seven",
                                           observed = "Journal",
                                           expected = "Census6")
 
 ## Census7
-SupplH2_BF_Journal_Census7_region_four <- BayesMultiNomial(dataset = SupplH2_region_seven_bayes,
+SupplH2_BF_Journal_Census7_region_seven <- BayesMultiNomial(dataset = SupplH2_region_seven_bayes,
                                           factor = "Region_seven",
                                           observed = "Journal",
                                           expected = "Census7")
 
 ## CFPS2018
-SupplH2_BF_Journal_CFPS2018_region_four <- BayesMultiNomial(dataset = SupplH2_region_seven_bayes,
+SupplH2_BF_Journal_CFPS2018_region_seven <- BayesMultiNomial(dataset = SupplH2_region_seven_bayes,
                                           factor = "Region_seven",
                                           observed = "Journal",
                                           expected = "CFPS2018")
