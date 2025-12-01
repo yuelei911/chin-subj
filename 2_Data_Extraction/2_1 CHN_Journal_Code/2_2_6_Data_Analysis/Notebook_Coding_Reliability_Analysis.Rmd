@@ -241,7 +241,6 @@ Journal_Coder1 <- Journal_Coder1 %>%
                 Age,M_age,SD_age,
                 Educational_Attainment_N,Subjects_Recruitment_Method_N,
                 Sampling_Method,Target_Population_N,Subjects_Recruitment_Area,
-                Remark1_N,Remark2_N,
                 Study_Type) %>% 
   dplyr::mutate(across(everything(), ~ifelse(is.na(.) | as.character(.) %in% c("　", ""), "NA", as.character(.))))
 
@@ -255,7 +254,6 @@ Journal_Coder2 <- Journal_Coder2 %>%
                 Age,M_age,SD_age,
                 Educational_Attainment_N,Subjects_Recruitment_Method_N,
                 Sampling_Method,Target_Population_N,Subjects_Recruitment_Area,
-                Remark1_N,Remark2_N,
                 Study_Type) %>% 
   dplyr::mutate(across(everything(), ~ifelse(is.na(.) | as.character(.) %in% c("　", ""), "NA", as.character(.))))
 ```
@@ -306,49 +304,6 @@ table(Journal_Coder1$Educational_Attainment_N)
 Journal_Coder1$Educational_Attainment_N <- as.factor(Journal_Coder1$Educational_Attainment_N)
 Journal_Coder2$Educational_Attainment_N <- as.factor(Journal_Coder2$Educational_Attainment_N)
 
-## remark1 & 2
-Journal_Coder1 <- Journal_Coder1 %>% 
-  dplyr::mutate(Remark1_N = case_when(Remark1_N == "animal" ~ "1", 
-                                      Remark1_N == "mining" ~ "2",
-                                      Remark1_N == "qualitative" ~ "3", 
-                                      Remark1_N == "secondary" ~ "4",
-                                      Remark1_N == "NA" ~ "NA",
-                                      TRUE ~ "5"),  ## other inappropriate uses
-                Remark1_N = as.factor(Remark1_N))
-
-Journal_Coder2 <- Journal_Coder2 %>% 
-  dplyr::mutate(Remark1_N = case_when(Remark1_N == "animal" ~ "1", 
-                                      Remark1_N == "mining" ~ "2",
-                                      Remark1_N == "qualitative" ~ "3", 
-                                      Remark1_N == "secondary" ~ "4",
-                                      Remark1_N == "NA" ~ "NA",
-                                      TRUE ~ "5"),  ## other inappropriate uses
-                Remark1_N = as.factor(Remark1_N))
-
-
-Journal_Coder1 <- Journal_Coder1 %>%
-  dplyr::mutate(Remark2_N = case_when(
-      # Code as 3 if both "区" and "重复" are present
-      grepl("区", Remark2_N) & grepl("重复", Remark2_N) ~ "3",
-      # Code as 2 if only "区" is present
-      grepl("区", Remark2_N) ~ "2",
-      # Code as 1 if only "重复" is present
-      grepl("重复", Remark2_N) ~ "1",
-      # Code as NA for all other cases
-      TRUE ~ "NA"),
-      Remark2_N = as.factor(Remark2_N))
-
-Journal_Coder2 <- Journal_Coder2 %>%
-  dplyr::mutate(Remark2_N = case_when(
-      # Code as 3 if both "区" and "重复" are present
-      grepl("区", Remark2_N) & grepl("重复", Remark2_N) ~ "3",
-      # Code as 2 if only "区" is present
-      grepl("区", Remark2_N) ~ "2",
-      # Code as 1 if only "重复" is present
-      grepl("重复", Remark2_N) ~ "1",
-      # Code as NA for all other cases
-      TRUE ~ "NA"),
-      Remark2_N = as.factor(Remark2_N))
   
 ## subjects recruitment area
 Journal_Coder1 <- Journal_Coder1 %>% 
@@ -417,7 +372,8 @@ Journal_irrs_continuous
 Journal_vars <- Journal_Coder1 %>% 
   dplyr::select(Age, Gender , Educational_Attainment_N,
                 Sampling_Method, Subjects_Recruitment_Method_N,
-                Target_Population_N,Study_Type) %>% 
+                Target_Population_N,Study_Type,Abstract1,
+                Abstract2) %>% 
   names() ## select calculated vars
  
 
