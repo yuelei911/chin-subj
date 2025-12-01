@@ -22,9 +22,9 @@ Sim_Sens_mult_age_four <- function(Mean1, diff_age, SD1, sample_N=Sample_Size){
   
   
   ageData_age_four <-  c(pnorm(17, mean = Mean1, sd = SD1) * sample_N,
-                          (pnorm(41, mean = Mean1, sd = SD1) - pnorm(17, mean = Mean1, sd = SD1)) *sample_N,
-                          (pnorm(61, mean = Mean1, sd = SD1) - pnorm(41, mean = Mean1, sd = SD1)) *sample_N,
-                          (1 - pnorm(61, mean = Mean1, sd = SD1)) * sample_N)
+                          (pnorm(40, mean = Mean1, sd = SD1) - pnorm(17, mean = Mean1, sd = SD1)) *sample_N,
+                          (pnorm(60, mean = Mean1, sd = SD1) - pnorm(40, mean = Mean1, sd = SD1)) *sample_N,
+                          (1 - pnorm(60, mean = Mean1, sd = SD1)) * sample_N)
   
     
   # create a dataframe with ageData_Fourage
@@ -59,14 +59,14 @@ Sim_Journal_age_four2_general <- do.call(rbind,Sim_Journal_age_four_general)
 
 Sim_Journal_age_four3_general <- Sim_Journal_age_four2_general %>% 
   dplyr::group_by(ageBins) %>% 
-  dplyr::summarise(sim1 = round(sum(sim1,na.rm = TRUE))) %>% 
+  dplyr::summarise(sim1 = sum(sim1,na.rm = TRUE)) %>% 
   dplyr::ungroup() %>% 
   dplyr::mutate(ageBins =factor(ageBins,
                                 levels = c("<=17","18~40", "41~60", ">=61")))
 
 
 ## Calculate the sample difference between the coded data and the simulated data
-# sum(Journal_age_four_general$Sample_Size)-sum(Sim_Journal_age_four3_general$sim1,na.rm = TRUE)
+sum(Journal_age_four_general$Sample_Size)-sum(Sim_Journal_age_four3_general$sim1,na.rm = TRUE)
 ```
 
 
@@ -123,7 +123,6 @@ BTS_age_four_allcountry <- BTS_age_four %>%
   dplyr::mutate(Proportion = n/sum(n)*100) %>% 
   dplyr::ungroup()
 
-
 ## calculate total sum
 BTS_age_four_allcountry_sum_prop <- BTS_age_four_allcountry %>% 
   dplyr::group_by(ISO3) %>% 
@@ -133,6 +132,7 @@ BTS_age_four_allcountry_sum_prop <- BTS_age_four_allcountry %>%
 
 ## Add Chinese data
 BTS_age_four_CHN <- BTS_age_four %>% 
+  dplyr::filter(Article_Id != "Lucca_et_al_2024") %>% 
   dplyr::filter(ISO3 == "CHN") %>% 
   dplyr::group_by(ISO3,ageBins) %>% 
   dplyr::summarise(n = n()) %>% 
@@ -154,7 +154,8 @@ Journal_BTS_age_four_CHN2 <- Journal_BTS_age_four_CHN %>%
   dplyr::ungroup() %>% 
   dplyr::mutate(ISO3 = "CHN") %>% 
   dplyr::mutate(Proportion = n/sum(n)*100)
-  
+ 
+sum(Journal_BTS_age_four_CHN2$Proportion) 
 
 ## Combine data
 H3_age_four <- dplyr::bind_rows(BTS_age_four_allcountry, Journal_BTS_age_four_CHN2)
@@ -181,14 +182,14 @@ H3_age_four2 <- H3_age_four %>%
 ## 18~40 age 
 H3_age_four2_1840 <- H3_age_four2 %>% 
   dplyr::filter(ageBins == "18~40") %>% 
-  dplyr::filter(Proportion > 60)   ## 123 
+  dplyr::filter(Proportion > 60)   ## 124
 ```
 
 
 ```{r}
 H3_Fig_age_four <- ggplot(H3_age_four2, aes(x=Proportion, y=ISO3, fill=ageBins)) +
   geom_col(alpha = .75)+
-  labs(y="Countries") + 
+  labs(y="Countries/Regions",fill = "Age bins") + 
   scale_fill_discrete(label=c("0~17", "18~40", "41~60",">=61")) +
   theme_classic()+
   #guides(y="axis_nested") +
@@ -199,7 +200,8 @@ H3_Fig_age_four <- ggplot(H3_age_four2, aes(x=Proportion, y=ISO3, fill=ageBins))
         strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black")) +
   scale_x_continuous(breaks = seq(0, 100, by = 10)) +
-  facet_wrap(~ WEIRD, scales = "free") 
+  facet_wrap(~ WEIRD, scales = "free",
+             labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD"))) 
 
 
 H3_Fig_age_four
