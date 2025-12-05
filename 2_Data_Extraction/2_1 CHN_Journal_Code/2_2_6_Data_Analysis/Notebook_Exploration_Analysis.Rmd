@@ -823,7 +823,7 @@ general population
 ```{r}
 Journal_abstract1_report_general <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,
-                Target_Population_N,Sample_Type_N,Abstract1,Target_Population_N) %>% 
+                Target_Population_N,Sample_Type_N,Abstract1) %>% 
   dplyr::filter(Sample_Type_N != 5) %>% 
   dplyr::filter(Target_Population_N != 1) %>% 
   dplyr::group_by(Article_IDs) %>% 
@@ -851,6 +851,61 @@ matrix_Journal_abstract1_report_general <- matrix(c(10, 7, # College students & 
 # Chi test
 matrix_Journal_abstract1_result_general <- chisq.test(matrix_Journal_abstract1_report_general)
 matrix_Journal_abstract1_result_general
+```
+
+
+Abstract 2 reported
+
+all data.
+```{r}
+
+## check info consisitency
+# Journal_abstract2_report_CE <- Journal %>% 
+#    dplyr::select(Article_IDs_N,Study_Number_N,Subjects_Group_N,
+#                 Target_Population_N,Sample_Type_N,Abstract2) %>% 
+#   dplyr::filter(!is.na(Abstract2)) %>% 
+#   dplyr::group_by(Article_IDs_N) %>% 
+#   dplyr::summarise(Distinct_ab2 = n_distinct(Abstract2)) %>% 
+#   dplyr::ungroup()
+  
+Journal_abstract2_report <- Journal %>% 
+  dplyr::select(Article_IDs_N,Study_Number_N,Subjects_Group_N,
+                Target_Population_N,Sample_Type_N,Abstract2) %>% 
+  dplyr::filter(!is.na(Abstract2)) %>% 
+  dplyr::group_by(Article_IDs_N) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup()
+
+
+
+## Chi-aquare test
+Journal_ab2_tab <- table(Journal_abstract2_report$Abstract2)
+Journal_ab2_tab
+
+Journal_ab2_tab_chi_test <- chisq.test(Journal_ab2_tab, p = c(0.5,0.5))
+Journal_ab2_tab_chi_test
+```
+
+
+general population
+```{r}
+Journal_abstract2_report_general <- Journal %>% 
+  dplyr::select(Article_IDs_N,Study_Number_N,Subjects_Group_N,
+                Target_Population_N,Sample_Type_N,Abstract2) %>% 
+  dplyr::filter(!is.na(Abstract2)) %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  dplyr::group_by(Article_IDs_N) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup()
+
+
+
+## Chi-aquare test
+Journal_ab2_general_tab <- table(Journal_abstract2_report_general$Abstract2)
+Journal_ab2_general_tab
+
+Journal_ab2_general_tab_chi_test <- chisq.test(Journal_ab2_general_tab, p = c(0.5,0.5))
+Journal_ab2_general_tab_chi_test
 ```
 
 
