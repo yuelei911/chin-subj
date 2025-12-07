@@ -82,7 +82,8 @@ Journal_year2008_education_occupation_table <- data.frame(Var1 = c("Unreported",
                                                    col_names= c("Educational_Attainment",
                                                                 "Educational_Attainment",
                                                                 "Occupation","Occupation"),
-                                                   proportion = c(0.52,0.48,0.55,0.45))
+                                                   proportion = c(34/(34+31),31/(34+31),
+                                                                  36/(36+29),29/(36+29)))
 
 Journal_year2008_report2 <- rbind(Journal_year2008_report,
                                   Journal_year2008_education_occupation_table) %>%
@@ -160,7 +161,8 @@ Journal_year2018_education_occupation_table <- data.frame(Var1 = c("Unreported",
                                                    col_names= c("Educational_Attainment",
                                                                 "Educational_Attainment",
                                                                 "Occupation","Occupation"),
-                                                   proportion = c(0.49,0.51,0.60,0.40))
+                                                   proportion = c(73/(73+76),76/(73+76),
+                                                                  90/(90+59),59/(90+59)))
 
 Journal_year2018_report2 <- rbind(Journal_year2018_report,
                                   Journal_year2018_education_occupation_table) %>%
@@ -234,11 +236,12 @@ table(Journal_year2021_education_occupation$Occupation_N)  ## FALSE 72 TRUE 16
 
 Journal_year2021_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
                                                             "Unreported","Reported"),
-                                                   Freq = c(57,34,74,17),
+                                                   Freq = c(58,34,75,17),
                                                    col_names= c("Educational_Attainment",
                                                                 "Educational_Attainment",
                                                                 "Occupation","Occupation"),
-                                                   proportion = c(0.63,0.37,0.81,0.19))
+                                                   proportion = c(58/(58+34),34/(58+34),
+                                                                  75/(75+17),75/(75+17)))
 
 Journal_year2021_report2 <- rbind(Journal_year2021_report,
                                   Journal_year2021_education_occupation_table) %>%
@@ -436,17 +439,17 @@ SupplH2_BF_gender_Journal_Census7 <- BayesMultiNomial(dataset = SupplH2_gender_g
                                              observed = "Journal",
                                              expected = "Census7")
 
-## Journal VS CFPS2018
-SupplH2_BF_gender_Journal_CFPS <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
-                                             factor = "Gender",
-                                             observed = "Journal",
-                                             expected = "CFPS2018")
-
 ## BTS VS Census7
 SupplH2_BF_gender_BTS_Census7 <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
                                              factor = "Gender",
                                              observed = "BTS Chinese",
                                              expected = "Census7")
+
+## Journal VS CFPS2018
+SupplH2_BF_gender_Journal_CFPS <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+                                             factor = "Gender",
+                                             observed = "Journal",
+                                             expected = "CFPS2018")
 
 ## BTS VS CFPS2018
 SupplH2_BF_gender_BTS_CFPS <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
@@ -590,7 +593,7 @@ SupplH2_BF_Psystages_BTS_Census6 <- BayesMultiNomial(dataset = Suppl_PsyStages_b
 
 
 ## BTS interval10 VS Census6
-SupplH2_BF_interval10_BTS_Census6 <- BayesMultiNomial(dataset = Suppl_PsyStages_bayes,
+SupplH2_BF_interval10_BTS_Census6 <- BayesMultiNomial(dataset = Suppl_interval10_bayes,
                                              factor = "ageBins",
                                              observed = "BTS Chinese",
                                              expected = "Census6")
