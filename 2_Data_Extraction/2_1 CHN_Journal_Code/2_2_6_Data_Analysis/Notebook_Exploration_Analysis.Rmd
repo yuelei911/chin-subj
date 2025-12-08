@@ -1670,42 +1670,47 @@ Journal_keywords_tab <- Journal_keywords %>%
   arrange(Year, desc(tab))
 
 
-## filter 71
+## filter 69
 ## total
-Journal_keywords_tab71 <- Journal_keywords_tab %>% 
+Journal_keywords_tab69 <- Journal_keywords_tab %>% 
   arrange(desc(tab)) %>% 
   select(Keywords,tab) %>% 
-  slice(1:71)
+  slice(1:84)
 
 ## different period
 Journal_keywords_tab2008 <- Journal_keywords_tab %>% 
   dplyr::filter(Year == "2008") %>% 
   select(Keywords,tab) %>% 
   arrange(desc(tab)) %>% 
-  slice(1:71)
+  slice(1:84)
 
 
 Journal_keywords_tab2018 <- Journal_keywords_tab %>% 
   dplyr::filter(Year == "2018") %>% 
   select(Keywords,tab) %>% 
   arrange(desc(tab)) %>% 
-  slice(1:71)
+  slice(1:84)
 
 
 Journal_keywords_tab2021 <- Journal_keywords_tab %>% 
   dplyr::filter(Year == "2021") %>% 
   select(Keywords,tab) %>% 
   arrange(desc(tab)) %>% 
-  slice(1:71)
+  slice(1:84)
 ```
 
 
 Journal wordcloud
 ```{r}
 ## total
-Journal_wordcloud_total <- Journal_keywords2 %>% 
+Journal_keywords3 <- Journal_keywords2 %>% 
   arrange(desc(tab)) %>% 
-  slice(1:71) %>% 
+  slice(1:84)
+
+library(showtext)
+showtext_auto()
+
+Journal_wordcloud_total <- Journal_keywords3 %>% 
   ggplot(aes(label = Keywords, 
              size = tab, 
              color = Keywords)) +
@@ -1714,41 +1719,8 @@ Journal_wordcloud_total <- Journal_keywords2 %>%
   scale_size_area(max_size = 8) +
   theme_void()
 
-Journal_wordcloud_total 
+ggsave("Journal_wordcloud_total.pdf", Journal_wordcloud_total, device = "pdf", width=10, height = 6)
 
-# ## 2008
-# Journal_wordcloud2008 <- ggplot(Journal_keywords_tab2008, 
-#                                   aes(label = Keywords, 
-#                             size = tab, 
-#                             color = Keywords)) +
-#   geom_text_wordcloud(shape = "square", 
-#                       alpha = 0.8) +
-#   scale_size_area(max_size = 8) +
-#   theme_void()
-# 
-# Journal_wordcloud2008
-# 
-# ## 2018
-# Journal_wordcloud2018 <- ggplot(Journal_keywords_tab2018, 
-#                                   aes(label = Keywords, 
-#                             size = tab, 
-#                             color = Keywords)) +
-#   geom_text_wordcloud(shape = "square", 
-#                       alpha = 0.8) +
-#   scale_size_area(max_size = 8) +
-#   theme_void()
-# 
-# Journal_wordcloud2018 
-# 
-# ## 2021
-# Journal_wordcloud2021 <- ggplot(Journal_keywords_tab2021, 
-#                                   aes(label = Keywords, 
-#                             size = tab, 
-#                             color = Keywords)) +
-#   geom_text_wordcloud(shape = "square", 
-#                       alpha = 0.8) +
-#   scale_size_area(max_size = 8) +
-#   theme_void()
-# 
-# Journal_wordcloud2021
+
+Journal_wordcloud_total 
 ```
