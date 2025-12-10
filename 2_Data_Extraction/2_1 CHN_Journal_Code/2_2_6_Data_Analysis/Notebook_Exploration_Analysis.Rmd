@@ -922,6 +922,20 @@ Journal_subjects_recruitment <- Journal %>%
 table(Journal_subjects_recruitment$Sampling_Method)  ## 0(1107),1(223),2(298)
 
 table(Journal_subjects_recruitment$Subjects_Recruitment_Method_N)
+
+## each articles 
+Journal_subjects_recruitment_articles <- Journal_subjects_recruitment %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  mutate(Subjects_Recruitment_Method_cate = ifelse(all(Subjects_Recruitment_Method_N == "0"),"unreported",
+                                                       ifelse(any(grepl("1", Subjects_Recruitment_Method_N)),"have offline","other"))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup()
+
+table(Journal_subjects_recruitment_articles$Subjects_Recruitment_Method_cate)
+
+606/(606+46)
 ```
 
 
