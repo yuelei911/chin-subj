@@ -1716,25 +1716,43 @@ Journal_keywords_tab2021 <- Journal_keywords_tab %>%
 
 Journal wordcloud
 ```{r}
-## total
+# library(pcutils)
+# set_pcutils_config('baidu_appid', "20240711002097071")
+# set_pcutils_config('baidu_key', "8m0lLVSrtwvfMVxk5")
+
+
 Journal_keywords3 <- Journal_keywords2 %>% 
   arrange(desc(tab)) %>% 
-  slice(1:84)
+  slice(1:84) 
 
-library(showtext)
-showtext_auto()
+## save data and convert Chinese keywords into English keywords
 
-Journal_wordcloud_total <- Journal_keywords3 %>% 
-  ggplot(aes(label = Keywords, 
+# writexl::write_xlsx(Journal_keywords3,"Journal_keywords3.xlsx")
+
+
+Journal_keywords4 <-  readxl::read_xlsx("Journal_keywords3.xlsx") %>% 
+  dplyr::group_by(en) %>% 
+  dplyr::mutate(tab = sum(tab)) %>%
+  dplyr::slice(1) %>%
+  dplyr::arrange(desc(tab))
+
+
+## plot
+Journal_wordcloud <- Journal_keywords4 %>% 
+  ggplot(aes(label = en, 
              size = tab, 
-             color = Keywords)) +
+             color = en)) +
   geom_text_wordcloud(shape = "square", 
                       alpha = 0.8) +
   scale_size_area(max_size = 8) +
   theme_void()
 
-ggsave("Journal_wordcloud_total.pdf", Journal_wordcloud_total, device = "pdf", width=10, height = 6)
 
 
-Journal_wordcloud_total 
+ggsave("Journal_wordcloud.pdf", Journal_wordcloud, device = "pdf", width=10, height = 6)
+
+
+Journal_wordcloud 
+
+
 ```
