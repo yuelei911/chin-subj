@@ -2304,19 +2304,19 @@ Journal_region_single <- Journal %>%
    dplyr::select(3,5,7,37,40,16,30) %>% 
    dplyr::mutate(Subjects_Recruitment_Area = gsub("[;；、，,]",";",Subjects_Recruitment_Area),
                  Sample_Size = as.numeric(Sample_Size)) %>% 
-   dplyr::filter(Subjects_Recruitment_Area != "0" & !grepl(";",Subjects_Recruitment_Area)) 
+   dplyr::filter(Subjects_Recruitment_Area != "0" & !grepl(";",Subjects_Recruitment_Area)) %>% 
+  dplyr::filter(Target_Population_N != 1)
  
 ## Article 20185082' Sample_Size became NA during data format conversion, but it does not affect the results as it is unrelated to the target population(special population).
 
  ## papers
 Journal_region_single_papers_num <- Journal_region_single %>%
    dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
-   dplyr::distinct(Article_IDs) ## single 521 papers + multiple 11(only one targeting general population) = 522
+   dplyr::distinct(Article_IDs) ## single 129 papers + multiple 11(only one targeting general population) = 522
  
 
 Journal_region_single_general_tab <- Journal_region_single %>% 
    dplyr::select(Article_IDs,Target_Population_N,Sample_Size,Subjects_Recruitment_Area) %>%
-   dplyr::filter(Target_Population_N != 1) %>% 
    dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == "内蒙古自治区", "内蒙古",Subjects_Recruitment_Area),
                  Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == "广州","广东",Subjects_Recruitment_Area)) %>% 
    dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
