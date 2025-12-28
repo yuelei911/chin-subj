@@ -13,7 +13,10 @@ rm(list = ls())
 
 if (!require("pacman")) install.packages("pacman")
 
-p_load("tidyverse","ggplot2","ggwordcloud","ggrepel","xlsx","patchwork","sf","ggspatial")
+p_load("tidyverse","ggplot2","ggwordcloud",
+       "ggrepel","xlsx","patchwork",
+       "sf","ggspatial","pcutils","igraph",
+       "MetaNet")
 ```
 
 
@@ -25,6 +28,7 @@ load("Journal.Rdata")
 
 
 ## Journal report
+different period
 ```{r}
 Journal_year2008_report <- Journal %>% 
   dplyr::filter(substr(Article_IDs_N,1,4) == "2008") %>% 
@@ -297,6 +301,186 @@ ggsave("Journal_report_year.pdf", Journal_report_year, device = "pdf", width=12,
 
 
 Journal_report_year
+```
+
+
+different target population
+general
+```{r}
+Journal_general_population <- Journal %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
+                Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
+                SES_N = ifelse(SES_N == 0, 0, 1),
+                Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N == 0, 0, 1)) %>%
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Age = max(Age) > 0,
+                   Gender = max(Gender) > 0,
+                   Religious = max(Religious) > 0,
+                   Ethnicity = max(Ethnicity) > 0,
+                   Sampling_Method = max(Sampling_Method) > 0,
+                   Recruitment_Area = max(Subjects_Recruitment_Area) > 0,
+                   Recruitment_Method = max(Subjects_Recruitment_Method_N) > 0,
+                   SES = max(SES_N) > 0,
+                   .groups = "drop") %>% 
+  dplyr::select(3:last_col())
+
+
+report_list <- list()
+
+for (i in names(Journal_general_population)){
+  
+  
+  report_table <- data.frame(table(Journal_general_population[[i]])) %>% 
+    dplyr::mutate(col_names = names(Journal_general_population[i]),
+                  proportion = Freq / sum(Freq))
+  
+  report_list[[i]] <- report_table
+  
+}
+
+Journal_general_population_report <- do.call(rbind, report_list) %>% 
+  dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
+
+
+### Calculate reported status of Educational_Attainment and Occupation
+Journal_general_education_occupation <- Journal %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
+                   Occupation_N = max(Occupation_N) > 0,.groups = "drop") 
+
+
+
+table(Journal_general_education_occupation$Educational_Attainment_N) ## FALSE 73 TRUE 42
+table(Journal_general_education_occupation$Occupation_N)  ## FALSE 101 TRUE 14
+
+
+Journal_general_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
+                                                            "Unreported","Reported"),
+                                                   Freq = c(73,42,101,14),
+                                                   col_names= c("Educational_Attainment",
+                                                                "Educational_Attainment",
+                                                                "Occupation","Occupation"),
+                                                   proportion = c(73/(73+42),42/(73+42),
+                                                                  101/(101+14),14/(101+14)))
+
+Journal_general_report2 <- rbind(Journal_general_population_report,
+                                  Journal_general_education_occupation_table) %>%
+  dplyr::mutate(proportion = proportion *100) %>% 
+  dplyr::mutate(Target_population = "general population")
+
+```
+
+
+special
+```{r}
+Journal_special_population <- Journal %>% 
+  dplyr::filter(Target_Population_N == 1) %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
+                Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
+                SES_N = ifelse(SES_N == 0, 0, 1),
+                Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N == 0, 0, 1)) %>%
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Age = max(Age) > 0,
+                   Gender = max(Gender) > 0,
+                   Religious = max(Religious) > 0,
+                   Ethnicity = max(Ethnicity) > 0,
+                   Sampling_Method = max(Sampling_Method) > 0,
+                   Recruitment_Area = max(Subjects_Recruitment_Area) > 0,
+                   Recruitment_Method = max(Subjects_Recruitment_Method_N) > 0,
+                   SES = max(SES_N) > 0,
+                   .groups = "drop") %>% 
+  dplyr::select(3:last_col())
+
+
+report_list <- list()
+
+for (i in names(Journal_special_population)){
+  
+  
+  report_table <- data.frame(table(Journal_special_population[[i]])) %>% 
+    dplyr::mutate(col_names = names(Journal_special_population[i]),
+                  proportion = Freq / sum(Freq))
+  
+  report_list[[i]] <- report_table
+  
+}
+
+Journal_special_population_report <- do.call(rbind, report_list) %>% 
+  dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
+
+
+### Calculate reported status of Educational_Attainment and Occupation
+Journal_special_education_occupation <- Journal %>% 
+  dplyr::filter(Target_Population_N == 1) %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
+                   Occupation_N = max(Occupation_N) > 0,.groups = "drop") 
+
+
+
+table(Journal_special_education_occupation$Educational_Attainment_N) ## FALSE 92 TRUE 100
+table(Journal_special_education_occupation$Occupation_N)  ## FALSE 101 TRUE 91
+
+
+Journal_special_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
+                                                            "Unreported","Reported"),
+                                                   Freq = c(92,100,101,91),
+                                                   col_names= c("Educational_Attainment",
+                                                                "Educational_Attainment",
+                                                                "Occupation","Occupation"),
+                                                   proportion = c(92/(92+100),100/(92+100),
+                                                                  101/(101+91),91/(101+91)))
+
+Journal_special_report2 <- rbind(Journal_special_population_report,
+                                  Journal_special_education_occupation_table) %>%
+  dplyr::mutate(proportion = proportion *100) %>% 
+  dplyr::mutate(Target_population = "special population")
+```
+
+
+combine two data.frame and visualize
+```{r}
+Journal_target_population_report <- full_join(Journal_general_report2,
+                                              Journal_special_report2,
+                                              by = c("col_names", "Var1", "Freq", "proportion","Target_population")) %>% 
+  dplyr::filter(Var1 == "Reported")
+
+
+## set factor
+Journal_target_population_report_factor <- Journal_target_population_report %>% 
+  dplyr::filter(Target_population == "general population") %>% 
+  dplyr::arrange(desc(proportion)) %>% 
+  dplyr::pull(col_names)
+
+
+Journal_target_population_report2 <- Journal_target_population_report %>% 
+dplyr::mutate(col_names = factor(col_names,
+                                 levels = Journal_target_population_report_factor,
+                                 labels = c(labels = c("Sex", "Age","Recruitment method","Educational attainment",
+                                                       "Recruitment area","Socioeconomic status","Sampling method",
+                                               "Occupation", "Ethnicity", "Religious belief"))))
+
+
+## plot
+Journal_report_target_population <- Journal_target_population_report2 %>% 
+  ggplot(aes(x = col_names, y = proportion, fill = Target_population, group = Target_population))+
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8))+
+  labs(y="Proportion", x = "Target population")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 20, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))+
+  scale_x_discrete(guide = guide_axis(angle = 45))
+
+Journal_report_target_population
 ```
 
 
@@ -935,6 +1119,7 @@ Journal_subjects_recruitment_articles <- Journal_subjects_recruitment %>%
 
 table(Journal_subjects_recruitment_articles$Subjects_Recruitment_Method_cate)
 
+(949+7)/(949+7+78)
 606/(606+46)
 ```
 
@@ -1755,4 +1940,56 @@ ggsave("Journal_wordcloud.pdf", Journal_wordcloud, device = "pdf", width=10, hei
 Journal_wordcloud 
 
 
+```
+
+
+Venn diagram
+```{r}
+# install.packages("ggvenn")
+# library(ggvenn)
+
+BTS_keywords_venn <- BTS_keywords_tab %>%
+  dplyr::rename(Keywords = 1, Freq_en = 2) %>% 
+  dplyr::mutate(Keywords = str_to_lower(Keywords))
+
+# writexl::write_xlsx(BTS_keywords_upset,"BTS_keywords_upset.xlsx")
+
+
+Journal_keywords_venn <- Journal_keywords4 %>%
+  dplyr::select(en,tab) %>%
+  dplyr::rename(Keywords = 1, Freq_ch = 2) %>% 
+  dplyr::mutate(Keywords = str_to_lower(Keywords))
+
+# writexl::write_xlsx(Journal_keywords_upset,"Journal_keywords_upset.xlsx")
+
+
+# Keywords_venn_data <- list(BTS = BTS_keywords_venn$Keywords,
+#      Journal = Journal_keywords_venn$Keywords)
+
+key2 <- full_join(BTS_keywords_venn,Journal_keywords_venn, by = "Keywords") %>% 
+  dplyr::mutate(BTS = ifelse(is.na(Freq_en),0,Freq_en),
+                Journal = ifelse(is.na(Freq_ch),0,Freq_ch)) %>% 
+  dplyr::select(Keywords,BTS,Journal)
+
+# Keywords_venn <- ggvenn(key2,
+#        element_column = "Keywords",
+#        label_sep = " ")
+# 
+# Keywords_venn
+# 
+# ggsave("Keywords_venn.pdf", Keywords_venn, device = "pdf", width=10, height = 6)
+
+
+key2 <- as.data.frame(key2)
+rownames(key2) <- key2$Keywords
+
+key2 <- key2 %>% 
+  dplyr::select(-1)
+
+pdf("Keywords_venn.pdf", width=10, height=6)
+
+venn(key2, mode = "network",label = 2,  
+     vertex.label.cex = 0.8)
+
+dev.off()
 ```
