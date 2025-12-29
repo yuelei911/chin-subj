@@ -1478,16 +1478,16 @@ H1_edu_highschool <- rbind(Journal_high_school2,BTS_highschool_CHN)
 ## set factor 
 H1_edu_college <- H1_edu_college %>% 
   dplyr::mutate(Educational_attainment = ifelse(Educational_attainment == "Below_college",
-                                                "Below college","College and above"),
+                                                "Less-than-college","College-or-above"),
                 Educational_attainment = factor(Educational_attainment,
-                                                levels = c("College and above","Below college")))
+                                                levels = c("College-or-above","Less-than-college")))
 
 
 H1_edu_highschool <- H1_edu_highschool %>% 
-  dplyr::mutate(Educational_attainment = ifelse(Educational_attainment == "Below_high_school","Below high school","High school and above"),
+  dplyr::mutate(Educational_attainment = ifelse(Educational_attainment == "Below_high_school","Less-than-high-school","High-school-or-above"),
                 Educational_attainment = factor(Educational_attainment,
-                                                levels = c( "High school and above",
-                                                            "Below high school")))
+                                                levels = c( "High-school-or-above",
+                                                            "Less-than-high-school")))
 ```
 
 
@@ -2042,8 +2042,8 @@ Census7_edu_adults <- Census7_edu %>%
 
 
 Census7_college <- Census7_edu_adults %>% 
-  dplyr::summarise(`Below college` = sum(across(3:7)),
-                   `College and above` = sum(across(8:11))) %>% 
+  dplyr::summarise(`Less-than-college` = sum(across(3:7)),
+                   `College-or-above` = sum(across(8:11))) %>% 
   tidyr::pivot_longer(cols = c(1,2),
                       names_to = "Educational_attainment",
                       values_to = "Num") %>% 
@@ -2054,8 +2054,8 @@ sum(Census7_college$Proportion)
 
 
 Census7_high_school <- Census7_edu_adults %>% 
-  dplyr::summarise(`Below high school` = sum(across(3:6)),
-                   `High school and above` = sum(across(7:11))) %>% 
+  dplyr::summarise(`Less-than-high-school` = sum(across(3:6)),
+                   `High-school-or-above` = sum(across(7:11))) %>% 
   tidyr::pivot_longer(cols = c(1,2),
                       names_to = "Educational_attainment",
                       values_to = "Num") %>% 
@@ -2086,7 +2086,7 @@ CFPS2018_edu <- df_CFPS2018 %>%
                                 TRUE ~ W01))
 
 
-CFPS2018_edu_college <- data.frame(Educational_attainment = c("Below college","College and above"),
+CFPS2018_edu_college <- data.frame(Educational_attainment = c("Less-than-college","College-or-above"),
                                    Num = c(2846+756+3598+5273,3058+1648+1335+112+7)) %>% 
   dplyr::mutate(Proportion = Num/sum(Num)*100,
                 Data_source = "CFPS2018")
@@ -2094,7 +2094,7 @@ CFPS2018_edu_college <- data.frame(Educational_attainment = c("Below college","C
 sum(CFPS2018_edu_college$Proportion) 
 
 
-CFPS2018_edu_high_school <- data.frame(Educational_attainment = c("Below high school","High school and above"),
+CFPS2018_edu_high_school <- data.frame(Educational_attainment = c("Less-than-high-school","High-school-or-above"),
                                    Num = c(2846+756+3598+5273+3058,1648+1335+112+7)) %>% 
   dplyr::mutate(Proportion = Num/sum(Num)*100,
                 Data_source = "CFPS2018")
@@ -2149,7 +2149,7 @@ H2_Fig_college <- ggplot(data = H2_edu_college,aes(Data_source,Proportion,fill =
   xlab("Data source")+
   theme_classic()+ 
   
-  scale_fill_manual(values = c("Below college" = "#00BFC4", "College and above" = "#F8766D")) +
+  scale_fill_manual(values = c("Less-than-college" = "#00BFC4", "College-or-above" = "#F8766D")) +
   theme(legend.position = "bottom", 
         legend.text = element_text(size = 16, family = "serif"),
         legend.title = element_blank(),
@@ -2169,7 +2169,7 @@ H2_Fig_highschool <- ggplot(data = H2_edu_highschool,aes(Data_source,Proportion,
   ylab("")+
   xlab("Data source")+
 
-  scale_fill_manual(values = c("Below high school" = "#00BFC4", "High school and above" = "#F8766D")) +
+  scale_fill_manual(values = c("Less-than-high-school" = "#00BFC4", "High-school-or-above" = "#F8766D")) +
   theme(legend.position = "bottom", 
         legend.text = element_text(size = 16, family = "serif"), 
         legend.title = element_blank(),
@@ -3351,7 +3351,7 @@ H3_Fig_age
 
 ## suppl
 H3_Fig_age_suppl <- H3_Fig_BF_interval10 + H3_Fig_interval10 +
-   plot_annotation(tag_levels =list(c("S2a","S2b")))  & 
+   plot_annotation(tag_levels =list(c("a","b")))  & 
   theme(plot.tag = element_text(size = 18, face = "bold"))
 
 
