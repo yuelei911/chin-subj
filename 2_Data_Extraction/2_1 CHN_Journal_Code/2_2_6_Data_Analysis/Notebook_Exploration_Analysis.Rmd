@@ -369,7 +369,7 @@ Journal_general_education_occupation_table <- data.frame(Var1 = c("Unreported","
 Journal_general_report2 <- rbind(Journal_general_population_report,
                                   Journal_general_education_occupation_table) %>%
   dplyr::mutate(proportion = proportion *100) %>% 
-  dplyr::mutate(Target_population = "general population")
+  dplyr::mutate(Target_population = "General population")
 
 ```
 
@@ -438,7 +438,7 @@ Journal_special_education_occupation_table <- data.frame(Var1 = c("Unreported","
 Journal_special_report2 <- rbind(Journal_special_population_report,
                                   Journal_special_education_occupation_table) %>%
   dplyr::mutate(proportion = proportion *100) %>% 
-  dplyr::mutate(Target_population = "special population")
+  dplyr::mutate(Target_population = "Special population")
 ```
 
 
@@ -452,7 +452,7 @@ Journal_target_population_report <- full_join(Journal_general_report2,
 
 ## set factor
 Journal_target_population_report_factor <- Journal_target_population_report %>% 
-  dplyr::filter(Target_population == "general population") %>% 
+  dplyr::filter(Target_population == "General population") %>% 
   dplyr::arrange(desc(proportion)) %>% 
   dplyr::pull(col_names)
 
@@ -480,16 +480,9 @@ Journal_report_target_population <- Journal_target_population_report2 %>%
         axis.text = element_text(size = 20,family = "serif"))+
   scale_x_discrete(guide = guide_axis(angle = 45))
 
+ggsave("Journal_report_target_population.pdf", Journal_report_target_population, device = "pdf", width=12, height = 9)
+
 Journal_report_target_population
-```
-
-
-## Two data sources are respectively compared with the census data and CFPS
-
-load data
-```{r}
-load("H2_BTS_Journal_age_edu.RData")
-load("H2_gender_exploration.Rdata")
 ```
 
 
@@ -552,6 +545,27 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   
 }
 ```
+
+
+<!-- calculate BF within terget population in different demographic dimension -->
+```{r}
+## convert data form
+# Journal_target_population_report_bayes <- Journal_target_population_report2 %>% 
+#   dplyr::select(col_names,proportion,Target_population) %>% 
+#   tidyr::pivot_wider(names_from = col_names,
+#                      values_from = proportion)
+
+```
+
+
+## Two data sources are respectively compared with the census data and CFPS
+
+load data
+```{r}
+load("H2_BTS_Journal_age_edu.RData")
+load("H2_gender_exploration.Rdata")
+```
+
 
 and then, I process the data of gender, age and edu.
 
