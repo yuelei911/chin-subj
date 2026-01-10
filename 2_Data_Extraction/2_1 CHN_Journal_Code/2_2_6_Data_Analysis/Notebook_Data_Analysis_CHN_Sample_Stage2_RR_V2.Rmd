@@ -171,7 +171,15 @@ Journal <- df_stage2_Journal_Code2 %>%
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
   dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) ## valid 1628 rows
 
+## num of target population 
+Journal_targetpopulation <- Journal %>% 
+  dplyr::select(Article_IDs,Target_Population_N) %>% 
+  dplyr::distinct(Article_IDs,Target_Population_N)
 
+table(Journal_targetpopulation$Target_Population_N)
+
+
+## num of articles/study
 Journal_articles_num <- Journal %>% 
   dplyr::distinct(Article_IDs) ## A total 1000 articles
 
@@ -230,7 +238,6 @@ save(Journal, file ="Journal.Rdata")
 
 Meanwhile, I process the special target population
 ```{r}
-
 Journal_special_target_population <- Journal %>% 
   dplyr::select(Article_IDs,Article_Title,Target_Population_N,Coding_Basis_N,Sample_Type_N) %>% 
   dplyr::filter(Target_Population_N == 1) %>% 
@@ -242,6 +249,17 @@ Journal_special_target_population <- Journal %>%
 Journal_special_target_population2 <- readxl::read_xlsx("Journal_special_target_population.xlsx") %>% 
   dplyr::select(Article_IDs,Article_Title,`Disscu.&.Conclu`, ,Target_Population_N,Coding_Basis_N,Recode_target_population)
 
+table(Journal_special_target_population2$Recode_target_population)
+
+
+## num of different targetpopulation
+Journal_special_adolecent <- Journal_special_target_population2 %>% 
+  dplyr::filter(Recode_target_population == "儿童" | Recode_target_population == "青少年" | Recode_target_population == "儿童青少年") %>% 
+  dplyr::distinct(Article_IDs)
+
+Journal_sepcial_primaryhigh <- Journal_special_target_population2 %>% 
+  dplyr::filter(Recode_target_population == "小学生" | Recode_target_population == "中学生" | Recode_target_population == "中小学生"| Recode_target_population == "初中生"| Recode_target_population == "高中生"| Recode_target_population == "中职生") %>% 
+  dplyr::distinct(Article_IDs)
 ```
 
 
@@ -250,9 +268,11 @@ I try to classify special target population
 ## college
 Journal_college_TP <- Journal_special_target_population2 %>% 
   dplyr::filter(grepl("大学生|研究生|大学新生",Recode_target_population)) %>% 
-  dplyr::filter(Recode_target_population == "大学生" | Recode_target_population == "研究生")
+  dplyr::filter(Recode_target_population == "大学生" | Recode_target_population == "研究生") 
+# %>% 
+#   dplyr::distinct(Article_IDs) ## 106
 
-# table(Journal_college_TP$Recode_target_population)
+table(Journal_college_TP$Recode_target_population)
 ```
 
 

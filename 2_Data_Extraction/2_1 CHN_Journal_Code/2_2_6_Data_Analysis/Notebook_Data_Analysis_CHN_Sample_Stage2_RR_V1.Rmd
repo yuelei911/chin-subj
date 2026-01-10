@@ -2511,6 +2511,9 @@ Target_Population_N_detailed <- df_stage2_Journal_Code2 %>%
   dplyr::filter(!Target_Population_N %in% c(0,1,2,3)) %>% 
   dplyr::select(Article_IDs,Target_Population_N,Remark1,Remark2)
 
+## 20213192
+df_stage2_Journal_Code2$Target_Population_N[1630] <- 3
+
 
 ## Coding_Basis
 Coding_Basis_N_detailed <- df_stage2_Journal_Code2 %>% 

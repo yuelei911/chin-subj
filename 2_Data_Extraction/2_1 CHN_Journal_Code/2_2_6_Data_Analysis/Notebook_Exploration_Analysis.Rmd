@@ -469,7 +469,11 @@ dplyr::mutate(col_names = factor(col_names,
 Journal_report_target_population <- Journal_target_population_report2 %>% 
   ggplot(aes(x = col_names, y = proportion, fill = Target_population, group = Target_population))+
   geom_bar(stat = "identity", position = position_dodge(width = 0.8))+
-  labs(y="Proportion", x = "Target population")+
+  geom_text(aes(label = round(proportion,2)),
+            position = position_dodge(width = 0.9),
+            vjust = -0.5,
+            size =3)+
+  labs(y="Proportion(%)", x = "Target population")+
   theme_classic()+
   theme(panel.border =element_rect(fill=NA,color="black"),
         legend.position = "bottom",
