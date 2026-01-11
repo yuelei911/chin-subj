@@ -551,16 +551,6 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 ```
 
 
-<!-- calculate BF within terget population in different demographic dimension -->
-```{r}
-## convert data form
-# Journal_target_population_report_bayes <- Journal_target_population_report2 %>% 
-#   dplyr::select(col_names,proportion,Target_population) %>% 
-#   tidyr::pivot_wider(names_from = col_names,
-#                      values_from = proportion)
-
-```
-
 
 ## Two data sources are respectively compared with the census data and CFPS
 
@@ -863,8 +853,8 @@ Suppl_Census6_edu_adults <- Census6_edu %>%
  
 ## college
 Suppl_Census6_college <- Suppl_Census6_edu_adults %>% 
-  dplyr::summarise(`Below college` = sum(across(3:6)),
-                   `College and above` = sum(across(7:9))) %>% 
+  dplyr::summarise(`Less-than-college` = sum(across(3:6)),
+                   `College-or-above` = sum(across(7:9))) %>% 
   tidyr::pivot_longer(cols = c(1,2),
                       names_to = "Educational_attainment",
                       values_to = "Num") %>% 
@@ -874,8 +864,8 @@ Suppl_Census6_college <- Suppl_Census6_edu_adults %>%
 
 ## high school
 Suppl_Census6_high_school <- Suppl_Census6_edu_adults %>% 
-  dplyr::summarise(`Below high school` = sum(across(3:5)),
-                   `High school and above` = sum(across(6:9))) %>% 
+  dplyr::summarise(`Less-than-high-school` = sum(across(3:5)),
+                   `High-school-or-above` = sum(across(6:9))) %>% 
   tidyr::pivot_longer(cols = c(1,2),
                       names_to = "Educational_attainment",
                       values_to = "Num") %>% 
@@ -1816,6 +1806,68 @@ ggsave("SupplH2_Fig_region_studytype.pdf", SupplH2_Fig_region_studytype, device 
 
 SupplH2_Fig_region_studytype
 ```
+
+
+We also try to calculate the Spearman’s correlation between Journal region and SHANGHAI RANKING
+
+```{r}
+load("ShanghaiRanking_psy.Rdata")
+
+## psy2021
+ShanghaiRanking_psy2021_provincetab <- ShanghaiRanking_psy2021 %>% 
+  dplyr::rename(Region = 4) %>% 
+  dplyr::group_by(Region) %>% 
+  dplyr::summarise(psy2021 = n()) %>% 
+  dplyr::ungroup()
+
+## applied psy
+ShanghaiRanking_appliedpsy2021_provincetab <- ShanghaiRanking_appliedpsy2021 %>% 
+  dplyr::rename(Region = 4) %>% 
+  dplyr::group_by(Region) %>% 
+  dplyr::summarise(appliedpsy2021 = n()) %>% 
+  dplyr::ungroup()
+
+## Journal region
+Journal_region_ShanghaiRanking <- Journal_region_general_tab2 %>% 
+  dplyr::select(1:2) %>% 
+  dplyr::rename(Journal = 2)
+
+
+## create province name data
+China_province <- data.frame(Region = c("新疆","西藏","甘肃","青海","内蒙古",
+                    "宁夏","四川","重庆","陕西","贵州","云南",
+                    "北京","山西","河北","河南","湖北","湖南",
+                    "广西","广东","香港","澳门","台湾","海南",
+                    "黑龙江","吉林","辽宁","天津","山东","江苏",
+                    "安徽","上海","浙江","江西","福建"))
+
+## psy merge data
+
+Region_psy_cordata <- left_join(China_province,ShanghaiRanking_psy2021_provincetab,by = "Region") %>% 
+  left_join(Journal_region_ShanghaiRanking,by = "Region")
+
+
+## applied psy merge data
+Region_appliedpsy_cordata <- left_join(China_province,ShanghaiRanking_appliedpsy2021_provincetab,by = "Region") %>%
+  left_join(Journal_region_ShanghaiRanking,by = "Region")
+
+```
+
+
+spearman relation
+the first psychology of Shanghai Ranking
+```{r}
+cor.test(Region_psy_cordata$psy2021, Region_psy_cordata$Journal, method = "pearson", use = "pairwise.complete.obs")
+
+cor.test(Region_psy_cordata$psy2021, Region_psy_cordata$Journal, method = "spearman", exact = F)
+```
+the second applied psychology of Shanghai Ranking
+```{r}
+cor.test(Region_appliedpsy_cordata$appliedpsy2021, Region_appliedpsy_cordata$Journal, method = "pearson", use = "pairwise.complete.obs")
+
+cor.test(Region_appliedpsy_cordata$appliedpsy2021, Region_appliedpsy_cordata$Journal, method = "spearman", exact = F)
+```
+
 
 
 ## Bibliometric Analysis
