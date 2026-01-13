@@ -1814,23 +1814,30 @@ We also try to calculate the Spearman’s correlation between Journal region and
 load("ShanghaiRanking_psy.Rdata")
 
 ## psy2021
-ShanghaiRanking_psy2021_provincetab <- ShanghaiRanking_psy2021 %>% 
+ShanghaiRanking_psy2021_provinceRank <- ShanghaiRanking_psy2021 %>% 
   dplyr::rename(Region = 4) %>% 
   dplyr::group_by(Region) %>% 
-  dplyr::summarise(psy2021 = n()) %>% 
-  dplyr::ungroup()
+  dplyr::slice(1) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::arrange(`排名`) %>% 
+  dplyr::mutate(psy2021 = 1:21) %>%    ## give a rank num
+  dplyr::select(Region,psy2021)
 
 ## applied psy
-ShanghaiRanking_appliedpsy2021_provincetab <- ShanghaiRanking_appliedpsy2021 %>% 
+ShanghaiRanking_appliedpsy2021_provinceRank <- ShanghaiRanking_appliedpsy2021 %>% 
   dplyr::rename(Region = 4) %>% 
   dplyr::group_by(Region) %>% 
-  dplyr::summarise(appliedpsy2021 = n()) %>% 
-  dplyr::ungroup()
+  dplyr::slice(1) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::arrange(`排名`) %>% 
+  dplyr::mutate(Appliedpsy2021 = 1:29) %>% 
+  dplyr::select(Region,Appliedpsy2021)
 
 ## Journal region
 Journal_region_ShanghaiRanking <- Journal_region_general_tab2 %>% 
-  dplyr::select(1:2) %>% 
-  dplyr::rename(Journal = 2)
+  dplyr::arrange(desc(n)) %>% 
+  dplyr::mutate(Journal = 1:27) %>% 
+  dplyr::select(Region,Journal)
 
 
 ## create province name data
@@ -1843,29 +1850,24 @@ China_province <- data.frame(Region = c("新疆","西藏","甘肃","青海","内
 
 ## psy merge data
 
-Region_psy_cordata <- left_join(China_province,ShanghaiRanking_psy2021_provincetab,by = "Region") %>% 
+Region_psy_cordata <- left_join(China_province,ShanghaiRanking_psy2021_provinceRank,by = "Region") %>% 
   left_join(Journal_region_ShanghaiRanking,by = "Region")
 
 
 ## applied psy merge data
-Region_appliedpsy_cordata <- left_join(China_province,ShanghaiRanking_appliedpsy2021_provincetab,by = "Region") %>%
+Region_appliedpsy_cordata <- left_join(China_province,ShanghaiRanking_appliedpsy2021_provinceRank,by = "Region") %>%
   left_join(Journal_region_ShanghaiRanking,by = "Region")
-
 ```
 
 
 spearman relation
 the first psychology of Shanghai Ranking
 ```{r}
-cor.test(Region_psy_cordata$psy2021, Region_psy_cordata$Journal, method = "pearson", use = "pairwise.complete.obs")
-
 cor.test(Region_psy_cordata$psy2021, Region_psy_cordata$Journal, method = "spearman", exact = F)
 ```
 the second applied psychology of Shanghai Ranking
 ```{r}
-cor.test(Region_appliedpsy_cordata$appliedpsy2021, Region_appliedpsy_cordata$Journal, method = "pearson", use = "pairwise.complete.obs")
-
-cor.test(Region_appliedpsy_cordata$appliedpsy2021, Region_appliedpsy_cordata$Journal, method = "spearman", exact = F)
+cor.test(Region_appliedpsy_cordata$Appliedpsy2021, Region_appliedpsy_cordata$Journal, method = "spearman", exact = F)
 ```
 
 
@@ -1905,7 +1907,7 @@ Fig_BTS_wordcloud <- ggplot(BTS_keywords_tab,
   scale_size_area(max_size = 8) +
   theme_void()
 
-ggsave("Fig_BTS_wordcloud.pdf", Fig_BTS_wordcloud, device = "pdf", width=10, height = 6)
+# ggsave("Fig_BTS_wordcloud.pdf", Fig_BTS_wordcloud, device = "pdf", width=10, height = 6)
 
 Fig_BTS_wordcloud
 ```
@@ -2004,62 +2006,15 @@ Journal_wordcloud <- Journal_keywords4 %>%
 
 
 
-ggsave("Journal_wordcloud.pdf", Journal_wordcloud, device = "pdf", width=10, height = 6)
+# ggsave("Journal_wordcloud.pdf", Journal_wordcloud, device = "pdf", width=10, height = 6)
 
 
 Journal_wordcloud 
 
 
-```
+Wordcloud <- Fig_BTS_wordcloud + Journal_wordcloud
 
+Wordcloud
 
-Venn diagram
-```{r}
-# install.packages("ggvenn")
-# library(ggvenn)
-
-BTS_keywords_venn <- BTS_keywords_tab %>%
-  dplyr::rename(Keywords = 1, Freq_en = 2) %>% 
-  dplyr::mutate(Keywords = str_to_lower(Keywords))
-
-# writexl::write_xlsx(BTS_keywords_upset,"BTS_keywords_upset.xlsx")
-
-
-Journal_keywords_venn <- Journal_keywords4 %>%
-  dplyr::select(en,tab) %>%
-  dplyr::rename(Keywords = 1, Freq_ch = 2) %>% 
-  dplyr::mutate(Keywords = str_to_lower(Keywords))
-
-# writexl::write_xlsx(Journal_keywords_upset,"Journal_keywords_upset.xlsx")
-
-
-# Keywords_venn_data <- list(BTS = BTS_keywords_venn$Keywords,
-#      Journal = Journal_keywords_venn$Keywords)
-
-key2 <- full_join(BTS_keywords_venn,Journal_keywords_venn, by = "Keywords") %>% 
-  dplyr::mutate(BTS = ifelse(is.na(Freq_en),0,Freq_en),
-                Journal = ifelse(is.na(Freq_ch),0,Freq_ch)) %>% 
-  dplyr::select(Keywords,BTS,Journal)
-
-# Keywords_venn <- ggvenn(key2,
-#        element_column = "Keywords",
-#        label_sep = " ")
-# 
-# Keywords_venn
-# 
-# ggsave("Keywords_venn.pdf", Keywords_venn, device = "pdf", width=10, height = 6)
-
-
-key2 <- as.data.frame(key2)
-rownames(key2) <- key2$Keywords
-
-key2 <- key2 %>% 
-  dplyr::select(-1)
-
-pdf("Keywords_venn.pdf", width=10, height=6)
-
-venn(key2, mode = "network",label = 2,  
-     vertex.label.cex = 0.8)
-
-dev.off()
+ggsave("Wordcloud.pdf",Wordcloud, device = "pdf", width=18, height = 9)
 ```
