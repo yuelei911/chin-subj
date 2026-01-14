@@ -249,17 +249,10 @@ Journal_special_target_population <- Journal %>%
 Journal_special_target_population2 <- readxl::read_xlsx("Journal_special_target_population.xlsx") %>% 
   dplyr::select(Article_IDs,Article_Title,`Disscu.&.Conclu`, ,Target_Population_N,Coding_Basis_N,Recode_target_population)
 
-table(Journal_special_target_population2$Recode_target_population)
 
+## Save the special target population for exploration analyse
 
-## num of different targetpopulation
-Journal_special_adolecent <- Journal_special_target_population2 %>% 
-  dplyr::filter(Recode_target_population == "儿童" | Recode_target_population == "青少年" | Recode_target_population == "儿童青少年") %>% 
-  dplyr::distinct(Article_IDs)
-
-Journal_sepcial_primaryhigh <- Journal_special_target_population2 %>% 
-  dplyr::filter(Recode_target_population == "小学生" | Recode_target_population == "中学生" | Recode_target_population == "中小学生"| Recode_target_population == "初中生"| Recode_target_population == "高中生"| Recode_target_population == "中职生") %>% 
-  dplyr::distinct(Article_IDs)
+save(Journal_special_target_population2,file =  "Journal_special_target_population2.RData")
 ```
 
 
@@ -475,7 +468,7 @@ Journal_SES_report_5 <- Journal_SES_report %>%
   dplyr::filter(Article_IDs != "20081025" & Article_IDs != "20183264") %>% 
   dplyr::filter(SES_N == 5)  ## 10 studies
 
-# table(Journal_SES_report_studynum$ses_reported_ceta)
+# table(Journal_SES_report_studynum$ses_reported_ceta)  ## 0(261)
 ```
 
 
@@ -1762,6 +1755,7 @@ H2_BF_gender_preschool_Census <- BayesMultiNomial(dataset = H2_gender_preschool_
                                                 observed = "Chinese participants",
                                                 expected = "Census7")
 ```
+Gender:Lucca vs Journal, $Log(BF_{10})$ = `r H2_BF_gender_preschool_Census$BF$LogBF10`. The result showed that moderate evidence in favor of $H_0$
 
 
 I calculate college
@@ -1807,7 +1801,7 @@ H2_BF_gender_college_special <- BayesMultiNomial(dataset = H2_gender_college_bay
                                                  expected = "Outline_Women")
 ```
 
-In terms of gender, for the special target population of college students, we have found that there is no difference between Journal and the overall data of China (the Outline for Women's Development in China (2021-2030)),  $Log(BF_{10})$ = `r H2_BF_gender_special_college$BF$LogBF10`.
+In terms of gender, for the special target population of college students, we have found that there is no difference between Journal and the overall data of China (the Outline for Women's Development in China (2021-2030)),  $Log(BF_{10})$ = `r H2_BF_gender_college_special$BF$LogBF10`.
 
 
 
@@ -2252,6 +2246,8 @@ H2_BF_edu_highschool_CFPS2018 <- BayesMultiNomial(dataset = H2_edu_highschool_ba
 ```
 I found all results show extremely evidence support $H_1$. 
 
+College: Census7($Log(BF_{10})$ = `r H2_BF_edu_college_Census7$BF$LogBF10`), CFPS2018($Log(BF_{10})$ = `r H2_BF_edu_college_CFPS2018$BF$LogBF10`)
+High school: Census7($Log(BF_{10})$ = `H2_BF_edu_highschool_Census7$BF$LogBF10`), CFPS2018($Log(BF_{10})$ = `r H2_BF_edu_highschool_CFPS2018$BF$LogBF10`)
 
 Save the data so that I can compare the data from large-scale international cooperation projects and Chinese journals respectively with the census data and data from CFPS.
 ```{r}
@@ -2749,6 +2745,8 @@ H2_BF_Journal_CFPS2018_region_four <- BayesMultiNomial(dataset = H2_region_four_
                                           observed = "Journal",
                                           expected = "CFPS2018")
 ```
+four regions: Journal vs Census7,$Log(BF_{10})$ =`r H2_BF_Journal_Census7_region_four$BF$LogBF10`
+four regions: Journal vs CFPS2018,$Log(BF_{10})$ =`r H2_BF_Journal_CFPS2018_region_four$BF$LogBF10`
 
 
 BF seven region
@@ -2789,6 +2787,8 @@ H2_BF_Journal_CFPS2018_region_seven <- BayesMultiNomial(dataset = H2_region_seve
                                           observed = "Journal",
                                           expected = "CFPS2018")
 ```
+seven regions: Journal vs Census7,$Log(BF_{10})$ =`r H2_BF_Journal_Census7_region_seven$BF$LogBF10`
+seven regions: Journal vs CFPS2018,$Log(BF_{10})$ =`r H2_BF_Journal_CFPS2018_region_seven$BF$LogBF10`
 
 
 save region data for exploration analysis

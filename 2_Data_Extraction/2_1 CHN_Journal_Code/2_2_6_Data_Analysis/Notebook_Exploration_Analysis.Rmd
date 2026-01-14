@@ -27,8 +27,8 @@ load("Journal.Rdata")
 ```
 
 
-## Journal report
-different period
+## Journal report in different period
+2008
 ```{r}
 Journal_year2008_report <- Journal %>% 
   dplyr::filter(substr(Article_IDs_N,1,4) == "2008") %>% 
@@ -108,6 +108,7 @@ Journal_year2008_report2 <- rbind(Journal_year2008_report,
 ```
 
 
+2018
 ```{r}
 Journal_year2018_report <- Journal %>% 
   dplyr::filter(substr(Article_IDs_N,1,4) == "2018") %>% 
@@ -186,7 +187,7 @@ Journal_year2018_report2 <- rbind(Journal_year2018_report,
 
 ```
 
-
+2020-2021
 ```{r}
 Journal_year2021_report <- Journal %>% 
   dplyr::filter(substr(Article_IDs_N,1,4) == "2021") %>% 
@@ -304,7 +305,7 @@ Journal_report_year
 ```
 
 
-different target population
+## Journal reported within different target population
 general
 ```{r}
 Journal_general_population <- Journal %>% 
@@ -490,6 +491,47 @@ Journal_report_target_population
 ```
 
 
+## the exporation analyse in special population
+
+```{r}
+load("Journal_special_target_population2.RData")
+
+
+Journal_special_visual <- Journal_special_target_population2 %>% 
+  dplyr::group_by(Recode_target_population) %>% 
+  dplyr::summarise(n = n())
+
+## save and translate Chinese into English
+# writexl::write_xlsx(Journal_special_visual,"Journal_special_visual.xlsx")
+Journal_special_visual2 <- readxl::read_xlsx("Journal_special_visual_complete_translation.xlsx")
+
+Special_Wordcloud <- Journal_special_visual2 %>% 
+  ggplot(aes(label = Target_Population_English, 
+             size = Count, 
+             color = Target_Population_English)) +
+  geom_text_wordcloud(area_corr = TRUE) +
+  scale_size_area(max_size = 50) +
+  theme_minimal()
+
+Special_Wordcloud
+
+ggsave("Special_Wordcloud.pdf",Special_Wordcloud, device = "pdf", width=18, height = 9)
+
+```
+
+```{r}
+#  num of different targetpopulation
+
+Journal_special_adolecent <- Journal_special_target_population2 %>% 
+  dplyr::filter(grepl("儿童|青少年|幼儿",Recode_target_population))
+  
+  
+Journal_sepcial_primaryhigh <- Journal_special_target_population2 %>% 
+  dplyr::filter(Recode_target_population == "小学生" | Recode_target_population == "中学生" | Recode_target_population == "中小学生"| Recode_target_population == "初中生"| Recode_target_population == "高中生"| Recode_target_population == "中职生") %>% 
+  dplyr::distinct(Article_IDs)
+```
+
+
 create BF func, It is consistent with the analyzed function in the formal Rmd.
 ```{r}
 BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior = TRUE, prior = NA){
@@ -649,6 +691,17 @@ SupplH2_BF_gender_BTS_CFPS <- BayesMultiNomial(dataset = SupplH2_gender_general_
                                              observed = "BTS Chinese",
                                              expected = "CFPS2018")
 ```
+Journal vs Census6: $Log(BF_{10})$ = `r SupplH2_BF_gender_Journal_Census6$BF$LogBF10`.
+
+BTS vs Census6: $Log(BF_{10})$ = `r SupplH2_BF_gender_BTS_Census6$BF$LogBF10`.
+
+Journal vs Census7: $Log(BF_{10})$ = `r SupplH2_BF_gender_Journal_Census7$BF$LogBF10`.
+
+BTS vs Census7: $Log(BF_{10})$ = `r SupplH2_BF_gender_BTS_Census7$BF$LogBF10`.
+
+Journal vs CFPS2018: $Log(BF_{10})$ = `r SupplH2_BF_gender_Journal_CFPS$BF$LogBF10`.
+
+BTS vs CFPS2018: $Log(BF_{10})$ = `r SupplH2_BF_gender_BTS_CFPS$BF$LogBF10`.
 
 
 ## age
@@ -803,6 +856,13 @@ SupplH2_BF_interval10_Journal_Census6 <- BayesMultiNomial(dataset =Suppl_interva
                                              observed = "Journal",
                                              expected = "Census6")
 ```
+BTS vs Census6 in PsyStages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_BTS_Census6$BF$LogBF10`.
+
+BTS vs Census6 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_BTS_Census6$BF$LogBF10`.
+
+Journal vs Census6 in Psystages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_Journal_Census6$BF$LogBF10`.
+
+Journal vs Census6 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_Journal_Census6$BF$LogBF10`.
 
 
 Census7, BTS Chinese, and Journal
@@ -833,7 +893,13 @@ SupplH2_BF_interval10_Journal_Census7 <- BayesMultiNomial(dataset =Suppl_interva
                                              observed = "Journal",
                                              expected = "Census7")
 ```
+BTS vs Census7 in PsyStages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_BTS_Census7$BF$LogBF10`.
 
+BTS vs Census7 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_BTS_Census7$BF$LogBF10`.
+
+Journal vs Census7 in Psystages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_Journal_Census7$BF$LogBF10`.
+
+Journal vs Census7 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_Journal_Census7$BF$LogBF10`.
 
 ## edu
 process Census6 data
@@ -948,6 +1014,13 @@ Suppl_BF_highschool_Journal_Census6 <-  BayesMultiNomial(dataset = Suppl_highsch
                                              observed = "Journal",
                                              expected = "Census6")
 ```
+BTS vs Census6 in college: $Log(BF_{10})$ = `r Suppl_BF_college_BTS_Census6$BF$LogBF10`.
+
+Journal vs Census6 in college: $Log(BF_{10})$ = `r Suppl_BF_college_Journal_Census6$BF$LogBF10`.
+
+BTS vs Census6 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_BTS_Census6$BF$LogBF10`.
+
+Journal vs Census6 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_Journal_Census6$BF$LogBF10`.
 
 
 BF Journal, BTS and Census7
@@ -975,7 +1048,13 @@ Suppl_BF_highschool_Journal_Census7 <-  BayesMultiNomial(dataset = Suppl_highsch
                                              observed = "Journal",
                                              expected = "Census7")
 ```
+BTS vs Census7 in college: $Log(BF_{10})$ = `r Suppl_BF_college_BTS_Census7$BF$LogBF10`.
 
+Journal vs Census7 in college: $Log(BF_{10})$ = `r Suppl_BF_college_Journal_Census7$BF$LogBF10`.
+
+BTS vs Census7 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_BTS_Census7$BF$LogBF10`.
+
+Journal vs Census7 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_Journal_Census7$BF$LogBF10`.
 
 ## Abstract report
 Abstract1 subjects information reported of Chinese journal
@@ -1523,6 +1602,11 @@ SupplH2_BF_Journal_CFPS2018_region_four <- BayesMultiNomial(dataset = SupplH2_re
                                           observed = "Journal",
                                           expected = "CFPS2018")
 ```
+Journal vs Census6 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census6_region_four$BF$LogBF10`.
+
+Journal vs Census7 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census7_region_four$BF$LogBF10`.
+
+Journal vs CFPS2018 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_CFPS2018_region_four$BF$LogBF10`.
 
 
 BF seven region on Journal
@@ -1549,6 +1633,11 @@ SupplH2_BF_Journal_CFPS2018_region_seven <- BayesMultiNomial(dataset = SupplH2_r
                                           observed = "Journal",
                                           expected = "CFPS2018")
 ```
+Journal vs Census6 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census6_region_seven$BF$LogBF10`.
+
+Journal vs Census7 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census7_region_seven$BF$LogBF10`.
+
+Journal vs CFPS2018 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_CFPS2018_region_seven$BF$LogBF10`.
 
 
 BF four region on experi 
@@ -1582,6 +1671,11 @@ SupplH2_BF_experi_CFPS2018_region_four <- BayesMultiNomial(dataset = SupplH2_reg
                                           observed = "Journal experiment study",
                                           expected = "CFPS2018")
 ```
+Journal vs Census6 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census6_region_four$BF$LogBF10`.
+
+Journal vs Census7 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census7_region_four$BF$LogBF10`.
+
+Journal vs CFPS2018 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_CFPS2018_region_four$BF$LogBF10`.
 
 
 BF seven region on experi 
@@ -1615,6 +1709,11 @@ SupplH2_BF_experi_CFPS2018_region_seven <- BayesMultiNomial(dataset = SupplH2_re
                                           observed = "Journal experiment study",
                                           expected = "CFPS2018")
 ```
+Journal vs Census6 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census6_region_seven$BF$LogBF10`.
+
+Journal vs Census7 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census7_region_seven$BF$LogBF10`.
+
+Journal vs CFPS2018 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_CFPS2018_region_seven$BF$LogBF10`.
 
 
 BF four region on questionaire
@@ -1650,6 +1749,11 @@ SupplH2_BF_questionaire_CFPS2018_region_four <- BayesMultiNomial(dataset = Suppl
                                           observed = "Journal questionaire study",
                                           expected = "CFPS2018")
 ```
+Journal vs Census6 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census6_region_four$BF$LogBF10`.
+
+Journal vs Census7 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census7_region_four$BF$LogBF10`.
+
+Journal vs CFPS2018 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_CFPS2018_region_four$BF$LogBF10`.
 
 
 BF seven region on questionaire
@@ -1683,6 +1787,11 @@ SupplH2_BF_questionaire_CFPS2018_region_seven <- BayesMultiNomial(dataset = Supp
                                           observed = "Journal questionaire study",
                                           expected = "CFPS2018")
 ```
+Journal vs Census6 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census6_region_seven$BF$LogBF10`.
+
+Journal vs Census7 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census7_region_seven$BF$LogBF10`.
+
+Journal vs CFPS2018 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_CFPS2018_region_seven$BF$LogBF10`.
 
 
 And then, I will visualize the map for the region data of Chinese subjects
@@ -1946,28 +2055,7 @@ Journal_keywords_tab <- Journal_keywords %>%
 Journal_keywords_tab69 <- Journal_keywords_tab %>% 
   arrange(desc(tab)) %>% 
   select(Keywords,tab) %>% 
-  slice(1:84)
-
-## different period
-Journal_keywords_tab2008 <- Journal_keywords_tab %>% 
-  dplyr::filter(Year == "2008") %>% 
-  select(Keywords,tab) %>% 
-  arrange(desc(tab)) %>% 
-  slice(1:84)
-
-
-Journal_keywords_tab2018 <- Journal_keywords_tab %>% 
-  dplyr::filter(Year == "2018") %>% 
-  select(Keywords,tab) %>% 
-  arrange(desc(tab)) %>% 
-  slice(1:84)
-
-
-Journal_keywords_tab2021 <- Journal_keywords_tab %>% 
-  dplyr::filter(Year == "2021") %>% 
-  select(Keywords,tab) %>% 
-  arrange(desc(tab)) %>% 
-  slice(1:84)
+  slice(1:104)
 ```
 
 
@@ -1978,9 +2066,9 @@ Journal wordcloud
 # set_pcutils_config('baidu_key', "8m0lLVSrtwvfMVxk5")
 
 
-Journal_keywords3 <- Journal_keywords2 %>% 
-  arrange(desc(tab)) %>% 
-  slice(1:84) 
+# Journal_keywords3 <- Journal_keywords2 %>% 
+#   arrange(desc(tab)) %>% 
+#   slice(1:84) 
 
 ## save data and convert Chinese keywords into English keywords
 
