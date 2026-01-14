@@ -178,7 +178,7 @@ H3_age_four2 <- H3_age_four %>%
   dplyr::mutate(ISO3 = factor(ISO3, levels = H3_age_four_factor)) %>%
   dplyr::filter(!is.na(ageBins))
 
-`
+
 ## 18~40 age 
 H3_age_four2 %>% 
   dplyr::distinct(ISO3)  ## 128
