@@ -1056,6 +1056,7 @@ BTS vs Census7 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_BTS_Censu
 
 Journal vs Census7 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_Journal_Census7$BF$LogBF10`.
 
+
 ## Abstract report
 Abstract1 subjects information reported of Chinese journal
 
@@ -1077,20 +1078,39 @@ Journal_abstract1_report_all <- Journal %>%
   dplyr::ungroup() %>% 
   tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
 
+Journal_abstract1_report_all
 
-## Chi
-matrix_Journal_abstract1_report_all <- matrix(c(33, 9, # College students & other populations
-                                            227, 204, # Only college students
-                                            434, 28), # Only sample outside colleges
-                                          nrow = 3,
-                                          byrow = TRUE,
-                                          dimnames = list(Study_Type = c("College students & other", "Only college students", "Only outside colleges"),
-                                                          Sample_Status = c("Sample not mentioned", "Samples mentioned")))
 
-# Chi test
-matrix_Journal_abstract1_result_all <- chisq.test(matrix_Journal_abstract1_report_all)
-matrix_Journal_abstract1_result_all
+## trans prop
+Journal_abstract1_report_all_trans <- Journal_abstract1_report_all %>% 
+  tidyr::pivot_longer(cols = c(`Sample not mentioned`, `Samples mentioned`),
+                      names_to = "Mentioned status",
+                      values_to = "Count") %>% 
+  tidyr::pivot_wider(names_from = Study_Type,
+                     values_from = Count)
+
+## bayes
+Journal_abstract1_report_all_bayes <- Journal_abstract1_report_all_trans %>% 
+  dplyr::mutate(`College students & other populations` = (`College students & other populations`/sum(`College students & other populations`))*100,
+                `Only college students` = (`Only college students`/sum(`Only college students`))*100,
+                `Only sample outside colleges` = (`Only sample outside colleges`)/sum(`Only sample outside colleges`)*100)
+
+## BF
+Suppl_BF_Abstract1_all_college_other <- BayesMultiNomial(dataset = Journal_abstract1_report_all_bayes,
+                                       factor = "Mentioned status",
+                                       observed = "College students & other populations",
+                                       expected = "Only college students")
+
+
+Suppl_BF_Abstract1_all_college_outside <- BayesMultiNomial(dataset = Journal_abstract1_report_all_bayes,
+                                       factor = "Mentioned status",
+                                       observed = "Only sample outside colleges",
+                                       expected = "Only college students")
 ```
+Only college students as expected. Abstract1 for all data.
+Only college students vs College students & other populations：$Log(BF_{10})$ = `r Suppl_BF_Abstract1_all_college_other$BF$LogBF10`.
+
+Only college students vs Only sample outside colleges：$Log(BF_{10})$ = `r Suppl_BF_Abstract1_all_college_outside$BF$LogBF10`.
 
 
 general population
@@ -1112,25 +1132,42 @@ Journal_abstract1_report_general <- Journal %>%
   dplyr::ungroup() %>% 
   tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
 
+Journal_abstract1_report_general
 
-## Chi
-matrix_Journal_abstract1_report_general <- matrix(c(10, 7, # College students & other populations
-                                            91, 198, # Only college students
-                                            32, 11), # Only sample outside colleges
-                                          nrow = 3,
-                                          byrow = TRUE,
-                                          dimnames = list(Study_Type = c("College students & other", "Only college students", "Only outside colleges"),
-                                                          Sample_Status = c("Sample not mentioned", "Samples mentioned")))
 
-# Chi test
-matrix_Journal_abstract1_result_general <- chisq.test(matrix_Journal_abstract1_report_general)
-matrix_Journal_abstract1_result_general
+## trans prop
+Journal_abstract1_report_general_trans <- Journal_abstract1_report_general %>% 
+  tidyr::pivot_longer(cols = c(`Sample not mentioned`, `Samples mentioned`),
+                      names_to = "Mentioned status",
+                      values_to = "Count") %>% 
+  tidyr::pivot_wider(names_from = Study_Type,
+                     values_from = Count)
+
+## bayes
+Journal_abstract1_report_general_bayes <- Journal_abstract1_report_general_trans %>% 
+  dplyr::mutate(`College students & other populations` = (`College students & other populations`/sum(`College students & other populations`))*100,
+                `Only college students` = (`Only college students`/sum(`Only college students`))*100,
+                `Only sample outside colleges` = (`Only sample outside colleges`)/sum(`Only sample outside colleges`)*100)
+
+## BF
+Suppl_BF_Abstract1_general_college_other <- BayesMultiNomial(dataset = Journal_abstract1_report_general_bayes,
+                                       factor = "Mentioned status",
+                                       observed = "College students & other populations",
+                                       expected = "Only college students")
+
+
+Suppl_BF_Abstract1_general_college_outside <- BayesMultiNomial(dataset = Journal_abstract1_report_general_bayes,
+                                       factor = "Mentioned status",
+                                       observed = "Only sample outside colleges",
+                                       expected = "Only college students")
 ```
+Only college students as expected. Abstract1 for general population.
+Only college students vs College students & other populations：$Log(BF_{10})$ = `r Suppl_BF_Abstract1_general_college_other$BF$LogBF10`.
+
+Only college students vs Only sample outside colleges：$Log(BF_{10})$ = `r Suppl_BF_Abstract1_general_college_outside$BF$LogBF10`.
 
 
-Abstract 2 reported
-
-all data.
+Abstract 2 reported for all data.
 ```{r}
 
 ## check info consisitency
@@ -1161,7 +1198,7 @@ Journal_ab2_tab_chi_test
 ```
 
 
-general population
+Abstract 2 reported for general population
 ```{r}
 Journal_abstract2_report_general <- Journal %>% 
   dplyr::select(Article_IDs_N,Study_Number_N,Subjects_Group_N,
