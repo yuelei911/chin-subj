@@ -1115,29 +1115,38 @@ Only college students vs Only sample outside colleges：$Log(BF_{10})$ = `r Supp
 
 general population
 ```{r}
-Journal_abstract1_report_general <- Journal %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
-                Target_Population_N,Sample_Type_N,Abstract1) %>% 
+Journal_abstract_report_general <- Journal %>% 
+  dplyr::select(Article_IDs_N,Study_Number,Subjects_Group,
+                Target_Population_N,Sample_Type_N,Abstract1,Abstract2) %>% 
   dplyr::filter(Sample_Type_N != 5) %>% 
   dplyr::filter(Target_Population_N != 1) %>% 
-  dplyr::group_by(Article_IDs) %>% 
+  dplyr::group_by(Article_IDs_N) %>% 
   dplyr::mutate(Study_Type = ifelse(all(Sample_Type_N == 1),"Only college students",ifelse(any(grepl("1",Sample_Type_N)) & any(Sample_Type_N !=1),"College students & other populations","Only sample outside colleges"))) %>% 
   dplyr::ungroup() %>% 
-  dplyr::group_by(Article_IDs) %>% 
+  dplyr::arrange(desc(Abstract2)) %>% 
+  dplyr::group_by(Article_IDs_N) %>% 
   dplyr::slice(1) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Sample_Mentioned = ifelse(Abstract1 == "0" ,"Samples mentioned", "Sample not mentioned")) %>% 
+  dplyr::ungroup() %>%
+  dplyr::mutate(Abstract2 = ifelse(Study_Type == "Only sample outside colleges",NA,Abstract2))
+```
+
+
+calculate Abstract1
+```{r}
+Journal_abstract1_report_general<- Journal_abstract_report_general %>% 
+  dplyr::mutate(Sample_Mentioned = ifelse(Abstract1 == "0" ,"Samples not mentioned", "Samples mentioned")) %>% 
   dplyr::group_by(Sample_Mentioned,Study_Type) %>% 
   dplyr::count() %>% 
   dplyr::ungroup() %>% 
   tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
+
 
 Journal_abstract1_report_general
 
 
 ## trans prop
 Journal_abstract1_report_general_trans <- Journal_abstract1_report_general %>% 
-  tidyr::pivot_longer(cols = c(`Sample not mentioned`, `Samples mentioned`),
+  tidyr::pivot_longer(cols = c(`Samples not mentioned`, `Samples mentioned`),
                       names_to = "Mentioned status",
                       values_to = "Count") %>% 
   tidyr::pivot_wider(names_from = Study_Type,
@@ -1167,52 +1176,11 @@ Only college students vs College students & other populations：$Log(BF_{10})$ =
 Only college students vs Only sample outside colleges：$Log(BF_{10})$ = `r Suppl_BF_Abstract1_general_college_outside$BF$LogBF10`.
 
 
-Abstract 2 reported for all data.
-```{r}
-
-## check info consisitency
-# Journal_abstract2_report_CE <- Journal %>% 
-#    dplyr::select(Article_IDs_N,Study_Number_N,Subjects_Group_N,
-#                 Target_Population_N,Sample_Type_N,Abstract2) %>% 
-#   dplyr::filter(!is.na(Abstract2)) %>% 
-#   dplyr::group_by(Article_IDs_N) %>% 
-#   dplyr::summarise(Distinct_ab2 = n_distinct(Abstract2)) %>% 
-#   dplyr::ungroup()
-  
-Journal_abstract2_report <- Journal %>% 
-  dplyr::select(Article_IDs_N,Study_Number_N,Subjects_Group_N,
-                Target_Population_N,Sample_Type_N,Abstract2) %>% 
-  dplyr::filter(!is.na(Abstract2)) %>% 
-  dplyr::group_by(Article_IDs_N) %>% 
-  dplyr::slice(1) %>% 
-  dplyr::ungroup()
-
-
-
-## Chi-aquare test
-Journal_ab2_tab <- table(Journal_abstract2_report$Abstract2)
-Journal_ab2_tab
-
-Journal_ab2_tab_chi_test <- chisq.test(Journal_ab2_tab, p = c(0.5,0.5))
-Journal_ab2_tab_chi_test
-```
-
-
 Abstract 2 reported for general population
 ```{r}
-Journal_abstract2_report_general <- Journal %>% 
-  dplyr::select(Article_IDs_N,Study_Number_N,Subjects_Group_N,
-                Target_Population_N,Sample_Type_N,Abstract2) %>% 
-  dplyr::filter(!is.na(Abstract2)) %>% 
-  dplyr::filter(Target_Population_N != 1) %>% 
-  dplyr::group_by(Article_IDs_N) %>% 
-  dplyr::slice(1) %>% 
-  dplyr::ungroup()
-
-
 
 ## Chi-aquare test
-Journal_ab2_general_tab <- table(Journal_abstract2_report_general$Abstract2)
+Journal_ab2_general_tab <- table(Journal_abstract_report_general$Abstract2)
 Journal_ab2_general_tab
 
 Journal_ab2_general_tab_chi_test <- chisq.test(Journal_ab2_general_tab, p = c(0.5,0.5))
