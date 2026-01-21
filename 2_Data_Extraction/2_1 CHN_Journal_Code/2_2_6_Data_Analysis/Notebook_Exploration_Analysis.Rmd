@@ -503,21 +503,65 @@ Journal_special_visual <- Journal_special_target_population2 %>%
 
 ## save and translate Chinese into English
 # writexl::write_xlsx(Journal_special_visual,"Journal_special_visual.xlsx")
-Journal_special_visual2 <- readxl::read_xlsx("Journal_special_visual_complete_translation.xlsx")
+Journal_special_visual2 <- readxl::read_xlsx("Journal_special_visual_complete_translation.xlsx") %>% 
+  dplyr::mutate(cate = ifelse(Count == 1,"one",Count))
 
 Special_Wordcloud <- Journal_special_visual2 %>% 
   ggplot(aes(label = Target_Population_English, 
              size = Count, 
-             color = Target_Population_English)) +
+             color = cate)) +
   geom_text_wordcloud(area_corr = TRUE) +
   scale_size_area(max_size = 50) +
   theme_minimal()
 
 Special_Wordcloud
 
-ggsave("Special_Wordcloud.pdf",Special_Wordcloud, device = "pdf", width=18, height = 9)
+
 
 ```
+
+
+bar plot 
+```{r}
+Journal_special_visual_gt2 <- Journal_special_visual2 %>% 
+  dplyr::filter(Count > 2) %>% 
+  dplyr::mutate(Prop = (Count/622)*100) %>% 
+  dplyr::arrange(desc(Prop))
+
+
+## factor
+Journal_special_visual_gt2_factor <- Journal_special_visual_gt2 %>% 
+  dplyr::pull(Target_Population_English)
+
+Journal_special_visual_gt3 <- Journal_special_visual_gt2 %>% 
+  dplyr::mutate(Target_Population_English = factor(Target_Population_English,
+                                                   levels = Journal_special_visual_gt2_factor))
+  
+
+Journal_special_visual_bar <-  Journal_special_visual_gt3 %>% 
+ggplot(aes(x = Target_Population_English,y = Prop))+
+  geom_col(fill = "blue",alpha = 0.5)+
+  xlab("Special population")+
+  ylab("Proportion")+
+  coord_flip()+
+  theme_classic()+
+  theme(axis.title.y = element_text(vjust = -5),
+        panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 10, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 10,family = "serif"),
+        axis.text = element_text(size = 10,family = "serif"))
+
+Journal_special_visual_bar
+
+Special_Wordcloud_Barplot <- Special_Wordcloud + Journal_special_visual_bar
+
+ggsave("Special_Wordcloud_Barplot.pdf",Special_Wordcloud_Barplot, device = "pdf", width=18, height = 9)
+
+```
+
 
 ```{r}
 #  num of different targetpopulation
