@@ -21,9 +21,10 @@ p_load("tidyverse","ggplot2","ggwordcloud",
 
 
 
-## Load data
-```{r}
-load(here("3_Data_Analysis","3_1_Intermediate_Data","Journal.Rdata"))
+Load the process data of the main analysis by running an R script
+```{r warning=FALSE}
+## main analyze Rmd data
+source("Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2.R")
 ```
 
 
@@ -298,7 +299,7 @@ Journal_report_year <- Journal_report %>%
         axis.title = element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"))
 
-ggsave("Journal_report_year.pdf", Journal_report_year, device = "pdf", width=12, height = 9)
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\Journal_report_year.pdf", Journal_report_year, device = "pdf", width=12, height = 9)
 
 
 Journal_report_year
@@ -485,7 +486,7 @@ Journal_report_target_population <- Journal_target_population_report2 %>%
         axis.text = element_text(size = 20,family = "serif"))+
   scale_x_discrete(guide = guide_axis(angle = 45))
 
-ggsave("Journal_report_target_population.pdf", Journal_report_target_population, device = "pdf", width=12, height = 9)
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\Journal_report_target_population.pdf", Journal_report_target_population, device = "pdf", width=12, height = 9)
 
 Journal_report_target_population
 ```
@@ -494,19 +495,18 @@ Journal_report_target_population
 ## the exporation analyse in special population
 
 ```{r}
-load("Journal_special_target_population2.RData")
+# Journal_special_visual <- Journal_special_target_population2 %>% 
+#   dplyr::group_by(Recode_target_population) %>% 
+#   dplyr::summarise(n = n())
 
-
-Journal_special_visual <- Journal_special_target_population2 %>% 
-  dplyr::group_by(Recode_target_population) %>% 
-  dplyr::summarise(n = n())
 
 ## save and translate Chinese into English
+
 # writexl::write_xlsx(Journal_special_visual,"Journal_special_visual.xlsx")
-Journal_special_visual2 <- readxl::read_xlsx("Journal_special_visual_complete_translation.xlsx") %>% 
+Journal_special_visual2 <- Journal_special_population_translation %>% 
   dplyr::mutate(cate = ifelse(Count == 1,"one",Count))
 
-Special_Wordcloud <- Journal_special_visual2 %>% 
+Suppl_Fig_Special_Wordcloud <- Journal_special_visual2 %>% 
   ggplot(aes(label = Target_Population_English, 
              size = Count, 
              color = cate)) +
@@ -514,10 +514,7 @@ Special_Wordcloud <- Journal_special_visual2 %>%
   scale_size_area(max_size = 50) +
   theme_minimal()
 
-Special_Wordcloud
-
-
-
+Suppl_Fig_Special_Wordcloud
 ```
 
 
@@ -538,7 +535,7 @@ Journal_special_visual_gt3 <- Journal_special_visual_gt2 %>%
                                                    levels = Journal_special_visual_gt2_factor))
   
 
-Journal_special_visual_bar <-  Journal_special_visual_gt3 %>% 
+Suppl_Fig_Journal_special_visual_bar <-  Journal_special_visual_gt3 %>% 
 ggplot(aes(x = Target_Population_English,y = Prop))+
   geom_col(fill = "blue",alpha = 0.5)+
   xlab("Special population")+
@@ -554,11 +551,15 @@ ggplot(aes(x = Target_Population_English,y = Prop))+
         axis.title = element_text(size = 10,family = "serif"),
         axis.text = element_text(size = 10,family = "serif"))
 
-Journal_special_visual_bar
+Suppl_Fig_Journal_special_visual_bar
 
-Special_Wordcloud_Barplot <- Special_Wordcloud + Journal_special_visual_bar
+Suppl_Fig_Special_Wordcloud_Barplot <- Suppl_Fig_Special_Wordcloud + Suppl_Fig_Journal_special_visual_bar
 
-ggsave("Special_Wordcloud_Barplot.pdf",Special_Wordcloud_Barplot, device = "pdf", width=18, height = 9)
+
+Suppl_Fig_Special_Wordcloud_Barplot
+
+
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\Suppl_Fig_Special_Wordcloud_Barplot.pdf",Suppl_Fig_Special_Wordcloud_Barplot, device = "pdf", width=18, height = 9)
 
 ```
 
@@ -639,15 +640,7 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 
 
 ## Two data sources are respectively compared with the census data and CFPS
-
-load data
-```{r}
-load("H2_BTS_Journal_age_edu.RData")
-load("H2_gender_exploration.Rdata")
-```
-
-
-and then, I process the data of gender, age and edu.
+I process the data of gender, age and edu.
 
 ## gender
 process data
@@ -686,7 +679,7 @@ Suppl_Fig_H2_gender_general <- ggplot(SupplH2_gender_general,aes(Data_Source,Pro
         axis.text = element_text(size = 20,family = "serif"))
 
 
-ggsave("Suppl_Fig_H2_gender_general.pdf",Suppl_Fig_H2_gender_general, device = "pdf", width=18, height = 9)
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\Suppl_Fig_H2_gender_general.pdf",Suppl_Fig_H2_gender_general, device = "pdf", width=18, height = 9)
 Suppl_Fig_H2_gender_general
 
 ```
@@ -791,7 +784,7 @@ SupplH2_Census7_age_general <- ggplot(data= Census7_age_five5,
         axis.title = element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"))
 
-ggsave("SupplH2_Census7_age_general.pdf",SupplH2_Census7_age_general, device = "pdf", width=18, height = 9)
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\SupplH2_Census7_age_general.pdf",SupplH2_Census7_age_general, device = "pdf", width=18, height = 9)
 
 SupplH2_Census7_age_general
 ```
@@ -823,7 +816,7 @@ SupplH2_Census6_age_general <- ggplot(data= Census6_age_five5,
         axis.title = element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"))
 
-ggsave("SupplH2_Census6_age_general.pdf",SupplH2_Census6_age_general, device = "pdf", width=18, height = 9)
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\SupplH2_Census6_age_general.pdf",SupplH2_Census6_age_general, device = "pdf", width=18, height = 9)
 
 SupplH2_Census6_age_general
 ```
@@ -948,8 +941,6 @@ Journal vs Census7 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_Jour
 ## edu
 process Census6 data
 ```{r warning=FALSE}
-Census6_edu <- readxl::read_xlsx("Census6_edu.xlsx")
-
 Suppl_Census6_edu_adults <- Census6_edu %>%
   dplyr::select(1,2,5,8,11,14,17,20,23) %>%
   dplyr::rename(Age = 1,n = 2,
@@ -1271,9 +1262,6 @@ table(Journal_subjects_recruitment2$Subjects_Recruitment_Method_N)
 ## sample size in different study type
 the sample size of different study type
 ```{r} 
-load("Journal_region.RData")
-
-
 Journal_general_experi <- Journal %>% 
   dplyr::select(Article_IDs_N,Study_Number_N,Study_Type,Sample_Size,Target_Population_N) %>% 
   dplyr::mutate(Sample_Size = ifelse(Article_IDs_N == "20185082", 33, Sample_Size)) %>% 
@@ -1428,7 +1416,7 @@ sum(Journal_region_seven_questionaire$questionaire_Prop)
 
 add census6' regional data 
 ```{r}
-Census6_region <- readxl::read_xlsx("Census6_region.xlsx") %>% 
+Census6_region <- Census6_region %>% 
   dplyr::select(1,5) %>% 
   dplyr::slice(-c(1:7)) %>% 
   dplyr::rename(Region = 1, n = 2) %>% 
@@ -1960,7 +1948,7 @@ SupplH2_Fig_region_studytype <- SupplH2_Fig_region_general + SupplH2_Fig_Journal
   theme(plot.tag = element_text(size = 16))
 
 
-ggsave("SupplH2_Fig_region_studytype.pdf", SupplH2_Fig_region_studytype, device = "pdf", width=10, height = 6)
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\SupplH2_Fig_region_studytype.pdf", SupplH2_Fig_region_studytype, device = "pdf", width=10, height = 6)
 
 SupplH2_Fig_region_studytype
 ```
@@ -1969,8 +1957,6 @@ SupplH2_Fig_region_studytype
 We also try to calculate the Spearman’s correlation between Journal region and SHANGHAI RANKING
 
 ```{r}
-load("ShanghaiRanking_psy.Rdata")
-
 ## psy2021
 ShanghaiRanking_psy2021_provinceRank <- ShanghaiRanking_psy2021 %>% 
   dplyr::rename(Region = 4) %>% 
@@ -2023,6 +2009,7 @@ the first psychology of Shanghai Ranking
 ```{r}
 cor.test(Region_psy_cordata$psy2021, Region_psy_cordata$Journal, method = "spearman", exact = F)
 ```
+
 the second applied psychology of Shanghai Ranking
 ```{r}
 cor.test(Region_appliedpsy_cordata$Appliedpsy2021, Region_appliedpsy_cordata$Journal, method = "spearman", exact = F)
@@ -2033,9 +2020,6 @@ cor.test(Region_appliedpsy_cordata$Appliedpsy2021, Region_appliedpsy_cordata$Jou
 ## Bibliometric Analysis
 BTS data
 ```{r}
-## load BTS data
-BTS_keywords <- readxl::read_xlsx("D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_keywords.xlsx")
-
 ## split keyword
 BTS_keywords_split_rows <- BTS_keywords %>% 
   dplyr::filter(!is.na(Article_Keywords)) %>% 
@@ -2048,7 +2032,8 @@ BTS_keywords_split_rows <- BTS_keywords %>%
 ## tab
 BTS_keywords_tab <- BTS_keywords_split_rows %>% 
   dplyr::group_by(Article_Keywords) %>% 
-  dplyr::summarise(n = n())
+  dplyr::summarise(n = n()) %>% 
+  dplyr::mutate(cate = factor(n))
 
 sum(BTS_keywords_tab$n)
 ```
@@ -2056,29 +2041,25 @@ sum(BTS_keywords_tab$n)
 
 BTS wordcloud
 ```{r}
-Fig_BTS_wordcloud <- ggplot(BTS_keywords_tab, 
-                        aes(label = Article_Keywords, 
-                            size = n, 
-                            color = Article_Keywords)) +
+
+Suppl_Fig_BTS_wordcloud <- BTS_keywords_tab %>% 
+  ggplot(aes(label = Article_Keywords, 
+             size = n, 
+             color =cate)) +
   geom_text_wordcloud(shape = "square", 
                       alpha = 0.8) +
   scale_size_area(max_size = 8) +
   theme_void()
 
-# ggsave("Fig_BTS_wordcloud.pdf", Fig_BTS_wordcloud, device = "pdf", width=10, height = 6)
 
-Fig_BTS_wordcloud
+Suppl_Fig_BTS_wordcloud
 ```
 
 
 Journal data
 ```{r}
-Journal_keywords <- read.xlsx("C://Users//ynian//Desktop//cnki//Chin_Subj_Journal_Keywords.xlsx",
-                              sheetIndex = 1)
-
-
 Journal_keywords2 <- Journal_keywords %>% 
-  dplyr::select(Article_IDs,Article_Title,`Keyword.关键词`,`Year.年`) %>% 
+  dplyr::select(Article_IDs,Article_Title,`Keyword-关键词`,`Year-年`) %>% 
   dplyr::rename(Keywords = 3 , Year = 4) %>% 
   tidyr::separate_rows(3, sep = "[;,.\\s|]+") %>% 
   group_by(Keywords) %>%
@@ -2086,89 +2067,53 @@ Journal_keywords2 <- Journal_keywords %>%
   arrange(desc(tab))
 
 
-## split year
-Journal_keywords_tab <- Journal_keywords %>% 
-  dplyr::select(Article_IDs,Article_Title,`Keyword.关键词`,`Year.年`) %>% 
-  dplyr::rename(Keywords = 3 , Year = 4) %>% 
-  tidyr::separate_rows(3, sep = "[;,.\\s|]+") %>% 
-  dplyr::mutate(Year = case_when(Year %in% c("2017","2018") ~ "2018",
-                                 Year %in% c("2020","2021") ~ "2021",
-                                 TRUE ~ Year)) %>% 
-  group_by(Year, Keywords) %>%
-  summarise(tab = n(), .groups = "drop") %>%
-  arrange(Year, desc(tab))
-
-
 ## filter 69
 ## total
-Journal_keywords_tab69 <- Journal_keywords_tab %>% 
+Journal_keywords_tab69 <- Journal_keywords2 %>% 
   arrange(desc(tab)) %>% 
   select(Keywords,tab) %>% 
-  slice(1:104)
+  slice(1:84)
 ```
 
 
 Journal wordcloud
 ```{r}
-# library(pcutils)
-# set_pcutils_config('baidu_appid', "20240711002097071")
-# set_pcutils_config('baidu_key', "8m0lLVSrtwvfMVxk5")
-
-
-# Journal_keywords3 <- Journal_keywords2 %>% 
-#   arrange(desc(tab)) %>% 
-#   slice(1:84) 
-
 ## save data and convert Chinese keywords into English keywords
 
 # writexl::write_xlsx(Journal_keywords3,"Journal_keywords3.xlsx")
+# "Journal_keywords3" and "Journal_keywords_translation" are the same file; the latter is the translated version.
 
-
-Journal_keywords4 <-  readxl::read_xlsx("Journal_keywords3.xlsx") %>% 
+Journal_keywords4 <-  Journal_keywords_translation %>% 
   dplyr::group_by(en) %>% 
-  dplyr::mutate(tab = sum(tab)) %>%
+  dplyr::mutate(tab = sum(tab),
+                cate = factor(tab)) %>%
   dplyr::slice(1) %>%
   dplyr::arrange(desc(tab))
 
 
 ## plot
-Journal_wordcloud <- Journal_keywords4 %>% 
+Suppl_Fig_Journal_wordcloud <- Journal_keywords4 %>% 
   ggplot(aes(label = en, 
              size = tab, 
-             color = en)) +
+             color = cate)) +
   geom_text_wordcloud(shape = "square", 
                       alpha = 0.8) +
   scale_size_area(max_size = 8) +
   theme_void()
 
 
-
-# ggsave("Journal_wordcloud.pdf", Journal_wordcloud, device = "pdf", width=10, height = 6)
-
-
-Journal_wordcloud 
+Suppl_Fig_Journal_wordcloud 
 
 
-Wordcloud <- Fig_BTS_wordcloud + Journal_wordcloud
+Suppl_Fig_Wordcloud <- Suppl_Fig_BTS_wordcloud + Suppl_Fig_Journal_wordcloud
 
-Wordcloud
+Suppl_Fig_Wordcloud
 
-ggsave("Wordcloud.pdf",Wordcloud, device = "pdf", width=18, height = 9)
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\Suppl_Fig_Wordcloud.pdf",Suppl_Fig_Wordcloud, device = "pdf", width=18, height = 9)
 ```
 
 
 ## H3 exloration analysis
-
-load data
-```{r}
-rm(list = ls())
-
-library(tidyverse)
-library(ggplot2)
-
-load("H3_age_exploration.RData")
-```
-
 
 I continued to use the same steps to divide age into four age group.
 ```{r}
@@ -2347,7 +2292,7 @@ H3_age_four2_1840 <- H3_age_four2 %>%
 
 plot
 ```{r}
-H3_Fig_age_four <- ggplot(H3_age_four2, aes(x=Proportion, y=ISO3, fill=ageBins)) +
+SupplH3_Fig_age_four <- ggplot(H3_age_four2, aes(x=Proportion, y=ISO3, fill=ageBins)) +
   geom_col(alpha = .75)+
   labs(y="Countries/Regions",fill = "Age bins") + 
   scale_fill_discrete(label=c("0~17", "18~40", "41~60",">=61")) +
@@ -2364,7 +2309,7 @@ H3_Fig_age_four <- ggplot(H3_age_four2, aes(x=Proportion, y=ISO3, fill=ageBins))
              labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD"))) 
 
 
-H3_Fig_age_four
+SupplH3_Fig_age_four
 
-ggsave("H3_Fig_age_four.pdf",H3_Fig_age_four,device = "pdf", width=18, height = 18)
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\SupplH3_Fig_age_four.pdf",SupplH3_Fig_age_four,device = "pdf", width=18, height = 18)
 ```

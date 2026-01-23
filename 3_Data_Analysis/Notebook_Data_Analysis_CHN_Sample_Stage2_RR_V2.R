@@ -1,39 +1,4 @@
----
-title: "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2"
-author: "Lei Yue"
-date: "2024-04-20"
-output:
-  prettydoc::html_pretty:
-  theme: cayman
-  highlight: github
----
-
-In "Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V1.Rmd"， I preprocess the journal code data. In this Rmd(V2), we enter the informal process data.
-
-**Special Note:** To enhance the readability and accessibility of this document, we have provided a concise explanation for the naming convention of data
-
-Journal\_: This prefix signifies data that has been coded and extracted from five mainstream Chinese journals.
-
-BTS\_: This indicates data sourced from large-scale international collaborations.
-
-H1\_: This indicates data use to test hypothesis 1.
-
-H2\_: This indicates data use to test hypothesis 2.
-
-H3\_: This indicates data use to test hypothesis 3.
-
-Census\_: This prefix represents Census data published by the National Bureau of Statistics of China.
-
-CFPS2018\_: This signifies data from the 2018 Chinese Family Panel Studies.
-
-The majority of data adhere to these naming conventions, with the prefixes typically followed by descriptive and comprehensible demographic variable names or other relevant terms to clarify the data content.
-
-Furthermore, if "Fig" appears in the data name, it signifies that the content represents a data visualization result. Similarly, the presence of "bayes" or "BF" indicates that the data or result pertains to the calculation of the Bayes factor.
-
-Now, I start to analysis data. and the first thing is load packages.
-
-# Install and Load packages
-```{r message=FALSE, warning=FALSE}
+## ----message=FALSE, warning=FALSE----------------------------------------------------------------
 rm(list = ls())
 
 if (!require("pacman")) install.packages("pacman")
@@ -43,15 +8,9 @@ if (!require("pacman")) install.packages("pacman")
 pacman::p_load("tidyverse","here","rio","purrr")
 pacman::p_load("geojsonsf","sf","RColorBrewer","ggspatial","patchwork","ggrepel","maps")
 pacman::p_load("truncnorm","BayesFactor", "gtools", "bruceR")
-```
 
 
-And then, I loaded the data. The data primarily includes Census data, CFPS2018 data, Chinese journal coding data, and BTS data.
-
-
-# Load data
-## Load the data of stage 1, Chinese journals coding data, and BTS data
-```{r}
+## ------------------------------------------------------------------------------------------------
 load(here("3_Data_Analysis","3_1_Intermediate_Data","df_chinese_subj_rr_stage1.Rdata")) 
 
 # "df_chinese_subj_rr_stage1.Rdata" is Stage 1 data for the Registered Report, covering census6, census7, CFPS2018, PSA001.
@@ -74,11 +33,9 @@ load(here("3_Data_Analysis","3_1_Intermediate_Data","Analyze_supporting_data.Rda
 
 ## Here, I remove some data sets to reduce data set clutter.
 rm(df_regionCode)
-```
 
 
-## combine raw data and coding data of BTS
-```{r}
+## ------------------------------------------------------------------------------------------------
 BTS_coding <- BTS_coding %>% 
   dplyr::filter(Coder == "final")
 
@@ -96,27 +53,9 @@ for (i in seq_along(BTS)) {
 
 BTS[["BTS_Klein_et_al_2018_1"]]$Target_Population <- 2
 BTS[["BTS_Klein_et_al_2018_2"]]$Target_Population <- 2
-```
 
 
-Here, I used self-defined function in Stage1 to calculate Bayesian multinomial test.
-
-# Define a Func to calculate Bayesian multinomial test
-
-## Algorithm in R
-
-```         
-lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
-lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
-
-LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
-```
-
-Here, `alphas` defined the prior Dirichlet distribution, e.g., noninformative prior is a vector of $1$ s, `counts` are the observed frequencies.
-
-To use the algorithm in R, we defined a function here:
-
-```{r}
+## ------------------------------------------------------------------------------------------------
 BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior = TRUE, prior = NA){
   # datase - the input dataframe
   # factor - column name of the factor,
@@ -173,13 +112,9 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
               expected = expected))
   
 }
-```
 
 
-At this point, I have completed the loading packages and data. Next, I conducted data analysis and visualization according to the logic of the written protocol.
-# Overview of participants
-## The basic situation of Chinese journals coding data
-```{r warning=FALSE}
+## ----warning=FALSE-------------------------------------------------------------------------------
 Journal <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
   dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) ## valid 1628 rows
@@ -239,11 +174,9 @@ Journal_sample_size <- Journal %>%
 
 
 sum(Journal_sample_size$Sample_Size,na.rm = TRUE)  ## 555,098
-```
 
 
-Meanwhile, I process the special target population
-```{r}
+## ------------------------------------------------------------------------------------------------
 # Journal_special_population <- Journal %>% 
 #   dplyr::select(Article_IDs,Article_Title,Target_Population_N,Coding_Basis_N,Sample_Type_N) %>% 
 #   dplyr::filter(Target_Population_N == 1) %>% 
@@ -254,11 +187,9 @@ Meanwhile, I process the special target population
 
 Journal_special_target_population2 <- Journal_special_population %>% 
   dplyr::select(Article_IDs,Article_Title,`Disscu.&.Conclu`, ,Target_Population_N,Coding_Basis_N,Recode_target_population)
-```
 
 
-I try to classify special target population
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## college
 Journal_college_TP <- Journal_special_target_population2 %>% 
   dplyr::filter(grepl("大学生|研究生|大学新生",Recode_target_population)) %>% 
@@ -267,11 +198,9 @@ Journal_college_TP <- Journal_special_target_population2 %>%
   # dplyr::distinct(Article_IDs) ## 106
 
 # table(Journal_college_TP$Recode_target_population)
-```
 
 
-## The basic situation about BTS data
-```{r}
+## ------------------------------------------------------------------------------------------------
 BTS_Overview <- lapply(BTS,function(df){
   
   df <- df %>% 
@@ -305,11 +234,9 @@ writexl::write_xlsx(BTS_Overview2,"D://chin-subj//2_Data_Extraction//2_2_BTS//BT
 # ## n < 1000
 # BTS_n1000 <- BTS_Overview2 %>% 
 #   dplyr::filter(n < 1000)
-```
 
 
-## The reported situation of Chinese Journals
-```{r}
+## ------------------------------------------------------------------------------------------------
 Journal_report <- Journal %>% 
   dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
                 Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
@@ -382,12 +309,9 @@ Journal_report <- rbind(Journal_report,Journal_education_occupation_table) %>%
 Journal_report %>% 
   dplyr::group_by(col_names) %>% 
   dplyr::summarise(Prop = sum(proportion))
-```
 
 
-
-### Visualize subjects information reported situations in Chinese journals
-```{r}
+## ------------------------------------------------------------------------------------------------
 Fig_Journal_report <- ggplot(Journal_report,aes(col_names,proportion,fill=Var1))+
   geom_col()+
   labs(x="",y="%")+
@@ -409,12 +333,9 @@ ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\Fig_Journal_report.pdf",
 
 ## Here, I remove some data sets to reduce data set clutter.
 rm(report_list,report_table,i,Journal_education_occupation_report,Journal_education_occupation_table)
-```
 
 
-### Specific reports on some demographic categories
-Age
-```{r}
+## ------------------------------------------------------------------------------------------------
 Journal_age_report_detail <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Age,M_age,SD_age,Other_age) %>%
   dplyr::filter(Age == 1)
@@ -448,11 +369,9 @@ Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>%
 
 
 # writexl::write_xlsx(Journal, "Chin_Subj_articles_replaced.xlsx")
-```
 
 
-SES
-```{r}
+## ------------------------------------------------------------------------------------------------
 Journal_SES_report <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group,SES_N,SES_info_N) %>% 
   dplyr::filter(SES_N != 0)
@@ -471,16 +390,9 @@ Journal_SES_report_5 <- Journal_SES_report %>%
   dplyr::filter(SES_N == 5)  ## 10 studies
 
 # table(Journal_SES_report_studynum$ses_reported_ceta)  ## 0(261)
-```
 
 
-In this section, I tested the three main hypotheses of this study.
-# Test three hypotheses
-## Test the 1st hypothesis
-### Gender
-
-Process gender data from Chinese journals.
-```{r warning=FALSE}
+## ----warning=FALSE-------------------------------------------------------------------------------
 ## Filter for information-rich key variables
 Journal_key_variable <- Journal %>% 
   dplyr::select(Article_IDs,Study_Number,Subjects_Group_N,
@@ -554,12 +466,9 @@ Journal_gender_special <- Journal_gender2 %>%
                    Female_Proportion = Female_Num/(Male_Num + Female_Num)*100)
 
 sum(Journal_gender_special$Male_Proportion)+sum(Journal_gender_special$Female_Proportion)
-```
 
 
-infants and toddlers & special target population
-
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## Filter studies targeting infants/toddlers from "Journal_special_target_population2"
 Journal_gender_Infants_toddlers_TP <- Journal_special_target_population2 %>% 
   dplyr::select(Article_IDs,Article_Title,Recode_target_population) %>% 
@@ -595,19 +504,15 @@ Journal_gender_Infants_toddlers <- Journal_gender_Infants_toddlers_TP_IDs %>%
                    Female_Proportion = Female_Num/(Male_Num+Female_Num)*100) 
 
 sum(Journal_gender_Infants_toddlers$Male_Proportion)+sum(Journal_gender_Infants_toddlers$Female_Proportion)
-```
 
 
-Here, I remove some data sets to reduce data set clutter.
-```{r}
+## ------------------------------------------------------------------------------------------------
 rm(Journal_gender_decimal,Journal_gender_decimal2,
    Journal_gender_integer,Journal_gender_integer2,
    Journal_gender_integer_add,Journal_gender)
-```
 
 
-Process gender data from BTS.
-```{r}
+## ------------------------------------------------------------------------------------------------
 BTS_gender_list <- list()
 
 for(i in seq_along(BTS)) {
@@ -629,11 +534,9 @@ for(i in seq_along(BTS)) {
   } 
 
 }
-```
 
 
-Combine gender data from Chinese Journal and BTS.
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## Extracting Chinese data
 BTS_gender_CHN <- lapply(BTS_gender_list, function(df){
   
@@ -669,11 +572,9 @@ H1_gender_factor_general <- H1_gender_general %>%
 H1_gender_general <- H1_gender_general %>% 
   dplyr::mutate(Data_Source = factor(Data_Source,
                                      levels = H1_gender_factor_general))
-```
 
 
-Visualize gender data for Chinese journals and BTS.
-```{r}
+## ------------------------------------------------------------------------------------------------
 H1_Fig_gender_general <- ggplot(data = H1_gender_general,aes(Data_Source,Proportion,fill = Gender))+
   geom_col()+
   geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
@@ -689,15 +590,9 @@ H1_Fig_gender_general <- ggplot(data = H1_gender_general,aes(Data_Source,Proport
   xlab("Data source")
 
 H1_Fig_gender_general 
-```
 
-Here I tested whether the gender proportion distribution from Chinese five journal data are similar to that of the BTS data. I used Bayesian multinomial test (Bayesian goodness-of-fit test) to examine whether the observed (BTS data) fit the expected (Chinese five journal data).
 
-$H_0$: $\theta = c$, where $c$ is defined by Chinese five journal data; $H_1$: $\theta$ is free to vary.
-
-I compared the general population between the two.
-
-```{r}
+## ------------------------------------------------------------------------------------------------
 H1_gender_bayes_general <- H1_gender_general %>% 
   dplyr::select(1,3:4) %>% 
   tidyr::pivot_wider(names_from = Data_Source, values_from = Proportion)
@@ -706,13 +601,9 @@ H1_BF_gender_general <- BayesMultiNomial(dataset = H1_gender_bayes_general,
                                              factor = "Gender",
                                              observed = "BTS Chinese",
                                              expected = "Journal")
-```
-
-However, within the general population, I found there is no difference between BTS Chinese data and Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_general$BF$LogBF10`.
 
 
-In this part, I will analysis gender based on the special target population. For the first research question, only Lucca et al.(2024)' target population is special target population Specifically, it focuses on infants. Therefore, in specila target population, I will compare Lucca et al..(2024) with Chinese journal studies targeting infants/toddlers.
-```{r}
+## ------------------------------------------------------------------------------------------------
 Lucca_gender_special <- BTS[[19]] %>% 
   dplyr::filter(ISO2 == "CN") %>% 
   dplyr::group_by(Gender) %>% 
@@ -737,19 +628,13 @@ H1_BF_gender_special <-  BayesMultiNomial(dataset = H1_gender_bayes_special,
                                           factor = "Gender",
                                           observed = "Lucca",
                                           expected = "Journal")
-```
-In the special population of infants and toddlers, I did not find difference between Lucca et al. (2024) and Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_special$BF$LogBF10`.
 
 
-At the end of gender data processing for hypothesis 1, I removed some data sets to reduce data set clutter.
-```{r}
+## ------------------------------------------------------------------------------------------------
 rm(H1_gender_factor_general,i,BTS_name)
-```
 
 
-### Age
-Reprocess age data from Chinese journals.
-```{r warning=FALSE}
+## ----warning=FALSE-------------------------------------------------------------------------------
 Journal_age <- Journal_key_variable %>% 
   dplyr::select(-c(7:9,14:17)) %>%  ## not select gender, remake and subjects recruitment area
   dplyr::filter(Age == 1 & !is.na(Sample_Size)) %>% 
@@ -791,13 +676,9 @@ Journal_age2 <- bind_rows(Journal_strings_age_newdata,Journal_single_age,Journal
 
 
 sum(Journal_age2$Sample_Size)  ## 370426
-```
 
 
-Since raw data is not available for papers in Chinese journals, I simulated the raw data using the method used in the Stges 1 of registration report. It is then combined with BTS and compared with census data.
-
-First, I created a function that groups ages into five-year intervals for the purpose of creating a Population pyramid chart.
-```{r}
+## ------------------------------------------------------------------------------------------------
 Sim_Sens_mult_five <- function(Mean0, diff_age, SD0, sample_N=Sample_Size){
 
   
@@ -834,11 +715,9 @@ Sim_Sens_mult_five <- function(Mean0, diff_age, SD0, sample_N=Sample_Size){
 
   return(Sim_agefive_df)
 }
-```
 
 
-I then continued to use the same steps to divide age into psychological developmental stages.
-```{r}
+## ------------------------------------------------------------------------------------------------
 Sim_Sens_mult_PsyStages <- function(Mean1, diff_age, SD1, sample_N=Sample_Size){
   
   
@@ -857,11 +736,9 @@ Sim_Sens_mult_PsyStages <- function(Mean1, diff_age, SD1, sample_N=Sample_Size){
 
   return(Sim_agePsyStages_df)
 }
-```
 
 
-Meanwhile, I created func to process age data simulation in 10-year-old segment.
-```{r}
+## ------------------------------------------------------------------------------------------------
 Sim_Sens_mult_interval10 <- function(Mean2, diff_age2, SD2, sample_N2=Sample_Size){
 
   
@@ -884,13 +761,9 @@ Sim_Sens_mult_interval10 <- function(Mean2, diff_age2, SD2, sample_N2=Sample_Siz
   
   return(Sim_ageinterval10_df)
 }
-```
 
 
-In the following part, I will calculate other age data based on different target population.The first is general population.
-
-5-years-old
-```{r}
+## ------------------------------------------------------------------------------------------------
 Journal_age_general <-  Journal_age2 %>%
   dplyr::filter(Target_Population_N != 1)
 
@@ -925,11 +798,9 @@ Sim_Journal_age_five3_general <- Sim_Journal_age_five2_general %>%
 
 ## Calculate the sample difference between the coded data and the simulated data
 sum(Journal_age_general$Sample_Size)-sum(Sim_Journal_age_five3_general$sim1) 
-```
 
 
-PsyStages
-```{r}
+## ------------------------------------------------------------------------------------------------
 Sim_Journal_age_PsyStages1_general <- lapply(1:nrow(Journal_age_general),function(i){
   
   Sim_Sens_mult_PsyStages(Mean1 = Journal_age_general$M_age[i],
@@ -952,11 +823,9 @@ Sim_Journal_age_PsyStages3_general <- Sim_Journal_age_PsyStages2_general %>%
 
 ## Calculate the sample difference between the coded data and the simulated data
 sum(Journal_age_general$Sample_Size)-sum(Sim_Journal_age_PsyStages3_general$sim1,na.rm = TRUE)
-```
 
 
-interval10
-```{r}
+## ------------------------------------------------------------------------------------------------
 Sim_Journal_age_interval101_general <- lapply(1:nrow(Journal_age_general),function(i){
   
   Sim_Sens_mult_interval10(Mean2 = Journal_age_general$M_age[i],
@@ -983,13 +852,9 @@ Sim_Journal_age_interval103_general <- Sim_Journal_age_interval102_general %>%
 
 ## Calculate the sample difference between the coded data and the simulated data
 sum(Journal_age_general$Sample_Size)-sum(Sim_Journal_age_interval103_general$sim1,na.rm = TRUE)
-```
-
-As mentioned above, the special target population of BTS is only Lucca et al.(2024), its target population is babies, and there is no need to compare ages between BTS and Journals in age.
 
 
-Process age data from BTS.
-```{r}
+## ------------------------------------------------------------------------------------------------
 BTS_age_list <- list()
 
 for(i in seq_along(BTS)){
@@ -1026,11 +891,9 @@ BTS_age_list[[BTS_name]] <- BTS_age
 
 ## merge data.frame in list
 BTS_age <-  bind_rows(BTS_age_list)
-```
 
 
-I filter Chinese age data from BTS, and combine BTS CHN data with Journals data. Considering the different target population, I process all data firstly.
-```{r}
+## ------------------------------------------------------------------------------------------------
 BTS_age_general_CHN <- BTS_age %>% 
   dplyr::filter(ISO3 == "CHN" & (Target_Population == 2 | Target_Population == 3)) %>% 
   dplyr::count(ageBins) %>% 
@@ -1063,14 +926,9 @@ H1_age_general <- H1_age_general %>%
                                  "25~29","30~34","35~39","40~44","45~49",
                                  "50~54","55~59","60~64","65~69","70~74",
                                  "75~79","80~84","85~89", "90~94",">=95" )))
-```
 
 
-
-Visualize age data from Chinese journals and BTS.
-
-in general target population
-```{r}
+## ------------------------------------------------------------------------------------------------
 H1_Fig_age_general <- ggplot(data= H1_age_general, aes(x=ageBins, y=ifelse(Data_Source=="BTS Chinese", -Proportion, Proportion),fill = Data_Source)) +
   geom_col(alpha=0.8, width = 1) +
   coord_flip() +
@@ -1087,11 +945,9 @@ H1_Fig_age_general <- ggplot(data= H1_age_general, aes(x=ageBins, y=ifelse(Data_
 
 
 H1_Fig_age_general
-```
 
 
-Process age for Bayesian multinomial test. First of all, I processed BTS CHN age in psychological development stages.
-```{r}
+## ------------------------------------------------------------------------------------------------
 BTS_age_PsyStages_list <- list()
 
 for(i in seq_along(BTS)){
@@ -1120,11 +976,9 @@ BTS_age_PsyStages_list[[BTS_name]] <- BTS_age
 
 ## merge data.frame in list
 BTS_age_PsyStages <-  do.call(rbind,BTS_age_PsyStages_list)
-```
 
 
-Secondly, I processed BTS CHN age in 10-year-old segment.
-```{r}
+## ------------------------------------------------------------------------------------------------
 BTS_age_interval10_list <- list()
 
 for(i in seq_along(BTS)){
@@ -1153,12 +1007,9 @@ BTS_age_interval10_list[[BTS_name]] <- BTS_age
 
 ## merge data.frame in list
 BTS_age_interval10 <-  do.call(rbind,BTS_age_interval10_list)
-```
 
 
-And then, I filtered BTS CHN data.
-
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## psychological development stages in BTS
 ### psychological development
 BTS_age_PsyStages_CHN_general <- BTS_age_PsyStages %>% 
@@ -1180,11 +1031,9 @@ BTS_age_interval10_CHN_general <- BTS_age_interval10 %>%
                 Data_Source = "BTS Chinese") 
 
 sum(BTS_age_interval10_CHN_general$Proportion)
-```
 
 
-Next, I Combined two CHN data to Bayesian multinomial test in two different classifications (PsyStages and 10-year-old). One is PsyStages.
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## general population 
 H1_PsyStages_bayes_general <- Sim_Journal_age_PsyStages3_general %>% 
   dplyr::rename(n = 2) %>% 
@@ -1199,12 +1048,9 @@ H1_BF_PsyStages_general <- BayesMultiNomial(dataset = H1_PsyStages_bayes_general
                                           factor = "ageBins",
                                           observed = "BTS Chinese",
                                           expected = "Journal")
-```
-For age (Psychological stages) with general population, there is difference between BTS and Chinese papers, $Log(BF_{10})$ = `r H1_BF_PsyStages_general$BF$LogBF10`.
 
 
-The other is interval10.
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## general population 
 H1_interval10_bayes_general <- Sim_Journal_age_interval103_general %>% 
   dplyr::rename(n = 2) %>%
@@ -1222,15 +1068,9 @@ H1_BF_interval10_general <- BayesMultiNomial(dataset = H1_interval10_bayes_gener
                                           factor = "ageBins",
                                           observed = "BTS Chinese",
                                           expected = "Journal")
-```
 
 
-I also found extremely strong evidence support $H_1$ for another age category,the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_interval10_general$BF$LogBF10`.
-
-
-### attainment education
-Try to process educational attainment data from Chinese journal.
-```{r}
+## ------------------------------------------------------------------------------------------------
 # Journal_edu <- Journal %>% 
 #   dplyr::filter(Educational_Attainment_N == 1) %>% 
 #   dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,M_age,SD_age,
@@ -1260,11 +1100,9 @@ Journal_edu_general <- Journal_edu %>%
 
 Journal_edu_general_papersnum <- Journal_edu_general %>% 
   dplyr::distinct(Article_IDs)
-```
 
 
-In our study, educational attainment was categorized into three groups, and we processed the data for each group separately. The first group was defined by years of education, for which we reported the mean (M) and standard deviation (SD) in the paper. These descriptive statistics were then used to impute the sample sizes for the other two educational attainment groups (College and high school); subsequently, we merged the data of the first group with each of the latter two groups respectively, and finalized the subsequent analyses and data visualization.
-```{r}
+## ------------------------------------------------------------------------------------------------
 Journal_edu2_year <- Journal_edu_general %>% 
   dplyr::select(1:15) %>% 
   dplyr::filter(!is.na(M_edu_year) & !is.na(SD_edu_year)) %>% 
@@ -1319,11 +1157,9 @@ Journal_edu2_year_simul <- rbind(Journal_edu2_year_simul, data.frame(Article_IDs
                                        High_school_and_above = Highschool_and_above_count,
                                        Below_high_school = Highschool_below_count))
 }
-```
 
 
-The second category is 'college and above' and 'below college'.
-```{r}
+## ------------------------------------------------------------------------------------------------
 Journal_college <- Journal_edu_general %>% 
   dplyr::select(-c(5:9,12:15)) %>% 
   dplyr::filter(!is.na(College_and_above) & !is.na(Below_college))
@@ -1348,11 +1184,9 @@ Journal_college_decimal <- Journal_college  %>%
   dplyr::mutate(tab = College_and_above_tab + Below_college_tab) %>% 
   dplyr::summarise(College_and_above = sum(College_and_above_tab),
                    Below_college = sum(Below_college_tab)) 
-```
 
 
-The third category is 'high shcool and above' and 'below high school'
-```{R}
+## ------------------------------------------------------------------------------------------------
 Journal_high_school <- Journal_edu_general %>% 
   dplyr::select(4,12:13) %>% 
   dplyr::filter(!is.na(High_school_and_above) & !is.na(Below_high_school))
@@ -1377,11 +1211,9 @@ Journal_high_school_decimal <- Journal_high_school  %>%
   dplyr::mutate(tab = High_school_and_above_tab + Below_high_school_tab) %>% 
   dplyr::summarise(High_school_and_above = sum(High_school_and_above_tab),
                    Below_high_school = sum(Below_high_school_tab)) 
-```
 
 
-Combine education year with the other categories respectively.
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## combine college data
  Journal_college2 <-  bind_rows(Journal_college_decimal, Journal_college_integer) %>% 
   dplyr::add_row(College_and_above = 1, Below_college = 141) %>% 
@@ -1409,11 +1241,9 @@ Journal_high_school2  <-   bind_rows(Journal_high_school_integer,
                 Data_source = "Journal")  
 
 sum(Journal_high_school2$Proportion)
-```
 
 
-Now, in this part, I process chinese subjects' edu data of BTS
-```{r}
+## ------------------------------------------------------------------------------------------------
 # names(BTS_edu_list)
 BTS_edu_list2 <- BTS_edu_list[names(BTS_edu_list) != "BTS_Hall_et_al_2018"]
 
@@ -1426,11 +1256,9 @@ BTS_edu_CHN <- lapply(BTS_edu_list2,function(df_edu){
 })
 
 BTS_edu_CHN <- do.call(rbind,BTS_edu_CHN)
-```
 
 
-Classify educational attainment and calculate special num
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## calculate
 BTS_college_CHN <- BTS_edu_CHN %>%
   dplyr::filter(!is.na(College)) %>% 
@@ -1473,11 +1301,9 @@ H1_edu_highschool <- H1_edu_highschool %>%
                 Educational_attainment = factor(Educational_attainment,
                                                 levels = c( "High-school-or-above",
                                                             "Less-than-high-school")))
-```
 
 
-visulize the edu data
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## college
 H1_Fig_college <- ggplot(data = H1_edu_college,aes(Data_source,Proportion,fill = Educational_attainment))+
   geom_col()+
@@ -1520,14 +1346,9 @@ ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H1_Fig_gender_age_edu_general
        H1_Fig_gender_age_edu_general, device = "pdf", width=18, height = 18)
 
 H1_Fig_gender_age_edu_general
-```
 
 
-Here I tested whether the educatinal attainment proportion distribution from Chinese five journal data are similar to that of the BTS data.
-
-
-First, I calculate the first category: college.
-```{r}
+## ------------------------------------------------------------------------------------------------
 H1_edu_college_bayes <- H1_edu_college %>% 
   dplyr::select(1,3:4) %>% 
   tidyr::pivot_wider(names_from = Data_source, values_from = Proportion)
@@ -1537,13 +1358,9 @@ H1_BF_edu_college <- BayesMultiNomial(dataset = H1_edu_college_bayes,
                                       factor = "Educational_attainment",
                                       observed = "BTS Chinese",
                                       expected = "Journal")
-```
-
-I found moderate evidence for the $H_1$ that the college proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_college$BF$LogBF10`.
 
 
-and then, I continue processing the second category: high school.
-```{r}
+## ------------------------------------------------------------------------------------------------
 H1_edu_highschool_bayes <- H1_edu_highschool %>% 
   dplyr::select(1,3:4) %>% 
   tidyr::pivot_wider(names_from = Data_source, values_from = Proportion)
@@ -1553,21 +1370,9 @@ H1_BF_edu_highschool <- BayesMultiNomial(dataset = H1_edu_highschool_bayes,
                                       factor = "Educational_attainment",
                                       observed = "BTS Chinese",
                                       expected = "Journal")
-```
-
-Similarity, I also found very strong evidence for the $H_1$ that the high schools proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_highschool$BF$LogBF10`.
 
 
-## Test the 2nd hypothesis
-
-
-For hypothesis 2, I first tried to analyze the data in general. I would then compare certain demographic characteristics of the Chinese subjects in studies (BTS and Chinese journals) with those corresponding to Census data or other representative large general social surveys (e.g., CFPS2018) based on the target population.
-
-Firstly, I analyzed data in general.
-
-### Gender
-In this part, I processed gender data of the Census 6th, the Census 7th data, and the CFPS2018 data.
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## Process the gender data of census6
 Census6_gender <- df_census6 %>%
   dplyr::select(6:7) %>% 
@@ -1605,11 +1410,9 @@ CFPS2018_gender <- df_CFPS2018 %>%
   dplyr::select(Data_source, Gender, Proportion)
 
 sum(CFPS2018_gender$Proportion)
-```
 
 
-Secondly, I converted data format and combined three data sources.
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## Convert H1_gender data format
 H1_gender_general2 <- H1_gender_general %>% 
   dplyr::select(1:2) %>% 
@@ -1622,11 +1425,9 @@ H1_gender_general2 <- H1_gender_general %>%
 sum(H1_gender_general2$Proportion)
 
 H2_gender_general <- bind_rows(Census7_gender,CFPS2018_gender,H1_gender_general2)
-```
 
 
-And then, I combined all Chinese gender data and visualized them.
-```{r}
+## ------------------------------------------------------------------------------------------------
 H2_Fig_gender_general <- ggplot(H2_gender_general,aes(Data_source,Proportion,fill= Gender))+
   geom_col()+
   geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
@@ -1642,11 +1443,9 @@ H2_Fig_gender_general <- ggplot(H2_gender_general,aes(Data_source,Proportion,fil
 
 
 H2_Fig_gender_general
-```
 
 
-Finally, I calculated the bayes factor for gender.
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## general population
 H2_gender_bayes_general <- H2_gender_general %>% 
   dplyr::select(2,3,1) %>% 
@@ -1663,15 +1462,9 @@ H2_BF_gender_CFPS2018_general <- BayesMultiNomial(dataset = H2_gender_bayes_gene
                                           factor = "Gender",
                                           observed = "Chinese participants",
                                           expected = "CFPS2018")
-```
 
 
-The calculation results show that there is no difference between the data in Chinese participants and Census7 and CFPS2018, and the calculation results are: Census7 VS Chinese participants: $Log(BF_{10})$ = `r H2_BF_gender_Census7_general$BF$LogBF10` , CFPS2018 VS Chinese participants: $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_general$BF$LogBF10`
-
-
-In this part, I calculate data based on special target population
-I calculate preschool children.
-```{r}
+## ------------------------------------------------------------------------------------------------
 Journal_gender_preschool <- Journal_gender_Infants_toddlers_TP_IDs %>% 
   dplyr::summarise(Male_Num = sum(as.numeric(Male_Num)), ## 3832
                    Female_Num = sum(as.numeric(Female_Num))) ## 3598
@@ -1721,12 +1514,9 @@ H2_BF_gender_preschool_Census <- BayesMultiNomial(dataset = H2_gender_preschool_
                                                 factor = "Gender",
                                                 observed = "Chinese participants",
                                                 expected = "Census7")
-```
-Gender:Lucca vs Journal, $Log(BF_{10})$ = `r H2_BF_gender_preschool_Census$BF$LogBF10`. The result showed that moderate evidence in favor of $H_0$
 
 
-I calculate college
-```{r}
+## ------------------------------------------------------------------------------------------------
 Journal_college_TP_IDs <-  Journal_college_TP %>% 
   dplyr::pull(Article_IDs)
 
@@ -1766,15 +1556,9 @@ H2_BF_gender_college_special <- BayesMultiNomial(dataset = H2_gender_college_bay
                                                  factor = "Gender",
                                                  observed = "Journal",
                                                  expected = "Outline_Women")
-```
-
-In terms of gender, for the special target population of college students, we have found that there is no difference between Journal and the overall data of China (the Outline for Women's Development in China (2021-2030)),  $Log(BF_{10})$ = `r H2_BF_gender_college_special$BF$LogBF10`.
 
 
-
-### Age
-Similarly, for age data, I first processed the Census data and the CFPS2018 data.
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## Process age data of the census 6
 Census6_age_five5 <- df_census6 %>% 
   dplyr::filter(row_number() %% 6 == 0) %>%
@@ -1825,11 +1609,9 @@ Census7_age_five5 <- Census7_age_five5 %>%
                                  "75~79","80~84","85~89", "90~94",">=95" )))
 
 # sum(Census7_age_five5$Proportion) 100.02
-```
 
 
-Then, I convert the data format of H1_age.
-```{r}
+## ------------------------------------------------------------------------------------------------
 H2_age_general <- H1_age_general %>%
   dplyr::select(1:2) %>% 
   dplyr::group_by(ageBins) %>% 
@@ -1838,11 +1620,9 @@ H2_age_general <- H1_age_general %>%
   dplyr::ungroup()
 
 sum(H2_age_general$Proportion)
-```
 
 
-Finally, I visualized all Chinese age data and combined figure of gender and age.
-```{r}
+## ------------------------------------------------------------------------------------------------
 H2_Fig_age_general <- ggplot(data= Census7_age_five5, 
        aes(x=ageBins, y = Proportion, fill="Census7")) +
   geom_col(alpha=0.5, width = 1) +
@@ -1864,12 +1644,9 @@ H2_Fig_age_general <- ggplot(data= Census7_age_five5,
 
 
 H2_Fig_age_general
-```
 
 
-In addition, I calculated the bayes factor.
-process the data of Census 6th for exploration analyse.
-```{r}
+## ------------------------------------------------------------------------------------------------
 Census6_age <- df_census6 %>% 
   dplyr::rename(Age = 1, n = 2) %>% 
   dplyr::select(Age,n) %>% 
@@ -1909,10 +1686,9 @@ Census6_age_interval10 <- Census6_age %>%
 
 sum(Census6_age_interval10$Proportion)
 
-```
 
 
-```{r}
+## ------------------------------------------------------------------------------------------------
 # Firstly, I process Census data for the following analysis.
 ## process census data.
 Census7_age <- df_census7 %>%
@@ -2000,15 +1776,9 @@ H2_BF_age_interval10_general <- BayesMultiNomial(dataset = H2_age_inteval10_baye
                               factor = "ageBins",
                               observed = "Chinese participants",
                               expected = "Census7")
-```
 
 
-For age within general population, I found the Bayesian multinomial test shows extremely strong evidence in foavor of $H_1$. PsyStages and interval10 are $Log(BF_{10})$ = `r H2_BF_age_Psystages_general$BF$LogBF10` and interval10: $Log(BF_{10})$ = `r H2_BF_age_interval10_general$BF$LogBF10` respectively.
-
-
-### Educational attainment
-Load and process the edu data of census 7th
-```{r}
+## ------------------------------------------------------------------------------------------------
 Census7_edu_adults <- Census7_edu %>% 
   dplyr::slice(c(3,4,29,30,32,39,46,53,60,67,74,81,88,95,102,109,116,123)) %>% 
   dplyr::select(1,2,5,8,11,14,17,20,23,26,29) %>% 
@@ -2042,11 +1812,9 @@ Census7_high_school <- Census7_edu_adults %>%
                 Data_source = "Census7")
 
 sum(Census7_high_school$Proportion)
-```
 
 
-receive edu data of CFPS2018
-```{r}
+## ------------------------------------------------------------------------------------------------
 CFPS2018_edu <- df_CFPS2018 %>% 
   dplyr::filter(W01 > -1) %>% 
   dplyr::group_by(W01) %>% 
@@ -2080,11 +1848,9 @@ CFPS2018_edu_high_school <- data.frame(Educational_attainment = c("Less-than-hig
 
 
 sum(CFPS2018_edu_high_school$Proportion) 
-```
 
 
-Combine multiple edu data
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## College
 Chinese_subjects_pools_edu_college <- H1_edu_college %>%
   dplyr::select(-3) %>%
@@ -2117,11 +1883,9 @@ H2_edu_highschool <- bind_rows(Chinese_subjects_pools_edu_highschool,
                                Census7_high_school,CFPS2018_edu_high_school)  %>%
   dplyr::mutate(Data_source = factor(Data_source,
                                      levels = c("Census7","CFPS2018","Chinese participants")))
-```
 
 
-And visualization
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## college
 H2_Fig_college <- ggplot(data = H2_edu_college,aes(Data_source,Proportion,fill = Educational_attainment))+
   geom_col()+
@@ -2171,11 +1935,9 @@ ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H2_Fig_gender_age_edu_general
        H2_Fig_gender_age_edu_general, device = "pdf", width=18, height = 18)
 
 H2_Fig_gender_age_edu_general
-```
 
 
-Calculate the BF of edu
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## college
 H2_edu_college_bayes <- H2_edu_college %>% 
   dplyr::select(1,3:4) %>% 
@@ -2209,19 +1971,9 @@ H2_BF_edu_highschool_CFPS2018 <- BayesMultiNomial(dataset = H2_edu_highschool_ba
                                           factor = "Educational_attainment",
                                           observed = "Chinese participants",
                                           expected = "CFPS2018")
-```
-I found all results show extremely evidence support $H_1$. 
-
-College: Census7($Log(BF_{10})$ = `r H2_BF_edu_college_Census7$BF$LogBF10`), CFPS2018($Log(BF_{10})$ = `r H2_BF_edu_college_CFPS2018$BF$LogBF10`)
-High school: Census7($Log(BF_{10})$ = `H2_BF_edu_highschool_Census7$BF$LogBF10`), CFPS2018($Log(BF_{10})$ = `r H2_BF_edu_highschool_CFPS2018$BF$LogBF10`)
 
 
-### Region
-As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals.
-
-
-Create a vector of China's four economic regions, with data sourced from the National Bureau of Statistics of China. The four regions are Central, Eastern, Western, and Northeastern.
-```{r}
+## ------------------------------------------------------------------------------------------------
 Central_China4 <- c("山西","安徽","江西","河南","湖北","湖南")
 
 East_China4 <- c("北京","天津","河北","上海","江苏","浙江","福建","山东","广东","海南")
@@ -2234,11 +1986,9 @@ China_region_four <- tibble(Region = c(Central_China4, East_China4,
                                         West_China4, Northeast_China4),
                              Region_four = c(rep("Central China", 6), rep("East China", 10),
                                         rep("West China", 12),rep("Northeast China", 3)))
-```
 
 
-We also create a vector of China's seven regions.
-```{r}
+## ------------------------------------------------------------------------------------------------
 China_region_seven <-  tibble(
   Region = c("北京", "天津", "河北", "山西", "内蒙古",
               "上海", "江苏", "浙江", "安徽", "福建", "江西", "山东",
@@ -2254,24 +2004,18 @@ China_region_seven <-  tibble(
              rep("Southwest China", 5),
              rep("Northwest China", 5),
              rep("Northeast China", 3)))
-```
 
 
-Create a vector of all China' province
-```{r}
+## ------------------------------------------------------------------------------------------------
 China_province <- c("新疆","西藏","甘肃","青海","内蒙古",
                     "宁夏","四川","重庆","陕西","贵州","云南",
                     "北京","山西","河北","河南","湖北","湖南",
                     "广西","广东","香港","澳门","台湾","海南",
                     "黑龙江","吉林","辽宁","天津","山东","江苏",
                     "安徽","上海","浙江","江西","福建")
-```
 
 
-The data is processed when the target population is the general population.
-
-single region
-```{r warning=FALSE}
+## ----warning=FALSE-------------------------------------------------------------------------------
 Journal_region_single <- Journal %>% 
    dplyr::select(3,5,7,37,40,16,30) %>% 
    dplyr::mutate(Subjects_Recruitment_Area = gsub("[;；、，,]",";",Subjects_Recruitment_Area),
@@ -2294,11 +2038,9 @@ Journal_region_single_general_tab <- Journal_region_single %>%
    dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
    dplyr::group_by(Subjects_Recruitment_Area) %>% 
    dplyr::summarise(n = sum(Sample_Size))
-```
 
 
-multiple regions
-```{r}
+## ------------------------------------------------------------------------------------------------
 # Journal_region_multiple <- Journal %>% 
 #    dplyr::select(3,5,7,37,40,16,30) %>% 
 #    dplyr::mutate(Subjects_Recruitment_Area = gsub("[;；、，,]",";",Subjects_Recruitment_Area)) %>% 
@@ -2323,11 +2065,9 @@ Journal_region_multiple_general_tab <-   Journal_region_multiple %>%
   dplyr::select(Sample_Size,Subjects_Recruitment_Area) %>% 
   dplyr::rename(n = Sample_Size)
 
-```
 
 
-combine two data
-```{r}
+## ------------------------------------------------------------------------------------------------
 Journal_region_general_tab <-bind_rows(Journal_region_single_general_tab,
                                        Journal_region_multiple_general_tab) %>% 
   dplyr::group_by(Subjects_Recruitment_Area) %>% 
@@ -2345,11 +2085,9 @@ Journal_region_general_tab2 <- Journal_region_general_tab %>%
   dplyr::rename(Region = 1)
 
 sum(Journal_region_general_tab2$n) #44029
-```
 
 
-convert Journal data into four regions and seven regions
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## four regions
 Journal_region_four <- merge(Journal_region_general_tab2,China_region_four,
                               by = "Region") %>% 
@@ -2364,11 +2102,9 @@ Journal_region_seven <- merge(Journal_region_general_tab2,China_region_seven,
   dplyr::select(1,2,6) %>% 
   dplyr::group_by(Region_seven) %>% 
   dplyr::summarise(Journal_n=sum(n)) 
-```
 
 
-The second step, I processed of provincial distribution of population for census7.
-```{r message=FALSE, warning=FALSE, include=FALSE}
+## ----message=FALSE, warning=FALSE, include=FALSE-------------------------------------------------
 Census7_region <- Census7_region %>% 
   dplyr::select(1,5) %>% 
   dplyr::rename(Region = 1, n = 2) %>% 
@@ -2392,11 +2128,9 @@ Census7_region$Region <- gsub(" ", "", Census7_region$Region)
 
 sum(Census7_region$n) #1,441,497,378
 sum(Census7_region$Proportion) ## 100
-```
 
 
-convert Census7 data into four regions and seven regions
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## four regions
 Census7_region_four <- merge(Census7_region,China_region_four,by = "Region") %>%
   dplyr::select(1,2,6) %>% 
@@ -2409,11 +2143,9 @@ Census7_region_seven <- merge(Census7_region,China_region_seven,by= "Region") %>
   dplyr::select(1,2,6) %>% 
   dplyr::group_by(Region_seven) %>% 
   dplyr::summarise(Census7_n=sum(n)) 
-```
 
 
-The third step, I processed of provincial distribution of population for CFPS2018.
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## process CFPS2018 province data
 CFPS2018_region <- data.frame(table(df_CFPS2018$PROVCD18)) %>% 
   dplyr::rename(Region = 1,n=2) %>% 
@@ -2430,11 +2162,9 @@ CFPS2018_region <- data.frame(table(df_CFPS2018$PROVCD18)) %>%
 
 sum(CFPS2018_region$Proportion) 
 
-```
 
 
-Convert CFPS2018 into four regions and seven regions
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## four regions
 CFPS2018_region_four <- merge(CFPS2018_region,China_region_four,by = "Region") %>%
   dplyr::select(1,2,6) %>% 
@@ -2447,11 +2177,9 @@ CFPS2018_region_seven <- merge(CFPS2018_region,China_region_seven,by = "Region")
   dplyr::select(1,2,6) %>% 
   dplyr::group_by(Region_seven) %>% 
   dplyr::summarise(CFPS2018_n=sum(n))
-```
 
 
-Visualize four region
-```{r}
+## ------------------------------------------------------------------------------------------------
 H2_region_four <- full_join(Journal_region_four,Census7_region_four,
                             by = "Region_four") %>% 
   dplyr::full_join(CFPS2018_region_four,by = "Region_four") %>% 
@@ -2487,11 +2215,9 @@ H2_Fig_region_four <- ggplot(data = H2_region_four2, aes(x = `Data Source`, y = 
   guides(fill = guide_legend(ncol = 2))
 
 H2_Fig_region_four
-```
 
 
-Visualize seven region
-```{r}
+## ------------------------------------------------------------------------------------------------
 H2_region_seven <- full_join(Journal_region_seven,Census7_region_seven,
                              by = "Region_seven") %>% 
   dplyr::full_join(CFPS2018_region_seven,by = "Region_seven") %>% 
@@ -2542,12 +2268,9 @@ H2_Fig_major_region
 ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H2_Fig_major_region.pdf",
        H2_Fig_major_region, device = "pdf", width= 15, height = 9)
 
-```
 
 
-And then, I will visualize the map for the region data of Chinese subjects
-Combine all region data and load color data
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## combine region data
 Region_map_data <-  bind_rows(Census7_region,CFPS2018_region,
                               Journal_region_general_tab2)
@@ -2567,11 +2290,9 @@ Region_data <- dplyr::left_join(Region_map_data,Region_map_color,by = join_by(Re
                 Color = factor(Color, levels = c("1", "2", "3", "4"))) %>% 
   tidyr::pivot_wider(names_from = Data_Source,values_from = c(Proportion, Count_Bins,n,Color)) %>% 
   dplyr::mutate(across(3:ncol(.),~ifelse(is.na(.),0,.)))
-```
 
 
-Finally, I visualized geographic distribution and calculated Bayesian multinomial test for region.
-```{r}
+## ------------------------------------------------------------------------------------------------
 API_pre <-  "http://xzqh.mca.gov.cn/data/"
 ## 读取全国数据
 China <-  st_read(dsn = paste0(API_pre, "quanguo.json"), stringsAsFactors=FALSE) 
@@ -2658,11 +2379,9 @@ ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H2_Fig_region.pdf",
        H2_Fig_region, device = "pdf", width=10, height = 15)
 
 H2_Fig_region 
-```
 
 
-BF four region
-```{r}
+## ------------------------------------------------------------------------------------------------
 Journal_region_four <- Journal_region_four %>% 
   dplyr::rename(n = 2) %>% 
   dplyr::mutate(Data_source = "Journal")
@@ -2703,13 +2422,9 @@ H2_BF_Journal_CFPS2018_region_four <- BayesMultiNomial(dataset = H2_region_four_
                                           factor = "Region_four",
                                           observed = "Journal",
                                           expected = "CFPS2018")
-```
-four regions: Journal vs Census7,$Log(BF_{10})$ =`r H2_BF_Journal_Census7_region_four$BF$LogBF10`
-four regions: Journal vs CFPS2018,$Log(BF_{10})$ =`r H2_BF_Journal_CFPS2018_region_four$BF$LogBF10`
 
 
-BF seven region
-```{r}
+## ------------------------------------------------------------------------------------------------
 Journal_region_seven <- Journal_region_seven %>% 
   dplyr::rename(n = 2) %>% 
   dplyr::mutate(Data_source = "Journal")
@@ -2745,15 +2460,9 @@ H2_BF_Journal_CFPS2018_region_seven <- BayesMultiNomial(dataset = H2_region_seve
                                           factor = "Region_seven",
                                           observed = "Journal",
                                           expected = "CFPS2018")
-```
-seven regions: Journal vs Census7,$Log(BF_{10})$ =`r H2_BF_Journal_Census7_region_seven$BF$LogBF10`
-seven regions: Journal vs CFPS2018,$Log(BF_{10})$ =`r H2_BF_Journal_CFPS2018_region_seven$BF$LogBF10`
 
 
-## Test the 3rd hypothesis
-### Gender
-As with the first two hypotheses, I dealt with gender data first.
-```{r}
+## ------------------------------------------------------------------------------------------------
 BTS_gender_allcountry <- lapply(BTS_gender_list, function(df){
   
   df %>% 
@@ -2818,11 +2527,9 @@ H3_gender <- H3_BTS_Journal_gender_prop %>%
   dplyr::mutate(ISO3 = factor(ISO3,levels = H3_BTS_Journal_gender_factor)) %>% 
   dplyr::filter(!is.na(ISO3)) %>% 
   dplyr::rename(Sex = 2)
-```
 
 
-and I visualized gender data.
-```{r}
+## ------------------------------------------------------------------------------------------------
 H3_Fig_gender <- ggplot(H3_gender, aes(x=Proportion, y=ISO3,fill=Sex)) +
   geom_col(alpha = .75)+
   labs(y="Countries/Regions") + 
@@ -2855,11 +2562,9 @@ H3_female_more60 <- H3_gender %>%
 H3_male_more60 <- H3_gender %>% 
   dplyr::filter(Sex == "Male") %>% 
   dplyr::filter(Proportion > 60)
-```
 
 
-Secondly, I processed age data. Similarity, I processed age data in two classification. The one is PsyStages.
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## filter > 30
 BTS_Psystages_allcountry_filter <-  BTS_age_PsyStages %>% 
   dplyr::filter(Article_Id != "Lucca_et_al_2024") %>%  ## filter target population is a and 3
@@ -2919,11 +2624,9 @@ H3_PsyStages2 <- H3_PsyStages %>%
 H3_PsyStages2_more60 <- H3_PsyStages2 %>% 
   dplyr::filter(`Age bins` == "18~25") %>% 
   dplyr::filter(Proportion > 60)
-```
 
 
-And I visualized age data (PsyStages) for all countries in BTS.
-```{r}
+## ------------------------------------------------------------------------------------------------
 H3_Fig_PsyStages <- ggplot(H3_PsyStages2, aes(x=Proportion, y=ISO3, fill=`Age bins`)) +
   geom_col(alpha = .75)+
   labs(y="Countries/Regions") + 
@@ -2942,11 +2645,9 @@ H3_Fig_PsyStages <- ggplot(H3_PsyStages2, aes(x=Proportion, y=ISO3, fill=`Age bi
 
 
 H3_Fig_PsyStages
-```
 
 
-The other is 10-year-old.
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## Filter > 30
 BTS_interval10_allcountry_filter <-  BTS_age_interval10 %>% 
   dplyr::filter(Article_Id != "Lucca_et_al_2024") %>%  ## filter target population is a and 3
@@ -3006,11 +2707,9 @@ H3_interval10_max_agebins <-  H3_interval10 %>%
   dplyr::filter(Rank == 1) 
 
 # table(H3_interval10_max_agebins$ageBins)
-```
 
 
-and I visualized age data (interval10) of all countries in BTS.
-```{r}
+## ------------------------------------------------------------------------------------------------
 H3_Fig_interval10 <- ggplot(H3_interval10, aes(x=Proportion, y=ISO3, fill=`Age bins`)) +
   geom_col(alpha = .75)+
   labs(y="Countries/Regions") + 
@@ -3029,11 +2728,9 @@ H3_Fig_interval10 <- ggplot(H3_interval10, aes(x=Proportion, y=ISO3, fill=`Age b
 
 
 H3_Fig_interval10
-```
 
 
-After the visualization of complete, I calculated BF. Firstly I defined a function to calculating BF for multiple countries.
-```{r}
+## ------------------------------------------------------------------------------------------------
 # create a new variable to store the BF values
 Func_BFpairs <- function(df, countries_order, prop_name){
   
@@ -3068,11 +2765,9 @@ Func_BFpairs <- function(df, countries_order, prop_name){
   
   return(BF_mult_p_tmp)
 }
-```
 
 
-Secondly , I calculated gender BF and visualized gender BF.
-```{r message=FALSE, warning=FALSE}
+## ----message=FALSE, warning=FALSE----------------------------------------------------------------
 H3_BF_gender <- H3_gender %>% 
   dplyr::select(ISO3,Sex,Proportion) %>% 
   dplyr::rename(Countries = 1)
@@ -3103,10 +2798,9 @@ H3_BF_gender_supportH1 <- H3_BF_gender %>%
 H3_gender_different <- H3_gender %>% 
   dplyr::filter(ISO3 %in% H3_BF_gender_supportH1$Observed) %>% 
   dplyr::filter(Sex == "Female")
-```
 
 
-```{r warning=FALSE}
+## ----warning=FALSE-------------------------------------------------------------------------------
 H3_Fig_BF_gender <- ggplot(H3_BF_gender, aes( x = `Log(BF10)_NonInform`, y = `Countries/Regions`)) +
   geom_point() +
   scale_color_grey() +
@@ -3142,13 +2836,9 @@ H3_Fig_BF_gender <- ggplot(H3_BF_gender, aes( x = `Log(BF10)_NonInform`, y = `Co
 
 
 H3_Fig_BF_gender
-```
 
 
-Third, I calculted age BF in two classification. In this part, I calculated BF for this two categories.
-
-PsyStages
-```{r}
+## ------------------------------------------------------------------------------------------------
 ## PsyStages
 H3_BF_PsyStages <- H3_PsyStages2 %>% 
   dplyr::select(ISO3,`Age bins`,Proportion) %>%
@@ -3178,11 +2868,9 @@ H3_BF_PsyStages <- H3_BF_PsyStages %>%
 ## moderate evidence support H0
 H3_BF_PsyStages_supportH0 <- H3_BF_PsyStages %>% 
   dplyr::filter(`Log(BF10)_NonInform` < log(1/6))
-```
 
 
-interval10
-```{r}
+## ------------------------------------------------------------------------------------------------
 H3_BF_interval10  <- H3_interval10 %>% 
   dplyr::select(ISO3,`Age bins`,Proportion) %>% 
   dplyr::rename(Countries = 1)
@@ -3211,11 +2899,9 @@ H3_BF_interval10 <- H3_BF_interval10 %>%
 H3_BF_interval10_supportH0 <- H3_BF_interval10 %>% 
   dplyr::filter(`Log(BF10)_NonInform` < log(1/6))
 
-```
 
 
-and I visualized PsyStages BF at first.
-```{r warning=FALSE}
+## ----warning=FALSE-------------------------------------------------------------------------------
 H3_Fig_BF_PsyStages <- ggplot(H3_BF_PsyStages, aes( x = `Log(BF10)_NonInform`, 
                                                     y = `Countries/Regions`)) +
   geom_point() +
@@ -3251,11 +2937,9 @@ H3_Fig_BF_PsyStages <- ggplot(H3_BF_PsyStages, aes( x = `Log(BF10)_NonInform`,
               axis.line.y = element_line(color='black', size = 1))
 
 H3_Fig_BF_PsyStages
-```
 
 
-Then I visualized another category.
-```{r warning=FALSE}
+## ----warning=FALSE-------------------------------------------------------------------------------
 H3_Fig_BF_interval10 <- ggplot(H3_BF_interval10, 
                             aes( x = `Log(BF10)_NonInform`, y = `Countries/Regions`)) +
   geom_point() +
@@ -3291,11 +2975,9 @@ H3_Fig_BF_interval10 <- ggplot(H3_BF_interval10,
               axis.line.y = element_line(color='black', size = 1))
 
 H3_Fig_BF_interval10
-```
 
 
-Finally, I combined the these fig, as well as the figure that suppl document.
-```{r warning=FALSE}
+## ----warning=FALSE-------------------------------------------------------------------------------
 ## gender
 H3_Fig_gender2 <- H3_Fig_BF_gender + H3_Fig_gender +
   plot_annotation(tag_levels = 'A')  & 
@@ -3329,11 +3011,9 @@ ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H3_Fig_age_suppl.pdf",
 
 
 H3_Fig_age_suppl 
-```
 
 
-In this part, I Will compare the special subpopulation. as above description, only Lucca et al.(2018).
-```{r warning=FALSE}
+## ----warning=FALSE-------------------------------------------------------------------------------
 H3_Lucca_gender <- do.call(rbind, (BTS[names(BTS) == "BTS_Lucca_et_al_2024"]))
 
 
@@ -3388,11 +3068,9 @@ H3_Lucca_gender_Journal2 <- H3_Lucca_gender_Journal %>%
 H3_Lucca_gender_Journal2_more_China <- H3_Lucca_gender_Journal2 %>% 
   dplyr::filter(Sex == "Female") %>%  ## the prop female of China is 53.54
   dplyr::filter(Proportion > 48.34843)
-```
 
 
-and then,we visualzie the prop data
-```{r}
+## ------------------------------------------------------------------------------------------------
 H3_Fig_Lucca_gender <- ggplot(H3_Lucca_gender_Journal2,aes(x=Proportion, y=ISO3, fill = Sex))+
   geom_col(alpha = 0.75)+
   labs(y="Countries/Regions") + 
@@ -3409,11 +3087,9 @@ H3_Fig_Lucca_gender <- ggplot(H3_Lucca_gender_Journal2,aes(x=Proportion, y=ISO3,
 
 H3_Fig_Lucca_gender
   
-```
 
 
-next, I calculate gender BF and visualize it
-```{r warning=FALSE}
+## ----warning=FALSE-------------------------------------------------------------------------------
 H3_BF_Lucca_gender <- H3_Lucca_gender_Journal %>% 
   dplyr::select(ISO3,Gender,Proportion) %>% 
   dplyr::rename(Countries = 1)
@@ -3473,4 +3149,4 @@ ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H3_Fig_Lucca.pdf",
        H3_Fig_Lucca, device = "pdf", width=18, height = 9)
 
 H3_Fig_Lucca
-```
+

@@ -23,24 +23,18 @@
 |---------2_1_3_Article_Download
 |---------2_1_4_Code_Manual
 |---------2_1_5_Extract_Data
-|---------2_1_6_Data_Analysis
 |------2_2_BTS_Data
 |
 |---3_Data_Analysis
+|------3_1_Intermediate_Data
+|------3_2_Image
 |------About_Data_Analysis.txt
 |
 |---4_Reports
 |-------About_Reports.txt
 |-------4_1_Project_reports [slides]
 |-------4_2_Conference1__NACP2023
-|-------4_3_Conference2
-|-------4_4_Stage2_Report
-|
-|---5_Others
-|------About_Others.txt
-|------5_1_Meeting_Video
-|------5_2_Meeting_Slide
-|------5_3_Gourp_People_Info
+|-------4_3_Conference2_BTSCON2025
 
 - Software required to open or run any of the shared files
 This project used R 4.1.1 and JASP 16.0 for data analysis and visualization.

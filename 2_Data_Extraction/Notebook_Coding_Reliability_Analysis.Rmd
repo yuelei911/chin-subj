@@ -18,23 +18,49 @@ pacman::p_load("tidyverse","rio","here","tidyr","irr")
 First, I calculated the consistency of Chinese journal coding, and then the consistency of BTS coding.
 ## Load Chinese Journal data
 ```{r warning=FALSE}
+## load coidng stage data
+
 file_list <- list.files(
-  here("C:/Users/ynian/Desktop/Stage_2_Code_Data"),
+  here("D:\\chin-subj\\2_Data_Extraction\\2_1_CHN_Journal_Code\\2_1_5_Extract_Data\\2_2_5_1_Article_Coding"),
   pattern = ".xlsx",
   full.names = TRUE, recursive = TRUE)
 
-df <- rio::import_list(file_list) 
+coding <- rio::import_list(file_list) 
 
  
-df <-   df[grepl("Group",names(df),ignore.case = TRUE)]
+coding  <-  coding[grepl("CE",names(coding),ignore.case = TRUE)]
 
 
-df <- lapply(df, function(df) {  
-  df[] <- lapply(df, as.character)  
-  return(df)  
+coding <- lapply(coding, function(coding) {  
+  coding[] <- lapply(coding, as.character)  
+  return(coding)  
 })
 
 rm(file_list)
+
+
+## load profreading stage data
+
+file_list <- list.files(
+  here("D:\\chin-subj\\2_Data_Extraction\\2_1_CHN_Journal_Code\\2_1_5_Extract_Data\\2_2_5_2_Article_Proofreading"),
+  pattern = ".xlsx",
+  full.names = TRUE, recursive = TRUE)
+
+Proofreading <- rio::import_list(file_list) 
+
+ 
+Proofreading  <- Proofreading[grepl("CE",names(Proofreading),ignore.case = TRUE)]
+
+
+Proofreading <- lapply(Proofreading, function(Proofreading) {  
+  Proofreading[] <- lapply(Proofreading, as.character)  
+  return(Proofreading)  
+})
+
+rm(file_list)
+
+## combine list
+df <- c(coding,Proofreading)
 ```
 
 
@@ -203,7 +229,7 @@ Group3_bind <- bind_rows(Group3_bind,Group3_suppl)
 
 ## load the replaced article data
 ```{r}
-Relaced_articles <- readxl::read_xlsx("Chin_Subj_articles_replaced_CE.xlsx") %>% 
+Relaced_articles <- readxl::read_xlsx("D:\\chin-subj\\2_Data_Extraction\\2_1_CHN_Journal_Code\\2_1_5_Extract_Data\\2_5_5_3_Article_Replaced\\Chin_Subj_articles_replaced_CE.xlsx") %>% 
   dplyr::select(-rows) %>% 
   dplyr::filter(Coder != "check")
 
@@ -234,7 +260,7 @@ Journal_Coder2 <- Journal_CE[seq(2,nrow(Journal_CE), by = 3), ]
 ## process Coder NA
 ```{r}
 Journal_Coder1 <- Journal_Coder1 %>%
-  dplyr::mutate(rownum = 1:1749) %>% 
+  dplyr::mutate(rownum = 1:1750) %>% 
   dplyr::select(rownum,Coder,Article_IDs_N,Study_Number_N,Subjects_Group_N,
                 Abstract1,Abstract2,
                 Sample_Size,Gender,Male_Num,Female_Num,
@@ -247,7 +273,7 @@ Journal_Coder1 <- Journal_Coder1 %>%
 
 
 Journal_Coder2 <- Journal_Coder2 %>% 
-  dplyr::mutate(rownum = 1:1749) %>% 
+  dplyr::mutate(rownum = 1:1750) %>% 
   dplyr::select(rownum,Coder,Article_IDs_N,Study_Number_N,Subjects_Group_N,
                 Abstract1,Abstract2, 
                 Sample_Size,Gender,Male_Num,Female_Num,
