@@ -1,11 +1,5 @@
 *.csv
-*.sas*
-._*
 *.Rproj.user
-*/.Rproj.user
 .RData
 .Rhistory
-.Rproj.user
-Diversity-PsychSci-2-14_1.xls
-!Rad_2018_suppl.csv
-2_Data_Extraction/2_1_CHN_Journal_Code/2_1_3_Article_Download/
+2_Data_Extraction/2_1_CHN_Journal_Code/2_1_3_Article_Download/*.pdf
