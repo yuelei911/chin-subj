@@ -1,14 +1,1 @@
-This folder contains all the data of Chinese psychological journal articles related information and the data of large-scale international collaboration projects (BTS). Including the following:
-1. Article numbering principles and numbering results
-
-2. Article sampling code and results
-
-3. All target articles (PDF)
-
-4. Coding manual
-
-5. Articles' extract data
-
-6. The data manual and raw data of BTS.
-
-7. Analysis of CHN Journal and BTS 
+This folder contains all the data of Chinese psychological journal articles related information and the data of large-scale international collaborative projects (BTS). 

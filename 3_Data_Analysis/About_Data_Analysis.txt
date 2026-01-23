@@ -1,1 +1,1 @@
-This folder file includes Stage2 analysis data and code. This data and analysis is the overall data and analysis code after combining CHN Journal data and BTS data
+This folder file includes Stage2 analysis data and code. 

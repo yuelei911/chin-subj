@@ -239,13 +239,6 @@ Journal_sample_size <- Journal %>%
 
 
 sum(Journal_sample_size$Sample_Size,na.rm = TRUE)  ## 555,098
-
-## Here, I remove some data sets to reduce data set clutter.
-# rm(Journal_articles_num,Journal_study_num,df_stage2_Journal_Code2)
-
-
-## Save Journal to explore analysis
-save(Journal, file ="Journal.Rdata")
 ```
 
 
@@ -261,11 +254,6 @@ Meanwhile, I process the special target population
 
 Journal_special_target_population2 <- Journal_special_population %>% 
   dplyr::select(Article_IDs,Article_Title,`Disscu.&.Conclu`, ,Target_Population_N,Coding_Basis_N,Recode_target_population)
-
-
-## Save the special target population for exploration analyse
-
-# save(Journal_special_target_population2,file =  "Journal_special_target_population2.RData")
 ```
 
 
@@ -1240,12 +1228,6 @@ H1_BF_interval10_general <- BayesMultiNomial(dataset = H1_interval10_bayes_gener
 I also found extremely strong evidence support $H_1$ for another age category,the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_interval10_general$BF$LogBF10`.
 
 
-In addition, I attempt to conduct an exploratory analysis on Hypothesis 3 using four age groups (<18, 18~40, 41~60, >61). Therefore, I will save the following age data.
-```{r}
-save(Journal_age2,BTS,WEIRD,file = "H3_age_exploration.RData")
-```
-
-
 ### attainment education
 Try to process educational attainment data from Chinese journal.
 ```{r}
@@ -1685,12 +1667,6 @@ H2_BF_gender_CFPS2018_general <- BayesMultiNomial(dataset = H2_gender_bayes_gene
 
 
 The calculation results show that there is no difference between the data in Chinese participants and Census7 and CFPS2018, and the calculation results are: Census7 VS Chinese participants: $Log(BF_{10})$ = `r H2_BF_gender_Census7_general$BF$LogBF10` , CFPS2018 VS Chinese participants: $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_general$BF$LogBF10`
-
-
-save gender data for exploration analyse
-```{r}
-save(H1_gender_general,H2_gender_general,Census6_gender,file = "H2_gender_exploration.Rdata") ## data include papers, projects, and Census data.
-```
 
 
 In this part, I calculate data based on special target population
@@ -2239,17 +2215,6 @@ I found all results show extremely evidence support $H_1$.
 College: Census7($Log(BF_{10})$ = `r H2_BF_edu_college_Census7$BF$LogBF10`), CFPS2018($Log(BF_{10})$ = `r H2_BF_edu_college_CFPS2018$BF$LogBF10`)
 High school: Census7($Log(BF_{10})$ = `H2_BF_edu_highschool_Census7$BF$LogBF10`), CFPS2018($Log(BF_{10})$ = `r H2_BF_edu_highschool_CFPS2018$BF$LogBF10`)
 
-Save the data so that I can compare the data from large-scale international cooperation projects and Chinese journals respectively with the census data and data from CFPS.
-```{r}
-save(H1_age_general,H1_PsyStages_bayes_general,H1_interval10_bayes_general,
-     H1_edu_college_bayes,H1_edu_highschool_bayes,
-     H2_edu_college_bayes,H2_edu_highschool_bayes,
-     Census7_age_five5,Census7_age_interval10,Census7_age_PsyStages,
-     Census6_age_five5,Census6_age_PsyStages,Census6_age_interval10,
-     Census7_high_school,Census7_college,CFPS2018_edu_high_school,CFPS2018_edu_college,
-     file = "H2_BTS_Journal_age_edu.RData")
-```
-
 
 ### Region
 As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals.
@@ -2290,6 +2255,7 @@ China_region_seven <-  tibble(
              rep("Northwest China", 5),
              rep("Northeast China", 3)))
 ```
+
 
 Create a vector of all China' province
 ```{r}
@@ -2694,6 +2660,7 @@ ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H2_Fig_region.pdf",
 H2_Fig_region 
 ```
 
+
 BF four region
 ```{r}
 Journal_region_four <- Journal_region_four %>% 
@@ -2783,18 +2750,6 @@ seven regions: Journal vs Census7,$Log(BF_{10})$ =`r H2_BF_Journal_Census7_regio
 seven regions: Journal vs CFPS2018,$Log(BF_{10})$ =`r H2_BF_Journal_CFPS2018_region_seven$BF$LogBF10`
 
 
-save region data for exploration analysis
-```{r}
-save(Journal_region_single,Journal_region_multiple,
-     Census7_region,Census7_region_four,Census7_region_seven,
-     CFPS2018_region,CFPS2018_region_four,CFPS2018_region_seven,
-     H2_region_four_bayes,H2_region_seven_bayes,Region_map_color,
-     China_province,China_region_four,China_region_seven,
-     H2_region_four,H2_region_seven,Journal_region_general_tab2,
-     file = "Journal_region.RData")
-```
-
-
 ## Test the 3rd hypothesis
 ### Gender
 As with the first two hypotheses, I dealt with gender data first.
@@ -2865,8 +2820,8 @@ H3_gender <- H3_BTS_Journal_gender_prop %>%
   dplyr::rename(Sex = 2)
 ```
 
-and I visualized gender data.
 
+and I visualized gender data.
 ```{r}
 H3_Fig_gender <- ggplot(H3_gender, aes(x=Proportion, y=ISO3,fill=Sex)) +
   geom_col(alpha = .75)+
@@ -3053,8 +3008,8 @@ H3_interval10_max_agebins <-  H3_interval10 %>%
 # table(H3_interval10_max_agebins$ageBins)
 ```
 
-and I visualized age data (interval10) of all countries in BTS.
 
+and I visualized age data (interval10) of all countries in BTS.
 ```{r}
 H3_Fig_interval10 <- ggplot(H3_interval10, aes(x=Proportion, y=ISO3, fill=`Age bins`)) +
   geom_col(alpha = .75)+
