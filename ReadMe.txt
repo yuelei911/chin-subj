@@ -24,6 +24,7 @@
 |---------2_1_4_Code_Manual
 |---------2_1_5_Extract_Data
 |---------Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V1.Rmd
+|---------Coding_check.R
 |------2_2_BTS_Data
 |------Notebook_Coding_Reliability_Analysis.Rmd
 |

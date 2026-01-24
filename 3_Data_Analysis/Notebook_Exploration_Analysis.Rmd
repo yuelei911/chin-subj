@@ -424,18 +424,18 @@ Journal_special_education_occupation <- Journal %>%
 
 
 
-table(Journal_special_education_occupation$Educational_Attainment_N) ## FALSE 92 TRUE 100
-table(Journal_special_education_occupation$Occupation_N)  ## FALSE 101 TRUE 91
+table(Journal_special_education_occupation$Educational_Attainment_N) ## FALSE 92 TRUE 99
+table(Journal_special_education_occupation$Occupation_N)  ## FALSE 100 TRUE 91
 
 
 Journal_special_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
                                                             "Unreported","Reported"),
-                                                   Freq = c(92,100,101,91),
+                                                   Freq = c(92,99,100,91),
                                                    col_names= c("Educational_Attainment",
                                                                 "Educational_Attainment",
                                                                 "Occupation","Occupation"),
-                                                   proportion = c(92/(92+100),100/(92+100),
-                                                                  101/(101+91),91/(101+91)))
+                                                   proportion = c(92/(92+99),99/(92+99),
+                                                                  100/(100+91),91/(100+91)))
 
 Journal_special_report2 <- rbind(Journal_special_population_report,
                                   Journal_special_education_occupation_table) %>%
@@ -475,7 +475,7 @@ Journal_report_target_population <- Journal_target_population_report2 %>%
             position = position_dodge(width = 0.9),
             vjust = -0.5,
             size =3)+
-  labs(y="Proportion(%)", x = "Target population")+
+  labs(y="Proportion", x = "Target population")+
   theme_classic()+
   theme(panel.border =element_rect(fill=NA,color="black"),
         legend.position = "bottom",
