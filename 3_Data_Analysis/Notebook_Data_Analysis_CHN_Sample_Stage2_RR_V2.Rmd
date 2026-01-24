@@ -475,8 +475,11 @@ Journal_SES_report_5 <- Journal_SES_report %>%
 
 
 In this section, I tested the three main hypotheses of this study.
+
 # Test three hypotheses
+
 ## Test the 1st hypothesis
+
 ### Gender
 
 Process gender data from Chinese journals.
@@ -924,7 +927,7 @@ Sim_Journal_age_five3_general <- Sim_Journal_age_five2_general %>%
 
 
 ## Calculate the sample difference between the coded data and the simulated data
-sum(Journal_age_general$Sample_Size)-sum(Sim_Journal_age_five3_general$sim1) 
+# sum(Journal_age_general$Sample_Size)-sum(Sim_Journal_age_five3_general$sim1) 
 ```
 
 
@@ -951,7 +954,7 @@ Sim_Journal_age_PsyStages3_general <- Sim_Journal_age_PsyStages2_general %>%
                                 levels = c("<=17","18~25","26~40","41~60", ">=61")))
 
 ## Calculate the sample difference between the coded data and the simulated data
-sum(Journal_age_general$Sample_Size)-sum(Sim_Journal_age_PsyStages3_general$sim1,na.rm = TRUE)
+# sum(Journal_age_general$Sample_Size)-sum(Sim_Journal_age_PsyStages3_general$sim1,na.rm = TRUE)
 ```
 
 
@@ -982,7 +985,7 @@ Sim_Journal_age_interval103_general <- Sim_Journal_age_interval102_general %>%
 
 
 ## Calculate the sample difference between the coded data and the simulated data
-sum(Journal_age_general$Sample_Size)-sum(Sim_Journal_age_interval103_general$sim1,na.rm = TRUE)
+# sum(Journal_age_general$Sample_Size)-sum(Sim_Journal_age_interval103_general$sim1,na.rm = TRUE)
 ```
 
 As mentioned above, the special target population of BTS is only Lucca et al.(2024), its target population is babies, and there is no need to compare ages between BTS and Journals in age.
@@ -2003,7 +2006,7 @@ H2_BF_age_interval10_general <- BayesMultiNomial(dataset = H2_age_inteval10_baye
 ```
 
 
-For age within general population, I found the Bayesian multinomial test shows extremely strong evidence in foavor of $H_1$. PsyStages and interval10 are $Log(BF_{10})$ = `r H2_BF_age_Psystages_general$BF$LogBF10` and interval10: $Log(BF_{10})$ = `r H2_BF_age_interval10_general$BF$LogBF10` respectively.
+For age within general population, I found the Bayesian multinomial test shows extremely strong evidence in foavor of $H_1$. PsyStages and interval10 are $Log(BF_{10})$ = `r H2_BF_age_Psystages_general$BF$LogBF10` and $Log(BF_{10})$ = `r H2_BF_age_interval10_general$BF$LogBF10` respectively.
 
 
 ### Educational attainment
@@ -2212,8 +2215,8 @@ H2_BF_edu_highschool_CFPS2018 <- BayesMultiNomial(dataset = H2_edu_highschool_ba
 ```
 I found all results show extremely evidence support $H_1$. 
 
-College: Census7($Log(BF_{10})$ = `r H2_BF_edu_college_Census7$BF$LogBF10`), CFPS2018($Log(BF_{10})$ = `r H2_BF_edu_college_CFPS2018$BF$LogBF10`)
-High school: Census7($Log(BF_{10})$ = `H2_BF_edu_highschool_Census7$BF$LogBF10`), CFPS2018($Log(BF_{10})$ = `r H2_BF_edu_highschool_CFPS2018$BF$LogBF10`)
+College: Census7($Log(BF_{10})$ = `r H2_BF_edu_college_Census7$BF$LogBF10`), CFPS2018($Log(BF_{10})$ = `r H2_BF_edu_college_CFPS2018$BF$LogBF10`),
+High school: Census7($Log(BF_{10})$ = `r H2_BF_edu_highschool_Census7$BF$LogBF10`), CFPS2018($Log(BF_{10})$ = `r H2_BF_edu_highschool_CFPS2018$BF$LogBF10`)
 
 
 ### Region
@@ -2344,7 +2347,7 @@ Journal_region_general_tab2 <- Journal_region_general_tab %>%
                 Data_Source = "Journal_region_general_population")%>% 
   dplyr::rename(Region = 1)
 
-sum(Journal_region_general_tab2$n) #44029
+sum(Journal_region_general_tab2$n) #444429
 ```
 
 
@@ -2751,6 +2754,7 @@ seven regions: Journal vs CFPS2018,$Log(BF_{10})$ =`r H2_BF_Journal_CFPS2018_reg
 
 
 ## Test the 3rd hypothesis
+
 ### Gender
 As with the first two hypotheses, I dealt with gender data first.
 ```{r}
@@ -2857,6 +2861,7 @@ H3_male_more60 <- H3_gender %>%
   dplyr::filter(Proportion > 60)
 ```
 
+### Age
 
 Secondly, I processed age data. Similarity, I processed age data in two classification. The one is PsyStages.
 ```{r}

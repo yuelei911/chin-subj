@@ -3718,6 +3718,8 @@ Journal_articles_replace2 <- Journal_articles_replace %>%
 ## combine journal replace and the first coding
 df_stage2_Journal_Code2 <-  bind_rows(df_stage2_Journal_Code2,Journal_articles_replace2)
 
+df_stage2_Journal_Code2 %>% 
+  distinct(Article_IDs)
 ## after func `distinct` 1000 atircles 
 # str(df_stage2_Journal_Code2)
 ```
