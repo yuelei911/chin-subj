@@ -182,7 +182,7 @@ At this point, I have completed the loading packages and data. Next, I conducted
 ```{r warning=FALSE}
 Journal <- df_stage2_Journal_Code2 %>% 
   dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
-  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) ## valid 1628 rows
+  dplyr::filter(!grepl("2",Subjects_Recruitment_Area)) ## valid 1629 rows
 
 ## num of target population 
 Journal_targetpopulation <- Journal %>% 
@@ -198,7 +198,7 @@ Journal_articles_num <- Journal %>%
 
 
 Journal_study_num <- Journal %>% 
-  dplyr::distinct(Article_IDs,Study_Number) ## A total 1265 studies
+  dplyr::distinct(Article_IDs,Study_Number) ## A total 1264 studies
 
 
 ## invalid papers
@@ -228,7 +228,7 @@ Journal_simple_info_articles <- df_stage2_Journal_Code2 %>%
   dplyr::filter(!is.na(Remark1)) %>% 
   dplyr::distinct(Article_IDs,Remark1)
 
-table(Journal_simple_info_articles$Remark1)
+# table(Journal_simple_info_articles$Remark1)
 
 
 ## sample size sum
@@ -238,7 +238,7 @@ Journal_sample_size <- Journal %>%
                 Sample_Size = ifelse(Article_IDs == "20185082",33,Sample_Size))
 
 
-sum(Journal_sample_size$Sample_Size,na.rm = TRUE)  ## 555,098
+sum(Journal_sample_size$Sample_Size,na.rm = TRUE)  ## 554,794
 ```
 
 
@@ -351,17 +351,17 @@ Journal_education_occupation_report <- Journal %>%
   dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
                    Occupation_N = max(Occupation_N) > 0,.groups = "drop")   ### 306 studies
 
-table(Journal_education_occupation_report$Educational_Attainment_N) ## FALSE 165 TRUE 141
+table(Journal_education_occupation_report$Educational_Attainment_N) ## FALSE 166 TRUE 140
 table(Journal_education_occupation_report$Occupation_N)  ## FALSE 201 TRUE 105
 
 
 Journal_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
                                                             "Unreported","Reported"),
-                                                   Freq = c(165,141,201,105),
+                                                   Freq = c(166,140,201,105),
                                                    col_names= c("Educational_Attainment",
                                                                 "Educational_Attainment",
                                                                 "Occupation","Occupation"),
-                                                   proportion = c(165/(165+141),141/(165+141),201/(201+105),105/(201+105)))
+                                                   proportion = c(166/(166+140),140/(166+140),201/(201+105),105/(201+105)))
 
 
 Journal_report <- rbind(Journal_report,Journal_education_occupation_table) %>%
@@ -421,11 +421,11 @@ Journal_age_report_detail <- Journal %>%
 
 ### Age report studies num
 Journal_age_report_detail_study_num <- Journal_age_report_detail %>%
-    dplyr::distinct(Article_IDs,Study_Number) ## 1034 studies
+    dplyr::distinct(Article_IDs,Study_Number) 
 
 ### Age report papers num
 Journal_age_report_detail_papers_num <- Journal_age_report_detail_study_num %>% 
-  dplyr::distinct(Article_IDs) ## 829 articles
+  dplyr::distinct(Article_IDs) 
   
 ### Age fuzzy report studies num
 Journal_age_fuzzy_report <- Journal_age_report_detail %>% 
@@ -433,11 +433,11 @@ Journal_age_fuzzy_report <- Journal_age_report_detail %>%
 
 ## articles
 Journal_age_fuzzy_report_article_num <- Journal_age_fuzzy_report %>% 
-  dplyr::distinct(Article_IDs) ## 121-6=115
+  dplyr::distinct(Article_IDs) ## 120-6=114
 
 ## study
 Journal_age_fuzzy_report_study_num <- Journal_age_fuzzy_report %>% 
-  dplyr::distinct(Article_IDs,Study_Number)  ## 142-6=136
+  dplyr::distinct(Article_IDs,Study_Number)  ## 140-6=134
 
 ## the above "-6" means aticles Mage coded in other_age, these articles are 20183340, 20183097, 20082227, 20214027, 20083017, 20181065
 
@@ -793,7 +793,7 @@ Journal_otherage <- Journal_otherage %>%
 Journal_age2 <- bind_rows(Journal_strings_age_newdata,Journal_single_age,Journal_otherage)
 
 
-sum(Journal_age2$Sample_Size)  ## 370426
+sum(Journal_age2$Sample_Size)  ## 370328
 ```
 
 
@@ -900,6 +900,8 @@ Journal_age_general <-  Journal_age2 %>%
 Journal_age_general_papernum <- Journal_age2 %>% 
   dplyr::filter(Target_Population_N != 1) %>% 
   dplyr::distinct(Article_IDs)
+
+
 ## simulate different categories age data
 ### five-year-old
 Sim_Journal_age_five1_general <- lapply(1:nrow(Journal_age_general),function(i){
