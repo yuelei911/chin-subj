@@ -1614,9 +1614,6 @@ df_stage2_Journal_Code2$Remark1_N[1084] <- "secondary"
 df_stage2_Journal_Code2$Sampling_Method[1085] <- 0
 
 ### Article_IDs 20182191
-#I found this is "qualitative"
-df_stage2_Journal_Code2$Remark1[1086] <- "qualitative"
-df_stage2_Journal_Code2$Remark1_N[1086] <- "qualitative"
 
 ### Article_IDs 20081026
 df_stage2_Journal_Code2$Sampling_Method[1251] <- 1
@@ -3722,6 +3719,72 @@ df_stage2_Journal_Code2 %>%
   distinct(Article_IDs)
 ## after func `distinct` 1000 atircles 
 # str(df_stage2_Journal_Code2)
+
+
+## One article from 2008 was omitted from the coding
+## 20084071
+Article20084071 <-  tibble(
+  !!!set_names(rep(NA, ncol(df_stage2_Journal_Code2)), colnames(df_stage2_Journal_Code2))
+) %>% 
+  slice(rep(1, 3))
+
+Article20084071$Coder[1:3] <- "final"
+Article20084071$Coder_N[1:3] <- "final"
+
+Article20084071$Article_IDs[1:3] <- "20084071"
+Article20084071$Article_IDs_N[1:3] <- "20084071"
+
+Article20084071$Study_Number[1:3] <- 1
+Article20084071$Study_Number_N[1:3] <- 1
+
+Article20084071$Subjects_Group[1] <- "7岁"
+Article20084071$Subjects_Group_N[1] <- "7岁"
+Article20084071$Subjects_Group[2] <- "9岁"
+Article20084071$Subjects_Group_N[2] <- "9岁"
+Article20084071$Subjects_Group[3] <- "11岁"
+Article20084071$Subjects_Group_N[3] <- "11岁"
+
+Article20084071$Article_Title[1:3] <- "小学儿童执行功能与问题解决能力的关系"
+Article20084071$First_Author[1:3] <- "王晶"
+Article20084071$Journal <- "心理发展与教育"
+
+Article20084071$Abstract1[1:3] <- "123"
+Article20084071$Study_Type[1:3] <- 1
+Article20084071$Sample_Size[1:3] <- c(39,46,36)
+
+Article20084071$Gender[1:3] <- 1
+Article20084071$Female_Num[1:3] <- c(23,21,16)
+Article20084071$Male_Num[1:3] <- c(16,25,20)
+
+Article20084071$Age[1:3] <- 1
+Article20084071$M_age[1:3] <- c(7.17,9.27,11.25)
+Article20084071$SD_age[1:3] <- c(0.35,0.47,0.46)
+
+Article20084071[,c("Ethnicity","Religious","SES_N",
+                   "Subjects_Area","Subjects_Recruitment_Area")] <- 0
+
+Article20084071$Sampling_Method <- 2
+Article20084071$Subjects_Recruitment_Method_N <- 1
+Article20084071$Sample_Type_N <- 2
+Article20084071$Target_Population_N <- 3
+Article20084071$Coding_Basis_N <- "在问题解决的计划方面 抑制能力较高的人无次佳路径的情况下计划的时间相对较短 但有次佳路径的情况下计划的时间相对较多；而抑制能力不好的人两种情况没有差异。在问题解决的表现类型上抑制不好的人在有子目标无次佳路径的问题上易出现”绕远”解决类型"
+Article20084071$Sample_Type_info_N <- "本研究被试为某中等公立小学的二、四、六年级学生。"
+
+Article20084071 <- Article20084071 %>% 
+  mutate(across(everything(), as.character))
+
+df_stage2_Journal_Code2 <- bind_rows(df_stage2_Journal_Code2,Article20084071)
+
+
+## An extra coded article from 2018 should be deleted.
+## These three articles are 20181038,20181040,20181169
+set.seed(2018)
+
+sample(c("20181038","20181040","20181169"),size = 1)
+## 20181169
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Article_IDs_N != "20181169")
 ```
 
 
