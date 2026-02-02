@@ -675,7 +675,7 @@ Journal_otherage <- Journal_otherage %>%
 Journal_age2 <- bind_rows(Journal_strings_age_newdata,Journal_single_age,Journal_otherage)
 
 
-sum(Journal_age2$Sample_Size)  ## 370426
+sum(Journal_age2$Sample_Size)  ## 370328
 
 
 ## ------------------------------------------------------------------------------------------------------------------------
@@ -770,6 +770,8 @@ Journal_age_general <-  Journal_age2 %>%
 Journal_age_general_papernum <- Journal_age2 %>% 
   dplyr::filter(Target_Population_N != 1) %>% 
   dplyr::distinct(Article_IDs)
+
+
 ## simulate different categories age data
 ### five-year-old
 Sim_Journal_age_five1_general <- lapply(1:nrow(Journal_age_general),function(i){
@@ -2028,7 +2030,7 @@ Journal_region_single <- Journal %>%
  ## papers
 Journal_region_single_papers_num <- Journal_region_single %>%
    dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
-   dplyr::distinct(Article_IDs) ## single 129 papers + multiple 11(only one targeting general population) = 522
+   dplyr::distinct(Article_IDs) ## single 129 papers + multiple 11(only one targeting general population) = 130
  
 
 Journal_region_single_general_tab <- Journal_region_single %>% 
@@ -2084,7 +2086,7 @@ Journal_region_general_tab2 <- Journal_region_general_tab %>%
                 Data_Source = "Journal_region_general_population")%>% 
   dplyr::rename(Region = 1)
 
-sum(Journal_region_general_tab2$n) #444429
+sum(Journal_region_general_tab2$n) #44442
 
 
 ## ------------------------------------------------------------------------------------------------------------------------

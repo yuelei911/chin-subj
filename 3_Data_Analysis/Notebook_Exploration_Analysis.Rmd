@@ -28,6 +28,20 @@ source("Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2.R")
 ```
 
 
+## Check articles num in different journals
+```{r}
+Journal_check <- Journal %>% 
+  dplyr::select(Article_IDs_N) %>% 
+  dplyr::distinct(Article_IDs_N) %>% 
+  dplyr::mutate(Year = substr(Article_IDs_N,1,4),
+                Journal = substr(Article_IDs_N,5,5)) %>% 
+  dplyr::group_by(Year,Journal) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::ungroup()
+
+Journal_check
+```
+
 ## Journal report in different period
 2008
 ```{r}
@@ -77,8 +91,8 @@ Journal_year2008_education_occupation <- Journal %>%
 
 
 
-table(Journal_year2008_education_occupation$Educational_Attainment_N) ## FALSE 32 TRUE 30
-table(Journal_year2008_education_occupation$Occupation_N)  ## FALSE 35 TRUE 27
+table(Journal_year2008_education_occupation$Educational_Attainment_N)
+table(Journal_year2008_education_occupation$Occupation_N) 
 
 
 Journal_year2008_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
@@ -157,17 +171,17 @@ Journal_year2018_education_occupation <- Journal %>%
 
 
 
-table(Journal_year2018_education_occupation$Educational_Attainment_N) ## FALSE 73 TRUE 69
-table(Journal_year2018_education_occupation$Occupation_N)  ## FALSE 84 TRUE 58
+table(Journal_year2018_education_occupation$Educational_Attainment_N) 
+table(Journal_year2018_education_occupation$Occupation_N) 
 
 
 Journal_year2018_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
                                                             "Unreported","Reported"),
-                                                   Freq = c(73,76,90,59),
+                                                   Freq = c(74,75,90,59),
                                                    col_names= c("Educational_Attainment",
                                                                 "Educational_Attainment",
                                                                 "Occupation","Occupation"),
-                                                   proportion = c(73/(73+76),76/(73+76),
+                                                   proportion = c(74/(74+75),75/(74+75),
                                                                   90/(90+59),59/(90+59)))
 
 Journal_year2018_report2 <- rbind(Journal_year2018_report,
@@ -236,8 +250,8 @@ Journal_year2021_education_occupation <- Journal %>%
 
 
 
-table(Journal_year2021_education_occupation$Educational_Attainment_N) ## FALSE 55 TRUE 33
-table(Journal_year2021_education_occupation$Occupation_N)  ## FALSE 72 TRUE 16
+table(Journal_year2021_education_occupation$Educational_Attainment_N) 
+table(Journal_year2021_education_occupation$Occupation_N) 
 
 
 Journal_year2021_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
@@ -247,7 +261,7 @@ Journal_year2021_education_occupation_table <- data.frame(Var1 = c("Unreported",
                                                                 "Educational_Attainment",
                                                                 "Occupation","Occupation"),
                                                    proportion = c(58/(58+34),34/(58+34),
-                                                                  75/(75+17),75/(75+17)))
+                                                                  75/(75+17),17/(75+17)))
 
 Journal_year2021_report2 <- rbind(Journal_year2021_report,
                                   Journal_year2021_education_occupation_table) %>%
@@ -355,8 +369,8 @@ Journal_general_education_occupation <- Journal %>%
 
 
 
-table(Journal_general_education_occupation$Educational_Attainment_N) ## FALSE 73 TRUE 42
-table(Journal_general_education_occupation$Occupation_N)  ## FALSE 101 TRUE 14
+table(Journal_general_education_occupation$Educational_Attainment_N) 
+table(Journal_general_education_occupation$Occupation_N)  
 
 
 Journal_general_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
@@ -424,17 +438,17 @@ Journal_special_education_occupation <- Journal %>%
 
 
 
-table(Journal_special_education_occupation$Educational_Attainment_N) ## FALSE 92 TRUE 99
-table(Journal_special_education_occupation$Occupation_N)  ## FALSE 100 TRUE 91
+table(Journal_special_education_occupation$Educational_Attainment_N) 
+table(Journal_special_education_occupation$Occupation_N) 
 
 
 Journal_special_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
                                                             "Unreported","Reported"),
-                                                   Freq = c(92,99,100,91),
+                                                   Freq = c(93,98,100,91),
                                                    col_names= c("Educational_Attainment",
                                                                 "Educational_Attainment",
                                                                 "Occupation","Occupation"),
-                                                   proportion = c(92/(92+99),99/(92+99),
+                                                   proportion = c(93/(93+98),98/(93+98),
                                                                   100/(100+91),91/(100+91)))
 
 Journal_special_report2 <- rbind(Journal_special_population_report,
@@ -504,6 +518,9 @@ Journal_report_target_population
 
 # writexl::write_xlsx(Journal_special_visual,"Journal_special_visual.xlsx")
 Journal_special_visual2 <- Journal_special_population_translation %>% 
+  dplyr::group_by(Target_Population_English) %>% 
+  dplyr::summarise(Count = sum(Count)) %>% 
+  dplyr::ungroup() %>% 
   dplyr::mutate(cate = ifelse(Count == 1,"one",Count))
 
 Suppl_Fig_Special_Wordcloud <- Journal_special_visual2 %>% 
@@ -1170,55 +1187,6 @@ Journal_abstract_report_general <- Journal %>%
 ```
 
 
-calculate Abstract1
-```{r}
-# Journal_abstract1_report_general<- Journal_abstract_report_general %>% 
-#   dplyr::mutate(Sample_Mentioned = ifelse(Abstract1 == "0" ,"Samples not mentioned", "Samples mentioned")) %>% 
-#   dplyr::group_by(Sample_Mentioned,Study_Type) %>% 
-#   dplyr::count() %>% 
-#   dplyr::ungroup() %>% 
-#   tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
-# 
-# 
-# Journal_abstract1_report_general
-# 
-# 
-# ## trans prop
-# Journal_abstract1_report_general_trans <- Journal_abstract1_report_general %>% 
-#   tidyr::pivot_longer(cols = c(`Samples not mentioned`, `Samples mentioned`),
-#                       names_to = "Mentioned status",
-#                       values_to = "Count") %>% 
-#   tidyr::pivot_wider(names_from = Study_Type,
-#                      values_from = Count)
-# 
-# ## bayes
-# Journal_abstract1_report_general_bayes <- Journal_abstract1_report_general_trans %>% 
-#   dplyr::mutate(`College students & other populations` = (`College students & other populations`/sum(`College students & other populations`))*100,
-#                 `Only college students` = (`Only college students`/sum(`Only college students`))*100,
-#                 `Only sample outside colleges` = (`Only sample outside colleges`)/sum(`Only sample outside colleges`)*100)
-# 
-# ## BF
-# Suppl_BF_Abstract1_general_college_other <- BayesMultiNomial(dataset = Journal_abstract1_report_general_bayes,
-#                                        factor = "Mentioned status",
-#                                        observed = "College students & other populations",
-#                                        expected = "Only college students")
-# 
-# 
-# Suppl_BF_Abstract1_general_college_outside <- BayesMultiNomial(dataset = Journal_abstract1_report_general_bayes,
-#                                        factor = "Mentioned status",
-#                                        observed = "Only sample outside colleges",
-#                                        expected = "Only college students")
-
-```
-
-
-
-Abstract 2 reported for general population
-```{r}
-
-```
-
-
 ## Reason for current data pattern
 ```{r}
 Journal_subjects_recruitment <- Journal %>% 
@@ -1226,7 +1194,7 @@ Journal_subjects_recruitment <- Journal %>%
                 Target_Population_N,Sample_Type_N,Sampling_Method,Subjects_Recruitment_Method_N,
                 Subjects_Recruitment_Method_info_N)
 
-table(Journal_subjects_recruitment$Sampling_Method)  ## 0(1107),1(223),2(298)
+table(Journal_subjects_recruitment$Sampling_Method)  
 
 table(Journal_subjects_recruitment$Subjects_Recruitment_Method_N)
 
@@ -1242,8 +1210,8 @@ Journal_subjects_recruitment_articles <- Journal_subjects_recruitment %>%
 
 table(Journal_subjects_recruitment_articles$Subjects_Recruitment_Method_cate)
 
-(949+7)/(949+7+78)
-606/(606+46)
+(950+7)/(950+7+77)
+606/(606+45)
 ```
 
 
