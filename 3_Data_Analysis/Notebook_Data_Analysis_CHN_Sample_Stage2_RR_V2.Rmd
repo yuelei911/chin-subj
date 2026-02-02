@@ -2289,7 +2289,7 @@ Journal_region_single <- Journal %>%
  ## papers
 Journal_region_single_papers_num <- Journal_region_single %>%
    dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
-   dplyr::distinct(Article_IDs) ## single 129 papers + multiple 11(only one targeting general population) = 522
+   dplyr::distinct(Article_IDs) ## single 129 papers + multiple 11(only one targeting general population) = 130
  
 
 Journal_region_single_general_tab <- Journal_region_single %>% 
@@ -2349,7 +2349,7 @@ Journal_region_general_tab2 <- Journal_region_general_tab %>%
                 Data_Source = "Journal_region_general_population")%>% 
   dplyr::rename(Region = 1)
 
-sum(Journal_region_general_tab2$n) #444429
+sum(Journal_region_general_tab2$n) #44442
 ```
 
 
