@@ -1111,60 +1111,6 @@ Journal vs Census7 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_Journ
 
 ## Abstract report
 Abstract1 subjects information reported of Chinese journal
-
-all data
-```{r message=FALSE, warning=FALSE}
-Journal_abstract1_report_all <- Journal %>% 
-  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
-                Target_Population_N,Sample_Type_N,Abstract1) %>% 
-  dplyr::filter(Sample_Type_N != 5) %>%
-  dplyr::group_by(Article_IDs) %>% 
-  dplyr::mutate(Study_Type = ifelse(all(Sample_Type_N == 1),"Only college students",ifelse(any(grepl("1",Sample_Type_N)) & any(Sample_Type_N !=1),"College students & other populations","Only sample outside colleges"))) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::group_by(Article_IDs) %>% 
-  dplyr::slice(1) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(Sample_Mentioned = ifelse(Abstract1 == "0" ,"Samples mentioned", "Sample not mentioned")) %>% 
-  dplyr::group_by(Sample_Mentioned,Study_Type) %>% 
-  dplyr::count() %>% 
-  dplyr::ungroup() %>% 
-  tidyr::pivot_wider(names_from = Sample_Mentioned, values_from = n)
-
-Journal_abstract1_report_all
-
-
-## trans prop
-Journal_abstract1_report_all_trans <- Journal_abstract1_report_all %>% 
-  tidyr::pivot_longer(cols = c(`Sample not mentioned`, `Samples mentioned`),
-                      names_to = "Mentioned status",
-                      values_to = "Count") %>% 
-  tidyr::pivot_wider(names_from = Study_Type,
-                     values_from = Count)
-
-## bayes
-Journal_abstract1_report_all_bayes <- Journal_abstract1_report_all_trans %>% 
-  dplyr::mutate(`College students & other populations` = (`College students & other populations`/sum(`College students & other populations`))*100,
-                `Only college students` = (`Only college students`/sum(`Only college students`))*100,
-                `Only sample outside colleges` = (`Only sample outside colleges`)/sum(`Only sample outside colleges`)*100)
-
-## BF
-Suppl_BF_Abstract1_all_college_other <- BayesMultiNomial(dataset = Journal_abstract1_report_all_bayes,
-                                       factor = "Mentioned status",
-                                       observed = "College students & other populations",
-                                       expected = "Only college students")
-
-
-Suppl_BF_Abstract1_all_college_outside <- BayesMultiNomial(dataset = Journal_abstract1_report_all_bayes,
-                                       factor = "Mentioned status",
-                                       observed = "Only sample outside colleges",
-                                       expected = "Only college students")
-```
-Only college students as expected. Abstract1 for all data.
-Only college students vs College students & other populations：$Log(BF_{10})$ = `r Suppl_BF_Abstract1_all_college_other$BF$LogBF10`.
-
-Only college students vs Only sample outside colleges：$Log(BF_{10})$ = `r Suppl_BF_Abstract1_all_college_outside$BF$LogBF10`.
-
-
 general population
 ```{r}
 Journal_abstract_report_general <- Journal %>% 
@@ -1182,8 +1128,16 @@ Journal_abstract_report_general <- Journal %>%
   dplyr::mutate(Abstract2 = ifelse(Study_Type == "Only sample outside colleges",NA,Abstract2),
                 Sample_Mentioned = ifelse(Abstract1 == "0" ,"Samples not mentioned", "Samples mentioned"))
 
+table(Journal_abstract_report_general$Abstract2)
+
+Journal_abstract_report_general_tab <- Journal_abstract_report_general %>% 
+  dplyr::group_by(Study_Type,Sample_Mentioned) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::ungroup()
+
+Journal_abstract_report_general_tab
 ## save csv to calculate BF in JASP
-# write.csv(Journal_abstract_report_general,"Journal_abstract_report_general.csv",row.names = FALSE)
+write.csv(Journal_abstract_report_general,"Journal_abstract_report_general.csv",row.names = FALSE)
 ```
 
 
@@ -2011,8 +1965,6 @@ BTS_keywords_tab <- BTS_keywords_split_rows %>%
   dplyr::group_by(Article_Keywords) %>% 
   dplyr::summarise(n = n()) %>% 
   dplyr::mutate(cate = factor(n))
-
-sum(BTS_keywords_tab$n)
 ```
 
 
@@ -2259,7 +2211,7 @@ H3_age_four2 <- H3_age_four %>%
 
 ## 18~40 age 
 H3_age_four2 %>% 
-  dplyr::distinct(ISO3)  ## 128
+  dplyr::distinct(ISO3)
 
 H3_age_four2_1840 <- H3_age_four2 %>% 
   dplyr::filter(ageBins == "18~40") %>% 
