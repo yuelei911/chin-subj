@@ -260,7 +260,7 @@ Journal_Coder2 <- Journal_CE[seq(2,nrow(Journal_CE), by = 3), ]
 ## process Coder NA
 ```{r}
 Journal_Coder1 <- Journal_Coder1 %>%
-  dplyr::mutate(rownum = 1:1750) %>% 
+  dplyr::mutate(rownum = 1:1748) %>% 
   dplyr::select(rownum,Coder,Article_IDs_N,Study_Number_N,Subjects_Group_N,
                 Abstract1,Abstract2,
                 Sample_Size,Gender,Male_Num,Female_Num,
@@ -273,7 +273,7 @@ Journal_Coder1 <- Journal_Coder1 %>%
 
 
 Journal_Coder2 <- Journal_Coder2 %>% 
-  dplyr::mutate(rownum = 1:1750) %>% 
+  dplyr::mutate(rownum = 1:1748) %>% 
   dplyr::select(rownum,Coder,Article_IDs_N,Study_Number_N,Subjects_Group_N,
                 Abstract1,Abstract2, 
                 Sample_Size,Gender,Male_Num,Female_Num,
