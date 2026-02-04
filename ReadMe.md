@@ -1,5 +1,5 @@
 # Profiling the Chinese Participants in Psychological Science: Non-WEIRD but Not Representative
-This project aimed at exploring the representativeness of participants from non-WEIRD region. We selected a typical non-WEIRD regions, China, as our entry point. We analysed participants  data from 1,000 empirical articles published in five mainstream Chinese psychology journals and 27 large-scale international collaborative projects.
+This project aimed at exploring the representativeness of participants from non-WEIRD region. We selected a typical non-WEIRD region, China, as our entry point. We analysed participants  data from 1,000 empirical articles published in five mainstream Chinese psychological journals and 27 large-scale international collaborative projects.
 
 The Stage 1 Registered Report of our project has been accepted in principle by [Peer Community in](https://osf.io/ehw54)
 
@@ -30,7 +30,7 @@ Documentation in each subfolder can be found in *about-.txt*, and the top-level 
 
 **Protocol**: includes the project’s early *OSF* pre-registration, the stage 1 of PCI Registered Report text, and review comments.
 
-**Data_Extraction**: it includes data from 1,000 empirical studies published in five mainstream Chinese psychological journals, data from 27 large-scale international collaborative projects, and others data (e.g., 7th Census).
+**Data_Extraction**: it includes data from 1,000 empirical studies published in five mainstream Chinese psychological journals, data from 27 large-scale international collaborative projects, and others data (e.g., 7thCensus).
 
 **Data_Analysis**: includes the code for formal analyses and the generated visualization files
 
