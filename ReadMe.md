@@ -1,9 +1,9 @@
 # Profiling the Chinese Participants in Psychological Science: Non-WEIRD but Not Representative
 This project aimed at exploring the representativeness of participants from non-WEIRD region. We selected a typical non-WEIRD regions, China, as our entry point. We analysed participants  data from 1,000 empirical articles published in five mainstream Chinese psychology journals and 27 large-scale international collaborative projects.
 
-## Athors
+## Authors
 
-## files folder
+Files folder
 
 - This project is the characteristics of Chinese human subjects
 |----Short name of the project: Chin_Subj
