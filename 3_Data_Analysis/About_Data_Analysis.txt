@@ -1,1 +1,7 @@
-This folder file includes Stage2 analysis data and code. 
+This folder file save the formal analysis files. It includes code, data, and visulization files. 
+
+Analyze_Data_Zip: Packaged data required for the formal analyses. These data are derived from "2_Data_Extraction" and also stored in "3_1_Intermediate_Data", including data from Journal papers, BTS, and data for supporting analysis.
+
+Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2: Primary analyses (hypothesis testing), with three document formats: R, Rmd and HTML.
+
+Notebook_Exploration_Analysis: exploration analyses, with two documents formats (R and HTML).
