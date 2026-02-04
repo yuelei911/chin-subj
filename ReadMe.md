@@ -1,14 +1,44 @@
 # Profiling the Chinese Participants in Psychological Science: Non-WEIRD but Not Representative
 This project aimed at exploring the representativeness of participants from non-WEIRD region. We selected a typical non-WEIRD regions, China, as our entry point. We analysed participants  data from 1,000 empirical articles published in five mainstream Chinese psychology journals and 27 large-scale international collaborative projects.
 
+The Stage 1 Registered Report of our project has been accepted in principle by [Peer Community in](https://osf.io/ehw54)
+
 ## Authors
+**Lei Yue**, School of Psychology, Nanjing Normal University;
 
-Files folder
+**Weiwei Zhang**, Psychological Service Center, Shenzhen City Polytechnic;
 
-- This project is the characteristics of Chinese human subjects
-|----Short name of the project: Chin_Subj
+**Chunxiao Wang**, School of Education, Tsinghua University;
 
-- A description of the folder structure
+**Xi-Nian Zuo**, State Key Laboratory of Cognitive Neuroscience and Learning, International Data Group/McGovern Institute for Brain Research, Beijing Normal University;
+
+**Hu Chuan-Peng**(Corresponding author), School of Psychology, Nanjing Normal University, email:
+hu.chuan-peng@nnu.edu.cn, or, hcp4715@hotmail.com
+
+## Online information related to this project
+**Projetcs materials**: https://github.com/hcp4715/chin-subj; https://osf.io/avb7t/
+
+**Preregistration Report**: https://osf.io/ehw54
+
+## Software
+This project used [R 4.1.1](https://www.R-project.org/) and [JASP 0.95.4](https://jasp-stats.org/) for data reprocessing, analysis and visualization.
+
+## Files folder
+To help you better understand our project, please review the file descriptions in this section.  
+
+Documentation in each subfolder can be found in *about-.txt*, and the top-level files are explained below:
+
+**Protocol**: includes the project’s early *OSF* pre-registration, the stage 1 of PCI Registered Report text, and review comments.
+
+**Data_Extraction**: it includes data from 1,000 empirical studies published in five mainstream Chinese psychological journals, data from 27 large-scale international collaborative projects, and others data (e.g., 7th Census).
+
+**Data_Analysis**: includes the code for formal analyses and the generated visualization files
+
+**Reports**: contains communication documents from the project implementation, such as conference presentations.
+
+The folder structure is outlined below:
+```
+.
 |-root_dir
 |---1_Protocol
 |-------About_Protocol.txt
@@ -50,22 +80,8 @@ Files folder
 |-------4_1_Project_reports [slides]
 |-------4_2_Conference1__NACP2023
 |-------4_3_Conference2_BTSCON2025
+```
 
-- Software required to open or run any of the shared files
-This project used R 4.1.1 and JASP 16.0 for data analysis and visualization.
+## License
+ CC-BY 4.0
 
-- Under which license(s) the files are shared
----- CC-BY 4.0
-
-- Online information related to this project
----- Project storage: https://osf.io/xpgmk/
----- Code storage: https://github.com/hcp4715/chin-subj; https://osf.io/avb7t/?view_only=a7e4610491374093851fc2b7da57e85c
----- Preregistration Report: https://osf.io/ehw54
----- Preprint: psyrxiv.org/.... [optional]
----- Journal: ...
-
-- Contact information for the authors
----- Lei Yue, email: yniannian911@163.com
----- Hu Chuan-Peng (Prof., Dr.), email: hcp4715@hotmail.com
-----Wei-Wei Zhang, email: asdzhangww@163.com
-----Chun-Xiao Wang, email: chxwang12@126.com
