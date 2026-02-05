@@ -1,0 +1,87 @@
+# Profiling the Chinese Participants in Psychological Science: Non-WEIRD but Not Representative
+This project aimed at exploring the representativeness of participants from non-WEIRD region. We selected a typical non-WEIRD region, China, as our entry point. We analysed participants  data from 1,000 empirical articles published in five mainstream Chinese psychological journals and 27 large-scale international collaborative projects.
+
+The Stage 1 Registered Report of our project has been accepted in principle by [Peer Community in](https://osf.io/ehw54)
+
+## Authors
+**Lei Yue**, School of Psychology, Nanjing Normal University;
+
+**Weiwei Zhang**, Psychological Service Center, Shenzhen City Polytechnic;
+
+**Chunxiao Wang**, School of Education, Tsinghua University;
+
+**Xi-Nian Zuo**, State Key Laboratory of Cognitive Neuroscience and Learning, International Data Group/McGovern Institute for Brain Research, Beijing Normal University;
+
+**Hu Chuan-Peng**(Corresponding author), School of Psychology, Nanjing Normal University, email:
+hu.chuan-peng@nnu.edu.cn, or, hcp4715@hotmail.com
+
+## Online information related to this project
+**Projetcs materials**: https://github.com/hcp4715/chin-subj; https://osf.io/avb7t/
+
+**Preregistration Report**: https://osf.io/ehw54
+
+## Software
+This project used [R 4.1.1](https://www.R-project.org/) and [JASP 0.95.4](https://jasp-stats.org/) for data reprocessing, analysis and visualization.
+
+## Files folder
+To help you better understand our project, please review the file descriptions in this section.  
+
+Documentation in each subfolder can be found in *about-.txt*, and the top-level files are explained below:
+
+**Protocol**: includes the project’s early *OSF* pre-registration, the stage 1 of PCI Registered Report text, and review comments.
+
+**Data_Extraction**: it includes data from 1,000 empirical studies published in five mainstream Chinese psychological journals, data from 27 large-scale international collaborative projects, and others data (e.g., 7thCensus).
+
+**Data_Analysis**: includes the code for formal analyses and the generated visualization files
+
+**Reports**: contains communication documents from the project implementation, such as conference presentations.
+
+The folder structure is outlined below:
+```
+.
+|-root_dir
+|---1_Protocol
+|-------About_Protocol.txt
+|-------1_1_Preregistration
+|-------1_2_Reg_Report_Stage_1
+|---------1_2_1_Reg_Report_Stage_1_Protocol
+|---------1_2_2_Reg_Report_Stage_1_Reviewer_Round1
+|---------1_2_3_Reg_Report_Stage_1_Reviewer_Round2
+|---------1_2_3_Reg_Report_Stage_1_Reviewer_Round3
+|---------1_2_3_Reg_Report_Stage_1_Reviewer_Round4
+|---------1_2_3_Reg_Report_Stage_1_Reviewer_Round5
+|---------1_2_4_Reg_Report_Stage_1_Analysis
+|
+|---2_Data_Extraction
+|------About_Data_Extration.txt
+|------2_1_CHN_Journal_Data
+|---------2_1_1_Ariticle_Numbering
+|---------2_1_2_Article_Sampling
+|---------2_1_3_Article_Download
+|---------2_1_4_Code_Manual
+|---------2_1_5_Extract_Data
+|---------Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V1.Rmd
+|---------Coding_check.R
+|------2_2_BTS_Data
+|------Notebook_Coding_Reliability_Analysis.Rmd
+|
+|---3_Data_Analysis
+|------About_Data_Analysis.txt
+|------3_1_Intermediate_Data
+|------3_2_Image
+|------Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2.Rmd
+|------Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2.R
+|------Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2.html
+|------Notebook_Exploration_Analysis.Rmd
+|------Notebook_Exploration_Analysis.html
+|
+|---4_Reports
+|-------About_Reports.txt
+|-------4_1_Project_reports [slides]
+|-------4_2_Conference1__NACP2023
+|-------4_3_Conference2_BTSCON2025
+```
+
+## License
+ CC-BY 4.0
+

@@ -1,0 +1,1 @@
+This folder contains data from Chinese psychological journal articles (2_1_CHN_Journal_Code), the large-scale international collaborative project (2_2_BTS), and supporting analysis data(2_3_Analyze_supporting_data).
