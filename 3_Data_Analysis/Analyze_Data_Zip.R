@@ -1,23 +1,24 @@
-
-
 rm(list = ls())
 
+# root path: \...\chin-subj
 ## -----------------------------------------------------------------------------------------
 ## BTS
 
+pacman::p_load(readxl,here)
+
 ## load 27 projects data, BTS edu data and target population of BTS 
-load("D:\\chin-subj\\2_Data_Extraction\\2_2_BTS\\BTS.Rdata") 
+load(here::here("2_Data_Extraction", "2_2_BTS", "BTS.Rdata"))
 
 ## load BTS keywords' data
-BTS_keywords <- readxl::read_xlsx("D:\\chin-subj\\2_Data_Extraction\\2_2_BTS\\BTS_keywords.xlsx")
+BTS_keywords <- readxl::read_xlsx(here::here("2_Data_Extraction", "2_2_BTS","BTS_keywords.xlsx"))
 
 ## save BTS
-save(BTS,BTS_coding,BTS_edu_list, BTS_keywords,file ="D:\\chin-subj\\3_Data_Analysis\\3_1_Intermediate_Data\\BTS.RData")
+save(BTS,BTS_coding,BTS_edu_list, BTS_keywords,file = here::here("3_Data_Analysis", "3_1_Intermediate_Data", "BTS.RData"))
 
 ## ----------------------------------------------------------------------------------------
 ##Journal
 ## load the Journal repreprocess data,including coding data and other age data
-load("D:\\chin-subj\\2_Data_Extraction\\2_1_CHN_Journal_Code\\df_Pre_Stage2_Journal_Code.Rdata")
+load(here::here("2_Data_Extraction","2_1_CHN_Journal_Code","df_Pre_Stage2_Journal_Code.Rdata"))
 
 ## load Journal process data, manually processed and verified.
 Journal_edu <- readxl::read_xlsx("D:\\chin-subj\\2_Data_Extraction\\2_1_CHN_Journal_Code\\Journal_edu.xlsx")
