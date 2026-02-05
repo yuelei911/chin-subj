@@ -1,7 +1,7 @@
 # Profiling the Chinese Participants in Psychological Science: Non-WEIRD but Not Representative
-This project aimed at exploring the representativeness of participants from non-WEIRD region. We selected a typical non-WEIRD region, China, as our entry point. We analysed participants  data from 1,000 empirical articles published in five mainstream Chinese psychological journals and 27 large-scale international collaborative projects.
+This project aimed at exploring the representativeness of participants from China. We analysed participants data from 1,000 empirical articles published in five mainstream Chinese psychological journals and 27 large-scale international collaborative projects.
 
-The Stage 1 Registered Report of our project has been accepted in principle by [Peer Community in](https://osf.io/ehw54)
+The Stage 1 Registered Report of our project has been accepted in principle by [Peer Community in Registered Reports](https://osf.io/ehw54)
 
 ## Authors
 **Lei Yue**, School of Psychology, Nanjing Normal University;
@@ -15,28 +15,26 @@ The Stage 1 Registered Report of our project has been accepted in principle by [
 **Hu Chuan-Peng**(Corresponding author), School of Psychology, Nanjing Normal University, email:
 hu.chuan-peng@nnu.edu.cn, or, hcp4715@hotmail.com
 
-## Online information related to this project
-**Projetcs materials**: https://github.com/hcp4715/chin-subj; https://osf.io/avb7t/
+## Related links
 
-**Preregistration Report**: https://osf.io/ehw54
+- **Projects materials**: https://osf.io/avb7t/
+- **Preregistration Report**: https://osf.io/ehw54
+- **preprint**: to-be-available
 
 ## Software
-This project used [R 4.1.1](https://www.R-project.org/) and [JASP 0.95.4](https://jasp-stats.org/) for data reprocessing, analysis and visualization.
+We used [R 4.1.1](https://www.R-project.org/) and [JASP 0.95.4](https://jasp-stats.org/) for data reprocessing, analyses, and visualization.
 
-## Files folder
-To help you better understand our project, please review the file descriptions in this section.  
+## About the folders
 
-Documentation in each subfolder can be found in *about-.txt*, and the top-level files are explained below:
+This project include the follow folders, each has an "about" file describing its content:
 
-**Protocol**: includes the project’s early *OSF* pre-registration, the stage 1 of PCI Registered Report text, and review comments.
-
-**Data_Extraction**: it includes data from 1,000 empirical studies published in five mainstream Chinese psychological journals, data from 27 large-scale international collaborative projects, and others data (e.g., 7thCensus).
-
-**Data_Analysis**: includes the code for formal analyses and the generated visualization files
-
-**Reports**: contains communication documents from the project implementation, such as conference presentations.
+- **1_Protocol**: includes the project’s early *OSF* pre-registration, the stage 1 of PCI Registered Report text, and review comments.
+- **2_Data_Extraction**: it includes data from 1,000 empirical studies published in five mainstream Chinese psychological journals, data from 27 large-scale international collaborative projects, and others data (e.g., 7thCensus).
+- **3_Data_Analysis**: includes the code for formal analyses and the generated visualization files
+- **4_Reports**: contains communication documents from the project implementation, such as conference presentations.
 
 The folder structure is outlined below:
+
 ```
 .
 |-root_dir
