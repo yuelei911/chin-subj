@@ -1,7 +1,17 @@
-# Profiling the Chinese Participants in Psychological Science: Non-WEIRD but Not Representative
+# Profiling the Chinese Participants in Psychological Science
 This project aimed at exploring the representativeness of participants from China. We analysed participants data from 1,000 empirical articles published in five mainstream Chinese psychological journals and 27 large-scale international collaborative projects.
 
 The Stage 1 Registered Report of our project has been accepted in principle by [Peer Community in Registered Reports](https://osf.io/ehw54)
+
+[![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
+This work is licensed under a
+[Creative Commons Attribution-NonCommercial 4.0 International License][cc-by-nc].
+
+[![CC BY-NC 4.0][cc-by-nc-image]][cc-by-nc]
+
+[cc-by-nc]: https://creativecommons.org/licenses/by-nc/4.0/
+[cc-by-nc-image]: https://licensebuttons.net/l/by-nc/4.0/88x31.png
+[cc-by-nc-shield]: https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg
 
 ## Authors
 **Lei Yue**, School of Psychology, Nanjing Normal University;
@@ -79,15 +89,4 @@ The folder structure is outlined below:
 |-------4_2_Conference1__NACP2023
 |-------4_3_Conference2_BTSCON2025
 ```
-
-Shield: [![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
-
-This work is licensed under a
-[Creative Commons Attribution-NonCommercial 4.0 International License][cc-by-nc].
-
-[![CC BY-NC 4.0][cc-by-nc-image]][cc-by-nc]
-
-[cc-by-nc]: https://creativecommons.org/licenses/by-nc/4.0/
-[cc-by-nc-image]: https://licensebuttons.net/l/by-nc/4.0/88x31.png
-[cc-by-nc-shield]: https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg
 
