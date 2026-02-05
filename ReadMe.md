@@ -1,9 +1,10 @@
-# Profiling the Chinese Participants in Psychological Science
+# Profiling Chinese Participants in Psych. Sci.
 This project aimed at exploring the representativeness of participants from China. We analysed participants data from 1,000 empirical articles published in five mainstream Chinese psychological journals and 27 large-scale international collaborative projects.
 
-The Stage 1 Registered Report of our project has been accepted in principle by [Peer Community in Registered Reports](https://osf.io/ehw54)
+The Stage 1 Registered Report of our project has been accepted in principle by [PCI-RR](https://osf.io/ehw54)
 
-[![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
+## [![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
+
 This work is licensed under a
 [Creative Commons Attribution-NonCommercial 4.0 International License][cc-by-nc].
 
