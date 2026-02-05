@@ -1,0 +1,3795 @@
+---
+title: "Chin_Subj_Analysis_Stage2_V1"
+author: "Lei Yue"
+date: "2024-01-01"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Loading the data and Precossing the data
+First, we load our first data sourse, namely, the five Chinese journals of coding data. Our coding scheme include three stage: pre-codding stage, coding stage and proofreading  coding stage. The coding data was producted in last two stages. We combine each coding data respectively becasuse these data was coded by different coding group.
+
+
+### Loading the data of coding stage 
+```{r message=FALSE, warning=FALSE}
+rm(list = ls())
+
+if (!require("pacman")) install.packages("pacman")
+
+# use package "pacman" as loading R packages tools
+
+pacman::p_load("tidyverse","rio","here")
+
+# getwd()
+
+## load coidng stage data
+
+file_list <- list.files(
+  here("D:\\chin-subj\\2_Data_Extraction\\2_1_CHN_Journal_Code\\2_1_5_Extract_Data\\2_2_5_1_Article_Coding"),
+  pattern = ".xlsx",
+  full.names = TRUE, recursive = TRUE)
+
+coding <- rio::import_list(file_list) 
+
+ 
+coding  <-  coding[grepl("CE",names(coding),ignore.case = TRUE)]
+
+
+coding <- lapply(coding, function(coding) {  
+  coding[] <- lapply(coding, as.character)  
+  return(coding)  
+})
+
+rm(file_list)
+
+
+## load profreading stage data
+
+file_list <- list.files(
+  here("D:\\chin-subj\\2_Data_Extraction\\2_1_CHN_Journal_Code\\2_1_5_Extract_Data\\2_2_5_2_Article_Proofreading"),
+  pattern = ".xlsx",
+  full.names = TRUE, recursive = TRUE)
+
+Proofreading <- rio::import_list(file_list) 
+
+ 
+Proofreading  <- Proofreading[grepl("CE",names(Proofreading),ignore.case = TRUE)]
+
+
+Proofreading <- lapply(Proofreading, function(Proofreading) {  
+  Proofreading[] <- lapply(Proofreading, as.character)  
+  return(Proofreading)  
+})
+
+rm(file_list)
+
+## combine list
+df <- c(coding,Proofreading)
+
+```
+
+
+### Check col names
+I only corrected the inconsistencies in the case of letters and spelling errors in the column names. For any other inconsistencies in column names, I made the necessary modifications during the subsequent merging process.
+```{r}
+## Check the coding stage col names
+
+
+Coding_Data_Names <- data.frame(Group1_Coding_Names = names(df[[1]]),
+                       Group1_Coding_Suppl_Names = names(df[[2]]),
+                       Group2_Coding_Names = names(df[[3]]),
+                       Group3_Coding_Names = names(df[[4]]),
+                       Group3_Coding_Suppl_Names = names(df[[5]]),
+                       Group4_Coding_Names = names(df[[6]]),
+                       Group5_Coding_Names = names(df[[7]]),
+                       Group6_Coding_Names = names(df[[8]]),
+                       Group7_Coding_Names = names(df[[9]])) 
+
+check_row_equality1 <- function(row) {  
+  all_equal <- all(row == row[1])  
+  return(all_equal)  
+}  
+  
+row_equalities1 <- apply(Coding_Data_Names, 1, check_row_equality1) 
+
+### I found the names of 3,4,5, 19 cols are different and I modfication them.
+
+colnames(df[[9]])[colnames(df[[9]]) == "First_author"] <- "First_Author"
+
+colnames(df[[3]])[colnames(df[[3]]) == "Sample_Szie"] <- "Sample_Size"
+colnames(df[[4]])[colnames(df[[4]]) == "Sample_Szie"] <- "Sample_Size"
+colnames(df[[5]])[colnames(df[[5]]) == "Sample_Szie"] <- "Sample_Size"
+colnames(df[[6]])[colnames(df[[6]]) == "Sample_Szie"] <- "Sample_Size"
+colnames(df[[7]])[colnames(df[[7]]) == "Sample_Szie"] <- "Sample_Size"
+colnames(df[[9]])[colnames(df[[9]]) == "Sample_Szie"] <- "Sample_Size"
+
+rm(Coding_Data_Names,row_equalities1,check_row_equality1)
+
+## Check the proofreading stage col names
+Proofreading_Data_Names <- data.frame(Group1_Proofreading_Names = names(df[[10]]),
+                                      Group2_Proofreading_Names = names(df[[11]]),
+                                      Group3_Proofreading_Names = names(df[[12]]),
+                                      Group4_Proofreading_Names = names(df[[13]]),
+                                      Group5_Proofreading_Names = names(df[[14]]),
+                                      Group6_Proofreading_Names = names(df[[15]]),
+                                      Group7_Proofreading_Names = names(df[[16]]))
+
+check_row_equality2 <- function(row) {  
+  all_equal <- all(row == row[1])  
+  return(all_equal)  
+}  
+  
+row_equalities2 <- apply(Proofreading_Data_Names, 1, check_row_equality2) 
+
+### I found the names of 8 cols are different and I modfication them.
+
+colnames(df[[11]])[colnames(df[[11]]) == "target_population_N"] <- "Target_Population_N"
+
+rm(Proofreading_Data_Names,row_equalities2,check_row_equality2)
+
+```
+
+
+### Combining the two stages' data (Group2,4,5,6, and 7)
+```{r}
+Group24567_1 <- dplyr::bind_rows(df[[3]],df[[6]],df[[7]],df[[8]],df[[9]]) %>% 
+  dplyr::filter(Coder == "final") %>% 
+  dplyr::select(-c(8,9,14:18,27,28,37,38))
+
+
+Group24567_2 <- dplyr::bind_rows(df[[11]],df[[13]],df[[14]],df[[15]],df[[16]]) %>% 
+  dplyr::filter(Coder == "final") %>%
+  dplyr::rename_at(vars(1:4,7), ~paste0(., "_N"))
+
+  
+Group24567_bind <-  cbind(Group24567_1,Group24567_2) %>% 
+  dplyr::select(1,30,2,31,8,32,11,33,3:7,9,10,12:29,34:48)
+
+
+Group24567_bind_equal <- Group24567_bind %>%
+  dplyr::select(3:8) %>% 
+  dplyr::filter(!(Article_IDs == Article_IDs_N &
+                    Study_Number == Study_Number_N &
+                    Subjects_Group == Subjects_Group_N)) %>% 
+  dplyr::mutate(Remark = ifelse(!(Article_IDs == Article_IDs_N), "Article_IDs", ifelse(!(Study_Number == Study_Number_N), "Study_Number", ifelse(!(Subjects_Group == Subjects_Group_N), "Subjects_Group", NA_character_))))
+
+## The Articles_IDs, Study_Number, and Subject_Group of groups 2,4,5,6 and 7 are different in two coding stages (see Gourp24567_bind_equal) and now  we go back to the paper for modification.
+
+Group24567_bind$Subjects_Group[125] <- Group24567_bind$Subjects_Group_N[125]
+
+Group24567_bind$Subjects_Group[126] <- Group24567_bind$Subjects_Group_N[126]
+
+Group24567_bind$Subjects_Group[127] <- Group24567_bind$Subjects_Group_N[127]
+  
+Group24567_bind$Subjects_Group[377] <- "传统识字教学组"
+  
+Group24567_bind$Subjects_Group[383] <- "健康对照组"
+
+Group24567_bind$Subjects_Group[858] <- Group24567_bind$Subjects_Group_N[858]
+
+Group24567_bind$Subjects_Group[859] <- Group24567_bind$Subjects_Group_N[859]
+
+Group24567_bind$Subjects_Group[880] <- Group24567_bind$Subjects_Group_N[880]
+
+Group24567_bind$Subjects_Group[881] <- Group24567_bind$Subjects_Group_N[881]
+
+Group24567_bind$Subjects_Group[882] <- Group24567_bind$Subjects_Group_N[882]
+  
+Group24567_bind$Study_Number_N[975] <- 1
+  
+Group24567_bind$Study_Number_N[976] <- 2
+  
+Group24567_bind$Article_IDs[1057] <- 20181078
+  
+Group24567_bind$Subjects_Group_N[1076] <- "快乐经历"
+  
+Group24567_bind$Study_Number[1081] <- 0.1
+  
+Group24567_bind$Study_Number_N[1081] <- 0.1
+  
+Group24567_bind$Study_Number_N[1082] <- 0.2
+  
+Group24567_bind$Subjects_Group[1112] <- "控制组"
+  
+Group24567_bind$Study_Number_N[1176] <- 2
+
+## run Group24567_bind_equal again and find this data.frame is not data available, thus we rm this data frame
+
+rm(Group24567_bind_equal,Group24567_1,Group24567_2)
+
+```
+
+
+### Finding the distinct Ids in suppl documents
+```{r }
+Suppl_ID <- dplyr::bind_rows(df[[2]],df[[5]]) %>% 
+  dplyr::filter(Coder == "final") %>%
+  dplyr::distinct(Article_IDs)
+```
+
+
+### Loading the Group 1 data (include suppl)
+```{r}
+Group1_1 <- df[[1]] %>% 
+  dplyr::filter(Coder == "final") %>% 
+  dplyr::filter(!Article_IDs %in% Suppl_ID$Article_IDs) %>% 
+  dplyr::select(-c(8,9,14:18,27,28,37,38))
+
+Group1_suppl <- df[[2]] %>% 
+  dplyr::filter(Coder == "final") %>% 
+  dplyr::rename_at(vars(8,9,14:18,27,28,37,38), ~paste0(., "_N")) %>% 
+  dplyr::mutate(Coder_N = NA, Article_IDs_N = NA, Study_Number_N = NA, 
+                Subjects_Group_N = NA, Remark1_N = NA, Remark2_N = NA, 
+                Remark3_N = NA, Coder2_N= NA) %>% 
+  dplyr::mutate(Coder_N = Coder, Coder2_N = Coder,Article_IDs_N = Article_IDs,
+                Study_Number_N = Study_Number, Subjects_Group_N = Subjects_Group, Remark1_N = Remark1,
+                Remark2_N = Remark2, Remark3_N = Remark3)
+
+
+Group1_2 <- df[[10]] %>% 
+  dplyr::filter(Coder == "final") %>%
+  dplyr::filter(!Article_IDs %in% Suppl_ID$Article_IDs) %>%
+  dplyr::rename_at(vars(1:4,7), ~paste0(., "_N"))
+
+Group1_bind <- cbind(Group1_1,Group1_2) %>%
+  dplyr::select(1,30,2,31,8,32,11,33,3:7,9,10,12:29,34:48)
+
+Group1_bind_equal <- Group1_bind %>%
+  dplyr::select(3:8) %>% 
+  dplyr::filter(!(Article_IDs == Article_IDs_N &
+                    Study_Number == Study_Number_N &
+                    Subjects_Group == Subjects_Group_N)) %>% 
+  dplyr::mutate(Remark = ifelse(!(Article_IDs == Article_IDs_N), "Article_IDs", ifelse(!(Study_Number == Study_Number_N), "Study_Number", ifelse(!(Subjects_Group == Subjects_Group_N), "Subjects_Group", NA_character_))))
+
+Group1_bind <- bind_rows(Group1_bind,Group1_suppl)
+
+## The Articles_IDs, Study_Number, and Subject_Group are different in two coding stages (see Gourp1_bind_equal) and now  we go back to the paper for modification.
+
+Group1_bind$Study_Number[170] <- Group1_bind$Study_Number_N[170]
+
+Group1_bind$Study_Number[171] <- Group1_bind$Study_Number_N[171] 
+
+Group1_bind$Study_Number[172] <- Group1_bind$Study_Number_N[172] 
+
+Group1_bind$Study_Number[173] <- Group1_bind$Study_Number_N[173] 
+
+## run Group1_bind_equal again and find this data.frame is not data available, thus we rm this data frame
+
+# rm(Group1_bind_equal,Group1_1,Group1_2,Group1_suppl)
+``` 
+
+
+### Loading the Group 3 data (include suppl)
+```{r}
+Group3_1 <- df[[4]] %>% 
+  dplyr::filter(Coder == "final") %>% 
+  dplyr::filter(!Article_IDs %in% Suppl_ID$Article_IDs) %>% 
+  dplyr::select(-c(8,9,14:18,27,28,37,38))
+
+# The coders in the First_Author and Journal columns because of the wrong order of column names, so the two columns of 1:41 data position is reversed, now swap the data back, in order to facilitate the subsequent data merge
+
+Group3_1_Journal <- Group3_1[1:41,"Journal"]
+Group3_1_First_Author <- Group3_1[1:41,"First_Author"]
+
+Group3_1[1:41,"Journal"] <- Group3_1_First_Author
+Group3_1[1:41,"First_Author"] <- Group3_1_Journal
+
+Group3_1 <- Group3_1 %>% 
+  dplyr::rename(First_Author = "Journal",Journal = "First_Author")
+
+# continue sorting data
+Group3_suppl <- df[[5]] %>% 
+  dplyr::filter(Coder == "final") %>% 
+  dplyr::rename_at(vars(8,9,14:18,27,28,37,38), ~paste0(., "_N")) %>% 
+  dplyr::mutate(Coder_N = NA, Article_IDs_N = NA, Study_Number_N = NA, 
+                Subjects_Group_N = NA, Remark1_N = NA, Remark2_N = NA, 
+                Remark3_N = NA, Coder2_N= NA) %>% 
+  dplyr::mutate(Coder_N = Coder, Coder2_N = Coder,Article_IDs_N = Article_IDs,
+                Study_Number_N = Study_Number, Subjects_Group_N = Subjects_Group, Remark1_N = Remark1,
+                Remark2_N = Remark2, Remark3_N = Remark3)
+
+
+Group3_2 <- df[[12]] %>% 
+  dplyr::filter(Coder == "final") %>%
+  dplyr::filter(!Article_IDs %in% Suppl_ID$Article_IDs) %>%
+  dplyr::rename_at(vars(1:4,7), ~paste0(., "_N"))
+
+## two data frame have different rows, check and find that Articles_IDs 20213137 is uncode
+
+Group3_1$Article_IDs[169] <- 20213137
+
+Group3_1$Article_IDs[170] <- 20213137
+
+Group3_1_20213137suppl <- data.frame(Coder = c("final","final"),
+                                Article_IDs =c(20213137,20213137),
+                                Article_Title =c("外显社会范畴加工与内隐社会范畴加工的年龄效应
+","外显社会范畴加工与内隐社会范畴加工的年龄效应"),Journal = c("中国临床心理学杂志","中国临床心理学杂志"),
+First_Author =c("王沛","王沛"),
+Abstract1 =c(1,1),
+Abstract2 =c(0,0),
+Study_Number =c(2,2),
+Remark1 =c(NA,NA),
+Study_Type =c(1,1),
+Subjects_Group =c("年轻被试","老年被试"),
+Sample_Size =c(41,46),
+Gender = c(1,1),
+Male_Num =c(19,20),
+Female_Num =c(22,26),
+Age =c(1,1),
+M_age =c(21,63),
+SD_age=c(NA,NA),
+Other_age =c("19-26","58-88"),
+Ethnicity=c(0,0),
+Ethnicity_info=c(NA,NA),
+Religious=c(0,0),
+Religious_info=c(NA,NA),
+Subjects_Area =c(0,0),
+Subjects_Area_info =c(NA,NA),
+Subjects_Recruitment_Area =c(0,0),
+Sampling_Method =c(0,0),
+Remark2=c(NA,NA),
+Remark3=c(NA,NA))
+
+Group3_2_20213137suppl <- data.frame(Coder_N = c("final", "final","final","final"),
+                                Article_IDs_N = c(20213137,20213137,20213137,20213137),
+                                Study_Number_N = c(1,1,2,2),
+                                Subjects_Group_N = c("年轻被试","老年被试","年轻被试","老年被试"),
+                                Remark2_N = c(NA,NA,NA,NA),
+                                Remark3_N = c(NA,NA,NA,NA),
+                                Coder2_N = c("final","final","final","final"),
+                                Target_Population_N =c(3,3,3,3),
+                                Coding_Basis_N = c("本研究采用 Garner 选择性注意范式探究了认
+知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系","本研究采用Garner选择性注意范式探究了认知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系","本研究采用Garner选择性注意范式探究了认知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系","本研究采用 Garner选择性注意范式探究了认知者年龄对内隐社会范畴加工和外显社会范畴加工的影响，以及内隐社会范畴加工与外显社会范畴加工之间的关系"),
+                                Remark1_N = c(NA,NA,NA,NA),
+                                Sample_Type_N = c(1,4,1,4),
+                                Sample_Type_info_N =c ("其中年轻被试40人（男性18人，女性22人），均为大学生","老年被试35人（男性17人，女性 18 人），均来自某老年大学，年龄 58-88 岁，平均年龄64岁","其中年轻大学生被试 41 人（男性 19 人，女性 22 人），年龄 19-26岁，平均年龄21岁","老年被试46人（男性20人，女性26人），均来自某老年大学，年龄58-88岁，平均年龄63岁"),
+                                Educational_Attainment_N =c(NA,0,NA,0),
+                                Educational_Attainment_info_N =c(NA,NA,NA,NA),
+                                Occupation_N = c(NA,0,NA,0),
+                                SES_N =c(0,0,0,0),
+                                SES_info_N =c(NA,NA,NA,NA),
+                                Subjects_Recruitment_Method_N =c(1,1,1,1),
+                                Subjects_Recruitment_Method_info_N =c(NA, NA,NA,NA))
+
+
+Group3_1_20213137 <- Group3_1 %>% 
+  dplyr::filter(Article_IDs == 20213137)
+
+Group3_1 <- Group3_1 %>% 
+  dplyr::filter(!(Article_IDs == 20213137))
+
+Group3_1_20213137_bind <- rbind(Group3_1_20213137,Group3_1_20213137suppl)
+
+Group3_1_20213137_bind <- cbind(Group3_1_20213137_bind,Group3_2_20213137suppl) %>% 
+    dplyr::select(1,30,2,31,8,32,11,33,3:7,9,10,12:29,34:48)
+
+
+Group3_bind <- cbind(Group3_1,Group3_2) %>%
+  dplyr::select(1,30,2,31,8,32,11,33,3:7,9,10,12:29,34:48)
+
+
+Group3_bind_equal <- Group3_bind %>%
+  dplyr::select(3:8) %>% 
+  dplyr::filter(!(Article_IDs == Article_IDs_N &
+                    Study_Number == Study_Number_N &
+                    Subjects_Group == Subjects_Group_N)) %>% 
+  dplyr::mutate(Remark = ifelse(!(Article_IDs == Article_IDs_N), "Article_IDs", ifelse(!(Study_Number == Study_Number_N), "Study_Number", ifelse(!(Subjects_Group == Subjects_Group_N), "Subjects_Group", NA_character_))))
+
+
+## The Articles_IDs, Study_Number, and Subject_Group are different in two coding stages (see Gourp1_bind_equal) and now  we go back to the paper for modification.
+
+Group3_bind$Study_Number[27] <- 0
+
+Group3_bind$Study_Number_N[131] <- 1
+
+Group3_bind$Subjects_Group_N[130] <- "实验组"
+
+Group3_bind$Subjects_Group_N[131] <- "控制组"
+
+## Experiment 2 of Article_IDs 20184025 was not code, but experiment2 subjects was sames as experiment 1, therefore we  dont't recode it. 
+
+Group3_1_20213137_bind[] <- lapply(Group3_1_20213137_bind,as.character)
+
+Group3_suppl <- Group3_suppl %>% 
+  dplyr::filter(!(Article_IDs == 20213137))
+
+Group3_bind <- bind_rows(Group3_bind,Group3_suppl,Group3_1_20213137_bind)
+
+rm(Group3_1,Group3_1_20213137,Group3_1_20213137_bind,Group3_1_20213137suppl,Group3_bind_equal,Group3_suppl,Group3_2,Group3_2_20213137suppl)
+
+rm(Group3_1_Journal,Group3_1_First_Author)
+
+```
+
+
+### Combine the coding data and the proofreading data
+```{r message=FALSE, warning=FALSE}
+
+df_stage2_Journal_Code <- bind_rows(Group24567_bind,Group1_bind,Group3_bind)
+
+### There are three articles that need to be replaced, and we will filter them out.
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code %>% 
+  dplyr::filter(!Article_IDs %in% c(20084071,20182070,20185037))
+
+```
+
+
+## Check each code information and modification code information
+### Coder(Coder2_N/Coder_N)
+
+```{r message=FALSE, warning=FALSE}
+
+any(is.na(df_stage2_Journal_Code2$Coder)) ### The code runs result is FALSE
+
+any(is.na(df_stage2_Journal_Code2$Coder_N)) ### The code runs result is FALSE
+
+any(is.na(df_stage2_Journal_Code2$Coder2_N)) ### The code runs result is TURE and further find NA rows
+df_stage2_Journal_Code2$Article_IDs[is.na(df_stage2_Journal_Code2$Coder2_N)]
+
+### The results of code run shows that 20211059, 20211061, 20213236, 20213239 is NA
+
+df_stage2_Journal_Code2$Coder2_N[436] <- "final"
+df_stage2_Journal_Code2$Coder2_N[437] <- "final"
+df_stage2_Journal_Code2$Coder2_N[486] <- "final"
+df_stage2_Journal_Code2$Coder2_N[487] <- "final"
+```
+
+
+### Article_IDs(Article_IDs_N)
+```{r}
+Article_IDs <-  df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Article_IDs))   ### The code runs results is 20083093 and 20181140
+
+df_stage2_Journal_Code2$Article_IDs[62] <- 20083093
+df_stage2_Journal_Code2$Article_IDs[73] <- 20181140
+
+
+Article_IDs_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Article_IDs_N))  ### The code runs results is no data
+
+rm(Article_IDs,Article_IDs_N)
+```
+
+
+### Study_Number(Study_Number_N)
+```{r}
+Study_Number <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Study_Number) | is.na(Study_Number_N))
+
+### Article_IDs 20081127
+df_stage2_Journal_Code2$Study_Number[28] <- 1
+df_stage2_Journal_Code2$Study_Number_N[28] <- 1
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Study_Number[62] <- 1
+df_stage2_Journal_Code2$Study_Number_N[62] <- 1  ### 20083093 two coder codeed and completed "check", but they dont't complete "final"
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Study_Number[73] <- 2  ### 20181140 same as 20083093
+
+### Article_IDs 20181168
+df_stage2_Journal_Code2$Study_Number_N[104] <- 0
+
+### Article_IDs 20082054
+df_stage2_Journal_Code2$Study_Number[246] <- 1
+df_stage2_Journal_Code2$Study_Number_N[246] <- 1
+
+### Article_IDs 20082069
+df_stage2_Journal_Code2$Study_Number_N[254] <- 1
+
+### Article_IDs 20082074
+df_stage2_Journal_Code2$Study_Number[257:258] <- 1
+df_stage2_Journal_Code2$Study_Number_N[257:258] <- 1
+
+### Article_IDs 20082087
+df_stage2_Journal_Code2$Study_Number_N[260] <- 1
+
+### Article_IDs 20211046
+df_stage2_Journal_Code2$Study_Number[432] <- 1
+df_stage2_Journal_Code2$Study_Number_N[432] <- 1
+
+### Article_IDs 20212097
+df_stage2_Journal_Code2$Study_Number[928] <- 0
+df_stage2_Journal_Code2$Study_Number[929] <- 0.1
+
+### Article_IDs 20182192
+df_stage2_Journal_Code2$Study_Number[1087] <- 1
+
+### Article_IDs 20182193
+df_stage2_Journal_Code2$Study_Number[1088] <- 1
+df_stage2_Journal_Code2$Study_Number_N[1088] <- 1
+
+### Article_IDs 20212172
+df_stage2_Journal_Code2$Study_Number[1179] <- 1
+df_stage2_Journal_Code2$Study_Number_N[1179] <- 1 
+
+### Article_IDs 20083017
+df_stage2_Journal_Code2$Study_Number_N[1298] <- 1
+
+### Article_IDs 20183268
+df_stage2_Journal_Code2$Study_Number[1393] <- 1
+df_stage2_Journal_Code2$Study_Number_N[1393] <- 1 
+
+### Article_IDs 20213023
+df_stage2_Journal_Code2$Study_Number[1437] <- 1
+
+### Article_IDs 20213039
+df_stage2_Journal_Code2$Study_Number[1443] <- 1
+
+### Article_IDs 20082013
+df_stage2_Journal_Code2$Study_Number[1473] <- 1
+
+### Artilce_IDs 20082029
+df_stage2_Journal_Code2$Study_Number[1485] <- 1
+
+### In this part, I found that the Study_Number of several studies were differentiated by Subjects_Gourp, so I recode them.
+
+### Article_IDs 20212067
+df_stage2_Journal_Code2$Study_Number[667:668] <- 2
+df_stage2_Journal_Code2$Study_Number_N[667:668] <- 2
+df_stage2_Journal_Code2$Subjects_Group[667:668] <- c("预研究1","正式研究")
+df_stage2_Journal_Code2$Subjects_Group_N[667:668] <- c("预研究1","正式研究")
+
+### Article_IDs 20185038
+df_stage2_Journal_Code2$Study_Number[1124:1125] <- df_stage2_Journal_Code2$Subjects_Group[1124:1125]
+df_stage2_Journal_Code2$Subjects_Group[1124:1125] <- df_stage2_Journal_Code2$Study_Number_N[1124:1125]
+df_stage2_Journal_Code2$Study_Number_N[1124:1125] <- df_stage2_Journal_Code2$Study_Number[1124:1125]
+df_stage2_Journal_Code2$Subjects_Group_N[1124:1125] <- df_stage2_Journal_Code2$Subjects_Group[1124:1125]
+df_stage2_Journal_Code2$Study_Number[1126] <- 1
+df_stage2_Journal_Code2$Study_Number_N[1126] <- 1
+df_stage2_Journal_Code2$Subjects_Group[1126] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[1126] <- NA
+
+rm(Study_Number)
+
+### I found some coding error of Study_Number when I check other information code.
+
+### Article_IDs 20181027
+df_stage2_Journal_Code2$Study_Number[1013:1014] <- 1
+df_stage2_Journal_Code2$Study_Number_N[1013:1014] <- 1
+
+```
+
+
+### Subjects_Group
+```{r}
+Subjects_Group <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter((!is.na(Subjects_Group) & !is.na(Subjects_Group_N) & Subjects_Group != Subjects_Group_N) |
+                  (is.na(Subjects_Group) & !is.na(Subjects_Group_N)) |
+                  (!is.na(Subjects_Group) & is.na(Subjects_Group_N))) 
+
+
+### Article_IDs 20083042
+df_stage2_Journal_Code2$Subjects_Group[42] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[42] <- NA
+
+### Article_IDs 20181148
+df_stage2_Journal_Code2$Subjects_Group[91] <- NA
+
+### Article_IDs 20181162
+df_stage2_Journal_Code2$Subjects_Group[98] <- NA
+
+### Article_IDs 20181187
+df_stage2_Journal_Code2$Subjects_Group_N[121] <- "积极怀旧组"
+df_stage2_Journal_Code2$Subjects_Group_N[122] <- "主题怀旧组"
+
+### Article_IDs 20182268
+df_stage2_Journal_Code2$Subjects_Group_N[140:148] <- df_stage2_Journal_Code2$Subjects_Group[140:148]
+
+### Article_IDs 20182019
+df_stage2_Journal_Code2$Subjects_Group[339:341] <- df_stage2_Journal_Code2$Subjects_Group_N[339:341]
+
+### Article_IDs 20182031
+df_stage2_Journal_Code2$Subjects_Group[358:359] <- df_stage2_Journal_Code2$Subjects_Group_N[358:359]
+
+### Article_IDs 20183071
+df_stage2_Journal_Code2$Subjects_Group[369:370] <- df_stage2_Journal_Code2$Subjects_Group_N[369:370]
+
+### Article_IDs 20182035
+df_stage2_Journal_Code2$Subjects_Group_N[554] <- "海洛因戒断者组"
+
+### Article_IDs 20082210
+### Redundant Subjects Group
+df_stage2_Journal_Code2$Subjects_Group[699:701] <- NA
+
+### Article_IDs 20181023
+df_stage2_Journal_Code2$Subjects_Group_N[788:791] <- df_stage2_Journal_Code2$Subjects_Group[788:791]
+
+### Article_IDs 20182126
+### Redundant Subjects Group
+df_stage2_Journal_Code2$Subjects_Group[830:831] <- NA
+
+### Article_IDs 20182131
+df_stage2_Journal_Code2$Subjects_Group_N[832:833] <- df_stage2_Journal_Code2$Subjects_Group[832:833] 
+
+### Article_IDs 20182174
+df_stage2_Journal_Code2$Subjects_Group_N[1076] <- NA
+
+### Article_IDs 20182192
+df_stage2_Journal_Code2$Subjects_Group_N[1087] <- NA
+
+### Article_IDs 20083017
+df_stage2_Journal_Code2$Subjects_Group_N[1298:1299] <- df_stage2_Journal_Code2$Subjects_Group[1298:1299]
+
+rm(Subjects_Group)
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Subjects_Group = if_else(Subjects_Group == 1, NA, Subjects_Group),
+                Subjects_Group_N = if_else(Subjects_Group_N == 1, NA, Subjects_Group_N))
+```
+
+
+### Article_Title
+```{r}
+Article_Title <-  df_stage2_Journal_Code2 %>%
+  dplyr::filter(is.na(Article_Title))
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Article_Title[62] <-  "抑郁与自尊水平、自我效能感的关系研究"
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Article_IDs[73] <- 20181140
+df_stage2_Journal_Code2$Article_Title[73] <- "比例推理的过度使用及其认知机制：一项发展性的负启动研究"
+## I found 20181140 had some coding info uncode
+
+## Article_IDs 20085035
+df_stage2_Journal_Code2$Article_Title[747] <- "《适应分量表》在蒙古族青少年群体中使用的信、效度检验"
+ 
+### Article_IDs 20183171
+df_stage2_Journal_Code2$Article_Title[867:868] <- "母亲消极完美主义与女儿内化问题：一个多重中介模型"
+ 
+### Article_IDs 20183182
+df_stage2_Journal_Code2$Article_Title[870:872] <- "父亲婚姻满意度与幼儿社会适应：父亲反应方式的中介作用"
+ 
+### Article_IDs 20183188
+df_stage2_Journal_Code2$Article_Title[873] <- "非营利机构员工相对剥夺感对情绪耗竭的影响：心理契约违背的中介作用"
+ 
+### Article_IDs 20183052
+df_stage2_Journal_Code2$Article_Title[1571] <- "学生同伴依恋与抑郁：自我认同感和宿舍人际关系的中介作用"
+
+### Article_IDs 20183054
+df_stage2_Journal_Code2$Article_Title[1572] <- "父母心理控制、自主支持与青少年外化问题行为：控制动机的中介作用"
+
+### Article_IDs 20184022
+df_stage2_Journal_Code2$Article_Title[1587:1592] <- "幼儿的自我投射能力对情景预见的影响：来自典型发展儿童和孤独症谱系障碍儿童的证据"
+
+### Article_IDs 20211015
+df_stage2_Journal_Code2$Article_Title[1671:1672] <- "如何激发员工绿色行为？绿色变革型领导与绿色人力资源管理实践的作用"
+
+rm(Article_Title)
+```
+
+
+### First_Author and Journal
+```{r}
+First_Author_Journal <-  df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(First_Author) | is.na(Journal)) %>% 
+  dplyr::select(3,4,10,11)
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$First_Author[62] <- "戴琴"
+df_stage2_Journal_Code2$Journal[62] <- "中国临床心理学杂志"
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$First_Author[73] <- "江荣焕"
+df_stage2_Journal_Code2$Journal[73] <-  "心理学报"
+
+### Article_IDs 20185166
+df_stage2_Journal_Code2$First_Author[208] <- "张林" 
+
+### Article_IDs 20215077
+df_stage2_Journal_Code2$First_Author[241] <- "张昕"
+
+### Article_IDs 20215078
+df_stage2_Journal_Code2$First_Author[242] <- "张野"
+
+### Article_IDs 20081048
+df_stage2_Journal_Code2$First_Author[1273] <- "冯冬冬"
+df_stage2_Journal_Code2$Journal[1273] <- "心理学报"
+
+### Article_IDs 20082379
+df_stage2_Journal_Code2$First_Author[1292] <- "安秋玲" 
+df_stage2_Journal_Code2$Journal[1292] <- "心理科学"
+
+### Article_IDS 20184027
+df_stage2_Journal_Code2$First_Author[1669:1670] <- "童钰" 
+df_stage2_Journal_Code2$Journal[1669:1670] <- "心理发展与教育"
+
+### Article_IDs 20213153
+df_stage2_Journal_Code2$First_Author[1678] <- "王鸿飞"
+df_stage2_Journal_Code2$Journal[1678] <- "中国临床心理学杂志"
+
+rm(First_Author_Journal)
+```
+
+
+### Remark
+```{r}
+Remark1 <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39) %>% 
+  dplyr::filter(if_any(c(Remark1, Remark1_N), ~!is.na(.) & nzchar(.)))
+
+
+### Article_IDs 20214072
+df_stage2_Journal_Code2$Remark1[976] <- "secondary"
+
+### Article_IDs 20182193
+df_stage2_Journal_Code2$Remark1_N[1088] <- "mining"
+
+### Article_ID 20213088
+df_stage2_Journal_Code2$Remark1_N[224] <- "qualitative"
+
+### Article_IDs 20182192
+df_stage2_Journal_Code2$Remark1_N[1087] <- "qualitative"
+
+### Article_IDs 20082029
+df_stage2_Journal_Code2$Remark1_N[1485] <- "qualitative"
+
+### Article_IDs 20181168
+#df_stage2_Journal_Code2$Remark1[104] <- "mining"
+#df_stage2_Journal_Code2$Remark1_N[104] <- "mining"
+#df_stage2_Journal_Code2$Remark1_N[105:106] <- NA
+
+### Article_IDs 20082013
+df_stage2_Journal_Code2$Remark1_N[1473] <- "secondary"
+
+### Articel_IDs 20213305
+df_stage2_Journal_Code2$Remark1[683] <- "inapplicable"
+df_stage2_Journal_Code2$Remark1_N[683] <- "inapplicable"
+
+### Article_IDs 20081055
+df_stage2_Journal_Code2$Remark1[1278:1279] <- "inapplicable"
+df_stage2_Journal_Code2$Remark1_N[1278:1279] <- "inapplicable"
+
+### Article_IDs 20181039
+df_stage2_Journal_Code2$Remark1[1025] <- "secondary"
+
+### Article_IDs 20182257
+df_stage2_Journal_Code2$Remark1[130] <- "secondary"
+df_stage2_Journal_Code2$Remark1_N[130] <- "secondary"
+df_stage2_Journal_Code2$Remark2[130] <- "与20182255被试重复"
+df_stage2_Journal_Code2$Remark2_N[130] <- "与20182255被试重复"
+
+### Article_IDs 20182271
+df_stage2_Journal_Code2$Remark1[150] <- "secondary"
+
+### Article_IDs 20182283
+df_stage2_Journal_Code2$Remark1[155:156] <- "secondary"
+
+### Article_IDs 20182028
+df_stage2_Journal_Code2$Remark1[355] <- "non_human"
+df_stage2_Journal_Code2$Remark1_N[355] <- "non_human"
+
+### Article_IDs 20082165
+df_stage2_Journal_Code2$Remark1[503] <- "inapplicable"
+df_stage2_Journal_Code2$Remark1_N[503] <- "inapplicable"
+
+### Article_IDs 20212013
+df_stage2_Journal_Code2$Remark1[643] <- "inapplicable"
+df_stage2_Journal_Code2$Remark1_N[643] <- "inapplicable"
+
+### Article_IDs 20085023
+df_stage2_Journal_Code2$Remark1[742] <- "secondary"
+
+### Article_IDs 20213023
+df_stage2_Journal_Code2$Remark1[1437] <- "mining"
+
+### Article_IDs 20183360
+df_stage2_Journal_Code2$Remark1[1574] <- "secondary"
+
+### Article_IDs 20184019
+df_stage2_Journal_Code2$Remark1[1586] <- "secondary" 
+
+rm(Remark1)
+
+Remark2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,32,34) %>%
+  dplyr::filter(grepl("重复",Remark2)| grepl("重复",Remark2_N))
+
+### Article_IDs 20081104
+df_stage2_Journal_Code2$Remark2_N[21] <- "被试重复使用"
+
+### Article_IDs 20081132
+df_stage2_Journal_Code2$Remark2_N[30:31] <- "被试重复使用"
+
+### Article_IDs 20083038
+df_stage2_Journal_Code2$Remark2[38:39] <- "被试重复使用"
+df_stage2_Journal_Code2$Remark2_N[38:39] <- "被试重复使用"
+
+### Article_IDs 20083085
+df_stage2_Journal_Code2$Remark2_N[60] <- "被试重复使用"
+
+### Article_IDs 20213104
+df_stage2_Journal_Code2$Remark2_N[231] <- "被试重复使用"
+df_stage2_Journal_Code2$Remark3_N[231] <- "样本3重复使用样本2为重测"
+
+### Article_IDs 20182030
+df_stage2_Journal_Code2$Remark2_N[357] <- "被试重复使用"
+
+### Article_IDs 20184042
+df_stage2_Journal_Code2$Remark2_N[388] <- "被试重复使用"
+
+## Article_IDs 20082248
+df_stage2_Journal_Code2$Remark2[711:712] <- NA
+df_stage2_Journal_Code2$Remark2_N[711:712] <- NA
+
+### Article_IDs 20181022
+df_stage2_Journal_Code2$Remark2[782:783] <- NA
+df_stage2_Journal_Code2$Remark2[784:785] <- "被试重复使用"
+
+### Article_IDs 20185003
+df_stage2_Journal_Code2$Remark2_N[897] <- NA
+df_stage2_Journal_Code2$Remark2[898] <- "被试重复使用"
+
+rm(Remark2)
+
+```
+
+
+### Abstract1
+```{r}
+Abstract1 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Abstract1) & (is.na(Remark1) | Remark1 == "")) %>%
+  dplyr::filter(is.na(Remark1_N)) %>% 
+  dplyr::select(3,12,14)
+
+### Article_IDs 20081070
+df_stage2_Journal_Code2$Abstract1[6:7] <- 0
+
+### Article_IDs 20081073
+df_stage2_Journal_Code2$Abstract1[10] <- 0
+
+### Article_IDs 20081127
+df_stage2_Journal_Code2$Abstract1[28] <- "1b"
+
+### Article_IDs 20081132
+df_stage2_Journal_Code2$Abstract1[30:31] <- 123 
+
+### Article_IDs 20081134
+df_stage2_Journal_Code2$Abstract1[33] <- 1234
+
+### Article_IDs 20083038
+df_stage2_Journal_Code2$Abstract1[38:39] <- 14
+
+### Article_IDs 20083039
+df_stage2_Journal_Code2$Abstract1[41] <- 134
+
+### Article_IDs 20083052
+df_stage2_Journal_Code2$Abstract1[44] <- 0
+
+### Article_IDs 20083067
+df_stage2_Journal_Code2$Abstract1[51] <- 134
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Abstract1[73] <- 123
+
+### Article_IDs 20183334
+df_stage2_Journal_Code2$Abstract1[183] <- 14
+
+### Article_IDs 20182035 
+df_stage2_Journal_Code2$Abstract1[555] <- 1
+
+### Article_IDs 20085035
+df_stage2_Journal_Code2$Abstract1[747] <-  "12348b"
+
+### Article_IDs 20085044
+df_stage2_Journal_Code2$Abstract1[752:754] <- "1234b"
+
+### Article_IDs 20181017
+df_stage2_Journal_Code2$Abstract1[773:776] <- 0
+
+### Article_IDs 20181022
+df_stage2_Journal_Code2$Abstract1[782:787] <- 8
+
+### Article_IDs 20181023
+df_stage2_Journal_Code2$Abstract1[788:793] <- 1238
+
+### Article_IDs 20182075
+df_stage2_Journal_Code2$Abstract1[794] <- 123
+
+### Article_IDs 20182103
+df_stage2_Journal_Code2$Abstract1[805:810] <- 123
+
+### Article_IDs 20182125
+df_stage2_Journal_Code2$Abstract1[825:829] <- 12345
+ 
+rm(Abstract1)
+
+```
+
+
+### Abstract2
+```{r message=FALSE, warning=FALSE}
+Abstract2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Sample_Type_N = as.numeric(Sample_Type_N)) %>% 
+  dplyr::filter(Sample_Type_N == c(1,5) & (is.na(Abstract2) | Abstract2 == "")) %>% 
+  dplyr::select(3,40,13,14,39,41) %>% 
+  dplyr::arrange(Sample_Type_N)
+
+### Article_IDs 20081070
+df_stage2_Journal_Code2$Abstract2[6:7] <- 0
+
+### Article_IDs 20081132
+df_stage2_Journal_Code2$Abstract2[30:31] <- 1
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Abstract2[73] <- 1
+
+### Article_IDs 20083204
+df_stage2_Journal_Code2$Abstract2[284:286] <- 1
+
+### Article_IDs 20181005
+df_stage2_Journal_Code2$Abstract2[759:764] <- 0
+  
+### Article_IDs 20182103
+df_stage2_Journal_Code2$Abstract2[805:810] <- 1
+
+### Article_IDs 20082313
+df_stage2_Journal_Code2$Abstract2[987:988] <- 0  
+
+### Article_IDs 20082343
+df_stage2_Journal_Code2$Abstract2[1000:1001] <- 0  
+
+### Article_IDs 20082346
+df_stage2_Journal_Code2$Abstract2[1003] <- 0 
+
+### Article_IDs 20181028
+df_stage2_Journal_Code2$Abstract2[1015:1018] <- 0
+
+### Article_IDs 20181034
+df_stage2_Journal_Code2$Abstract2[1021:1022] <- 0
+
+### Article_IDs 20181037
+df_stage2_Journal_Code2$Abstract2[1023:1024] <- 0
+
+### Article_IDs 20181044
+df_stage2_Journal_Code2$Abstract2[1027] <- 0
+
+### Article_IDs 20181051
+df_stage2_Journal_Code2$Abstract2[1028:1030] <- 0
+
+### Article_IDs 20181052
+df_stage2_Journal_Code2$Abstract2[1031:1032] <- 0
+
+### Article_IDs 20181058
+df_stage2_Journal_Code2$Abstract2[1033:1034] <- 0
+
+### Article_IDs 20181061
+df_stage2_Journal_Code2$Abstract2[1035:1037] <- 0
+
+### Article_IDs 20181063
+df_stage2_Journal_Code2$Abstract2[1038:1039] <- 0
+
+### Article_IDs 20181065
+df_stage2_Journal_Code2$Abstract2[1040:1043] <- 0
+
+### Article_IDs 20181066
+df_stage2_Journal_Code2$Abstract2[1044:1045] <- 0
+
+### Article_IDs 20181073
+df_stage2_Journal_Code2$Abstract2[1047:1050] <- 0
+
+### Article_IDs 20181075
+df_stage2_Journal_Code2$Abstract2[1051:1054] <- 0
+
+### Article_IDs 20181078
+df_stage2_Journal_Code2$Abstract2[1055] <- 0
+
+### Article_IDs 20182164
+df_stage2_Journal_Code2$Abstract2[1060:1063] <- 0
+
+### Article_IDs 20182165
+df_stage2_Journal_Code2$Abstract2[1064:1065] <- 0
+
+### Article_IDs 20182168
+df_stage2_Journal_Code2$Abstract2[1067:1075] <- 0
+
+### Article_IDs 20182183
+df_stage2_Journal_Code2$Abstract2[1082:1083] <- 0
+
+### Article_IDs 20183231
+df_stage2_Journal_Code2$Abstract2[1111] <- 1
+
+### Article_IDs 20185058
+df_stage2_Journal_Code2$Abstract2[1146:1147] <- 0
+
+### Article_IDs 20185076
+df_stage2_Journal_Code2$Abstract2[1157] <- 0
+
+### Article_IDs 20212166
+df_stage2_Journal_Code2$Abstract2[1174:1177] <- 0
+
+### Article_IDs 20212175
+df_stage2_Journal_Code2$Abstract2[1182:1183] <- 0
+
+### Article_IDs 20212188
+df_stage2_Journal_Code2$Abstract2[1187:1190] <- 0
+
+### Article_IDs 20214085
+df_stage2_Journal_Code2$Abstract2[1199:1200] <- 0
+
+### Article_IDs 20215006
+df_stage2_Journal_Code2$Abstract2[1203:1204] <- 0
+
+### Article_IDs 20215007
+df_stage2_Journal_Code2$Abstract2[1205:1206] <- 0
+
+### Article_IDs 20215017
+df_stage2_Journal_Code2$Abstract2[1210:1211] <- 0
+
+### Article_IDs 20215023
+df_stage2_Journal_Code2$Abstract2[1212:1214] <- 0
+
+### Article_IDs 20215068
+df_stage2_Journal_Code2$Abstract2[1232:1234] <- 0
+
+### Article_IDs 20213155
+df_stage2_Journal_Code2$Abstract2[1638:1639] <- 1
+
+### Article_IDs 20213167
+df_stage2_Journal_Code2$Abstract2[1643] <- 1
+
+
+### Sample_Type is 5
+### Article_IDs 20211064
+df_stage2_Journal_Code2$Abstract2[447:452] <- 0
+
+### Article_IDs 20213254
+df_stage2_Journal_Code2$Abstract2[493:494] <- 1
+
+### Article_IDs 20082188
+df_stage2_Journal_Code2$Abstract2[515:516] <- 0
+
+### Article_IDs 20213040
+df_stage2_Journal_Code2$Abstract2[1444] <- 0
+
+rm(Abstract2)
+```
+
+
+### Sample_Size
+```{r}
+Sample_Size <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,16,32,34) %>% 
+  dplyr::filter(is.na(Sample_Size)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复",Remark2))
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Sample_Size[62] <- 175
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Sample_Size[73] <- 43
+
+### Article_IDs 20182022
+df_stage2_Journal_Code2$Remark2[354] <- "被试重复使用"
+df_stage2_Journal_Code2$Remark2_N[354] <- "被试重复使用"
+
+### Article_IDs 20182262
+df_stage2_Journal_Code2$Sample_Size[724] <- 60
+
+### Article_IDs 20082283
+df_stage2_Journal_Code2$Sample_Size[732] <- 426
+
+### Article_IDs 20085044
+df_stage2_Journal_Code2$Sample_Size[753] <- 33
+#Meanwhile, I found this article' subjects group was uncode.
+#df_stage2_Journal_Code2$Subjects_Group[752:754] <- c("3岁组","4岁组","5岁组")
+#df_stage2_Journal_Code2$Subjects_Group_N[752:754] <- c("3岁组","4岁组","5岁组")
+
+### Article_IDs 20182101
+df_stage2_Journal_Code2$Sample_Size[801] <- 29
+df_stage2_Journal_Code2$Female_Num[801] <- 12
+
+### Article_IDs 20182103
+df_stage2_Journal_Code2$Sample_Size[807] <- 124
+##### row808 isn't need
+df_stage2_Journal_Code2$Sample_Size[812] <- 180
+
+df_stage2_Journal_Code2$Sample_Size[811] <- 30
+df_stage2_Journal_Code2$Female_Num[811] <- 17
+df_stage2_Journal_Code2$Male_Num[811] <- 13
+### Meanwhile, I found this article' Study3 should code "inapplicable" in Remark1( Remark1_N).
+#df_stage2_Journal_Code2$Remark1[811] <- "inapplicable"
+#df_stage2_Journal_Code2$Remark1_N[811] <- "inapplicable"
+
+### Article_IDs 20081026
+df_stage2_Journal_Code2$Sample_Size[1251] <- 284
+
+### Article_IDs 20082009
+df_stage2_Journal_Code2$Sample_Size[1471] <- 30
+#meanwhile, I found names error of study number
+df_stage2_Journal_Code2$Study_Number[1468:1471] <- c("1a","1b","2a","2b")
+df_stage2_Journal_Code2$Study_Number_N[1468:1471] <- c("1a","1b","2a","2b")
+
+rm(Sample_Size)
+```
+
+
+### Gender, Male_Num and Female_Num
+```{r}
+Gender <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,17,32,34) %>% 
+  dplyr::filter(is.na(Gender)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复",Remark2))
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Gender[62] <- 1
+df_stage2_Journal_Code2$Male_Num[62] <- 55
+df_stage2_Journal_Code2$Female_Num[62] <- 120
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Gender[73] <- 1
+df_stage2_Journal_Code2$Male_Num[73] <- 23
+df_stage2_Journal_Code2$Female_Num[73] <- 20
+
+rm(Gender)
+
+Male_Female <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Gender = as.numeric(Gender)) %>% 
+  dplyr::filter(Gender == 1 & (is.na(Male_Num) | is.na(Female_Num))) %>% 
+  dplyr::select(3,16:19)
+
+
+### Article_IDs 20184052
+df_stage2_Journal_Code2$Female_Num[398] <- 1-0.571
+
+
+### Article_IDs 20211034
+df_stage2_Journal_Code2$Female_Num[423] <- 1-0.55
+
+
+### Article_IDs 20211040
+df_stage2_Journal_Code2$Male_Num[426] <- 210-117
+
+
+### Article_IDs 20082283
+df_stage2_Journal_Code2$Male_Num[732] <- 426
+df_stage2_Journal_Code2$Female_Num[732] <- NA
+
+
+### Article_IDs 20181007
+df_stage2_Journal_Code2$Male_Num[765] <- 13
+df_stage2_Journal_Code2$Female_Num[765] <- 12
+
+
+### Article_IDs 20182103
+df_stage2_Journal_Code2$Male_Num[809:810] <- NA
+df_stage2_Journal_Code2$Male_Num[812] <- 180-86
+df_stage2_Journal_Code2$Female_Num[812] <- 86
+
+rm(Male_Female)
+```
+
+
+### Age, M_age, SD_age and Other_age
+```{r}
+Age <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,20,32,34) %>% 
+  dplyr::filter(is.na(Age)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复",Remark2))
+  
+### Article_IDs 20083038
+df_stage2_Journal_Code2$Age[37] <- 1
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Age[62] <- 1
+df_stage2_Journal_Code2$M_age[62] <- 26.02
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Age[73] <- 1
+df_stage2_Journal_Code2$M_age[73] <- 21.72
+df_stage2_Journal_Code2$SD_age[73] <- 2.3
+
+### Article_IDs 20182248
+df_stage2_Journal_Code2$Age[126:127] <- 1
+
+### Article_IDs 20185187
+df_stage2_Journal_Code2$Age[215] <-  0
+
+rm(Age)
+
+Age_info <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Age = as.numeric(Age)) %>% 
+  dplyr::filter(Age == 1) %>% 
+  dplyr::filter(is.na(M_age) | is.na(SD_age)) %>% 
+  dplyr::select(3,20:23,14,32,34,39)
+
+
+### Article_IDs 20081134
+df_stage2_Journal_Code2$M_age[33] <- 10.03
+
+### Article_IDs 20181150
+### I found 3 experiment in 20181150 and coder only code experiment 3.
+df_stage2_Journal_Code2$Study_Number[93] <- 3
+df_stage2_Journal_Code2$Study_Number_N[93] <- 3
+
+### Article_IDs 20181162 
+df_stage2_Journal_Code2$Other_age[100] <- "年龄集中在18-25岁"
+
+### Article_IDs 20182267
+df_stage2_Journal_Code2$SD_age[139] <- 1.64
+
+### Articles_IDs 20182279
+df_stage2_Journal_Code2$Other_age[153] <- "35-40为主(42.5%)"
+df_stage2_Journal_Code2$Other_age[154] <- "25-30为主(45.9%)"
+
+### Article_IDs 20183336
+df_stage2_Journal_Code2$SD_age[184] <- 0.591
+
+### Article_IDs 20183340
+df_stage2_Journal_Code2$Other_age[186] <- "11岁60人，12岁140人，13岁189人，14岁146人，15岁101人，16岁62人"
+
+### Article_IDs 20082069
+df_stage2_Journal_Code2$Other_age[253] <- "10.3-13.5"
+df_stage2_Journal_Code2$Other_age[254] <- "10.6-13.0"
+
+### Article_IDs 20083204
+df_stage2_Journal_Code2$Other_age[285:286] <- c("17-25","17-25")
+
+### Article_IDs 20084031
+df_stage2_Journal_Code2$M_age[313] <- 12.3
+
+### Article_IDs 20182003
+df_stage2_Journal_Code2$M_age[323] <- "男生8人（M=21.63），女生9人（M=21.89）"
+df_stage2_Journal_Code2$SD_age[323] <- "男生8人（SD=1.32），女生9人（SD=1.17）"
+
+### 20084045
+df_stage2_Journal_Code2$Other_age[522:523] <- NA
+
+### Article_IDs 20082281
+df_stage2_Journal_Code2$Other_age[731] <- "19-23"
+
+### Article_IDs 20082285
+df_stage2_Journal_Code2$Other_age[733:734] <- "18-22"
+
+### Article_IDs 20181020
+### Redundant Group
+df_stage2_Journal_Code2$M_age[779:779] <- 20.2
+df_stage2_Journal_Code2$SD_age[779:779] <- 2.17
+
+#### Article_IDs 20181023 
+### Redundant Group
+
+#### Article_IDs 20182133
+### Redundant Group
+
+### Article_IDs 20183192
+### Redundant Group
+
+### Article_IDs 20184162
+df_stage2_Journal_Code2$Other_age[893] <- "参与作答的父母中父亲1047人，母亲1139人(其中继母或养母2人)，父母年龄在27.25～62.83岁之间，其中父亲平均年龄为41.44岁，母亲平均年龄为40.23岁"
+
+### Article_IDs 20212091
+df_stage2_Journal_Code2$M_age[927] <- 20.59
+df_stage2_Journal_Code2$Other_age[927] <- "17-26"
+
+### Article_IDs 20214070
+df_stage2_Journal_Code2$M_age[975] <- 13.41
+df_stage2_Journal_Code2$SD_age[975] <- 0.62
+
+### Article_IDs 20214073
+df_stage2_Journal_Code2$M_age[977] <- 13.69
+df_stage2_Journal_Code2$SD_age[977] <- 1.42
+
+### 20185038 
+df_stage2_Journal_Code2$Other_age[1126] <- "年龄16–29岁439人，30–44岁153人，45–60岁27人，年龄资料缺失4人"
+
+### Article_IDs 20181022
+df_stage2_Journal_Code2$Other_age[1247] <- "13岁以下占28.9%，14到16岁占46.2%;17岁以上占24.9%"
+
+### Article_IDs 20081026
+df_stage2_Journal_Code2$M_age[1251] <- 20.20
+df_stage2_Journal_Code2$SD_age[1251] <- 0.81
+df_stage2_Journal_Code2$Other_age[1251] <- "18-24"
+
+### Article_IDs 20082374
+df_stage2_Journal_Code2$Age[1290] <- 1
+df_stage2_Journal_Code2$Other_age[1290] <- "20-23"
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1290] <- "福建"
+
+### Article_IDs 20083017
+df_stage2_Journal_Code2$Other_age[1298] <- "男女及各年级人数基本相等, 学生年龄为16-18岁"
+df_stage2_Journal_Code2$Other_age[1299] <- " 高一学生64人,高二学生65人,高三学生53人,平均年龄分别为16.2、17.1和18.2岁"
+
+### Article_IDs 20183018
+df_stage2_Journal_Code2$Other_age[1300] <- "19-25"
+
+### Article_IDs 20181091
+df_stage2_Journal_Code2$Other_age[1311] <- "18-25"
+
+### Article_IDs 20181133
+df_stage2_Journal_Code2$Other_age[1352] <- "20-25"
+
+### Article_IDs 20181139
+df_stage2_Journal_Code2$Other_age[1359] <- "18-22"
+df_stage2_Journal_Code2$Other_age[1360] <- "18-22"
+
+### Article_IDs 20182207
+df_stage2_Journal_Code2$SD_age[1364] <- "男性:6.56;女性:5.04"
+
+### Article_IDs 20182228
+df_stage2_Journal_Code2$M_age[1371] <-  "男性:10.01;女性:9.95"
+df_stage2_Journal_Code2$SD_age[1371] <-  "男性:1.31;女性:1.38"
+
+### Article_IDs 20182231
+df_stage2_Journal_Code2$Other_age[1374] <- "年龄以25~30岁为主（38.6%）"
+
+### Article_IDs 20183257
+df_stage2_Journal_Code2$Other_age[1384] <- "21岁以下(2人)21~30岁(6人)31~40岁(13人)40岁以上(4人)"
+df_stage2_Journal_Code2$Other_age[1385] <- "21岁以下(3人);21~30岁(9人);31~40岁(11人);40岁以上(2人)"
+
+### Article_IDs 20213067
+df_stage2_Journal_Code2$Other_age[1457] <- "年龄段：10~17岁10人，18~39岁355人，40~59岁159人，60~79岁21人"
+
+### Article_IDs 20083173
+df_stage2_Journal_Code2$Other_age[1514] <- "18-29岁:50人;30-39岁:18人;40岁以上:8人"
+
+### Article_IDs 20181210
+df_stage2_Journal_Code2$Other_age[1530] <- "按照年龄划分,25岁以下占18%,25~35岁占56.5,35~45岁占20.6%, 45岁以上占4.9%"
+df_stage2_Journal_Code2$Other_age[1531] <- "按照年龄划分,35岁以下占40.9%,35~45岁占37.2%,45岁以上占21.9%"
+
+### Article_IDs 20181213
+df_stage2_Journal_Code2$Other_age[1535] <- "90.3%年龄介于 21~40 岁之间"
+df_stage2_Journal_Code2$Other_age[1536] <- "21~40 岁占 95.7%"
+
+### Article_IDs 20183042
+df_stage2_Journal_Code2$Other_age[1568] <- "18-23"
+
+### Article_IDs 20185084
+df_stage2_Journal_Code2$Other_age[1658] <- "17-26"
+
+### Article_IDs 20215085
+df_stage2_Journal_Code2$Other_age[1659] <- "18-24"
+df_stage2_Journal_Code2$Other_age[1660] <- "17-26"
+
+### Article_IDs 20213137
+df_stage2_Journal_Code2$Other_age[1682] <- "19-26"
+df_stage2_Journal_Code2$Other_age[1683] <- "58-88"
+
+rm(Age_info)
+```
+
+
+### Ethnicity and info
+```{r}
+Ethnicity <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,24,32,34) %>% 
+  dplyr::filter(is.na(Ethnicity)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复",Remark2))
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Ethnicity[62] <- 0
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Ethnicity[73] <- 0
+
+### Article_IDs 20185191
+df_stage2_Journal_Code2$Ethnicity[218] <- 0
+
+### Article_IDs 20181017
+df_stage2_Journal_Code2$Ethnicity[775:776] <- 0
+
+rm(Ethnicity)
+
+
+Ethnicity_info <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Ethnicity == 1 & is.na(Ethnicity)) %>% 
+  dplyr::select(3,25,14,32,34,39)
+
+rm(Ethnicity_info)
+```
+
+
+### Religious and info
+```{r}
+Religious <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,26,32,34) %>% 
+  dplyr::filter(is.na(Religious)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2))
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Religious[62] <- 0
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Religious[73] <- 0
+
+### Article_IDs 20181081
+df_stage2_Journal_Code2$Religious[1056] <- 0
+
+### Article_IDs 20183229
+df_stage2_Journal_Code2$Religious[1109] <- 0
+
+### Article_IDs 20213029
+df_stage2_Journal_Code2$Religious[1440] <- 0
+
+rm(Religious)
+
+
+Religious_info <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Religious == 1 & is.na(Religious_info)) %>% 
+  dplyr::select(3,27,14,32,34,39)
+
+### In check process, 20182168' Religious_info need recode.
+df_stage2_Journal_Code2$Religious_info[1067:1068] <- "4(无宗教信仰)"
+
+rm(Religious_info)
+```
+
+
+### Subjects_Area and info
+```{r}
+Subjects_Area <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,28,32,34) %>% 
+  dplyr::filter(is.na(Subjects_Area)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2))
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Subjects_Area[62] <- 0
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Subjects_Area[73] <- 0
+
+### Article_IDs 20082296
+df_stage2_Journal_Code2$Subjects_Area[735:737] <- 0
+
+### Article_IDs 20082298
+df_stage2_Journal_Code2$Subjects_Area[738] <- 0
+
+### Article_IDs 20085035
+df_stage2_Journal_Code2$Subjects_Area[747] <- 0
+
+### Article_IDs 20085044
+df_stage2_Journal_Code2$Subjects_Area[752:754] <- 0
+
+### Article_IDs 20183229
+df_stage2_Journal_Code2$Subjects_Area[1109] <- 0
+
+### Article_IDs 20213012
+df_stage2_Journal_Code2$Subjects_Area[1434] <- 0
+
+### Article_IDs 20213039
+df_stage2_Journal_Code2$Subjects_Area[1443] <- 0
+
+### Article_IDs 20211018
+df_stage2_Journal_Code2$Subjects_Area[1675] <-  0
+
+rm(Subjects_Area)
+
+Subjects_Area_info <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Subjects_Area >= 1 & is.na(Subjects_Area_info)) %>% 
+  dplyr::select(3,28:29,14,39,32,34)
+
+
+### Article_IDs 20215026
+df_stage2_Journal_Code2$Subjects_Area_info[1216] <- "天津本地居住"
+
+rm(Subjects_Area_info)
+```
+
+
+### Subjects_Recruitment_Area
+```{r}
+Subjects_Recruitment_Area <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,30,32,34) %>% 
+  dplyr::filter(is.na(Subjects_Recruitment_Area)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2))
+
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[73] <- "广东"
+
+### Article_IDs 20182297
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[159] <- "东部;中部;西部"
+
+### Article_IDs 20183326
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[172] <- "湖北"
+
+### Article_IDs 20082064
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[250] <- "西北;东北;华北;华东;华南;华中;西南"
+
+### Article_IDs 20181243
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[319] <- "福建;上海;宁夏"
+
+### Article_IDs 20085035
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[747] <- "内蒙古"
+
+### Article_IDs 20085044
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[752:754] <- "北京"
+
+### Article_IDs 20181007
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[765:767] <- 0
+
+### Article_IDs 20082339
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[995] <- 0
+
+### Article_IDs 20081026
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1251] <- "广东"
+
+### Article_IDs 20183277
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1394] <- 0
+
+### Article_IDs 20183292
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1398:1399] <- 0
+
+### Article_IDs 20183308
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1406] <- 0
+
+### Article_IDs 20185083
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1409:1410] <- 0
+
+### Article_IDs 20185087
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1411:1414] <- 0
+
+### Article_IDs 20185096
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1415] <- 0
+
+### Article_IDs 20185110
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1418] <- 0
+
+### Article_IDs 20185114
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1421] <- 0
+
+### Article_IDs 20185121
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1424] <- 0
+
+### Article_IDs 20185128
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1428] <- 0
+
+### Article_IDs 20185130
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1429] <- 0
+
+### Article_IDs 20213037
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1442] <- 0
+### uncode experiment2????
+
+### Article_IDs 20213047
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1449:1450] <- 0
+
+### Article_IDs 20213048
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1451:1452] <- 0
+
+### Article_IDs 20215076
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[1460] <- 0
+
+rm(Subjects_Recruitment_Area)
+
+
+```
+
+
+### Sampling_Method
+```{r}
+Sampling_Method <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,31,32,34) %>% 
+  dplyr::filter(is.na(Sampling_Method)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2))
+
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Sampling_Method[62] <- 0
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Sampling_Method[73] <- 0
+
+### Article_IDs 20082105
+df_stage2_Journal_Code2$Sampling_Method[260:267] <- 1
+
+### Article_IDs 20211067
+df_stage2_Journal_Code2$Sampling_Method[453:454] <- 0
+
+### Article_IDs 20082296
+df_stage2_Journal_Code2$Sampling_Method[735:737] <- 2
+
+### Article_IDs 20082298
+df_stage2_Journal_Code2$Sampling_Method[738] <- 2
+
+### Article_IDs 20182180
+df_stage2_Journal_Code2$Sampling_Method[1078] <- 0
+
+### Article_IDs 20182182
+df_stage2_Journal_Code2$Sampling_Method[1079:1081] <- 0
+
+### Article_IDs 2182183
+df_stage2_Journal_Code2$Sampling_Method[1082:1083] <- 0
+
+### Article_IDs 20182184
+#I found this is "secondary"
+df_stage2_Journal_Code2$Remark1[1084] <- "secondary"
+df_stage2_Journal_Code2$Remark1_N[1084] <- "secondary"
+
+### Article_IDs 20182188
+df_stage2_Journal_Code2$Sampling_Method[1085] <- 0
+
+### Article_IDs 20182191
+
+### Article_IDs 20081026
+df_stage2_Journal_Code2$Sampling_Method[1251] <- 1
+
+rm(Sampling_Method)
+```
+
+
+### Target_Population_N and Coding_Basis 
+```{r}
+Target_Population_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,37,32,34) %>% 
+  dplyr::filter(is.na(Target_Population_N)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2))
+
+
+### Article_IDs 20182267
+df_stage2_Journal_Code2$Target_Population_N[138] <- 3
+
+### Article_IDs 20213098
+df_stage2_Journal_Code2$Target_Population_N[227] <- 1
+
+### Article_IDs 20215077
+df_stage2_Journal_Code2$Target_Population_N[241] <- 1
+df_stage2_Journal_Code2$Coding_Basis_N[241] <- "负性生活事件与儿童反应性攻击性之间的关系：一个有多重中介变量的结构方程模型"
+
+### Article_IDs 20082105
+df_stage2_Journal_Code2$Target_Population_N[262:267] <- 3
+df_stage2_Journal_Code2$Coding_Basis_N[262:267] <- "中国的心理治疗和咨询业近年来发展迅速中国的心理治疗文献的快速增长表明我国的心理治疗目前正处于一个快速发展时期"
+
+### Article_IDs 20085022
+df_stage2_Journal_Code2$Target_Population_N[741] <- 1
+df_stage2_Journal_Code2$Coding_Basis_N[741] <- "本研究假定:思维风格会通过影响学习策略,而间接影响数学学业成就。也就是说,学习策略在思维风格与数学学业成就之间起到中介的作用。"
+
+### Article_IDs 20212148
+df_stage2_Journal_Code2$Target_Population_N[950] <- 3
+
+### Article_IDs 20214067
+df_stage2_Journal_Code2$Target_Population_N[972] <- 3
+
+## Article_IDs 20182161
+df_stage2_Journal_Code2$Target_Population_N[1058] <- 3
+
+## Article_IDs 20215005
+df_stage2_Journal_Code2$Target_Population_N[1202] <- 3
+
+## Article_IDs 20215042
+df_stage2_Journal_Code2$Target_Population_N[1219:1221] <- 3
+
+### Article_IDs 20081051
+df_stage2_Journal_Code2$Target_Population_N[1274] <- 3
+df_stage2_Journal_Code2$Coding_Basis_N[1274] <- "这表明当代西方文化中的理想模型———男性化模型并不适用于中国,理想的性别角色模型具有文化特异性。这一结果不仅增进和丰富了人们对文化对心理和行为的影响的认识,还对我国目前青少年良好个性品质的塑造和培养以及心理健康教育的实践具有重要指导作用。"
+
+### Article_IDs 20183292
+df_stage2_Journal_Code2$Target_Population_N[1398:1399] <- 3
+
+### Article_IDs 20185096
+df_stage2_Journal_Code2$Target_Population_N[1415] <- 3
+df_stage2_Journal_Code2$Coding_Basis_N[1415] <- "（1）网站临场感对女性网络购买意愿具有显著的正向影响。（2）网站临场感可以通过风险感知和沉醉感的中介作用对女性网络购买意愿产生影响，且该中介作用包含了三条路径，即风险感知的中介作用、沉醉感的中介作用以及风险感知和沉醉感的链式中介作用。"
+
+### Article_IDs 20185102
+df_stage2_Journal_Code2$Target_Population_N[1416] <- 3
+
+### Article_IDs 20211018
+df_stage2_Journal_Code2$Target_Population_N[1675:1676] <- 3
+
+
+rm(Target_Population_N)
+
+Coding_Basis <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!is.na(Target_Population_N) & is.na(Coding_Basis_N)) %>% 
+  dplyr::select(3,37:38,14,32,34,39)
+
+rm(Coding_Basis)
+
+```
+
+
+### Sample_Type_N and Sample_Type_info_N
+```{R}
+Sample_Type_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(3,14,39,40,32,34) %>% 
+  dplyr::filter(is.na(Sample_Type_N)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2))
+
+
+### Article_IDs 20081136
+df_stage2_Journal_Code2$Sample_Type_N[35] <- 2
+
+### Article_IDs 20082002
+df_stage2_Journal_Code2$Sample_Type_N[36] <- 2
+
+### Article_IDs 20085022
+df_stage2_Journal_Code2$Sample_Type_N[741] <- 1
+
+### Article_IDs 20182104
+df_stage2_Journal_Code2$Sample_Type_N[813:814] <- 0
+
+### Article_IDs 20081026
+df_stage2_Journal_Code2$Sample_Type_N[1251] <- 0
+
+### Article_IDs 20184025
+df_stage2_Journal_Code2$Sample_Type_N[1596] <- 1
+
+rm(Sample_Type_N)
+
+Sample_Type_info_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Sample_Type_info_N)) %>% 
+  dplyr::filter(!is.na(Sample_Type_N)) %>% 
+  dplyr::select(3,14,39,41,32,34)
+
+
+### Article_IDs 20181176
+df_stage2_Journal_Code2$Sample_Type_info_N[109] <- "选取34名河北师范大学在校大校生(男生16名,女生18名)作为被试"
+
+### Article_IDs 20182018
+df_stage2_Journal_Code2$Sample_Type_info_N[335] <- "132名学前末期儿童参与实验1"
+
+### Article_IDs 20084068
+df_stage2_Journal_Code2$Sample_Type_info_N[537] <- "从上海两所中等水平幼儿园的325名幼儿中以年龄班分层随机抽取180名3～6岁幼儿。"
+
+### Article_IDs 20182050
+df_stage2_Journal_Code2$Sample_Type_info_N[565] <- "再另外随机选取78名本科生完成Buss-Perry攻击性量表"
+
+### Article_IDs 20182069
+df_stage2_Journal_Code2$Sample_Type_info_N[582] <- "来自上海某小学的154名7岁儿童参与本研究"
+
+### Article_IDs 20183142
+df_stage2_Journal_Code2$Sample_Type_info_N[611] <- "研究对象为来自湖南省某综合医院心理科门诊的心理咨询就诊患者"
+
+### Article_IDs 20212031
+df_stage2_Journal_Code2$Sample_Type_info_N[649] <- "采用方便取样和滚雪球抽样的方式，通过网络宣传、社区招募、熟人介绍等方式面向社会公开征集被试.确认愿意参与研究的有效被试为106对。夫 妻的婚龄为15.13±11.20月（1~36月之间）"
+
+### Sample_Type_N is 5, I need to reclassify the code once.
+
+### Article_IDs 20085022
+df_stage2_Journal_Code2$Sample_Type_info_N[741] <- "选取某大学二年级的理科生为被试"
+
+### Article_IDs 20181022
+df_stage2_Journal_Code2$Sample_Type_info_N[786] <- "汉族被试为四川省广安市两所公立中学的42名高中生"
+
+### Article_IDs 20181065
+df_stage2_Journal_Code2$Sample_Type_info_N[1042:1043] <- "大学生被试463人"
+### I found study1' Sample_Type_info_N of this article is incorrect.
+df_stage2_Journal_Code2$Sample_Type_info_N[1041] <- df_stage2_Journal_Code2$Sample_Type_info_N[1040]
+
+### Article_IDs 20081026
+df_stage2_Journal_Code2$Sample_Type_info_N[1251] <- "纸笔测验在中山大学完成，全部被试来自选修某选修课的学生"
+### I found this article' Sample_Type_N is incorrect.
+df_stage2_Journal_Code2$Sample_Type_N[1251] <- 1
+
+### Article_IDs 20184025
+df_stage2_Journal_Code2$Sample_Type_info_N[1596] <- "采用广告招募和公共课堂发问卷的方式从382名大学本科生中获取被试"
+
+rm(Sample_Type_info_N)
+
+
+## sample Type recode for 5
+Sample_Type5 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复", Remark2)) %>% 
+  dplyr::filter(Sample_Type_N == 5) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Sample_Type_info_N, M_age, SD_age)
+
+### Article_IDs 20181143
+df_stage2_Journal_Code2$Sample_Type_N[83:84] <- 14
+
+### Article_IDs 20083218
+df_stage2_Journal_Code2$Sample_Type_N[289] <- 4
+
+###Article_IDs 20183071
+df_stage2_Journal_Code2$Sample_Type_N[369:370] <- 4
+
+### Article_IDs 20211067
+df_stage2_Journal_Code2$Sample_Type_N[453] <- 4
+df_stage2_Journal_Code2$Sample_Type_N[454] <- 1
+df_stage2_Journal_Code2$Educational_Attainment_N[454] <- NA
+df_stage2_Journal_Code2$Occupation_N[454] <- NA
+
+### Article_IDs 20084057
+df_stage2_Journal_Code2$Sample_Type_N[531:532] <- 4
+
+### Article_IDs 20084085
+df_stage2_Journal_Code2$Sample_Type_N[542] <- 4
+
+### Article_IDs 20182035
+df_stage2_Journal_Code2$Sample_Type_N[554:555] <- 4
+
+### Article_IDs 20183107
+df_stage2_Journal_Code2$Sample_Type_N[590] <- 4
+
+### Article_IDs 20212031
+df_stage2_Journal_Code2$Sample_Type_N[649] <- 4
+
+### Article_IDs 20212122
+df_stage2_Journal_Code2$Sample_Type_N[942] <- 1
+
+### Article_IDs 20185050
+df_stage2_Journal_Code2$Sample_Type_N[1138:1139] <- 3
+df_stage2_Journal_Code2$Sample_Type_N[1140:1142] <- 2
+
+### Article_IDs 20212155
+df_stage2_Journal_Code2$Sample_Type_N[1165] <- 4
+
+### Article_IDs 20083109
+df_stage2_Journal_Code2$Sample_Type_N[1495] <- 4
+
+### Article_IDs 20181202
+df_stage2_Journal_Code2$Sample_Type_N[1519] <- 4
+df_stage2_Journal_Code2$Sample_Type_N[1521] <- 4
+
+### Article_IDs 20183013
+df_stage2_Journal_Code2$Sample_Type_N[1558] <- 4
+
+
+
+### Some of the studies in the sample type are coded as 5 because they include a wide variety of groups that make it impossible to classify (for example, the sample contains both college and high school students). In our coding manual, the educational attachment and occupation of the coding is more applicable to adults who are not students, so in order to get more accurate coding information of the educational attachment and occupation, I am prepared to recode this type of situation.
+
+### Article_IDs 20083076
+df_stage2_Journal_Code2$Sample_Type_N[54:56] <- 23
+
+### Article_IDs 20182268
+df_stage2_Journal_Code2$Sample_Type_N[148] <- 12
+
+### Article_IDs 20183311
+df_stage2_Journal_Code2$Sample_Type_N[161] <- 12
+
+### Article_IDs 20213116
+df_stage2_Journal_Code2$Sample_Type_N[235] <- 12
+
+### Article_IDs 20183055
+df_stage2_Journal_Code2$Sample_Type_N[360] <- 12
+
+### Article_IDs 20211064
+df_stage2_Journal_Code2$Sample_Type_N[450] <- 12
+
+### Article_IDs 20213252
+df_stage2_Journal_Code2$Sample_Type_N[491] <- 12
+
+### Article_IDs 20213254
+df_stage2_Journal_Code2$Sample_Type_N[493] <- 12
+
+### Article_IDs 20183241
+df_stage2_Journal_Code2$Sample_Type_N[1113] <- 12
+
+### Article_IDs 20215015
+df_stage2_Journal_Code2$Sample_Type_N[1209] <- 12
+
+### Article_IDs 20182241
+df_stage2_Journal_Code2$Sample_Type_N[1380] <- 23
+
+### Article_IDs 20213040
+df_stage2_Journal_Code2$Sample_Type_N[1444] <- 12
+
+### Article_IDs 20082042
+df_stage2_Journal_Code2$Sample_Type_N[1491] <- 12
+
+rm(Sample_Type5)
+
+
+### Sample 4 was re-examined for accuracy
+
+Sample_Type4 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复", Remark2)) %>% 
+  dplyr::filter(Sample_Type_N == 4) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Sample_Type_info_N, M_age, SD_age)
+
+### Article_IDs 20181186
+df_stage2_Journal_Code2$Sample_Type_N[120] <- 5
+
+### Article_IDs 20183344
+df_stage2_Journal_Code2$Sample_Type_N[187:188] <- 5
+
+### Article_IDs 20183078
+df_stage2_Journal_Code2$Sample_Size[371] <- 816
+df_stage2_Journal_Code2$Male_Num[371] <- NA
+df_stage2_Journal_Code2$Female_Num[371] <- NA
+df_stage2_Journal_Code2$M_age[371] <- "父亲39.15;母亲36.99"
+df_stage2_Journal_Code2$SD_age[371] <- "父亲3.73;母亲2.95"
+
+### Article_IDs 20183099
+df_stage2_Journal_Code2$Sample_Type_N[383] <- 5
+
+### Article_IDs 20181005
+df_stage2_Journal_Code2$Sample_Type_N[759] <- 5
+
+### Article_IDs 20182085
+df_stage2_Journal_Code2$Sample_Type_N[795] <- 5
+
+### Article_IDs 20182118
+df_stage2_Journal_Code2$Sample_Type_N[819:822] <- 5
+
+### Article_IDs 20182148
+df_stage2_Journal_Code2$Sample_Type_N[842:843] <- 5
+df_stage2_Journal_Code2$Sample_Size[843] <- 30
+df_stage2_Journal_Code2$Male_Num[843] <- 16
+df_stage2_Journal_Code2$Female_Num[843] <- 14
+
+### Article_IDs 20182159
+df_stage2_Journal_Code2$Sample_Type_N[853] <- 5
+
+### Article_IDs 20183192
+df_stage2_Journal_Code2$Sample_Type_N[876:877] <- 5
+
+### Article_IDs 20181027
+df_stage2_Journal_Code2$Sample_Type_N[1011] <- 5
+df_stage2_Journal_Code2$Sample_Type_N[1013] <- 5
+
+### Article_IDs 20081029
+df_stage2_Journal_Code2$Sample_Type_N[1259:1260] <- 5
+
+### Article_IDs 20083034
+df_stage2_Journal_Code2$Sample_Type_N[1307] <- 5
+
+### Article_IDs 20181134
+df_stage2_Journal_Code2$Sample_Type_N[1354] <- 5
+
+### Article_IDs 20183285
+df_stage2_Journal_Code2$Sample_Type_N[1396] <- 5
+
+### Article_IDs 20213021
+df_stage2_Journal_Code2$Sample_Type_N[1436] <- 5
+
+### Article_IDs 20213041
+df_stage2_Journal_Code2$Sample_Type_N[1445] <- 5
+
+### Article_IDs 20213045
+df_stage2_Journal_Code2$Sample_Type_N[1446] <- 5
+
+### Article_IDs 20213048
+df_stage2_Journal_Code2$Sample_Type_N[1451:1452] <- 5
+
+### Article_IDs 20083116
+df_stage2_Journal_Code2$Sample_Type_N[1500:1501] <- 5
+
+### Article_IDs 20213192
+df_stage2_Journal_Code2$Sample_Type_N[1650:1651] <- 5
+df_stage2_Journal_Code2$Sample_Type_N[1652:1653] <- 14
+
+rm(Sample_Type4)
+```
+
+
+### Subjects_Recruitment_Method_N and info
+```{r} 
+Subjects_Recruitment_Method_N <- df_stage2_Journal_Code2 %>%
+  dplyr::select(3,14,39,47,32,34) %>% 
+  dplyr::filter(is.na(Subjects_Recruitment_Method_N)) %>% 
+  dplyr::filter(is.na(Remark1)) %>% 
+  dplyr::filter(!grepl("重复", Remark2))
+
+
+### Article_IDs 20081134
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[33] <- 1
+
+### Article_IDs 20182255
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[129] <- 1
+
+### Article_IDs 20185165
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[206:207] <- 1
+
+### Article_IDs 20185174
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[211] <- 1
+
+### Article_IDs 20185191
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[218] <- 2
+
+### Article_IDs 20213089
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[225] <- 1
+
+### Article_IDs 20213091
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[226] <- 0
+
+### Article_IDs 20213120
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[237] <- 2
+
+### Article_IDs 20082067
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[252] <- 0
+
+### Article_IDs 20085022
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[741] <- 1
+
+### Article_IDs 20181005
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[763] <- 1
+
+### Article_IDs 20185003
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[897] <- 1 
+
+### Article_IDs 20214060
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[970] <- "1;2"
+
+### Article_IDs 20181026
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1251] <- 1
+
+### Article_IDs 20183277
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1394] <- 0
+
+### Article_IDs 20183292
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1398:1399] <- 0
+
+### Article_IDs 20183295
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1400] <- 1
+
+### Article_IDs 20213024
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1439] <- 1
+
+### Article_IDs 20184025
+### I found subjects of this study2 same as study1 ,namely "被试重复使用"
+df_stage2_Journal_Code2$Remark2[1596] <- "被试重复使用"
+df_stage2_Journal_Code2$Remark2_N[1596] <- "被试重复使用"
+
+rm(Subjects_Recruitment_Method_N)
+
+Subjects_Recruitment_Method_info_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Subjects_Recruitment_Method_N == 2 | Subjects_Recruitment_Method_N == "1;2") %>% 
+  dplyr::filter(is.na(Subjects_Recruitment_Method_info_N))%>% 
+  dplyr::select(3,47:48,14,39,34,36)
+
+
+### Article_IDs 20213104
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_info_N[230] <- "研究者社交网络招募被试，问卷星发放问卷"
+
+### Article_IDs 20211040
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_info_N[424:428] <- "营销实验室"
+
+rm(Subjects_Recruitment_Method_info_N)
+```
+
+
+### Educational_Attainment_N and info
+```{r message=FALSE, warning=FALSE}
+Educational_Attainment_N <- df_stage2_Journal_Code2 %>%
+  dplyr::mutate(Sample_Type_N = as.numeric(Sample_Type_N)) %>% 
+  dplyr::filter(Sample_Type_N >= 4 & is.na(Educational_Attainment_N)) %>% 
+  dplyr::select(3,40:43,14,32,34,39)
+
+
+### Article_IDs 20083052
+df_stage2_Journal_Code2$Educational_Attainment_N[44] <- 1
+df_stage2_Journal_Code2$Educational_Attainment_info_N[43]  <- "平均教育程度为14.1±1.7年" 
+
+### Article_IDs 20083107
+df_stage2_Journal_Code2$Educational_Attainment_N[67] <- 1
+df_stage2_Journal_Code2$Educational_Attainment_info_N[67] <- "文化水平小学及以上"
+
+### Article_IDs 20181143
+df_stage2_Journal_Code2$Educational_Attainment_N[83:84] <- 0
+
+### Article_IDs 20082105
+df_stage2_Journal_Code2$Educational_Attainment_N[262:267] <- 0
+
+### Article_IDs 20182017
+df_stage2_Journal_Code2$Educational_Attainment_N[332] <- 0
+df_stage2_Journal_Code2$Educational_Attainment_N[334] <- 0
+
+### Article_IDs 20182085
+df_stage2_Journal_Code2$Educational_Attainment_N[795] <- 0
+
+### Article_IDs 20182148
+df_stage2_Journal_Code2$Educational_Attainment_N[841] <- 0
+
+### Article_IDs 20212122
+### I found sample type of this study is not 5 but 1.
+df_stage2_Journal_Code2$Sample_Type_N[942] <- 1
+df_stage2_Journal_Code2$Sample_Type_info_N[942] <- "对559 名有过网络游戏经验的大学生进行调查"
+
+### Article_IDs 20215035
+### I found sample type of this study is not 5 but 2.
+df_stage2_Journal_Code2$Sample_Type_N[1218] <- 2
+
+### Article_IDs 20081037
+df_stage2_Journal_Code2$Educational_Attainment_N[1266:1267] <- 1
+df_stage2_Journal_Code2$Educational_Attainment_info_N[1266] <- "本研究的被试是某大学商学院参加“组织行为学”课程的 MBA 学生"
+df_stage2_Journal_Code2$Educational_Attainment_info_N[1267] <- "本研究的参加者为商学院学习《组织行为学》课程的 MBA 学生"
+
+### Article_IDs 20183264
+df_stage2_Journal_Code2$Educational_Attainment_N[1388:1389] <- 1
+
+rm(Educational_Attainment_N)
+```
+
+
+### Ocuupation_N
+```{r message=FALSE, warning=FALSE}
+Occupation_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Sample_Type_N = as.numeric(Sample_Type_N)) %>% 
+  dplyr::filter(Sample_Type_N >= 4 & is.na(Occupation_N)) %>% 
+  dplyr::select(3,40:41,44,14,32,34,39)
+
+### Article_IDs 20083107
+df_stage2_Journal_Code2$Occupation_N[67] <- 0
+
+### Article_IDs 20185174
+df_stage2_Journal_Code2$Occupation_N[211] <- 0
+
+### Article_IDs 20182085
+df_stage2_Journal_Code2$Occupation_N[795] <- 0
+
+### Article_IDs 20182148
+### I found Sample_Type_info_N of this study is incorrect
+df_stage2_Journal_Code2$Sample_Type_info_N[841] <- "预实验2让被试对产品进行体验型和搜索型的评分，48名被试参与实验，有效被试46人，其中男性21人,女性25人"
+
+###Article_IDs 20081037
+df_stage2_Journal_Code2$Occupation_N[1266:1267] <- 0
+
+### Article_IDs 20183257
+df_stage2_Journal_Code2$Occupation_N[1385] <- 0
+
+rm(Occupation_N)
+
+
+```
+
+
+###  Educational_Attainment and occupation recode
+```{r message=FALSE, warning=FALSE}
+Educational_Attainment_recode <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::mutate(Sample_Type_N = as.numeric(Sample_Type_N)) %>% 
+  dplyr::filter(Sample_Type_N >= 4) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
+                Sample_Type_N,Educational_Attainment_N,Educational_Attainment_info_N,Occupation_N)
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Educational_Attainment_N = ifelse(Sample_Type_N %in% c(12,23),NA,Educational_Attainment_N),
+                Educational_Attainment_info_N = ifelse(Sample_Type_N %in% c(12,23),NA,Educational_Attainment_info_N),
+                Occupation_N =ifelse(Sample_Type_N %in% c(12,23),NA,Occupation_N))
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Educational_Attainment_info_N = ifelse(Educational_Attainment_N == 0,NA,Educational_Attainment_info_N))
+```
+
+
+### SES_N and info
+```{r message=FALSE, warning=FALSE}
+SES_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Sample_Type_N = as.numeric(Sample_Type_N)) %>% 
+  dplyr::filter(Sample_Type_N >= 4 & is.na(SES_N)) %>% 
+  dplyr::select(3,40:41,45:46,14,32,34,39)
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$SES_N[63:64] <- 0
+
+### Article_IDs 20083107
+df_stage2_Journal_Code2$SES_N[67] <- 2
+
+### Article_IDs 20185174
+df_stage2_Journal_Code2$SES_N[211] <- 2
+
+### Article_IDs 20213116
+df_stage2_Journal_Code2$SES_N[235] <- 0
+
+### Article_IDs 20213120
+df_stage2_Journal_Code2$SES_N[237] <- "1;2;3"
+
+### Article_IDs 20215082
+df_stage2_Journal_Code2$SES_N[243] <- "1;3"
+
+### Article_IDs 20082105
+df_stage2_Journal_Code2$SES_N[262:267] <- 1
+
+### Article_IDs 20082107
+df_stage2_Journal_Code2$SES_N[268:269] <- 2
+df_stage2_Journal_Code2$SES_info_N[268] <- NA
+
+rm(SES_N)
+
+SES_info_N <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(SES_N == 5 | grepl("5",SES_N))
+
+### Article_IDs 20214060
+df_stage2_Journal_Code2$SES_info_N[970] <- "17.5%为贫困生,82.5%不是贫困生"
+
+SES_info_N_2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!is.na(SES_info_N))
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(SES_info_N = if_else(SES_N == 5 | grepl("5",SES_N),SES_info_N,NA))
+
+rm(SES_info_N,SES_info_N_2)
+```
+
+
+### Study_Type
+```{r}
+Study_Type <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Study_Type)) %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复", Remark2_N)) %>% 
+  dplyr::select(3,15,14,39,32,34)
+
+
+### Article_IDs 20081127
+df_stage2_Journal_Code2$Study_Type[28] <- 2
+  
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Study_Type[73] <- 1
+  
+### Article_IDs 20182268
+df_stage2_Journal_Code2$Study_Type[143:148] <- 2
+  
+### Article_IDs 20183314
+df_stage2_Journal_Code2$Study_Type[163:164] <- 1
+
+### Article_IDs 20082054
+df_stage2_Journal_Code2$Study_Type[246] <- 2
+  
+### Article_IDs 20082074
+df_stage2_Journal_Code2$Study_Type[257:258] <- 1
+
+### Article_IDs 20082087
+df_stage2_Journal_Code2$Study_Type[260] <- df_stage2_Journal_Code2$Study_Type[259]
+
+### Article_IDs 20084023
+df_stage2_Journal_Code2$Study_Type[301] <- 2
+  
+### Article_IDs 20085040
+df_stage2_Journal_Code2$Study_Type[749:751] <- 2
+  
+### Article_IDs 20085054
+df_stage2_Journal_Code2$Study_Type[755:757] <- "测验"
+  
+### Article_IDs 20182125
+df_stage2_Journal_Code2$Study_Type[827:829] <- 2
+  
+### Article_IDs 20182148
+df_stage2_Journal_Code2$Study_Type[843] <- 1
+  
+### Article_IDs 20182188
+df_stage2_Journal_Code2$Study_Type[1085] <- 2
+  
+### Article_IDs 20081026
+df_stage2_Journal_Code2$Study_Type[1251] <- 2  
+  
+### Article_IDs 20213137
+df_stage2_Journal_Code2$Study_Type[1682:1683] <-  1   
+
+rm(Study_Type)
+```
+
+
+### Subjects_Group_NA
+In the process of checking, I found that there were some Subjects_Group in the paper, but it was not recorded. The above code cannot check for both Subjects_Group and Subjects_Group_N columns as NA, so check the above again. Meanwhile,I found that our coding had some redundant group, so in this part, we tried to improve this problem as much as possible while checking that Subject_Group and Subject_Group_N were both NA.
+```{r}
+Subjects_Group2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::filter(n() >1 & (is.na(Subjects_Group) | is.na(Subjects_Group_N))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::select(3,7:8,14,32,34,39)
+
+### Article_IDs 20083093
+df_stage2_Journal_Code2$Subjects_Group[62] <- "抑郁情绪组"
+df_stage2_Journal_Code2$Subjects_Group_N[62] <- "抑郁情绪组"
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Subjects_Group[73] <- "大学生"
+df_stage2_Journal_Code2$Subjects_Group_N[73] <- "大学生"
+
+### Article_IDs 20082210
+### Redundant Group
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(700:701))
+
+df_stage2_Journal_Code2$Sample_Size[699] <- 89
+
+### Article_IDs 20082258
+### Redundant Group
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(715:717,719:721))
+
+df_stage2_Journal_Code2$Sample_Size[714] <- 170
+df_stage2_Journal_Code2$Sample_Size[715] <- 170
+
+### Article_IDs 20085040
+df_stage2_Journal_Code2$Subjects_Group[741:743] <- c("初一","初二","初三")
+df_stage2_Journal_Code2$Subjects_Group_N[741:743] <- c("初一","初二","初三")
+
+### Article_IDs 20085044
+df_stage2_Journal_Code2$Subjects_Group[744:746] <- c("3岁组","4岁组","5岁组")
+df_stage2_Journal_Code2$Subjects_Group_N[744:746] <- c("3岁组","4岁组","5岁组")
+
+### Article_IDs 20181005
+df_stage2_Journal_Code2$Subjects_Group[751:752] <- c("年轻组","老年组")
+df_stage2_Journal_Code2$Subjects_Group_N[751:752] <- c("年轻组","老年组")
+df_stage2_Journal_Code2$Subjects_Group[753:756] <- c("老年人情景特异性诱导","老年人控制性诱导","大学生情景特异性诱导","大学生控制性诱导")
+df_stage2_Journal_Code2$Subjects_Group_N[753:756] <- c("老年人情景特异性诱导","老年人控制性诱导","大学生情景特异性诱导","大学生控制性诱导")
+
+### Article_IDs 20181017
+df_stage2_Journal_Code2$Subjects_Group[765:768] <- c("高汉语水平","低汉语水平","高汉语水平","低汉语水平")
+df_stage2_Journal_Code2$Subjects_Group_N[765:768] <- c("高汉语水平","低汉语水平","高汉语水平","低汉语水平")
+
+### Article_IDs 20182101
+### Redundant Group
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(790:792,794:796))
+
+df_stage2_Journal_Code2$Sample_Size[789] <- 114
+df_stage2_Journal_Code2$Sample_Size[790] <- 113
+
+df_stage2_Journal_Code2$Male_Num [789] <- 55
+df_stage2_Journal_Code2$Female_Num[789] <- 59
+df_stage2_Journal_Code2$Male_Num[790] <- 56
+df_stage2_Journal_Code2$Female_Num[790] <- 57
+
+### Article_IDs 20182103
+### Redundant Group
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-794)
+
+### Article_IDs 20182117
+### Redundant Group
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(803,801))
+
+df_stage2_Journal_Code2$Sample_Size[800] <- 168
+df_stage2_Journal_Code2$Male_Num[800] <- 37
+df_stage2_Journal_Code2$Female_Num[800] <- 131
+df_stage2_Journal_Code2$Age[800] <- 1
+df_stage2_Journal_Code2$M_age[800] <- 20.59
+df_stage2_Journal_Code2$SD_age[800] <- 1.46
+
+df_stage2_Journal_Code2$Sample_Size[801] <- 72
+df_stage2_Journal_Code2$Male_Num[801] <- 21
+df_stage2_Journal_Code2$Female_Num[801] <- 51
+df_stage2_Journal_Code2$Age[801] <- 1
+df_stage2_Journal_Code2$M_age[801] <- 21.68
+df_stage2_Journal_Code2$SD_age[801] <- 2.03
+
+### Article_IDs 20182125
+### Redundant Group
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-809)
+
+df_stage2_Journal_Code2$Sample_Size[808] <- 64
+df_stage2_Journal_Code2$Female_Num[808] <- 64
+df_stage2_Journal_Code2$Age[808] <- 1
+df_stage2_Journal_Code2$M_age[808] <- 19.84
+df_stage2_Journal_Code2$SD_age[808] <- 1.26
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(810:811))
+
+df_stage2_Journal_Code2$Sample_Size[809] <- 104
+df_stage2_Journal_Code2$Female_Num[809] <- 104
+df_stage2_Journal_Code2$Age[809] <- 1
+df_stage2_Journal_Code2$M_age[809] <- 24.56
+df_stage2_Journal_Code2$SD_age[809] <- 2.19
+df_stage2_Journal_Code2$Subjects_Group[809] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[809] <- NA
+
+### Article_IDs 20182126
+### Redundant Group
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-811)
+
+df_stage2_Journal_Code2$Sample_Size[810] <- 68
+df_stage2_Journal_Code2$Gender[810] <- 1
+df_stage2_Journal_Code2$Male_Num[810] <- 23
+df_stage2_Journal_Code2$Female_Num[810] <- 45
+df_stage2_Journal_Code2$Age[810] <- 1
+df_stage2_Journal_Code2$M_age[810] <- 21.24
+df_stage2_Journal_Code2$SD_age[810] <- 0.67
+
+### Article_IDs 20215065
+df_stage2_Journal_Code2$Subjects_Group[1208] <- "老年人"
+df_stage2_Journal_Code2$Subjects_Group_N[1208] <- "老年人"
+df_stage2_Journal_Code2$Age[1208] <- 1
+
+### Article_IDs 20181091
+df_stage2_Journal_Code2$Subjects_Group[1292] <- "场依存型"
+df_stage2_Journal_Code2$Subjects_Group_N[1292] <- "场依存型"
+
+### Article_IDs 20182239
+df_stage2_Journal_Code2$Subjects_Group[1356:1357] <- c("9岁被试","13岁被试")
+df_stage2_Journal_Code2$Subjects_Group_N[1356:1357] <- c("9岁被试","13岁被试")
+
+### Article_IDs 20185126
+df_stage2_Journal_Code2$Subjects_Group[1405] <- "中国样本"
+df_stage2_Journal_Code2$Subjects_Group_N[1405] <- "中国样本"
+
+### Article_IDs 20211015
+df_stage2_Journal_Code2$Subjects_Group[1652:1653] <- c("领导者样本","员工样本")
+df_stage2_Journal_Code2$Subjects_Group_N[1652:1653] <- c("领导者样本","员工样本")
+
+rm(Subjects_Group2)
+
+```
+
+
+## Save Rdata
+In order to reduce code repetition, The Rdata is saved.
+```{r}
+save(df,df_stage2_Journal_Code,df_stage2_Journal_Code2,
+     Group1_bind,Group24567_bind,Group3_bind,
+     file = "df_Pre_Stage2_Journal_Code.Rdata")
+```
+
+
+## Load the pre Rdata
+```{r}
+rm(list = ls())
+load("df_Pre_Stage2_Journal_Code.Rdata")
+```
+
+
+### All information detailed check again
+```{r}
+#str(df_stage2_Journal_Code2)
+
+### fill all "  " character
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate_if(is.character, ~ifelse(. == "　",NA,.))
+
+
+## Check Abstract2
+Abstract2_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N == 1 & !(Abstract2 == 0|Abstract2 == 1))
+rm(Abstract2_detailed)
+
+
+## Check Sample_Size
+Sample_Size_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(if_any(c("Male_Num","Female_Num"),~!is.na(.))) %>% 
+  dplyr::filter(is.na(Sample_Size))
+rm(Sample_Size_detailed)
+
+
+## Check Gender
+Gender_detalied <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(if_any(c("Male_Num","Female_Num"),~!is.na(.))) %>%
+  dplyr::filter(Gender != 1)
+
+### Article_IDs 20182268
+df_stage2_Journal_Code2$Gender[146] <- 1
+
+
+## Check Male and Female
+Male_Female <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Gender == 1 & (is.na(Male_Num) & is.na(Female_Num)))
+### I find 2 rows was listed, but its indeed not have specific data
+rm(Male_Female,Gender_detalied)
+
+
+## Check Age
+Age_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(if_any(c("M_age","SD_age","Other_age"),~!is.na(.))) %>%
+  dplyr::filter(Age != 1)
+
+
+## Check Age_info
+Age_m_sd_other <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Age == 1 & (is.na(M_age) & is.na(SD_age) & is.na(Other_age)))
+
+### Article_IDs 20181133
+df_stage2_Journal_Code2$Other_age[1330] <- "20-25"
+rm(Age_m_sd_other,Age_detailed)
+
+
+## Check Ethnicity
+Ethnicity_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!Ethnicity %in% c(0,1))
+
+Ethnicity_detailed2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Ethnicity != 1 & !is.na(Ethnicity_info))
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Ethnicity_info = if_else(Ethnicity == 0 , NA, Ethnicity_info))
+
+
+## Check Ethnicity_info
+Ethnicity_info_detailed <- df_stage2_Journal_Code2 %>%
+  dplyr::filter(Ethnicity == 1 & is.na(Ethnicity_info))
+rm(Ethnicity_detailed,Ethnicity_detailed2,Ethnicity_info_detailed)
+
+
+## Check Religious
+Religious_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!Religious %in% c(0,1))
+
+
+## Check Religious_info
+Religious_info_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Religious == 0 & !is.na(Religious_info))
+rm(Religious_detailed,Religious_info_detailed)
+
+
+## Check Subjects_Area
+Subjects_Area_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!Subjects_Area %in% c(0,1))
+
+
+## Check Subjects_Area_info
+Subjects_Area_info_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Subjects_Area == 0 & !is.na(Subjects_Area_info))
+### Article_IDs 20083038
+df_stage2_Journal_Code2$Subjects_Area[37] <- 1
+rm(Subjects_Area_detailed,Subjects_Area_info_detailed)
+
+
+## Check Subjects_Recruitment_Area
+Subjects_Recruitment_Area_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!Subjects_Recruitment_Area %in% c(0,2)) %>% 
+  dplyr::select(Article_IDs,Subjects_Recruitment_Area,Remark1,Remark2)
+rm(Subjects_Recruitment_Area_detailed) 
+
+
+## Check Sampling_Method
+Sampling_Method_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!Sampling_Method %in% c(0,1,2)) %>% 
+  dplyr::select(Article_IDs,Sampling_Method,Remark1,Remark2)
+###Article_IDs 20185128
+df_stage2_Journal_Code2$Sampling_Method[1407] <- 0
+rm(Sampling_Method_detailed)
+
+
+## Target_Population
+Target_Population_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!Target_Population_N %in% c(0,1,2,3)) %>% 
+  dplyr::select(Article_IDs,Target_Population_N,Remark1,Remark2)
+
+## 20213192
+df_stage2_Journal_Code2$Target_Population_N[1630] <- 3
+
+
+## Coding_Basis
+Coding_Basis_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Target_Population_N %in% c(0,1,2,3) & is.na(Coding_Basis_N)) %>% 
+  dplyr::select(Article_IDs,Target_Population_N,Coding_Basis_N,Remark1,Remark2)
+
+### Article_IDs 20181140
+df_stage2_Journal_Code2$Coding_Basis_N[68:79] <- "在解决问题的过程中,无论是儿童、青少年还是成人都需要抑制控制的参与,三者在抑制控制效率上没有差异"
+
+### Article_IDs 20181186
+df_stage2_Journal_Code2$Coding_Basis_N[118] <- df_stage2_Journal_Code2$Coding_Basis_N[120]
+
+### Article_IDs 20181197
+df_stage2_Journal_Code2$Coding_Basis_N[124] <- "(1)暴力环境接触对大学生网络攻击行为有着显著的正向影响,并间接地通过反刍思维对大学生网络攻击行为产生作用。"
+
+### Article_IDs 20182261
+df_stage2_Journal_Code2$Coding_Basis_N[132:135] <- "本研究的结论如下：（1）青少年的网络社交使用频率对网络成瘾倾向具有显著的影响；家庭社会经济地位调节着青少年网络社交使用频率与网络成瘾倾向直接的关系。具体而言，在高社会经济家庭中成长的个体,其网络成瘾倾向不受网络社交使用频率的影响，而在低社会经济家庭中成长的个体，其网络成瘾倾向受到网络社交使用频率的影响。" 
+
+### Article_IDs 20083203
+df_stage2_Journal_Code2$Coding_Basis_N[283] <- "编制中学生羞耻感量表"
+
+### Article_IDs 20083210
+df_stage2_Journal_Code2$Coding_Basis_N[288] <- "编制具有科学性和实用性的中学教师工作满意度量表"
+
+### Article_IDs 20083227
+df_stage2_Journal_Code2$Coding_Basis_N[290:291] <- "探讨心理干预对小学生学习困难的效果"
+
+### Article_IDs 20084004
+df_stage2_Journal_Code2$Coding_Basis_N[292:294] <- "本研究采用注意线索范式对小学生视觉选择性注意的发展及其影响因素进行了研究"
+
+### Article_IDs 20084005
+df_stage2_Journal_Code2$Coding_Basis_N[295] <- "结果发现：（1）分类记忆策略的发展既有突变过程也有渐变过程：分类记策略有生成缺陷表现为训练后的突然变化；分类忆策略则是一个可以自发形成的渐变过程.如果加以适当的训练也会发生突然的增长。（2）在材料熟悉度较低的情况下会使少量儿童产生分类记、忆策略使用缺陷现象。"
+
+### Article_IDs 20084016
+df_stage2_Journal_Code2$Coding_Basis_N[296] <- "（1）中学教师的创造力内隐观主要涵盖了创造性思维和创造性人格；教师一致认同高创造性学生有28个重要心理特征"
+
+### Article_IDs 20084020
+df_stage2_Journal_Code2$Coding_Basis_N[297:300] <- "目前,国内外并没有现成的工具直接测量儿童表征能力,为此我们拟编制一套儿童表征能力测验"
+
+### Article_IDs 20084023
+df_stage2_Journal_Code2$Coding_Basis_N[301] <- "本研究采用追踪研究方法,考察了儿童2岁、4岁、7岁、11岁时内隐问题行为和外显问题行为的稳定性和变化。"
+
+### Article_IDs 20084025
+df_stage2_Journal_Code2$Coding_Basis_N[302:305] <- "本研究从一个新的角度探讨了5～8岁儿童心理理论的发展,考察了为错误信念任务中的主人公贴上“聪明”或“笨”的标签是否能影响儿童错误信念任务的成绩"
+
+### Article_IDs 20084026
+df_stage2_Journal_Code2$Coding_Basis_N[306:309] <- "研究设计了无意义问题来考察5、6、8、10岁共128名儿童在回答问题时的反应倾向"
+
+### Article_IDs 20084029
+df_stage2_Journal_Code2$Coding_Basis_N[310] <- "（1）除坚毅进取性之外,小学儿童社会创造性倾向的各个维度及总分均与父亲的情感温暖、理解父亲的偏爱呈显著或极其显著的正相关,与父亲的惩罚、严厉呈显著的负相关"
+
+### Article_IDs 20183097
+df_stage2_Journal_Code2$Coding_Basis_N[378] <- "探讨体验式干预对减少学龄儿童意外伤害危险行为及意外伤害事件的效果"
+
+### Article_IDs 20183098
+df_stage2_Journal_Code2$Coding_Basis_N[379:381] <- "本研究为减少疾病的异质性，将首发精神分裂症患者分为阳性症状组（幻觉妄想）和阴性症状组（言语乏、自发运动减少及情感淡漠），对其可能的神经生物学基础进行研究"
+
+### Article_IDs 20211059
+df_stage2_Journal_Code2$Coding_Basis_N[436] <- "本研究从知觉和概念水平上为揭示物体颜色在联结记忆中的作用提供了证据。"
+
+### Article_IDs 20211061
+df_stage2_Journal_Code2$Coding_Basis_N[437] <- "本研究在中国社会文化背景下从外显和内隐两个层面验证了食物性别刻板印象的存在,系统考察了食物性别刻板印象对人们人物评价产生的影响,具有一定的理论价值与实践意义。"
+
+### Article_IDs 20213236
+df_stage2_Journal_Code2$Coding_Basis_N[486] <- "父母婚姻质量通过家庭亲密度与适应性的中介作用，以及家庭亲密度与适应性和亲子冲突的链式中介作用影响小学生内化问题"
+
+### Article_IDs 20213239
+df_stage2_Journal_Code2$Coding_Basis_N[487] <- "本研究发现护士出勤主义行为对健康生产力受损具有显著的正向预测作用，即护士带病参加工作行为频率越高，对其生产力的负面影响就越大，这一结论和前人的研究相似"
+
+### Article_IDs 20084068
+df_stage2_Journal_Code2$Coding_Basis_N[537] <- "3～6岁儿童数感发展的研究"
+  
+### Article_IDs 20182050  
+df_stage2_Journal_Code2$Coding_Basis_N[565] <- "本研究主要探讨了不同领域厌恶情绪的时程加工特点，结果表明，不同领域的厌恶情感得到识别的先后顺序存在差异，病原体厌恶和道德厌恶率先得到识别，三种类型厌恶情绪在加工中期均得到识别，后期加工中个体对性厌恶情绪更为敏感，不同领域的厌恶情感对应了不同的加工机制。"
+
+### Article_IDs 20182069
+df_stage2_Journal_Code2$Coding_Basis_N[582] <- "本研究追踪考察139名儿童7岁、8岁和9岁时在计划和注意任务上的表现，并利用交叉滞后模型分析此期间计划能力与注意能力不同成分（持续性注意，抑制控制和选择性注意）在发展上的关系"
+
+### Article_IDs 20212054
+df_stage2_Journal_Code2$Coding_Basis_N[657] <- "人类生活的大部分时间都在编织各类大小不同、复杂抽象或简单具体不一的意义之网（Baumeister,1991）。换言之，每个人都在寻找或构建自身存在的意义。缺乏生命意义，个体会感到存在空虚，各种的心理与行为问题将随之产生"
+
+### Article_IDs 20181017
+df_stage2_Journal_Code2$Coding_Basis_N[767] <- "汉语熟练度不同的蒙汉双语者颜色范畴知觉效应存在差异,语言对知觉的作用在早期前注意阶段已有显现,Spair-Whorf假设在知觉早期加工过程中也成立"
+  
+### Article_IDs 20185030
+df_stage2_Journal_Code2$Coding_Basis_N[895] <- "农民工是中国城镇化的产物，农民工群体的身份认同分化为本研究提供了典型的样本。众多学者的研究发现，新生代农民工群体产生了身份认同的分化，形成了“ 城市人” “ 农村人” “ 不清楚” 的不同认同类型"
+
+### Article_IDs 20185033
+df_stage2_Journal_Code2$Coding_Basis_N[896] <- "（1）亲社会动机对新颖性和有效性都有促进作用。（2）“自我-他人”与新颖性关系密切，对有效性影响不显著。（3）为自己创造比为他人创造更加具有创造性。（4）社会动机与“ 自我-他人” 对创造性的影响不存在交互作用。"
+
+### Article_IDs 20212079
+df_stage2_Journal_Code2$Coding_Basis_N[897] <- "本研究旨在探究父母学业参与和学生消极情绪的关系及作用机制"
+
+### Article_IDs 20212082
+df_stage2_Journal_Code2$Coding_Basis_N[898] <- "结果显示：(1)逻辑训练可以提高个体三段论推理的成绩；(2)训练前后非冲突任务的正确率均高于冲突任务，但训练后该差异趋势缩小；(3)训练对低理性思维方式个体在冲突任务正确率的提高效果更好。这表明逻辑训练可以有效地减弱推理中的信念偏差现象，且对低理性思维方式个体的效果尤其明显。"
+
+### Article_IDs 20212083
+df_stage2_Journal_Code2$Coding_Basis_N[899:900] <- "结果表明：词汇预测性影响儿童阅读的眼动行为和词汇加工，且作用大小和发生时程受阅读技能调节。"
+
+### Article_IDs 20212085
+df_stage2_Journal_Code2$Coding_Basis_N[901:902] <- "社交与工作导向情境对“热情优先效应”具有重要的增强与削弱作用。社交导向情境下，“热情优先效应”普遍存在；工作导向情境下，在热情与能力独立维度视角中，情境的削弱效应使得“热情优先效应”无法表现；而在热情与能力互依维度视角中，“热情优先效应”则强于情境对其的削弱效应。" 
+
+### Article_IDs 20212091
+df_stage2_Journal_Code2$Coding_Basis_N[906] <- "结果表明，红色及图形均可有效助推健康行为，与通常的黑色数字相比，二者相结合可使这一助推效果更为稳定。"
+
+### Article_IDs 20212097
+df_stage2_Journal_Code2$Coding_Basis_N[907:909] <- "无论处于何种加工方式，个体在人际互动中并非完全追求利益最大化或是积极互惠，而是会关注互动对象的信任水平。"
+
+### Article_IDs 20212100
+df_stage2_Journal_Code2$Coding_Basis_N[910] <- "总之，本研究结果表明采用基于认知诊断测评的个性化补救教学能够有效促进学生学习，为实践者应用认知诊断测评促进学生学习提供了实践依据"
+
+### Article_IDs 20212105
+df_stage2_Journal_Code2$Coding_Basis_N[912:914] <- "该结果表明实验操纵方式所引发的编码过程和记忆测试所需的检索过程性质上相匹配，而且延迟测试时，知觉非流畅可以促进学习，说明非流畅效应存在边界。"
+
+### Article_IDs 20182191
+df_stage2_Journal_Code2$Coding_Basis_N[1065] <- "通过对186名企业员工的调查分析发现，上司地位知觉对下属默契有显著的正向影响；反馈寻求行为在此过程中起部分中介作用；此外，下属观点采择能力调节了 反馈寻求行为与下属默契间的正向关系"
+
+### Article_IDs 20183227
+df_stage2_Journal_Code2$Coding_Basis_N[1087] <- "社交焦虑水平能够显著调节放逐后个体对积极面孔的注意脱离加工过程，对理解社交焦虑的起源与维持有重要启示"
+
+### Article_IDs 20183229
+df_stage2_Journal_Code2$Coding_Basis_N[1088] <- "长期海洛因戒断组在反应时上能够较好的解决冲突，但是长期吸食海洛因导致其认知控制功能损伤"
+
+### Article_IDs 20185076
+df_stage2_Journal_Code2$Coding_Basis_N[1136] <- "在本研究条件下，得到以下结论：（1）阅读水平和阅读任务均会影响英语阅读中的词频效应；（2）高水平组被试在英语阅读中的认知灵活性更强。"
+
+### Article_IDs 20185077
+df_stage2_Journal_Code2$Coding_Basis_N[1137] <- "本研究条件得出如下结论：（1）在以大学生为被试的研究中发现，次级任务影响被试内隐序列学习，且“数形”任务较“数声”任务产生更大的干扰作用；与单任务相比，双任务下的内隐学习量未发生显著消退。（2）在不同年级被试的研究中，除“数形组”小学生内隐学习消退以外，其他年级组均习得内隐规则且内隐学习量的任务效应与年级效应显著。"
+
+### Article_IDs 20215008
+df_stage2_Journal_Code2$Coding_Basis_N[1186] <- "对1137名一年级职高生实施问卷调查，探讨感知教师和父母自主支持、基本心理需要满足与内外化问题的关系。"
+
+### Article_IDs 20215009
+df_stage2_Journal_Code2$Coding_Basis_N[1187] <- "本研究旨在探讨累积生态风险与农村初中生攻击行为之间的关系，以及道德推脱的中介作用与共情的调节作用。"
+
+### Article_IDs 20083033
+df_stage2_Journal_Code2$Coding_Basis_N[1285] <- "探讨涉毒罪犯的改造意识。"
+
+### Article_IDs 20182236
+df_stage2_Journal_Code2$Coding_Basis_N[1354] <- "研究发现积极学业情绪在先前学业成就与学习策略、学习动机之间起完全中介作用；消极学业情绪（消极低唤醒）在先前学业成就与学习策略、学习动机之间起部分中介作用"
+
+### Article_IDs 20185116
+df_stage2_Journal_Code2$Coding_Basis_N[1442:1444] <- "本研究采用图-词干扰范式，通过检验口语句子产生中不同位置的名词的语义干扰效应,探讨大中小学生词汇选择的计划单元大小"
+
+### Article_IDs 20183039
+df_stage2_Journal_Code2$Coding_Basis_N[1641:1642] <- "状态权力感、特质权力感共同对补偿消费产生影响，大选择集不能有效修复低权力状态。"
+
+### Article_IDs 20184027
+df_stage2_Journal_Code2$Coding_Basis_N[1643:1649] <- "说明威胁性刺激觉察中的注意偏向在视觉搜索的早期阶段已经发生"
+
+### Article_IDs 20213153
+df_stage2_Journal_Code2$Coding_Basis_N[1656:1660] <- "编制青少年学业自豪与学业自大问卷，并检验其信效度"
+
+rm(Target_Population_N_detailed,Coding_Basis_N_detailed)
+
+
+## Sample_Type
+Sample_Type_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!Sample_Type_N %in% c(1:5)) %>% 
+  dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N, Remark1,Remark2)
+
+### Article_IDs 20182104
+df_stage2_Journal_Code2$Sample_Type_N[798:799] <- 1
+
+### I found two articles' sample_type_N include ";"
+
+### Article_IDs 20082232
+df_stage2_Journal_Code2$Sample_Type_N[705] <- 12
+
+### Article_IDs 20082248
+df_stage2_Journal_Code2$Sample_Type_N[709:710] <- 14
+
+
+## Sample_Type_info
+Sample_Type_info_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N %in% c(1:5) & is.na(Sample_Type_info_N))
+rm(Sample_Type_info_N_detailed,Sample_Type_N_detailed)
+
+
+## Educational_Attainment
+Educational_Attainment_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5) & is.na(Educational_Attainment_N)) %>% 
+  dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N,Educational_Attainment_N,Remark1,Remark2)
+### Article_IDs 20082248
+df_stage2_Journal_Code2$Educational_Attainment_N[709:710] <- 0
+
+
+## Educational_Attainment_info
+Educational_Attainment_info_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Educational_Attainment_N == 1 & is.na(Educational_Attainment_info_N)) %>%
+  dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N,
+                 Educational_Attainment_N,Educational_Attainment_info_N,Remark1,Remark2)
+
+### Article_IDs 20081099
+df_stage2_Journal_Code2$Educational_Attainment_info_N[17] <- "高中、中专及以下占8.68%,大专占25.00%, 本科占 52.08%, 硕士及以上占 12.15%"
+
+### Article_IDs 20182258
+df_stage2_Journal_Code2$Educational_Attainment_info_N[131] <- "学历大专以下28人，大专61人，本科 100 人，研究生及以上 12 人"
+
+### Article_IDs 20183321
+df_stage2_Journal_Code2$Educational_Attainment_info_N[169] <- "小学8人，初中22人，高中24人，大学21人，大学以上6人"
+
+### Article_IDs 20185138
+df_stage2_Journal_Code2$Educational_Attainment_info_N[197] <- "6.88%的父亲具有本科及以上学历，14.38%的父亲为高中学历，51.88%父亲为初中学历，26.88%的父亲学历低于初中"
+df_stage2_Journal_Code2$Educational_Attainment_info_N[198] <- "5.00％的母亲具有本科及以上学历，5.63％的母亲为高中学历，43.75%的母亲为初中学历，45.63%的母亲学历低于初中"
+
+### Article_IDs 20185191
+df_stage2_Journal_Code2$Educational_Attainment_info_N[218] <- "本科5.36%，硕士30.35，博士64.29%"
+
+### Article_IDs 20183137
+df_stage2_Journal_Code2$Educational_Attainment_info_N[607] <- "平均受教育年限17.73"
+
+### Article_IDs 20082283
+df_stage2_Journal_Code2$Educational_Attainment_info_N[724] <- "大学文化程度"
+
+### Article-IDs 20181005
+df_stage2_Journal_Code2$Educational_Attainment_info_N[751:752] <- "老年被试为高中(中专)或以上学历, 与年轻被试的文化程度较为匹配"
+
+### Article_IDs 20212149
+df_stage2_Journal_Code2$Educational_Attainment_info_N[930] <- "在学历方面，高中或大专 96 人，占 37.209%；本科 156 人，占 60.465%，研究生或以上 7 人，占 2.713%"
+
+rm(Educational_Attainment_N_detailed,Educational_Attainment_info_N_detailed)
+
+
+## Occupation
+Occupation_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5) & is.na(Occupation_N)) %>% 
+  dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N,Occupation_N,Remark1,Remark2)
+rm(Occupation_N_detailed)
+
+
+## SES
+SES_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5) & is.na(SES_N)) %>% 
+  dplyr::select(Article_IDs,Sample_Type_N,Sample_Type_info_N,SES_N,Remark1,Remark2)
+
+
+## SES_info
+SES_info_N_detailed <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(SES_N == 5 & is.na(SES_info_N))
+rm(SES_N_detailed,SES_info_N_detailed)
+
+
+### Process data.frame (Education_Attachment_recode)
+Educational_Attainment_recode <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::mutate(Sample_Type_N = as.numeric(Sample_Type_N)) %>% 
+  dplyr::filter(Sample_Type_N >= 4) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
+                Sample_Type_N,Occupation_N)
+
+##writexl::write_xlsx(Educational_Attainment_recode,"Educational_Attainment_recode.xlsx")
+
+### Article_IDs 20081099
+df_stage2_Journal_Code2$Occupation_N[16:17] <- 0
+
+### Article_IDs 20083107
+df_stage2_Journal_Code2$Occupation_N[67] <- 9  ## Prisoners and other types are in non-occupational status and are not applicable to the coding of occupational reports. Therefore, I use 9 represent this status.
+
+### Article_IDs 20082110
+df_stage2_Journal_Code2$Occupation_N[270] <- 0
+
+### Article_IDs 20181242
+df_stage2_Journal_Code2$Occupation_N[318] <- 0
+
+### Article_IDs 20181245
+df_stage2_Journal_Code2$Occupation_N[321] <- 0
+
+### Article_IDs 20183071
+df_stage2_Journal_Code2$Occupation_N[369:370] <- 9
+
+### Article_IDs 20183099
+df_stage2_Journal_Code2$Occupation_N[382] <- 9
+
+### Article_IDs 20183101
+df_stage2_Journal_Code2$Occupation_N[384] <- 9
+
+### Article_IDs 20211071
+df_stage2_Journal_Code2$Occupation_N[455] <- 1
+
+### Article_IDs 20213254
+df_stage2_Journal_Code2$Occupation_N[494] <- 0
+
+### Article_IDs 20082188
+df_stage2_Journal_Code2$Occupation_N[516] <- 1
+
+### Article_IDs 20084057
+df_stage2_Journal_Code2$Occupation_N[531:532] <- 0
+
+### Article_IDs 20084085
+df_stage2_Journal_Code2$Occupation_N[542] <- 9
+
+### Article_IDs 20182035
+df_stage2_Journal_Code2$Occupation_N[554] <- 9
+
+### Article_IDs 20182148
+df_stage2_Journal_Code2$Sample_Type_N[820] <- 5
+df_stage2_Journal_Code2$Occupation_N[820] <- 0
+
+### Article_IDs 20082348
+df_stage2_Journal_Code2$Occupation_N[984] <- 0
+
+### Article_IDs 20182182
+df_stage2_Journal_Code2$Occupation_N[1058:1060] <- 0
+
+### Article_IDs 20183229
+df_stage2_Journal_Code2$Occupation_N[1088] <- 9
+
+### Article_IDs 20183236
+df_stage2_Journal_Code2$Occupation_N[1091] <- 0
+
+### Article_IDs 20185039
+df_stage2_Journal_Code2$Occupation_N[1106] <- 1
+
+### Article_IDs 20212151
+df_stage2_Journal_Code2$Occupation_N[1143] <- 0
+
+### Article_IDs 20212155
+df_stage2_Journal_Code2$Occupation_N[1144] <- 9
+
+### Article_IDs 20212157
+df_stage2_Journal_Code2$Occupation_N[1146] <- 0
+
+### Article_IDs 20082369
+df_stage2_Journal_Code2$Occupation_N[1264] <- 1
+
+### Article_IDs 20083033
+df_stage2_Journal_Code2$Occupation_N[1285] <- 9
+
+### Article_IDs 20183257
+df_stage2_Journal_Code2$Occupation_N[1363:1364] <- 9
+
+### Article_IDs 20183264
+df_stage2_Journal_Code2$Occupation_N[1366:1367] <- 9
+
+### Article_IDs 20185128
+df_stage2_Journal_Code2$Occupation_N[1407] <- 0
+
+### Article_IDs 20213067
+df_stage2_Journal_Code2$Occupation_N[1436] <- 0
+
+### Article_IDs 20083114
+df_stage2_Journal_Code2$Occupation_N[1478] <- 0
+
+### Article_IDs 20083177
+df_stage2_Journal_Code2$Occupation_N[1496] <- 9
+
+### Article_IDs 20181208
+df_stage2_Journal_Code2$Occupation_N[1503:1506] <- 1
+
+### Article_IDs 20181209
+df_stage2_Journal_Code2$Occupation_N[1507:1508] <- 1
+
+### Article_IDs 20181212
+df_stage2_Journal_Code2$Occupation_N[1512:1513] <- 0
+
+### Article_IDs 20181220
+df_stage2_Journal_Code2$Occupation_N[1517] <- 0
+
+### Article_IDs 20181228
+df_stage2_Journal_Code2$Occupation_N[1522] <- 1
+
+### Article_IDs 20181235
+df_stage2_Journal_Code2$Occupation_N[1524] <- 1
+
+rm(Educational_Attainment_recode)
+
+```
+
+
+## Redundant Group
+I found that some groups, especially the sixth group, had redundancy of subjects' group. Although some checks have been done above, in order to obtain more accurate and objective data, we conducted another check of the groups of subjects.
+
+### Group 6
+```{r}
+
+### Article_IDs 20082280
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(721:722))
+
+df_stage2_Journal_Code2$Subjects_Group[720] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[720] <- NA
+df_stage2_Journal_Code2$Sample_Size[720] <- 12
+df_stage2_Journal_Code2$Gender[720] <- 1
+df_stage2_Journal_Code2$Male_Num[720] <- 5
+df_stage2_Journal_Code2$Female_Num[720] <- 7
+
+
+### Article_IDs 20085033
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(735:736))
+
+df_stage2_Journal_Code2$Subjects_Group[734] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[734] <- NA
+df_stage2_Journal_Code2$Male_Num[734] <- 30
+df_stage2_Journal_Code2$Sample_Size[734] <- 30
+
+### Article_IDs 20085054
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(744:745))
+
+df_stage2_Journal_Code2$Subjects_Group[743] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[743] <- NA
+df_stage2_Journal_Code2$Sample_Size[743] <- 314
+df_stage2_Journal_Code2$Gender[743] <- 1
+df_stage2_Journal_Code2$Male_Num[743] <- 161
+df_stage2_Journal_Code2$Female_Num[743] <- 153
+
+### Article_IDs 20181005
+df_stage2_Journal_Code2$Remark3_N[747] <- "性别分组和年龄分组有冲突"
+
+### Article_IDs 20181020
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(764:765))
+
+df_stage2_Journal_Code2$Subjects_Group[763] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[763] <- NA
+df_stage2_Journal_Code2$Sample_Size[763] <- 72
+df_stage2_Journal_Code2$Gender[763] <- 1
+df_stage2_Journal_Code2$Male_Num[763] <- 27
+df_stage2_Journal_Code2$Female_Num[763] <- 45
+df_stage2_Journal_Code2$M_age[763] <- 20.2
+df_stage2_Journal_Code2$SD_age[763] <- 2.17
+df_stage2_Journal_Code2$Other_age[763] <- "18-23"
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-765)
+
+df_stage2_Journal_Code2$Subjects_Group[764] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[764] <- NA
+df_stage2_Journal_Code2$Male_Num[764] <- 31
+df_stage2_Journal_Code2$Female_Num[764] <- 42
+df_stage2_Journal_Code2$M_age[764] <- 21.5
+df_stage2_Journal_Code2$SD_age[764] <- 1.93
+df_stage2_Journal_Code2$Other_age[764] <- "18-23"
+
+### Article_IDs 20182103
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(783:784))
+
+df_stage2_Journal_Code2$Subjects_Group[782] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[782] <- NA
+df_stage2_Journal_Code2$Sample_Size[782] <- 291
+
+### Article_IDs 20182120
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-796)
+
+df_stage2_Journal_Code2$Sample_Size[795] <- 90
+df_stage2_Journal_Code2$Gender[795] <- 1
+df_stage2_Journal_Code2$Male_Num[795] <- 30
+df_stage2_Journal_Code2$Female_Num[795] <- 60
+df_stage2_Journal_Code2$Age[795] <- 1
+df_stage2_Journal_Code2$M_age[795] <- 22.5
+df_stage2_Journal_Code2$SD_age[795] <- 0.28
+
+### Article_IDs 20182133
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-802)
+
+df_stage2_Journal_Code2$Subjects_Group[801] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[801] <- NA
+df_stage2_Journal_Code2$Sample_Size[801] <- 21
+df_stage2_Journal_Code2$Male_Num[801] <- 11
+df_stage2_Journal_Code2$Female_Num[801] <- 9
+
+### Article_IDs 20183150
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-823)
+
+df_stage2_Journal_Code2$Subjects_Group[822] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[822] <- NA
+df_stage2_Journal_Code2$Sample_Size[822] <- 643
+df_stage2_Journal_Code2$Gender[822] <- 1
+df_stage2_Journal_Code2$Male_Num[822] <- 296
+df_stage2_Journal_Code2$Female_Num[822] <- 347
+df_stage2_Journal_Code2$Age[822] <- 1
+df_stage2_Journal_Code2$M_age[822] <- 11.98
+df_stage2_Journal_Code2$SD_age[822] <- 1.74
+
+### Article_IDs 20183192
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-842)
+
+df_stage2_Journal_Code2$Subjects_Group[841] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[841] <- NA
+df_stage2_Journal_Code2$Study_Type[841] <- 1
+df_stage2_Journal_Code2$Sample_Size[841] <- 80
+df_stage2_Journal_Code2$Gender[841] <- 1
+df_stage2_Journal_Code2$Male_Num[841] <- 49
+df_stage2_Journal_Code2$Female_Num[841] <- 31
+df_stage2_Journal_Code2$Age[841] <- 1
+df_stage2_Journal_Code2$M_age[841] <- 30.51
+df_stage2_Journal_Code2$SD_age[841] <- 9.54
+df_stage2_Journal_Code2$Other_age[841] <- NA
+df_stage2_Journal_Code2$Educational_Attainment_info_N[841] <- "初中以下11人，高中及中专18人，大专以上51人"
+
+### Article_IDs 20183198
+df_stage2_Journal_Code2$Gender[843] <- 1
+df_stage2_Journal_Code2$Male_Num[843] <- 27
+df_stage2_Journal_Code2$Female_Num[843] <- 18
+df_stage2_Journal_Code2$Age[843] <- 1
+df_stage2_Journal_Code2$M_age[843] <- 53.63
+df_stage2_Journal_Code2$SD_age[843] <- 9.34
+df_stage2_Journal_Code2$Gender[844] <- 1
+df_stage2_Journal_Code2$Male_Num[844] <- 29
+df_stage2_Journal_Code2$Female_Num[844] <- 21
+df_stage2_Journal_Code2$Age[844] <- 1
+df_stage2_Journal_Code2$M_age[844] <- 57.30
+df_stage2_Journal_Code2$SD_age[844] <- 9.63   
+
+### Article_IDs 20184162
+df_stage2_Journal_Code2$M_age[857] <- "父亲:41.44;母亲:40.23"
+
+### Article_IDs 20185017
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-c(871:872))
+
+df_stage2_Journal_Code2$Subjects_Group[870] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[870] <- NA
+df_stage2_Journal_Code2$Sample_Size[870] <- 31
+df_stage2_Journal_Code2$Female_Num[870] <- 31
+df_stage2_Journal_Code2$M_age[870] <- 22.1
+
+### Article_IDs 20212083
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-883)
+
+df_stage2_Journal_Code2$Sample_Size[882] <- 44
+df_stage2_Journal_Code2$Subjects_Group[882] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[882] <- NA
+```
+
+
+### Other Groups
+```{r}
+### Article_IDs 20182248
+df_stage2_Journal_Code2$M_age[125:127] <- c("3.54","4.53","5.50")
+df_stage2_Journal_Code2$SD_age[125:127] <- c("0.28","0.27","0.26")
+
+### Article_IDs 20181225
+df_stage2_Journal_Code2$Male_Num[1502] <- 0.712
+df_stage2_Journal_Code2$Female_Num[1502] <- 1-0.712
+df_stage2_Journal_Code2$Male_Num[1503] <- 0.456
+df_stage2_Journal_Code2$Female_Num[1503] <- 1-0.456
+df_stage2_Journal_Code2$Age[1502:1503] <- 1
+df_stage2_Journal_Code2$Other_age[1502] <- "30 岁及以上的占 65.1%"
+df_stage2_Journal_Code2$Other_age[1503] <- "30 岁以下的人占56.4%"
+
+### Article_IDs 20183001
+df_stage2_Journal_Code2$Educational_Attainment_info_N[1513:1515] <- c("受教育水平(年):M=13.78,SD=1.72","受教育水平(年）:M=13.67,SD=2.90","受教育水平(年）:M=13.10,SD=1.63")
+
+### Article_IDs 20211013
+df_stage2_Journal_Code2$Remark3[1588] <- "分组时性别与年龄冲突，总数为68人，其中男生37人"
+
+### Article_IDs 20211025
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-1593)
+
+df_stage2_Journal_Code2$Subjects_Group[1592] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[1592] <- NA
+df_stage2_Journal_Code2$Sample_Size[1592] <- 480
+
+### Article_IDs 20182022
+df_stage2_Journal_Code2$Sample_Size[352:353] <- c(102,488)
+df_stage2_Journal_Code2$Age[352:353] <- 1
+df_stage2_Journal_Code2$Male_Num[352:353] <- c(0.353,0.336)
+df_stage2_Journal_Code2$Female_Num[352:353] <- c(1-0.353,1-0.336)
+
+### Article_IDs 20184112
+df_stage2_Journal_Code2$M_age[618:619] <- 11
+df_stage2_Journal_Code2$Other_age[618:619] <- NA
+
+### Article_IDs 20082341
+df_stage2_Journal_Code2$Gender[957:959] <- 1
+df_stage2_Journal_Code2$Male_Num[957:959] <- c(40,36,47)
+df_stage2_Journal_Code2$Female_Num[957:959] <- c(43,40,33)
+
+### Article_IDs 20182183
+df_stage2_Journal_Code2$M_age[1043] <- NA
+df_stage2_Journal_Code2$SD_age[1043] <- NA
+
+### Article_IDs 20083017
+df_stage2_Journal_Code2$Gender[1259] <- 1
+df_stage2_Journal_Code2$Male_Num[1259] <- 374/2
+df_stage2_Journal_Code2$Female_Num[1259] <- 374/2
+
+### Article_IDs 20183257
+df_stage2_Journal_Code2$Female_Num[1345:1346] <- 0
+### Article 20183264
+df_stage2_Journal_Code2$Female_Num[1348:1350] <- 0
+```
+
+### Unreported Gender
+```{r}
+Gender_none <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Gender == 0) %>%
+  dplyr::select(Article_IDs,Study_Number,Gender,Male_Num,Female_Num,Remark1,Remark2) 
+
+Gender_none_distinct <- Gender_none %>% 
+  dplyr::distinct(Article_IDs)
+
+### Article_IDs 20082112
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::slice(-271)
+
+df_stage2_Journal_Code2$Subjects_Group[271] <- NA
+df_stage2_Journal_Code2$Subjects_Group_N[271] <- NA
+
+### Article_IDs 20082296
+df_stage2_Journal_Code2$Remark3[724] <- "分组后年龄与性别产生冲突，本研究性别分半"
+
+### Article_IDs 20181005
+df_stage2_Journal_Code2$Remark3[746] <- "分组后年龄与性别产生冲突，老年组女40人，男8人"
+df_stage2_Journal_Code2$Remark3[748] <- "分组后年龄与性别产生冲突，大学生组女30人，男18人"
+
+### Article_IDs 20183178
+df_stage2_Journal_Code2$Gender[833] <- 1
+df_stage2_Journal_Code2$Female_Num[833] <- 113
+df_stage2_Journal_Code2$Male_Num[833] <- 227
+df_stage2_Journal_Code2$Age[833] <- 1
+df_stage2_Journal_Code2$Other_age[833] <- "19-29:32.0%;30-39:41.2%;40以上:26.8%"
+
+### Article_IDs 20081024
+df_stage2_Journal_Code2$SES_N[1209:1210] <- 2
+
+### Article_IDs 20181208
+df_stage2_Journal_Code2$Sample_Size[1484:1487] <- c(195,112,251,83)
+df_stage2_Journal_Code2$Male_Num[1484] <- 0.949
+df_stage2_Journal_Code2$Female_Num[1484] <- 1-0.949
+df_stage2_Journal_Code2$Educational_Attainment_N[1484] <- 1
+df_stage2_Journal_Code2$Educational_Attainment_info_N[1484] <- "本科及以上学历为27.2%"
+df_stage2_Journal_Code2$Male_Num[1486] <- 0.61
+df_stage2_Journal_Code2$Female_Num[1486] <- 1-0.61
+df_stage2_Journal_Code2$Educational_Attainment_N[1486] <- 1
+df_stage2_Journal_Code2$Educational_Attainment_info_N[1486] <- "本科及以上学历为27.0%"
+df_stage2_Journal_Code2$SES_N[1484] <- 2
+df_stage2_Journal_Code2$SES_N[1486] <- 2
+
+rm(Gender_none,Gender_none_distinct)
+```
+
+
+### Unreported Age
+```{r}
+Age_none <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Age == 0) %>%
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::select(Article_IDs,Study_Number,Age,M_age,SD_age,Other_age,Remark1,Remark2)
+
+Age_none_distinct <- Age_none %>% 
+  dplyr::distinct(Article_IDs)
+
+### Article_IDs 20183334
+df_stage2_Journal_Code2$Age[183] <- 1
+df_stage2_Journal_Code2$M_age[183] <- 11.68
+df_stage2_Journal_Code2$SD_age[183] <- 2.55
+
+### Article_IDs 20185017
+df_stage2_Journal_Code2$Age[869] <- 1
+
+### Article_IDs 20212079
+df_stage2_Journal_Code2$Age[879] <- 1
+df_stage2_Journal_Code2$M_age[879] <- "高一821人:M=15.36;高二748人:M=16.35"
+df_stage2_Journal_Code2$SD_age[879] <- "高一:SD=0.52;高二:0.52"
+
+### Article_IDs 20212097
+df_stage2_Journal_Code2$Other_age[888] <- "17-26"
+
+### Article_IDs 20215005
+df_stage2_Journal_Code2$Subjects_Recruitment_Method_N[1162] <- 1
+
+### 大中小学生，很多研究可能报告了年级
+
+rm(Age_none,Age_none_distinct)
+```
+
+
+## Process Gender
+During the formal data analysis, I found that gender data needed to be improved in many ways. In order to increase the readability of the formal data analysis document(Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2.Rmd), this part was re-placed in this part for pre-processing.
+```{r message=FALSE, warning=FALSE}
+## in process data, I found Female_Num in Article_IDs 20211015 is incorrect.
+df_stage2_Journal_Code2$Female_Num[1633] <- 0.595
+## Meanwhile, I found some value is 0, but in our data is NA.
+df_stage2_Journal_Code2$Male_Num[139] <- 0
+df_stage2_Journal_Code2$Female_Num[1257] <- 0
+## Also other error
+df_stage2_Journal_Code2$Male_Num[214] <- 1442
+df_stage2_Journal_Code2$Female_Num[214] <- 1303
+df_stage2_Journal_Code2$Sample_Size[274:276] <- c(218,246,150)
+df_stage2_Journal_Code2$Sample_Size[335] <- 123
+df_stage2_Journal_Code2$Male_Num[335] <- 68
+df_stage2_Journal_Code2$Male_Num[402] <- 0.549
+df_stage2_Journal_Code2$Female_Num[402] <- 0.451
+df_stage2_Journal_Code2$Sample_Size[434] <- 28
+df_stage2_Journal_Code2$Sample_Size[510] <- 49
+df_stage2_Journal_Code2$Sample_Size[628] <- 530
+df_stage2_Journal_Code2$Sample_Size[763] <- 73
+df_stage2_Journal_Code2$Male_Num[800] <- 12
+df_stage2_Journal_Code2$Male_Num[801] <- 4
+df_stage2_Journal_Code2$Female_Num[856] <- 1141
+df_stage2_Journal_Code2$Sample_Size[1021] <- 23
+df_stage2_Journal_Code2$Sample_Size[1193:1194] <- 21
+df_stage2_Journal_Code2$Sample_Size[1231] <- 54
+df_stage2_Journal_Code2$Sample_Size[1420] <- 67
+df_stage2_Journal_Code2$Female_Num[1480] <- 45
+df_stage2_Journal_Code2$Male_Num[1499:1500] <- c(0.52,0.44)
+df_stage2_Journal_Code2$Female_Num[1499:1500] <- c(0.48,0.56)
+df_stage2_Journal_Code2$Sample_Size[1508] <- 1297
+df_stage2_Journal_Code2$Sample_Size[1543] <- 841
+
+df_stage2_Journal_Code_Gender <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(is.na(Remark1) & !grepl("重复",Remark2)) %>% 
+  dplyr::mutate(Male_Num = as.numeric(Male_Num),
+                Female_Num = as.numeric(Female_Num)) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Size,Gender,Male_Num,Female_Num,Remark1,Remark2,Remark3)
+
+df_stage2_Journal_Code_Gender_decimal <- df_stage2_Journal_Code_Gender %>% 
+  dplyr::filter(Male_Num < 1 & Female_Num < 1) %>% 
+  dplyr::select(Article_IDs,Sample_Size,Gender,Male_Num,Female_Num) %>% 
+  dplyr::mutate(Male_Num = round(Male_Num,2),
+                Female_Num = round(Female_Num,2),
+                Male_Female = Male_Num + Female_Num)
+
+### check Article with Male_Female < 1, all data have no problem.
+
+
+df_stage2_Journal_Code_Gender_integer <- df_stage2_Journal_Code_Gender %>% 
+  dplyr::filter(Male_Num > 1 | Female_Num > 1) %>% 
+  dplyr::select(Article_IDs,Sample_Size,Gender,Male_Num,Female_Num) %>% 
+  dplyr::mutate(Male_Female = Male_Num + Female_Num,
+                Juage = if_else(Male_Female == Sample_Size, "equal","no_equal"))
+
+### check Judge == "no_equal"
+df_stage2_Journal_Code_Gender_integer_noequal <- df_stage2_Journal_Code_Gender_integer %>% 
+  dplyr::filter(Juage == "no_equal") %>% 
+  dplyr::mutate(Remark=NA)
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[1] <- "23 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[2] <- "11 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[3] <- "unrepotred"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[4] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[5] <- "2 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[6] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[7] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[8:10] <- c("16 unreported","22 unreported","14 unreported")
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[11] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[12] <- "4 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[13] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[14] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[15] <- "56 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[16] <- "131 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[17] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[18] <- "17 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[19] <- "8 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[20] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[21] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[22] <- "2 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[23] <- "2 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[24] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[25] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[26] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[27] <- "37 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[28:29] <- c("12 unreported","5 unreported")
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[30] <- "5 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[31] <- "5 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[32] <- "224 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[33] <- "25 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[33] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[34] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[35] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[36] <- "59 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[37] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[38] <- "8 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[39] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[40] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[41] <- "7 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[42] <- "2 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[43] <- "2 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[44] <- "8 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[45] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[46] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[47] <- "14 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[48] <- "118 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[49] <- "67 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[50] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[51] <- "22 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[52] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[53] <- "14 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[54] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[55] <- "31 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[56] <- "5 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[57] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[58] <- "11 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[59] <- "1 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[60] <- "unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[61] <- "5 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[62] <- "55 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[63] <- "383 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[64] <- "13 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[65] <- "3 unreported"
+df_stage2_Journal_Code_Gender_integer_noequal$Remark[66] <- "52 unreported"
+
+rm(df_stage2_Journal_Code_Gender_integer_noequal,df_stage2_Journal_Code_Gender_integer,
+   df_stage2_Journal_Code_Gender_decimal,df_stage2_Journal_Code_Gender)
+
+```
+
+## Process M_age
+Meanwhile, I also age needed to improved
+```{r}
+df_stage2_Journal_Code2$M_age[993] <- NA
+df_stage2_Journal_Code2$M_age[995] <- NA
+df_stage2_Journal_Code2$M_age[1002] <- NA
+df_stage2_Journal_Code2$SD_age[993] <- NA
+df_stage2_Journal_Code2$SD_age[995] <- NA
+df_stage2_Journal_Code2$SD_age[1002] <- NA
+```
+
+
+However, after I informally processed the data, I still found some small details that needed to be improved, and I re-wrote this part in V1 to reduce the code redundancy of V2.
+```{r}
+### In order to facilitate the subsequent exclusion of foreign samples, the Subjects_Recruitment_Area information 29 of 20211064 was changed to Chinese character 29
+df_stage2_Journal_Code2$Subjects_Recruitment_Area[447] <- "被试填答IP覆盖了二十九个省、自治区、直辖市"
+
+## Minor revision
+## 20215075
+df_stage2_Journal_Code2$Sample_Size[1419] <- 310
+df_stage2_Journal_Code2$Male_Num[1419] <- 310
+df_stage2_Journal_Code2$Female_Num[1419] <- 0
+df_stage2_Journal_Code2$M_age[1419] <- 36.11
+df_stage2_Journal_Code2$SD_age[1419] <- 4.91
+df_stage2_Journal_Code2$Sample_Type_N[1419] <- 4
+df_stage2_Journal_Code2$Educational_Attainment_N[1419] <- 0
+df_stage2_Journal_Code2$Occupation_N[1419] <- 0
+
+## 20182003
+df_stage2_Journal_Code2$M_age[322] <- "男生:21.63;女生:21.89"
+df_stage2_Journal_Code2$SD_age[322] <- "男生:1.32;女生:1.17"
+
+
+## I found some outliers for M_age, so I processed this part of the data first.
+## 20185036
+df_stage2_Journal_Code2$Sample_Type_N[1082] <- 2
+## 20183336
+df_stage2_Journal_Code2$Sample_Type_info_N[184] <-
+  "采用整群抽样的方法从山东省济南市某高校选取大学生为被试"
+
+## 20215065
+df_stage2_Journal_Code2$Sample_Type_N[1190:1191] <- 2
+## 20184083
+df_stage2_Journal_Code2$M_age[407] <- "男性69.14;女性67.16"
+
+## 20084023
+df_stage2_Journal_Code2$Sample_Type_N[300] <- 23
+
+df_stage2_Journal_Code2$Gender[351:352] <- 0 ## 20182022 Original article gender report error, 0 here
+
+## little error 20181223
+df_stage2_Journal_Code2$M_age[1500] <- 31.6
+
+
+## In the following process, we found 3 rows include Mage = 0 and SDage = 0.
+## 20182182
+df_stage2_Journal_Code2$M_age[1039:1041] <- NA
+
+## 20182203
+df_stage2_Journal_Code2$M_age[1052] <- NA
+
+## 20182182
+df_stage2_Journal_Code2$SD_age[1039:1041] <- NA
+
+## 20182203
+df_stage2_Journal_Code2$SD_age[1052] <- NA
+
+
+## In informal code stage, Because our code group have multiple coders, in order to reduce coding differences between individuals based on criteria and understanding, our coding for ethnic groups does not include information about native minority languages. For example: Tibetan language. I will now supplement this.
+## 20181022
+df_stage2_Journal_Code2$Ethnicity_info[768] <- "汉族"
+
+### Article_IDs 20181113 
+df_stage2_Journal_Code2$Ethnicity[1291:1292] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1291:1292] <- "维吾尔族"
+
+### Article_IDs 20211018
+df_stage2_Journal_Code2$Ethnicity[1634:1635] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1634:1635] <- "藏族"
+
+### Article_IDs 20213168
+df_stage2_Journal_Code2$Ethnicity[1603] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1603] <- "汉族;少数民族"
+
+### Article_IDs 20181017
+df_stage2_Journal_Code2$Ethnicity[760:761] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[760:761] <- "蒙古族"
+
+### Article_IDs 20211013
+df_stage2_Journal_Code2$Ethnicity[1587:1588] <- 1
+df_stage2_Journal_Code2$Ethnicity_info[1587:1588] <- "锡伯族"
+
+
+## 20083011
+df_stage2_Journal_Code2$Male_Num[1257] <- 0
+df_stage2_Journal_Code2$Female_Num[1257] <- 845
+
+## 20183078
+df_stage2_Journal_Code2$Male_Num[370] <- 760
+df_stage2_Journal_Code2$Female_Num[370] <- 760
+df_stage2_Journal_Code2$Sample_Size[370] <- 760
+```
+
+
+
+Try to process Abstract data.
+
+```{r message=FALSE, warning=FALSE}
+### In our coding, different subject groups will make the same article have multiple rows of data, but there is only one abstract and the multi-rows Abstract1 should be consistent. So, first, I check whether Abstract1 is consistent.
+
+Abstract_subj_info_filter <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Abstract1,Sample_Type_N,Sample_Type_info_N,
+                Abstract2)
+
+
+Abstract1_subj_info_equl <- Abstract_subj_info_filter %>%
+  dplyr::group_by(Article_IDs) %>%  
+  dplyr::mutate(Same_Abstract1 = n_distinct(Abstract1) == 1) %>%  
+  dplyr::ungroup() 
+
+### Article_IDs 20081099
+df_stage2_Journal_Code2$Abstract1[17] <- 0
+
+### Article_IDs 20183099
+df_stage2_Journal_Code2$Abstract1[382] <- 14
+
+### Article_IDs 20083116
+df_stage2_Journal_Code2$Abstract1[1460] <- 14
+
+### Article_IDs 20181236
+df_stage2_Journal_Code2$Abstract1[1506] <- 145
+
+### Article_IDs 20081096
+df_stage2_Journal_Code2$Abstract1[15] <- 1234
+
+### Article_IDs 20185111
+df_stage2_Journal_Code2$Abstract1[1380] <- 0
+
+### Article_IDs 20211025
+df_stage2_Journal_Code2$Abstract1[1590:1591] <- "1234b"
+
+### Article_IDs 20213137
+df_stage2_Journal_Code2$Abstract1[1641:1642] <- 1
+
+## Then, I check that the encoding of Abstract1 and Abstract2 is exactly the same
+Abstract1_Abstract2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Abstract2,Abstract1) %>% 
+  dplyr::filter(grepl("1",Sample_Type_N)) %>% 
+  dplyr::filter(grepl("1",Abstract1) & Abstract2 != 1)
+
+### Article_IDs 20213252
+df_stage2_Journal_Code2$Abstract2[490] <- 1
+
+### Article_IDs 20185009
+df_stage2_Journal_Code2$Abstract1[867:868] <- 0
+
+### Article_IDs 20181100
+df_stage2_Journal_Code2$Abstract2[1278:1279] <- 1
+
+### Article_IDs 20213184
+df_stage2_Journal_Code2$Abstract2[1605] <- 1
+
+
+### Process demographic information reports for different samples in the Abstract1
+Abstract1_subj_info_equl <- Abstract1_subj_info_equl %>% 
+  dplyr::filter(Sample_Type_N != 5) %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::mutate(Sample_type3 = ifelse(all(Sample_Type_N == 1),1,
+                                          ifelse(any(grepl("1",Sample_Type_N)) & any(Sample_Type_N !=1),2,
+                                      3))) %>% 
+  dplyr::ungroup()
+
+
+
+### Abstract2 (univeristy students report)
+Abstract2_report_NA <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(grepl("1",Sample_Type_N)) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Sample_Type_N,Abstract2,Abstract1) %>% 
+  dplyr::filter(is.na(Abstract2))
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Abstract2 = ifelse(is.na(Remark1) & !grepl("重复",Remark2) & 
+                                     !grepl("2",Subjects_Recruitment_Area) & 
+                                     grepl("1",Sample_Type_N) & Abstract1 == 0,0,Abstract2))
+
+### Article_IDs 20183311
+df_stage2_Journal_Code2$Abstract2[161] <- 0
+
+### Article_IDs 20182075
+df_stage2_Journal_Code2$Abstract2[776] <- 1
+
+### Article_IDs 20082324
+df_stage2_Journal_Code2$Abstract2[950] <- 0
+
+### Article_ID 20082024
+df_stage2_Journal_Code2$Abstract2[1440] <- 1
+
+### Article_IDs 20082042
+df_stage2_Journal_Code2$Abstract1[1451] <- 123
+df_stage2_Journal_Code2$Abstract2[1451] <- 1
+
+### Article_IDs 20213168
+df_stage2_Journal_Code2$Abstract2[1603] <- 1
+
+### Article_IDs 20213192
+df_stage2_Journal_Code2$Abstract2[1611:1612] <- 0
+```
+
+
+## Create a data.frame to store M and SD of ages code in 'Other_Age' for the purpose of age analysis. 
+```{r}
+Journal_otherage <- data.frame(Article_IDs = c(20082227,20082227,20082227,
+                                               20083017,20083017,20083017,
+                                               20183340,20183340,20183340,20183340,20183340,20183340,
+                                               20183097,20183097,
+                                               20214027,20214027,20214027,
+                                               20181065
+                                               ),
+                               Study_Number = c(1,1,1,
+                                                1,1,1,
+                                                1,1,1,1,1,1,
+                                                1,1,
+                                                1,1,1,
+                                                2),
+                               Subjects_Group_N = c("8岁组","9岁组","10岁组",
+                                                    "高一","高二","高三",
+                                                    "11岁","12岁","13岁","14岁","15岁","16岁",
+                                                    "7岁组","8岁组",
+                                                    "留守初一","留守初二","留守初三",
+                                                    "产生式协变关系"),
+                               Sample_Size = c(11,10,10,
+                                               64,65,53,
+                                               60,140,189,146,101,62,
+                                               146,48,
+                                               221,165,133,
+                                               238),
+                               Target_Population_N = c(1,1,1,
+                                                       1,1,1,
+                                                       1,1,1,1,1,1,
+                                                       1,1,
+                                                       1,1,1,
+                                                       3),
+                               Sample_Type_N = c(2,2,2,
+                                                 2,2,2,
+                                                 2,2,2,2,2,2,
+                                                 2,2,
+                                                 2,2,2,
+                                                 4),
+                               Age = 1,
+                               M_Age = c(8,9,10,
+                                       16.2,17.1,18.2,
+                                       11,12,13,14,15,16,
+                                       7,8,
+                                       12.95,13.50,15.12,
+                                       18.4),
+                               SD_age = c(0,0,0,
+                                          NA,NA,NA,
+                                          0,0,0,0,0,0,
+                                          0,0,
+                                          0.67,1.02,1.09,
+                                          NA),
+                               Other_Age = NA)
+```
+
+
+modif some article IDs
+```{r}
+# class(df_stage2_Journal_Code2$Article_IDs_N)
+## 大学生大五人格与学习适应性的关系研究
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "大学生大五人格与学习适应性的关系研究","20083067",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "大学生大五人格与学习适应性的关系研究","20083067",Article_IDs))
+
+
+## 大学生手机依赖量表的编制
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "大学生手机依赖量表的编制","20083009",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "大学生手机依赖量表的编制","20083009",Article_IDs))
+
+
+## 大学生的同伴依恋与心理健康关系的性别角色效应
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "大学生的同伴依恋与心理健康关系的性别角色效应","20083060",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "大学生的同伴依恋与心理健康关系的性别角色效应","20083060",Article_IDs))
+
+
+## 大学生社交效能感与网络关系成瘾倾向的关系初探
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "大学生社交效能感与网络关系成瘾倾向的关系初探","20083029",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "大学生社交效能感与网络关系成瘾倾向的关系初探","20083029",Article_IDs))
+
+
+## 大学生社会支持、心理控制源与主观幸福感的关系
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "大学生社会支持、心理控制源与主观幸福感的关系","20083065",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "大学生社会支持、心理控制源与主观幸福感的关系","20083065",Article_IDs))
+
+
+## 基层组织领导人格特质研究
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "基层组织领导人格特质研究","20082324",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "基层组织领导人格特质研究","20082324",Article_IDs))
+
+
+## 在读护生的职业认同研究
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "在读护生的职业认同研究","20082280",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "在读护生的职业认同研究","20082280",Article_IDs))
+
+
+## delete dupli article
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(!(Article_IDs == "20082280" & Article_Title == "图形视觉与心理表象眼动模式的比较研究"))
+
+
+## 大学生经济自我的时间态度差异研究
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::mutate(Article_IDs_N = ifelse(Article_Title == "大学生经济自我的时间态度差异研究","20082370",Article_IDs_N),
+                Article_IDs = ifelse(Article_Title == "大学生经济自我的时间态度差异研究","20082370",Article_IDs))
+```
+
+
+
+We replaced those articles that only require brief information coding with empirical articles needed for our research and analysis (i.e., articles that require detailed information coding). Therefore, I need to process this part of the data next.
+
+```{r}
+library(openxlsx)
+
+Journal_articles_replace <- read.xlsx("D:\\chin-subj\\2_Data_Extraction\\2_1_CHN_Journal_Code\\2_1_5_Extract_Data\\2_5_5_3_Article_Replaced\\Chin_Subj_articles_replaced_CE.xlsx") %>%
+  dplyr::filter(Coder == "final")
+
+
+# names(df_stage2_Journal_Code2)
+# names(Journal_articles_replace)
+
+
+Journal_articles_replace2 <- Journal_articles_replace %>% 
+  dplyr::mutate(Coder_N = Coder,Coder2_N = Coder,
+                Article_IDs_N = Article_IDs,
+                Study_Number_N = Study_Number,
+                Subjects_Group_N = Subjects_Group,
+                Remark1_N =Remark1,
+                Remark2_N =Remark2,
+                Remark3_N = Remark3,
+                Subjects_Area = NA,
+                Subjects_Area_info = NA) %>% 
+  dplyr::select(Coder,Coder_N,
+                Article_IDs,Article_IDs_N,
+                Study_Number,Study_Number_N,
+                Subjects_Group,Subjects_Group_N,
+                Article_Title,First_Author,Journal,
+                Abstract1,Abstract2,
+                Remark1,Study_Type,Sample_Size,
+                Gender,Male_Num,Female_Num,
+                Age,M_age,SD_age,Other_age,
+                Ethnicity,Ethnicity_info,
+                Religious,Religious_info,
+                Subjects_Area,Subjects_Area_info,
+                Subjects_Recruitment_Area,Sampling_Method,
+                Remark2,Remark3, Remark2_N,Remark3_N,
+                Coder2_N,Target_Population_N,Coding_Basis_N,Remark1_N,
+                Sample_Type_N,Sample_Type_info_N,
+                Educational_Attainment_N,Educational_Attainment_info_N,Occupation_N,SES_N,SES_info_N,
+                Subjects_Recruitment_Method_N,Subjects_Recruitment_Method_info_N) %>% 
+  dplyr::mutate(across(everything(),as.character))
+
+
+
+## combine journal replace and the first coding
+df_stage2_Journal_Code2 <-  bind_rows(df_stage2_Journal_Code2,Journal_articles_replace2)
+
+df_stage2_Journal_Code2 %>% 
+  distinct(Article_IDs)
+## after func `distinct` 1000 atircles 
+# str(df_stage2_Journal_Code2)
+
+
+## One article from 2008 was omitted from the coding
+## 20084071
+Article20084071 <-  tibble(
+  !!!set_names(rep(NA, ncol(df_stage2_Journal_Code2)), colnames(df_stage2_Journal_Code2))
+) %>% 
+  slice(rep(1, 3))
+
+Article20084071$Coder[1:3] <- "final"
+Article20084071$Coder_N[1:3] <- "final"
+
+Article20084071$Article_IDs[1:3] <- "20084071"
+Article20084071$Article_IDs_N[1:3] <- "20084071"
+
+Article20084071$Study_Number[1:3] <- 1
+Article20084071$Study_Number_N[1:3] <- 1
+
+Article20084071$Subjects_Group[1] <- "7岁"
+Article20084071$Subjects_Group_N[1] <- "7岁"
+Article20084071$Subjects_Group[2] <- "9岁"
+Article20084071$Subjects_Group_N[2] <- "9岁"
+Article20084071$Subjects_Group[3] <- "11岁"
+Article20084071$Subjects_Group_N[3] <- "11岁"
+
+Article20084071$Article_Title[1:3] <- "小学儿童执行功能与问题解决能力的关系"
+Article20084071$First_Author[1:3] <- "王晶"
+Article20084071$Journal <- "心理发展与教育"
+
+Article20084071$Abstract1[1:3] <- "123"
+Article20084071$Study_Type[1:3] <- 1
+Article20084071$Sample_Size[1:3] <- c(39,46,36)
+
+Article20084071$Gender[1:3] <- 1
+Article20084071$Female_Num[1:3] <- c(23,21,16)
+Article20084071$Male_Num[1:3] <- c(16,25,20)
+
+Article20084071$Age[1:3] <- 1
+Article20084071$M_age[1:3] <- c(7.17,9.27,11.25)
+Article20084071$SD_age[1:3] <- c(0.35,0.47,0.46)
+
+Article20084071[,c("Ethnicity","Religious","SES_N",
+                   "Subjects_Area","Subjects_Recruitment_Area")] <- 0
+
+Article20084071$Sampling_Method <- 2
+Article20084071$Subjects_Recruitment_Method_N <- 1
+Article20084071$Sample_Type_N <- 2
+Article20084071$Target_Population_N <- 3
+Article20084071$Coding_Basis_N <- "在问题解决的计划方面 抑制能力较高的人无次佳路径的情况下计划的时间相对较短 但有次佳路径的情况下计划的时间相对较多；而抑制能力不好的人两种情况没有差异。在问题解决的表现类型上抑制不好的人在有子目标无次佳路径的问题上易出现”绕远”解决类型"
+Article20084071$Sample_Type_info_N <- "本研究被试为某中等公立小学的二、四、六年级学生。"
+
+Article20084071 <- Article20084071 %>% 
+  mutate(across(everything(), as.character))
+
+df_stage2_Journal_Code2 <- bind_rows(df_stage2_Journal_Code2,Article20084071)
+
+
+## An extra coded article from 2018 should be deleted.
+## These three articles are 20181038,20181040,20181169
+set.seed(2018)
+
+sample(c("20181038","20181040","20181169"),size = 1)
+## 20181169
+
+df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>% 
+  dplyr::filter(Article_IDs_N != "20181169")
+```
+
+
+## Save Rdata again
+```{r}
+save(df_stage2_Journal_Code2,Journal_otherage,Journal_articles_replace2,
+     file = "df_Pre_Stage2_Journal_Code.Rdata")
+```

@@ -1,0 +1,2244 @@
+---
+title: "Notebook_Exploration_Analysis"
+author: "Lei Yue"
+date: "2025-05-13"
+output: html_document
+---
+
+
+
+## intall library
+```{r}
+rm(list = ls())
+
+if (!require("pacman")) install.packages("pacman")
+
+p_load("tidyverse","ggplot2","ggwordcloud",
+       "ggrepel","xlsx","patchwork",
+       "sf","ggspatial","pcutils","igraph",
+       "MetaNet","here","correlation")
+```
+
+
+
+Load the process data of the main analysis by running an R script
+```{r warning=FALSE}
+## main analyze Rmd data
+source("Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2.R")
+```
+
+
+## Check articles num in different journals
+```{r}
+Journal_check <- Journal %>% 
+  dplyr::select(Article_IDs_N) %>% 
+  dplyr::distinct(Article_IDs_N) %>% 
+  dplyr::mutate(Year = substr(Article_IDs_N,1,4),
+                Journal = substr(Article_IDs_N,5,5)) %>% 
+  dplyr::group_by(Year,Journal) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::ungroup()
+
+Journal_check
+```
+
+## Journal report in different period
+2008
+```{r}
+Journal_year2008_report <- Journal %>% 
+  dplyr::filter(substr(Article_IDs_N,1,4) == "2008") %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
+                Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
+                SES_N = ifelse(SES_N == 0, 0, 1),
+                Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N == 0, 0, 1)) %>%
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Age = max(Age) > 0,
+                   Gender = max(Gender) > 0,
+                   Religious = max(Religious) > 0,
+                   Ethnicity = max(Ethnicity) > 0,
+                   Sampling_Method = max(Sampling_Method) > 0,
+                   Recruitment_Area = max(Subjects_Recruitment_Area) > 0,
+                   Recruitment_Method = max(Subjects_Recruitment_Method_N) > 0,
+                   SES = max(SES_N) > 0,
+                   .groups = "drop") %>% 
+  dplyr::select(3:last_col())
+
+
+report_list <- list()
+
+for (i in names(Journal_year2008_report )){
+  
+  
+  report_table <- data.frame(table(Journal_year2008_report [[i]])) %>% 
+    dplyr::mutate(col_names = names(Journal_year2008_report [i]),
+                  proportion = Freq / sum(Freq))
+  
+  report_list[[i]] <- report_table
+  
+}
+
+Journal_year2008_report <- do.call(rbind, report_list) %>% 
+  dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
+
+
+### Calculate reported status of Educational_Attainment and Occupation
+Journal_year2008_education_occupation <- Journal %>% 
+  dplyr::filter(substr(Article_IDs_N,1,4) == "2008") %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
+                   Occupation_N = max(Occupation_N) > 0,.groups = "drop") 
+
+
+
+table(Journal_year2008_education_occupation$Educational_Attainment_N)
+table(Journal_year2008_education_occupation$Occupation_N) 
+
+
+Journal_year2008_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
+                                                            "Unreported","Reported"),
+                                                   Freq = c(34,31,36,29),
+                                                   col_names= c("Educational_Attainment",
+                                                                "Educational_Attainment",
+                                                                "Occupation","Occupation"),
+                                                   proportion = c(34/(34+31),31/(34+31),
+                                                                  36/(36+29),29/(36+29)))
+
+Journal_year2008_report2 <- rbind(Journal_year2008_report,
+                                  Journal_year2008_education_occupation_table) %>%
+  dplyr::mutate(col_names = factor(col_names, 
+                                   labels = c("Gender","Recruitment Method",
+                                              "Recruitment Area",
+                                              "Age","Educational Attainment",
+                                              "Occupation","Sampling Method",
+                                              "SES","Ethnicity","Religious"),
+                                   levels = c("Gender","Recruitment_Method",
+                                              "Recruitment_Area",
+                                              "Age","Educational_Attainment",
+                                              "Occupation","Sampling_Method",
+                                              "SES","Ethnicity","Religious")),
+                proportion = proportion *100) %>% 
+  dplyr::mutate(Year = "2008")
+
+```
+
+
+2018
+```{r}
+Journal_year2018_report <- Journal %>% 
+  dplyr::filter(substr(Article_IDs_N,1,4) == "2018") %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
+                Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
+                SES_N = ifelse(SES_N == 0, 0, 1),
+                Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N == 0, 0, 1)) %>%
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Age = max(Age) > 0,
+                   Gender = max(Gender) > 0,
+                   Religious = max(Religious) > 0,
+                   Ethnicity = max(Ethnicity) > 0,
+                   Sampling_Method = max(Sampling_Method) > 0,
+                   Recruitment_Area = max(Subjects_Recruitment_Area) > 0,
+                   Recruitment_Method = max(Subjects_Recruitment_Method_N) > 0,
+                   SES = max(SES_N) > 0,
+                   .groups = "drop") %>% 
+  dplyr::select(3:last_col())
+
+
+report_list <- list()
+
+for (i in names(Journal_year2018_report )){
+  
+  
+  report_table <- data.frame(table(Journal_year2018_report [[i]])) %>% 
+    dplyr::mutate(col_names = names(Journal_year2018_report [i]),
+                  proportion = Freq / sum(Freq))
+  
+  report_list[[i]] <- report_table
+  
+}
+
+Journal_year2018_report <- do.call(rbind, report_list) %>% 
+  dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
+
+
+### Calculate reported status of Educational_Attainment and Occupation
+Journal_year2018_education_occupation <- Journal %>% 
+  dplyr::filter(substr(Article_IDs_N,1,4) == "2018") %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
+                   Occupation_N = max(Occupation_N) > 0,.groups = "drop") 
+
+
+
+table(Journal_year2018_education_occupation$Educational_Attainment_N) 
+table(Journal_year2018_education_occupation$Occupation_N) 
+
+
+Journal_year2018_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
+                                                            "Unreported","Reported"),
+                                                   Freq = c(74,75,90,59),
+                                                   col_names= c("Educational_Attainment",
+                                                                "Educational_Attainment",
+                                                                "Occupation","Occupation"),
+                                                   proportion = c(74/(74+75),75/(74+75),
+                                                                  90/(90+59),59/(90+59)))
+
+Journal_year2018_report2 <- rbind(Journal_year2018_report,
+                                  Journal_year2018_education_occupation_table) %>%
+  dplyr::mutate(col_names = factor(col_names, 
+                                   labels = c("Gender","Age","Recruitment Method",
+                                              "Recruitment Area",
+                                              "Educational Attainment",
+                                              "Occupation","Sampling Method",
+                                              "SES","Ethnicity","Religious"),
+                                   levels = c("Gender","Age","Recruitment_Method",
+                                              "Recruitment_Area",
+                                              "Educational_Attainment",
+                                              "Occupation","Sampling_Method",
+                                              "SES","Ethnicity","Religious")),
+                proportion = proportion *100)%>% 
+  dplyr::mutate(Year = "2018")
+
+```
+
+2020-2021
+```{r}
+Journal_year2021_report <- Journal %>% 
+  dplyr::filter(substr(Article_IDs_N,1,4) == "2021") %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
+                Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
+                SES_N = ifelse(SES_N == 0, 0, 1),
+                Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N == 0, 0, 1)) %>%
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Age = max(Age) > 0,
+                   Gender = max(Gender) > 0,
+                   Religious = max(Religious) > 0,
+                   Ethnicity = max(Ethnicity) > 0,
+                   Sampling_Method = max(Sampling_Method) > 0,
+                   Recruitment_Area = max(Subjects_Recruitment_Area) > 0,
+                   Recruitment_Method = max(Subjects_Recruitment_Method_N) > 0,
+                   SES = max(SES_N) > 0,
+                   .groups = "drop") %>% 
+  dplyr::select(3:last_col())
+
+
+report_list <- list()
+
+for (i in names(Journal_year2021_report )){
+  
+  
+  report_table <- data.frame(table(Journal_year2021_report [[i]])) %>% 
+    dplyr::mutate(col_names = names(Journal_year2021_report [i]),
+                  proportion = Freq / sum(Freq))
+  
+  report_list[[i]] <- report_table
+  
+}
+
+Journal_year2021_report <- do.call(rbind, report_list) %>% 
+  dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
+
+
+### Calculate reported status of Educational_Attainment and Occupation
+Journal_year2021_education_occupation <- Journal %>% 
+  dplyr::filter(substr(Article_IDs_N,1,4) == "2021") %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
+                   Occupation_N = max(Occupation_N) > 0,.groups = "drop") 
+
+
+
+table(Journal_year2021_education_occupation$Educational_Attainment_N) 
+table(Journal_year2021_education_occupation$Occupation_N) 
+
+
+Journal_year2021_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
+                                                            "Unreported","Reported"),
+                                                   Freq = c(58,34,75,17),
+                                                   col_names= c("Educational_Attainment",
+                                                                "Educational_Attainment",
+                                                                "Occupation","Occupation"),
+                                                   proportion = c(58/(58+34),34/(58+34),
+                                                                  75/(75+17),17/(75+17)))
+
+Journal_year2021_report2 <- rbind(Journal_year2021_report,
+                                  Journal_year2021_education_occupation_table) %>%
+  dplyr::mutate(col_names = factor(col_names, 
+                                   labels = c("Gender","Age","Recruitment Method",
+                                              "Recruitment Area","Sampling Method",
+                                              "Educational Attainment",
+                                              "SES","Occupation",
+                                              "Ethnicity","Religious"),
+                                   levels = c("Gender","Age","Recruitment_Method",
+                                              "Recruitment_Area","Sampling_Method",
+                                              "Educational_Attainment",
+                                              "SES","Occupation",
+                                              "Ethnicity","Religious")),
+                proportion = proportion *100)%>% 
+  dplyr::mutate(Year = "2021")
+```
+
+
+combine three data
+```{r}
+Journal_report <- bind_rows(Journal_year2008_report2,Journal_year2018_report2,Journal_year2021_report2) %>% 
+  dplyr::filter(Var1 == "Reported") %>% 
+  dplyr::add_row(data.frame(Var1 = c("Reported","Reported"),
+                            Freq = c(0,0),
+                            col_names = c("Religious","Religious"),
+                            proportion = c(0,0),
+                            Year = c("2008","2021"))) %>% 
+  dplyr::mutate(col_names = factor(col_names,
+                                   levels = c("Gender","Recruitment Method","Recruitment Area",
+                                              "Age","Educational Attainment","Occupation",
+                                              "Sampling Method","SES","Ethnicity",
+                                              "Religious"),
+                                   labels = c("Sex","Recruitment method","Recruitment area",
+                                              "Age","Educational attainment","Occupation",
+                                              "Sampling method","Socioeconomic status","Ethnicity",
+                                              "Religious belief")))
+
+Journal_report_year <- Journal_report %>% 
+  ggplot(aes(x = Year, y = proportion, color = col_names, group = col_names))+
+  geom_line(size = 1)+
+  geom_point(size = 3)+
+  labs(y="Proportion", x = "Year")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\Journal_report_year.pdf", Journal_report_year, device = "pdf", width=12, height = 9)
+
+
+Journal_report_year
+```
+
+
+## Journal reported within different target population
+general
+```{r}
+Journal_general_population <- Journal %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
+                Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
+                SES_N = ifelse(SES_N == 0, 0, 1),
+                Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N == 0, 0, 1)) %>%
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Age = max(Age) > 0,
+                   Gender = max(Gender) > 0,
+                   Religious = max(Religious) > 0,
+                   Ethnicity = max(Ethnicity) > 0,
+                   Sampling_Method = max(Sampling_Method) > 0,
+                   Recruitment_Area = max(Subjects_Recruitment_Area) > 0,
+                   Recruitment_Method = max(Subjects_Recruitment_Method_N) > 0,
+                   SES = max(SES_N) > 0,
+                   .groups = "drop") %>% 
+  dplyr::select(3:last_col())
+
+
+report_list <- list()
+
+for (i in names(Journal_general_population)){
+  
+  
+  report_table <- data.frame(table(Journal_general_population[[i]])) %>% 
+    dplyr::mutate(col_names = names(Journal_general_population[i]),
+                  proportion = Freq / sum(Freq))
+  
+  report_list[[i]] <- report_table
+  
+}
+
+Journal_general_population_report <- do.call(rbind, report_list) %>% 
+  dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
+
+
+### Calculate reported status of Educational_Attainment and Occupation
+Journal_general_education_occupation <- Journal %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
+                   Occupation_N = max(Occupation_N) > 0,.groups = "drop") 
+
+
+
+table(Journal_general_education_occupation$Educational_Attainment_N) 
+table(Journal_general_education_occupation$Occupation_N)  
+
+
+Journal_general_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
+                                                            "Unreported","Reported"),
+                                                   Freq = c(73,42,101,14),
+                                                   col_names= c("Educational_Attainment",
+                                                                "Educational_Attainment",
+                                                                "Occupation","Occupation"),
+                                                   proportion = c(73/(73+42),42/(73+42),
+                                                                  101/(101+14),14/(101+14)))
+
+Journal_general_report2 <- rbind(Journal_general_population_report,
+                                  Journal_general_education_occupation_table) %>%
+  dplyr::mutate(proportion = proportion *100) %>% 
+  dplyr::mutate(Target_population = "General population")
+
+```
+
+
+special
+```{r}
+Journal_special_population <- Journal %>% 
+  dplyr::filter(Target_Population_N == 1) %>% 
+  dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == 0, 0, 1),
+                Sampling_Method = ifelse(Sampling_Method == 0, 0 ,1),
+                SES_N = ifelse(SES_N == 0, 0, 1),
+                Subjects_Recruitment_Method_N = ifelse(Subjects_Recruitment_Method_N == 0, 0, 1)) %>%
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Age = max(Age) > 0,
+                   Gender = max(Gender) > 0,
+                   Religious = max(Religious) > 0,
+                   Ethnicity = max(Ethnicity) > 0,
+                   Sampling_Method = max(Sampling_Method) > 0,
+                   Recruitment_Area = max(Subjects_Recruitment_Area) > 0,
+                   Recruitment_Method = max(Subjects_Recruitment_Method_N) > 0,
+                   SES = max(SES_N) > 0,
+                   .groups = "drop") %>% 
+  dplyr::select(3:last_col())
+
+
+report_list <- list()
+
+for (i in names(Journal_special_population)){
+  
+  
+  report_table <- data.frame(table(Journal_special_population[[i]])) %>% 
+    dplyr::mutate(col_names = names(Journal_special_population[i]),
+                  proportion = Freq / sum(Freq))
+  
+  report_list[[i]] <- report_table
+  
+}
+
+Journal_special_population_report <- do.call(rbind, report_list) %>% 
+  dplyr::mutate(Var1 = ifelse(Var1 == "TRUE", "Reported","Unreported")) 
+
+
+### Calculate reported status of Educational_Attainment and Occupation
+Journal_special_education_occupation <- Journal %>% 
+  dplyr::filter(Target_Population_N == 1) %>% 
+  dplyr::filter(Sample_Type_N %in% c(4,5)) %>% 
+  dplyr::group_by(Article_IDs,Study_Number) %>% 
+  dplyr::summarise(Educational_Attainment_N = max(Educational_Attainment_N) > 0,
+                   Occupation_N = max(Occupation_N) > 0,.groups = "drop") 
+
+
+
+table(Journal_special_education_occupation$Educational_Attainment_N) 
+table(Journal_special_education_occupation$Occupation_N) 
+
+
+Journal_special_education_occupation_table <- data.frame(Var1 = c("Unreported","Reported",
+                                                            "Unreported","Reported"),
+                                                   Freq = c(93,98,100,91),
+                                                   col_names= c("Educational_Attainment",
+                                                                "Educational_Attainment",
+                                                                "Occupation","Occupation"),
+                                                   proportion = c(93/(93+98),98/(93+98),
+                                                                  100/(100+91),91/(100+91)))
+
+Journal_special_report2 <- rbind(Journal_special_population_report,
+                                  Journal_special_education_occupation_table) %>%
+  dplyr::mutate(proportion = proportion *100) %>% 
+  dplyr::mutate(Target_population = "Special population")
+```
+
+
+combine two data.frame and visualize
+```{r}
+Journal_target_population_report <- full_join(Journal_general_report2,
+                                              Journal_special_report2,
+                                              by = c("col_names", "Var1", "Freq", "proportion","Target_population")) %>% 
+  dplyr::filter(Var1 == "Reported")
+
+
+## set factor
+Journal_target_population_report_factor <- Journal_target_population_report %>% 
+  dplyr::filter(Target_population == "General population") %>% 
+  dplyr::arrange(desc(proportion)) %>% 
+  dplyr::pull(col_names)
+
+
+Journal_target_population_report2 <- Journal_target_population_report %>% 
+dplyr::mutate(col_names = factor(col_names,
+                                 levels = Journal_target_population_report_factor,
+                                 labels = c(labels = c("Sex", "Age","Recruitment method","Educational attainment",
+                                                       "Recruitment area","Socioeconomic status","Sampling method",
+                                               "Occupation", "Ethnicity", "Religious belief"))))
+
+
+## plot
+Journal_report_target_population <- Journal_target_population_report2 %>% 
+  ggplot(aes(x = col_names, y = proportion, fill = Target_population, group = Target_population))+
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8))+
+  geom_text(aes(label = round(proportion,2)),
+            position = position_dodge(width = 0.9),
+            vjust = -0.5,
+            size =3)+
+  labs(y="Proportion", x = "Target population")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 20, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))+
+  scale_x_discrete(guide = guide_axis(angle = 45))
+
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\Journal_report_target_population.pdf", Journal_report_target_population, device = "pdf", width=12, height = 9)
+
+Journal_report_target_population
+```
+
+
+## the exporation analyse in special population
+
+```{r}
+# Journal_special_visual <- Journal_special_target_population2 %>% 
+#   dplyr::group_by(Recode_target_population) %>% 
+#   dplyr::summarise(n = n())
+
+
+## save and translate Chinese into English
+
+# writexl::write_xlsx(Journal_special_visual,"Journal_special_visual.xlsx")
+Journal_special_visual2 <- Journal_special_population_translation %>% 
+  dplyr::group_by(Target_Population_English) %>% 
+  dplyr::summarise(Count = sum(Count)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(cate = ifelse(Count == 1,"one",Count))
+
+Suppl_Fig_Special_Wordcloud <- Journal_special_visual2 %>% 
+  ggplot(aes(label = Target_Population_English, 
+             size = Count, 
+             color = cate)) +
+  geom_text_wordcloud(area_corr = TRUE) +
+  scale_size_area(max_size = 50) +
+  theme_minimal()
+
+Suppl_Fig_Special_Wordcloud
+```
+
+
+bar plot 
+```{r}
+Journal_special_visual_gt2 <- Journal_special_visual2 %>% 
+  dplyr::filter(Count > 2) %>% 
+  dplyr::mutate(Prop = (Count/622)*100) %>% 
+  dplyr::arrange(desc(Prop))
+
+
+## factor
+Journal_special_visual_gt2_factor <- Journal_special_visual_gt2 %>% 
+  dplyr::pull(Target_Population_English)
+
+Journal_special_visual_gt3 <- Journal_special_visual_gt2 %>% 
+  dplyr::mutate(Target_Population_English = factor(Target_Population_English,
+                                                   levels = Journal_special_visual_gt2_factor))
+  
+
+Suppl_Fig_Journal_special_visual_bar <-  Journal_special_visual_gt3 %>% 
+ggplot(aes(x = Target_Population_English,y = Prop))+
+  geom_col(fill = "blue",alpha = 0.5)+
+  xlab("Special population")+
+  ylab("Proportion")+
+  coord_flip()+
+  theme_classic()+
+  theme(axis.title.y = element_text(vjust = -5),
+        panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 10, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 10,family = "serif"),
+        axis.text = element_text(size = 10,family = "serif"))
+
+Suppl_Fig_Journal_special_visual_bar
+
+Suppl_Fig_Special_Wordcloud_Barplot <- Suppl_Fig_Special_Wordcloud + Suppl_Fig_Journal_special_visual_bar
+
+
+Suppl_Fig_Special_Wordcloud_Barplot
+
+
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\Suppl_Fig_Special_Wordcloud_Barplot.pdf",Suppl_Fig_Special_Wordcloud_Barplot, device = "pdf", width=18, height = 9)
+
+```
+
+
+```{r}
+#  num of different targetpopulation
+
+Journal_special_adolecent <- Journal_special_target_population2 %>% 
+  dplyr::filter(grepl("儿童|青少年|幼儿",Recode_target_population))
+  
+  
+Journal_sepcial_primaryhigh <- Journal_special_target_population2 %>% 
+  dplyr::filter(Recode_target_population == "小学生" | Recode_target_population == "中学生" | Recode_target_population == "中小学生"| Recode_target_population == "初中生"| Recode_target_population == "高中生"| Recode_target_population == "中职生") %>% 
+  dplyr::distinct(Article_IDs)
+```
+
+
+create BF func, It is consistent with the analyzed function in the formal Rmd.
+```{r}
+BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior = TRUE, prior = NA){
+  # datase - the input dataframe
+  # factor - column name of the factor,
+  # observed - column name of the column contains counts information for the observed,
+  # expected - column name of the column contains counts information for the expected,
+  # default_prior - whether use the default, defused prior
+  # prior - priors defined by users
+  
+  fact_level <- dataset %>% dplyr::select(all_of(factor)) %>% dplyr::pull()
+  observed_data <- dataset %>% dplyr::select(all_of(observed)) %>% dplyr::pull()
+  names(observed_data) <- fact_level
+  expected_data <- dataset %>% dplyr::select(all_of(expected)) %>% dplyr::pull()
+  n_levels <- length(observed_data)
+  
+  
+  if (default_prior & all(is.na(prior))) {
+    prior <- rep(1, n_levels)
+  } else{
+    if (is.character(prior)){
+      prior <- dataset %>% dplyr::select(all_of(prior)) %>% dplyr::pull()
+    } else if (is.array(prior)){
+      prior <-  prior
+    } else if (is.numeric(prior)){
+      prior <-  prior
+    } else{
+      print("prior much a column of the input data or a vector")
+    }
+  }
+  
+  alphas <- prior
+  counts <- observed_data
+  thetas <- expected_data
+  
+  if(sum(thetas) != 1) {
+    thetas <- thetas/sum(thetas)
+    }
+  
+  expected <- setNames(sum(counts)*thetas, names(counts))
+  
+  lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
+  lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
+
+  if (any(rowSums(cbind(thetas, counts)) == 0)) {
+    LogBF10 <- (lbeta.xa-lbeta.a)
+  } else {
+     LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+  }
+
+  BF <- data.frame(LogBF10 = LogBF10,
+                   BF10    = exp(LogBF10),
+                   BF01    = 1/exp(LogBF10))
+
+  return(list(BF       = BF,
+              expected = expected))
+  
+}
+```
+
+
+
+## Two data sources are respectively compared with the census data and CFPS
+I process the data of gender, age and edu.
+
+## gender
+process data
+```{r}
+## process census 6th
+Census6_gender2 <- Census6_gender %>% 
+  dplyr::rename(Data_Source = 1) %>% 
+  dplyr::mutate(n = NA)
+
+## combine data
+SupplH2_gender_general <- H2_gender_general %>% 
+  dplyr::rename(Data_Source = Data_source) %>% 
+  rbind(H1_gender_general) %>% 
+  dplyr::filter(Data_Source != "Chinese participants") %>% 
+  rbind(Census6_gender2) %>% 
+  dplyr::mutate(Data_Source = factor(Data_Source,
+                                     levels = c("Census6","Census7",
+                                                "BTS Chinese","CFPS2018", 
+                                                "Journal")))
+```
+
+
+visulize
+```{r}
+Suppl_Fig_H2_gender_general <- ggplot(SupplH2_gender_general,aes(Data_Source,Proportion,fill= Gender))+
+  geom_col()+
+  geom_hline(yintercept = 50, linetype = "dashed", color = "#666666")+
+  labs(y="Proportion",x = "Data source")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 20, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))
+
+
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\Suppl_Fig_H2_gender_general.pdf",Suppl_Fig_H2_gender_general, device = "pdf", width=18, height = 9)
+Suppl_Fig_H2_gender_general
+
+```
+
+
+BF calculate
+```{r}
+SupplH2_gender_general_bayes <- SupplH2_gender_general %>% 
+  dplyr::select(Gender,Data_Source,Proportion) %>% 
+  pivot_wider(names_from = Data_Source,values_from = Proportion)
+
+
+## Journal VS Census6
+SupplH2_BF_gender_Journal_Census6 <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+                                             factor = "Gender",
+                                             observed = "Journal",
+                                             expected = "Census6")
+
+## BTS VS Census6
+SupplH2_BF_gender_BTS_Census6 <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+                                             factor = "Gender",
+                                             observed = "BTS Chinese",
+                                             expected = "Census6")
+
+## Journal VS Census7
+SupplH2_BF_gender_Journal_Census7 <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+                                             factor = "Gender",
+                                             observed = "Journal",
+                                             expected = "Census7")
+
+## BTS VS Census7
+SupplH2_BF_gender_BTS_Census7 <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+                                             factor = "Gender",
+                                             observed = "BTS Chinese",
+                                             expected = "Census7")
+
+## Journal VS CFPS2018
+SupplH2_BF_gender_Journal_CFPS <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+                                             factor = "Gender",
+                                             observed = "Journal",
+                                             expected = "CFPS2018")
+
+## BTS VS CFPS2018
+SupplH2_BF_gender_BTS_CFPS <- BayesMultiNomial(dataset = SupplH2_gender_general_bayes,
+                                             factor = "Gender",
+                                             observed = "BTS Chinese",
+                                             expected = "CFPS2018")
+```
+Journal vs Census6: $Log(BF_{10})$ = `r SupplH2_BF_gender_Journal_Census6$BF$LogBF10`.
+
+BTS vs Census6: $Log(BF_{10})$ = `r SupplH2_BF_gender_BTS_Census6$BF$LogBF10`.
+
+Journal vs Census7: $Log(BF_{10})$ = `r SupplH2_BF_gender_Journal_Census7$BF$LogBF10`.
+
+BTS vs Census7: $Log(BF_{10})$ = `r SupplH2_BF_gender_BTS_Census7$BF$LogBF10`.
+
+Journal vs CFPS2018: $Log(BF_{10})$ = `r SupplH2_BF_gender_Journal_CFPS$BF$LogBF10`.
+
+BTS vs CFPS2018: $Log(BF_{10})$ = `r SupplH2_BF_gender_BTS_CFPS$BF$LogBF10`.
+
+
+## age
+process data 
+```{r}
+## BTS
+H1_age_general_BTS <- H1_age_general %>% 
+  dplyr::filter(Data_Source == "BTS Chinese")
+
+## Journal
+H1_age_general_Journal <- H1_age_general %>% 
+  dplyr::filter(Data_Source == "Journal")
+
+# ## combine census6 and census7
+# Census_age_five <- rbind(Census6_age_five5,Census7_age_five5)
+
+```
+
+
+visualize Census7, BTS Chinese and Journal 
+```{r}
+SupplH2_Census7_age_general <- ggplot(data= Census7_age_five5,
+                              aes(x=ageBins, 
+                                  y= Proportion, fill=Data_Source)) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = H1_age_general_BTS, 
+            aes(x = ageBins, y = Proportion, group = 1, color = "BTS Chinese"), 
+            size = 1) +
+  geom_line(data = H1_age_general_Journal, 
+            aes(x = ageBins, y = Proportion, group = 1, color = "Journal"), 
+            size = 1) +
+  scale_fill_manual(values = c("Census7" = "#00BFC4")) +  
+  scale_color_manual(values = c("BTS Chinese" = "blue", "Journal" = "red")) +
+  scale_y_continuous(limits = c(0,50))+
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\SupplH2_Census7_age_general.pdf",SupplH2_Census7_age_general, device = "pdf", width=18, height = 9)
+
+SupplH2_Census7_age_general
+```
+
+
+visualize Census6, BTS Chinese and Journal 
+```{r}
+SupplH2_Census6_age_general <- ggplot(data= Census6_age_five5,
+                              aes(x=ageBins, 
+                                  y= Proportion, fill=Data_Source)) +
+  geom_col(alpha=0.5, width = 1) +
+  geom_line(data = H1_age_general_BTS, 
+            aes(x = ageBins, y = Proportion, group = 1, color = "BTS Chinese"), 
+            size = 1) +
+  geom_line(data = H1_age_general_Journal, 
+            aes(x = ageBins, y = Proportion, group = 1, color = "Journal"), 
+            size = 1) +
+  scale_fill_manual(values = c("Census6" = "#00BFC4")) +  
+  scale_color_manual(values = c("BTS Chinese" = "blue", "Journal" = "red")) +
+  scale_y_continuous(limits = c(0,50))+
+  coord_flip() +
+  labs(y="Proportion", x = "Age bins")+
+  theme_classic()+
+  theme(panel.border =element_rect(fill=NA,color="black"),
+        legend.position = "bottom",
+        legend.box.spacing = unit(2,"pt"),
+        legend.text = element_text(size = 16, family = "serif"),
+        legend.title = element_blank(),
+        axis.title = element_text(size = 16,family = "serif"),
+        axis.text = element_text(size = 16,family = "serif"))
+
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\SupplH2_Census6_age_general.pdf",SupplH2_Census6_age_general, device = "pdf", width=18, height = 9)
+
+SupplH2_Census6_age_general
+```
+
+
+BF data
+```{r}
+## Census6 PsyStages
+Suppl_Census6_age_PsyStages <- Census6_age_PsyStages %>% 
+  dplyr::select(ageBins,Proportion) %>% 
+  dplyr::rename(Census6 = 2)
+
+## Census7 PsyStages
+Suppl_Census7_age_PsyStages <- Census7_age_PsyStages %>% 
+  dplyr::select(ageBins,Proportion) %>% 
+  dplyr::rename(Census7 = 2)
+
+
+## Census6 interval10
+Suppl_Census6_age_interval10 <- Census6_age_interval10 %>% 
+  dplyr::select(ageBins,Proportion) %>% 
+  dplyr::rename(Census6 = 2)
+
+## Census7 interval10
+Suppl_Census7_age_interval10 <- Census7_age_interval10 %>% 
+  dplyr::select(ageBins,Proportion) %>% 
+  dplyr::rename(Census7 = 2)
+
+
+## combine data
+## PsyStages
+Suppl_PsyStages_bayes <- left_join(H1_PsyStages_bayes_general,
+                                Suppl_Census7_age_PsyStages,
+                                by = "ageBins") %>% 
+  left_join(Suppl_Census6_age_PsyStages,
+            by = "ageBins")
+
+
+## interval10
+Suppl_interval10_bayes <- left_join(H1_interval10_bayes_general,
+                                 Suppl_Census7_age_interval10,
+                             by = "ageBins") %>% 
+  left_join(Suppl_Census6_age_interval10,
+            by = "ageBins")
+
+```
+
+
+Census6, BTS Chinese, and Journal
+```{r}
+## BTS PsyStages VS Census6
+SupplH2_BF_Psystages_BTS_Census6 <- BayesMultiNomial(dataset = Suppl_PsyStages_bayes,
+                                             factor = "ageBins",
+                                             observed = "BTS Chinese",
+                                             expected = "Census6")
+
+
+## BTS interval10 VS Census6
+SupplH2_BF_interval10_BTS_Census6 <- BayesMultiNomial(dataset = Suppl_interval10_bayes,
+                                             factor = "ageBins",
+                                             observed = "BTS Chinese",
+                                             expected = "Census6")
+
+
+## Journal PsyStages VS Census6
+SupplH2_BF_Psystages_Journal_Census6 <- BayesMultiNomial(dataset = Suppl_PsyStages_bayes,
+                                             factor = "ageBins",
+                                             observed = "Journal",
+                                             expected = "Census6")
+
+## Journal interval10 VS Census6
+SupplH2_BF_interval10_Journal_Census6 <- BayesMultiNomial(dataset =Suppl_interval10_bayes,
+                                             factor = "ageBins",
+                                             observed = "Journal",
+                                             expected = "Census6")
+```
+BTS vs Census6 in PsyStages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_BTS_Census6$BF$LogBF10`.
+
+BTS vs Census6 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_BTS_Census6$BF$LogBF10`.
+
+Journal vs Census6 in Psystages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_Journal_Census6$BF$LogBF10`.
+
+Journal vs Census6 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_Journal_Census6$BF$LogBF10`.
+
+
+Census7, BTS Chinese, and Journal
+```{r}
+## BTS PsyStages VS Census7
+SupplH2_BF_Psystages_BTS_Census7 <- BayesMultiNomial(dataset = Suppl_PsyStages_bayes,
+                                             factor = "ageBins",
+                                             observed = "BTS Chinese",
+                                             expected = "Census7")
+
+
+## BTS interval10 VS Census7
+SupplH2_BF_interval10_BTS_Census7 <- BayesMultiNomial(dataset = Suppl_interval10_bayes,
+                                             factor = "ageBins",
+                                             observed = "BTS Chinese",
+                                             expected = "Census7")
+
+
+## Journal PsyStages VS Census7
+SupplH2_BF_Psystages_Journal_Census7 <- BayesMultiNomial(dataset = Suppl_PsyStages_bayes,
+                                             factor = "ageBins",
+                                             observed = "Journal",
+                                             expected = "Census7")
+
+## Journal interval10 VS Census7
+SupplH2_BF_interval10_Journal_Census7 <- BayesMultiNomial(dataset =Suppl_interval10_bayes,
+                                             factor = "ageBins",
+                                             observed = "Journal",
+                                             expected = "Census7")
+```
+BTS vs Census7 in PsyStages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_BTS_Census7$BF$LogBF10`.
+
+BTS vs Census7 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_BTS_Census7$BF$LogBF10`.
+
+Journal vs Census7 in Psystages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_Journal_Census7$BF$LogBF10`.
+
+Journal vs Census7 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_Journal_Census7$BF$LogBF10`.
+
+## edu
+process Census6 data
+```{r warning=FALSE}
+Suppl_Census6_edu_adults <- Census6_edu %>%
+  dplyr::select(1,2,5,8,11,14,17,20,23) %>%
+  dplyr::rename(Age = 1,n = 2,
+                Never_attended_school = 3,  Primary_school = 4,
+                Junior_high_school = 5, Senior_high_school = 6,
+                Junior_college = 7,Undergraduate_education = 8,
+                Graduate_education = 9) %>% 
+  dplyr::slice(21:22, seq(23,101,by = 6)) %>% 
+  dplyr::mutate(across(-1,as.numeric)) 
+  
+ 
+## college
+Suppl_Census6_college <- Suppl_Census6_edu_adults %>% 
+  dplyr::summarise(`Less-than-college` = sum(across(3:6)),
+                   `College-or-above` = sum(across(7:9))) %>% 
+  tidyr::pivot_longer(cols = c(1,2),
+                      names_to = "Educational_attainment",
+                      values_to = "Num") %>% 
+  dplyr::mutate(Proportion = Num/sum(Num)*100) %>% 
+  dplyr::select(-Num) %>% 
+  dplyr::rename(Census6 = 2)
+
+## high school
+Suppl_Census6_high_school <- Suppl_Census6_edu_adults %>% 
+  dplyr::summarise(`Less-than-high-school` = sum(across(3:5)),
+                   `High-school-or-above` = sum(across(6:9))) %>% 
+  tidyr::pivot_longer(cols = c(1,2),
+                      names_to = "Educational_attainment",
+                      values_to = "Num") %>% 
+  dplyr::mutate(Proportion = Num/sum(Num)*100) %>% 
+  dplyr::select(-Num)%>% 
+  dplyr::rename(Census6 = 2)
+```
+
+
+process Census7 data
+```{r}
+## Census
+Suppl_Census7_college <- Census7_college %>% 
+  dplyr::select(Educational_attainment,Proportion) %>% 
+  dplyr::rename(Census7 = 2)
+
+Suppl_Census7_high_school <- Census7_high_school %>% 
+  dplyr::select(Educational_attainment,Proportion) %>% 
+  dplyr::rename(Census7 = 2)
+```
+
+
+process CFPS2018 data
+```{r}
+Suppl_CFPS2018_edu_college <- CFPS2018_edu_college %>%
+  dplyr::select(Educational_attainment,Proportion) %>% 
+  dplyr::rename(CFPS2018 = 2)
+
+
+Suppl_CFPS2018_edu_high_school <- CFPS2018_edu_high_school %>% 
+  dplyr::select(Educational_attainment,Proportion) %>% 
+  dplyr::rename(CFPS2018 = 2)
+```
+
+
+combine all edu data
+```{r}
+## college
+Suppl_college <- left_join(H1_edu_college_bayes, 
+                           Suppl_Census7_college, 
+                           by = "Educational_attainment") %>%
+  left_join(Suppl_CFPS2018_edu_college,
+            by = "Educational_attainment") %>% 
+  left_join(Suppl_Census6_college,
+             by = "Educational_attainment")
+
+
+## high school
+Suppl_highschool <- left_join(H1_edu_highschool_bayes, 
+                              Suppl_Census7_high_school, 
+                              by = "Educational_attainment") %>% 
+  left_join(Suppl_CFPS2018_edu_high_school,by = "Educational_attainment") %>% 
+  left_join(Suppl_Census6_high_school,
+             by = "Educational_attainment")
+```
+
+
+BF Journal, BTS and Census6
+```{r}
+## College
+Suppl_BF_college_BTS_Census6 <-  BayesMultiNomial(dataset = Suppl_college,
+                                             factor = "Educational_attainment",
+                                             observed = "BTS Chinese",
+                                             expected = "Census6")
+
+Suppl_BF_college_Journal_Census6 <-  BayesMultiNomial(dataset = Suppl_college,
+                                             factor = "Educational_attainment",
+                                             observed = "Journal",
+                                             expected = "Census6")
+
+
+## high school
+Suppl_BF_highschool_BTS_Census6 <-  BayesMultiNomial(dataset = Suppl_highschool,
+                                             factor = "Educational_attainment",
+                                             observed = "BTS Chinese",
+                                             expected = "Census6")
+
+Suppl_BF_highschool_Journal_Census6 <-  BayesMultiNomial(dataset = Suppl_highschool,
+                                             factor = "Educational_attainment",
+                                             observed = "Journal",
+                                             expected = "Census6")
+```
+BTS vs Census6 in college: $Log(BF_{10})$ = `r Suppl_BF_college_BTS_Census6$BF$LogBF10`.
+
+Journal vs Census6 in college: $Log(BF_{10})$ = `r Suppl_BF_college_Journal_Census6$BF$LogBF10`.
+
+BTS vs Census6 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_BTS_Census6$BF$LogBF10`.
+
+Journal vs Census6 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_Journal_Census6$BF$LogBF10`.
+
+
+BF Journal, BTS and Census7
+```{r}
+## College
+Suppl_BF_college_BTS_Census7 <-  BayesMultiNomial(dataset = Suppl_college,
+                                             factor = "Educational_attainment",
+                                             observed = "BTS Chinese",
+                                             expected = "Census7")
+
+Suppl_BF_college_Journal_Census7 <-  BayesMultiNomial(dataset = Suppl_college,
+                                             factor = "Educational_attainment",
+                                             observed = "Journal",
+                                             expected = "Census7")
+
+
+## high school
+Suppl_BF_highschool_BTS_Census7 <-  BayesMultiNomial(dataset = Suppl_highschool,
+                                             factor = "Educational_attainment",
+                                             observed = "BTS Chinese",
+                                             expected = "Census7")
+
+Suppl_BF_highschool_Journal_Census7 <-  BayesMultiNomial(dataset = Suppl_highschool,
+                                             factor = "Educational_attainment",
+                                             observed = "Journal",
+                                             expected = "Census7")
+```
+BTS vs Census7 in college: $Log(BF_{10})$ = `r Suppl_BF_college_BTS_Census7$BF$LogBF10`.
+
+Journal vs Census7 in college: $Log(BF_{10})$ = `r Suppl_BF_college_Journal_Census7$BF$LogBF10`.
+
+BTS vs Census7 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_BTS_Census7$BF$LogBF10`.
+
+Journal vs Census7 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_Journal_Census7$BF$LogBF10`.
+
+
+## Abstract report
+Abstract1 subjects information reported of Chinese journal
+general population
+```{r}
+Journal_abstract_report_general <- Journal %>% 
+  dplyr::select(Article_IDs_N,Study_Number,Subjects_Group,
+                Target_Population_N,Sample_Type_N,Abstract1,Abstract2) %>% 
+  dplyr::filter(Sample_Type_N != 5) %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  dplyr::group_by(Article_IDs_N) %>% 
+  dplyr::mutate(Study_Type = ifelse(all(Sample_Type_N == 1),"Only college students",ifelse(any(grepl("1",Sample_Type_N)) & any(Sample_Type_N !=1),"College students & other populations","Only sample outside colleges"))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::arrange(desc(Abstract2)) %>% 
+  dplyr::group_by(Article_IDs_N) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup() %>%
+  dplyr::mutate(Abstract2 = ifelse(Study_Type == "Only sample outside colleges",NA,Abstract2),
+                Sample_Mentioned = ifelse(Abstract1 == "0" ,"Samples not mentioned", "Samples mentioned"))
+
+table(Journal_abstract_report_general$Abstract2)
+
+Journal_abstract_report_general_tab <- Journal_abstract_report_general %>% 
+  dplyr::group_by(Study_Type,Sample_Mentioned) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::ungroup()
+
+Journal_abstract_report_general_tab
+## save csv to calculate BF in JASP
+write.csv(Journal_abstract_report_general,"Journal_abstract_report_general.csv",row.names = FALSE)
+```
+
+
+## Reason for current data pattern
+```{r}
+Journal_subjects_recruitment <- Journal %>% 
+  dplyr::select(Article_IDs,Article_Title,Study_Number_N,Subjects_Group_N,
+                Target_Population_N,Sample_Type_N,Sampling_Method,Subjects_Recruitment_Method_N,
+                Subjects_Recruitment_Method_info_N)
+
+table(Journal_subjects_recruitment$Sampling_Method)  
+
+table(Journal_subjects_recruitment$Subjects_Recruitment_Method_N)
+
+## each articles 
+Journal_subjects_recruitment_articles <- Journal_subjects_recruitment %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  mutate(Subjects_Recruitment_Method_cate = ifelse(all(Subjects_Recruitment_Method_N == "0"),"unreported",
+                                                       ifelse(any(grepl("1", Subjects_Recruitment_Method_N)),"have offline","other"))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::group_by(Article_IDs) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup()
+
+table(Journal_subjects_recruitment_articles$Subjects_Recruitment_Method_cate)
+
+(950+7)/(950+7+77)
+606/(606+45)
+```
+
+
+```{r}
+Journal_subjects_recruitment2 <- Journal_subjects_recruitment %>% 
+  dplyr::filter(Target_Population_N != 1)
+
+table(Journal_subjects_recruitment2$Subjects_Recruitment_Method_N)
+```
+
+
+## sample size in different study type
+the sample size of different study type
+```{r} 
+Journal_general_experi <- Journal %>% 
+  dplyr::select(Article_IDs_N,Study_Number_N,Study_Type,Sample_Size,Target_Population_N) %>% 
+  dplyr::mutate(Sample_Size = ifelse(Article_IDs_N == "20185082", 33, Sample_Size)) %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  dplyr::filter(Study_Type == 1) %>% 
+  dplyr::mutate(Sample_Size = as.numeric(Sample_Size)) %>% 
+  dplyr::filter(!is.na(Sample_Size))
+
+
+Journal_general_experi_papernum <- Journal_general_experi %>% 
+  dplyr::distinct(Article_IDs_N) 
+Journal_general_experi_studynum <-  Journal_general_experi %>% 
+  dplyr::distinct(Article_IDs_N,Study_Number_N)
+sum(Journal_general_experi$Sample_Size,rm.na = TRUE)  ## 46183
+
+
+## questionnaire
+Journal_general_questionaire <- Journal %>% 
+  dplyr::select(Article_IDs_N,Study_Number_N,Study_Type,Sample_Size,Target_Population_N) %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  dplyr::filter(Study_Type == 2) %>% 
+  dplyr::mutate(Sample_Size = as.numeric(Sample_Size)) %>% 
+  dplyr::filter(!is.na(Sample_Size))
+
+
+Journal_general_questionaire_papernum <- Journal_general_questionaire %>% 
+  dplyr::distinct(Article_IDs_N)
+Journal_general_questionaire_studynum <- Journal_general_questionaire %>% 
+  dplyr::distinct(Article_IDs_N,Study_Number_N)
+sum(Journal_general_questionaire$Sample_Size)
+```
+
+
+exploration analysis region data of Journal based on study type
+```{r}
+## single region
+Journal_region_single_studytype <- Journal %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Study_Type) %>% 
+  dplyr::inner_join(Journal_region_single,
+                    by = c("Article_IDs","Study_Number","Subjects_Group"))
+
+Journal_region_single_studytype2 <- Journal_region_single_studytype %>% 
+  dplyr::filter(Target_Population_N != 1)
+
+
+## multiple region
+Journal_region_multiple_IDs <- Journal_region_multiple %>% 
+  dplyr::pull(Article_IDs)
+
+Journal_studytype <- Journal %>% 
+  dplyr::filter(Article_IDs %in% Journal_region_multiple_IDs) %>% 
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,Study_Type)
+  # dplyr::slice(-c(4,11)) %>% 
+
+
+Journal_region_multiple_studytype <- Journal_region_multiple %>% 
+  dplyr::inner_join(Journal_studytype, by = c("Article_IDs","Study_Number","Subjects_Group")) %>% 
+  dplyr::filter(Target_Population_N != 1) ## only one row data
+
+Journal_region_multiple_studytype2 <- Journal_region_multiple_studytype %>% 
+  tidyr::separate_rows(True_Value,sep = ";") %>% 
+  tidyr::separate(True_Value,c("Subjects_Recruitment_Area","Sample_Size"),sep = ":") %>% 
+  dplyr::mutate(Sample_Size = as.numeric(trimws(Sample_Size)),
+                Sample_Size = ceiling(2500 * Sample_Size)) %>% ## sample size is 2500
+  dplyr::select(Article_IDs,Study_Number,Subjects_Group,
+                Study_Type,Target_Population_N,Sample_Type_N,
+                Sample_Size,Subjects_Recruitment_Area)
+  
+
+## combine single region data and multiple region data
+Journal_region <- bind_rows(Journal_region_single_studytype2,Journal_region_multiple_studytype2)
+
+
+## group by study type
+Journal_region_experi <- Journal_region %>% 
+  dplyr::filter(Study_Type == 1) %>% 
+  dplyr::group_by(Subjects_Recruitment_Area) %>% 
+  dplyr::summarise(Sample_Size = sum(Sample_Size)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
+  dplyr::mutate(Proportion = Sample_Size/sum(Sample_Size)*100,
+                Count_Bins = cut(Proportion,
+                                 breaks = c(-Inf,1,5,10,Inf),
+                labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "Journal_experi") %>% 
+  dplyr::rename(Region = Subjects_Recruitment_Area)
+
+
+Journal_region_questionaire <- Journal_region %>% 
+  dplyr::filter(Study_Type == 2) %>% 
+  dplyr::group_by(Subjects_Recruitment_Area) %>% 
+  dplyr::summarise(Sample_Size = sum(Sample_Size)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
+  dplyr::mutate(Proportion = Sample_Size/sum(Sample_Size)*100,
+                Count_Bins = cut(Proportion,
+                                 breaks = c(-Inf,1,5,10,Inf),
+                labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "Journal_questionaire") %>% 
+  dplyr::rename(Region = Subjects_Recruitment_Area)
+```
+
+
+convert Journal data into four regions and seven regions
+```{r}
+## four regions & experi
+Journal_region_four_experi <- merge(Journal_region_experi,China_region_four,
+                              by = "Region") %>% 
+  dplyr::select(Region, Sample_Size, Data_Source, Region_four) %>% 
+  dplyr::group_by(Region_four) %>% 
+  dplyr::summarise(n = sum(Sample_Size)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(experi_Prop = n / sum(n) * 100) 
+
+sum(Journal_region_four_experi$experi_Prop)
+
+
+## seven regions & experi
+Journal_region_seven_experi <- merge(Journal_region_experi,China_region_seven,
+                              by = "Region") %>% 
+  dplyr::select(Region, Sample_Size, Data_Source, Region_seven) %>% 
+  dplyr::group_by(Region_seven) %>% 
+  dplyr::summarise(n = sum(Sample_Size)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(experi_Prop = n / sum(n) * 100) 
+
+sum(Journal_region_seven_experi$experi_Prop)
+
+## four regions & questionaire
+Journal_region_four_questionaire <- merge(Journal_region_questionaire, China_region_four,
+                              by = "Region") %>% 
+  dplyr::select(Region, Sample_Size, Data_Source, Region_four) %>% 
+  dplyr::group_by(Region_four) %>% 
+  dplyr::summarise(n = sum(Sample_Size)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(questionaire_Prop = n / sum(n) * 100)  
+
+sum(Journal_region_four_questionaire$questionaire_Prop)
+
+
+##seven regions & questionaire
+Journal_region_seven_questionaire <- merge(Journal_region_questionaire, China_region_seven,
+                              by = "Region") %>% 
+  dplyr::select(Region, Sample_Size, Data_Source, Region_seven) %>% 
+  dplyr::group_by(Region_seven) %>% 
+  dplyr::summarise(n = sum(Sample_Size)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(questionaire_Prop = n / sum(n) * 100) 
+
+sum(Journal_region_seven_questionaire$questionaire_Prop)
+```
+
+add census6' regional data 
+```{r}
+Census6_region <- Census6_region %>% 
+  dplyr::select(1,5) %>% 
+  dplyr::slice(-c(1:7)) %>% 
+  dplyr::rename(Region = 1, n = 2) %>% 
+  dplyr::mutate(n = as.numeric(n,
+                               Region = gsub(" ","",Region)))
+
+Census6_3 <- data.frame(Region = c("台湾","香港","澳门"),n =c(170283,234829,21201))
+
+
+Census6_region <- rbind(Census6_region,Census6_3) %>% 
+  dplyr::mutate(Proportion = n / sum(n)*100) %>% 
+  dplyr::mutate(Count_Bins = cut(Proportion,
+                                      breaks = c(-Inf,1,5,10,Inf),
+                                      labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "Census6")
+
+sum(Census6_region$n) #1,333,237,182
+sum(Census6_region$Proportion) ## 100
+
+
+## four regions
+Census6_region_four <- merge(Census6_region,China_region_four,by = "Region") %>%
+  dplyr::select(1,2,6) %>% 
+  dplyr::group_by(Region_four) %>% 
+  dplyr::summarise(Census6_n=sum(n)) %>% 
+  dplyr::mutate(Census6_Prop = Census6_n/sum(Census6_n)*100) %>% 
+  dplyr::select(1,3)
+
+sum(Census6_region_four$Census6_Prop)
+
+## seven regions
+Census6_region_seven <- merge(Census6_region,China_region_seven,by= "Region") %>% 
+  dplyr::select(1,2,6) %>% 
+  dplyr::group_by(Region_seven) %>% 
+  dplyr::summarise(Census6_n=sum(n)) %>% 
+  dplyr::mutate(Census6_Prop = Census6_n/sum(Census6_n)*100) %>% 
+  dplyr::select(1,3)
+
+sum(Census6_region_seven$Census6_Prop)
+```
+
+
+visualize the two cutoff regions
+first four region
+```{r}
+SupplH2_region_four_studytype <- full_join(Journal_region_four_experi,
+                                      Journal_region_four_questionaire,
+                            by = "Region_four") %>% 
+  dplyr::select(-c(n.x,n.y)) %>% ## remove n cols
+  dplyr::full_join(H2_region_four,
+                   by = "Region_four") %>% 
+  dplyr::full_join(Census6_region_four,
+                   by= "Region_four")
+
+SupplH2_region_four_studytype2 <- SupplH2_region_four_studytype %>% 
+  pivot_longer(cols = -Region_four,
+             names_to = "Data Source",
+             values_to = "Proportion") %>% 
+  dplyr::mutate(Region_four = factor(Region_four,
+                                     levels = c("Northeast China","West China",
+                                                "Central China","East China")))
+
+
+## Visualization
+SupplH2_Fig_region_four_studytype <- ggplot(data = SupplH2_region_four_studytype2, aes(x = `Data Source`, y = Proportion, fill = Region_four)) +
+  geom_col(position = "stack")+
+  labs(fill = "Region",x = "Data source")+
+  scale_x_discrete(labels =c("experi_Prop" = "Journal experiment study",
+                             "questionaire_Prop" = "Journal quantionaire study",
+                             "Journal_Prop" = "Journal",
+                              "CFPS2018_Prop" = "CFPS2018",
+                              "Census7_Prop" = "Census7",
+                             "Census6_Prop" = "Census6"))+
+  coord_flip()+
+  theme_classic()+
+  theme(legend.box.spacing = unit(2,"pt"),
+        legend.position = "bottom",
+        legend.key.size = unit(0.5, "cm"),
+        legend.text = element_text(size = 15, family = "serif"),
+        legend.title = element_text(size = 15, family = "serif"),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))+
+  guides(fill = guide_legend(ncol = 3))
+
+
+SupplH2_Fig_region_four_studytype 
+```
+
+second, seven region
+```{r}
+SupplH2_region_seven_studytype <- full_join(Journal_region_seven_experi,
+                                      Journal_region_seven_questionaire,
+                            by = "Region_seven") %>% 
+  dplyr::select(-c(n.x,n.y)) %>% ## remove n cols
+  dplyr::full_join(H2_region_seven,
+                   by = "Region_seven") %>% 
+  dplyr::full_join(Census6_region_seven,
+                   by= "Region_seven")
+
+SupplH2_region_seven_studytype2 <- SupplH2_region_seven_studytype %>% 
+  pivot_longer(cols = -Region_seven,
+             names_to = "Data Source",
+             values_to = "Proportion") %>% 
+  dplyr::mutate(Region_seven = factor(Region_seven,
+                                     levels = c("Northeast China","Northwest China",
+                                                "Southwest China","South China",
+                                                "North China","Central China",
+                                                "East China")))
+
+
+## Visualization
+SupplH2_Fig_region_seven_studytype <- ggplot(data = SupplH2_region_seven_studytype2, aes(x = `Data Source`, y = Proportion, fill = Region_seven)) +
+  geom_col(position = "stack")+
+  labs(fill = "Region",x = "Data source")+
+  scale_x_discrete(labels =c("experi_Prop" = "Journal experiment study",
+                             "questionaire_Prop" = "Journal quantionaire study",
+                             "Journal_Prop" = "Journal",
+                              "CFPS2018_Prop" = "CFPS2018",
+                              "Census7_Prop" = "Census7",
+                             "Census6_Prop" = "Census6"))+
+  coord_flip()+
+  theme_classic()+
+  theme(legend.box.spacing = unit(2,"pt"),
+        legend.position = "bottom",
+        legend.key.size = unit(0.5, "cm"),
+        legend.text = element_text(size = 15, family = "serif"),
+        legend.title = element_text(size = 15, family = "serif"),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))+
+  guides(fill = guide_legend(ncol = 3))
+
+
+SupplH2_Fig_region_seven_studytype 
+```
+
+
+To use func in main protocal 
+```{r}
+BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior = TRUE, prior = NA){
+  # datase - the input dataframe
+  # factor - column name of the factor,
+  # observed - column name of the column contains counts information for the observed,
+  # expected - column name of the column contains counts information for the expected,
+  # default_prior - whether use the default, defused prior
+  # prior - priors defined by users
+  
+  fact_level <- dataset %>% dplyr::select(all_of(factor)) %>% dplyr::pull()
+  observed_data <- dataset %>% dplyr::select(all_of(observed)) %>% dplyr::pull()
+  names(observed_data) <- fact_level
+  expected_data <- dataset %>% dplyr::select(all_of(expected)) %>% dplyr::pull()
+  n_levels <- length(observed_data)
+  
+  
+  if (default_prior & all(is.na(prior))) {
+    prior <- rep(1, n_levels)
+  } else{
+    if (is.character(prior)){
+      prior <- dataset %>% dplyr::select(all_of(prior)) %>% dplyr::pull()
+    } else if (is.array(prior)){
+      prior <-  prior
+    } else if (is.numeric(prior)){
+      prior <-  prior
+    } else{
+      print("prior much a column of the input data or a vector")
+    }
+  }
+  
+  alphas <- prior
+  counts <- observed_data
+  thetas <- expected_data
+  
+  if(sum(thetas) != 1) {
+    thetas <- thetas/sum(thetas)
+    }
+  
+  expected <- setNames(sum(counts)*thetas, names(counts))
+  
+  lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
+  lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
+
+  if (any(rowSums(cbind(thetas, counts)) == 0)) {
+    LogBF10 <- (lbeta.xa-lbeta.a)
+  } else {
+     LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+  }
+
+  BF <- data.frame(LogBF10 = LogBF10,
+                   BF10    = exp(LogBF10),
+                   BF01    = 1/exp(LogBF10))
+
+  return(list(BF       = BF,
+              expected = expected))
+  
+}
+```
+
+
+BF four region on Journal
+```{r}
+SupplH2_region_four_bayes <- H2_region_four_bayes %>% 
+  left_join(Census6_region_four,by = "Region_four") %>% 
+  dplyr::rename(Census6 = Census6_Prop)
+
+
+## Census6
+SupplH2_BF_Journal_Census6_region_four <- BayesMultiNomial(dataset = SupplH2_region_four_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal",
+                                          expected = "Census6")
+
+## Census7
+SupplH2_BF_Journal_Census7_region_four <- BayesMultiNomial(dataset = SupplH2_region_four_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal",
+                                          expected = "Census7")
+
+## CFPS2018
+SupplH2_BF_Journal_CFPS2018_region_four <- BayesMultiNomial(dataset = SupplH2_region_four_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal",
+                                          expected = "CFPS2018")
+```
+Journal vs Census6 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census6_region_four$BF$LogBF10`.
+
+Journal vs Census7 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census7_region_four$BF$LogBF10`.
+
+Journal vs CFPS2018 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_CFPS2018_region_four$BF$LogBF10`.
+
+
+BF seven region on Journal
+```{r}
+SupplH2_region_seven_bayes <- H2_region_seven_bayes %>% 
+  left_join(Census6_region_seven,by = "Region_seven") %>% 
+  dplyr::rename(Census6 = Census6_Prop)
+
+## Census6
+SupplH2_BF_Journal_Census6_region_seven <- BayesMultiNomial(dataset = SupplH2_region_seven_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal",
+                                          expected = "Census6")
+
+## Census7
+SupplH2_BF_Journal_Census7_region_seven <- BayesMultiNomial(dataset = SupplH2_region_seven_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal",
+                                          expected = "Census7")
+
+## CFPS2018
+SupplH2_BF_Journal_CFPS2018_region_seven <- BayesMultiNomial(dataset = SupplH2_region_seven_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal",
+                                          expected = "CFPS2018")
+```
+Journal vs Census6 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census6_region_seven$BF$LogBF10`.
+
+Journal vs Census7 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census7_region_seven$BF$LogBF10`.
+
+Journal vs CFPS2018 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_CFPS2018_region_seven$BF$LogBF10`.
+
+
+BF four region on experi 
+```{r}
+Journal_region_four_experi2 <- Journal_region_four_experi %>% 
+  dplyr::select(-n) %>% 
+  dplyr::rename(`Journal experiment study` = experi_Prop)
+
+SupplH2_region_four_experi_bayes <- left_join(H2_region_four_bayes,
+                                              Journal_region_four_experi2,
+                                              by = "Region_four") %>% 
+  left_join(Census6_region_four,by = "Region_four") %>% 
+  dplyr::rename(Census6 = Census6_Prop)
+
+
+## Census6
+SupplH2_BF_experi_Census6_region_four <- BayesMultiNomial(dataset = SupplH2_region_four_experi_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal experiment study",
+                                          expected = "Census6")
+
+## Census7
+SupplH2_BF_experi_Census7_region_four <- BayesMultiNomial(dataset = SupplH2_region_four_experi_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal experiment study",
+                                          expected = "Census7")
+
+## CFPS2018
+SupplH2_BF_experi_CFPS2018_region_four <- BayesMultiNomial(dataset = SupplH2_region_four_experi_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal experiment study",
+                                          expected = "CFPS2018")
+```
+Journal vs Census6 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census6_region_four$BF$LogBF10`.
+
+Journal vs Census7 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census7_region_four$BF$LogBF10`.
+
+Journal vs CFPS2018 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_CFPS2018_region_four$BF$LogBF10`.
+
+
+BF seven region on experi 
+```{r}
+Journal_region_seven_experi2 <- Journal_region_seven_experi %>% 
+  dplyr::select(-n) %>% 
+  dplyr::rename(`Journal experiment study` = experi_Prop)
+
+SupplH2_region_seven_experi_bayes <- left_join(H2_region_seven_bayes,
+                                             Journal_region_seven_experi2,
+                                             by = "Region_seven") %>%
+  left_join(Census6_region_seven,by="Region_seven") %>% 
+  dplyr::rename(Census6 = Census6_Prop)
+  
+
+## Census6
+SupplH2_BF_experi_Census6_region_seven <- BayesMultiNomial(dataset = SupplH2_region_seven_experi_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal experiment study",
+                                          expected = "Census6")
+
+## Census7
+SupplH2_BF_experi_Census7_region_seven <- BayesMultiNomial(dataset = SupplH2_region_seven_experi_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal experiment study",
+                                          expected = "Census7")
+
+## CFPS2018
+SupplH2_BF_experi_CFPS2018_region_seven <- BayesMultiNomial(dataset = SupplH2_region_seven_experi_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal experiment study",
+                                          expected = "CFPS2018")
+```
+Journal vs Census6 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census6_region_seven$BF$LogBF10`.
+
+Journal vs Census7 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census7_region_seven$BF$LogBF10`.
+
+Journal vs CFPS2018 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_CFPS2018_region_seven$BF$LogBF10`.
+
+
+BF four region on questionaire
+```{r}
+Journal_region_four_questionaire2 <- Journal_region_four_questionaire %>% 
+  dplyr::select(-n) %>% 
+  dplyr::rename(`Journal questionaire study` = questionaire_Prop)
+
+
+SupplH2_region_four_questionaire_bayes <- left_join(H2_region_four_bayes,
+                                               Journal_region_four_questionaire2,
+                                            by = "Region_four") %>%
+  left_join(Census6_region_four,by = "Region_four") %>% 
+  dplyr::rename(Census6 = Census6_Prop)
+
+  
+
+## census6
+SupplH2_BF_questionaire_Census6_region_four <- BayesMultiNomial(dataset = SupplH2_region_four_questionaire_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal questionaire study",
+                                          expected = "Census6")
+
+## census7
+SupplH2_BF_questionaire_Census7_region_four <- BayesMultiNomial(dataset = SupplH2_region_four_questionaire_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal questionaire study",
+                                          expected = "Census7")
+
+## CFPS2018
+SupplH2_BF_questionaire_CFPS2018_region_four <- BayesMultiNomial(dataset = SupplH2_region_four_questionaire_bayes,
+                                          factor = "Region_four",
+                                          observed = "Journal questionaire study",
+                                          expected = "CFPS2018")
+```
+Journal vs Census6 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census6_region_four$BF$LogBF10`.
+
+Journal vs Census7 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census7_region_four$BF$LogBF10`.
+
+Journal vs CFPS2018 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_CFPS2018_region_four$BF$LogBF10`.
+
+
+BF seven region on questionaire
+```{r}
+Journal_region_seven_questionaire2 <- Journal_region_seven_questionaire %>% 
+  dplyr::select(-n) %>% 
+  dplyr::rename(`Journal questionaire study` = questionaire_Prop)
+
+SupplH2_region_seven_questionaire_bayes <- left_join(H2_region_seven_bayes,
+                                             Journal_region_seven_questionaire2,
+                                            by = "Region_seven")%>%
+  left_join(Census6_region_seven,by="Region_seven") %>% 
+  dplyr::rename(Census6 = Census6_Prop)
+
+
+## census6
+SupplH2_BF_questionaire_Census6_region_seven <- BayesMultiNomial(dataset = SupplH2_region_seven_questionaire_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal questionaire study",
+                                          expected = "Census6")
+
+## census7
+SupplH2_BF_questionaire_Census7_region_seven <- BayesMultiNomial(dataset = SupplH2_region_seven_questionaire_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal questionaire study",
+                                          expected = "Census7")
+
+## CFPS2018
+SupplH2_BF_questionaire_CFPS2018_region_seven <- BayesMultiNomial(dataset = SupplH2_region_seven_questionaire_bayes,
+                                          factor = "Region_seven",
+                                          observed = "Journal questionaire study",
+                                          expected = "CFPS2018")
+```
+Journal vs Census6 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census6_region_seven$BF$LogBF10`.
+
+Journal vs Census7 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census7_region_seven$BF$LogBF10`.
+
+Journal vs CFPS2018 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_CFPS2018_region_seven$BF$LogBF10`.
+
+
+And then, I will visualize the map for the region data of Chinese subjects
+Combine all region data and load color data
+```{r}
+## combine region data
+Journal_region_experi2 <- Journal_region_experi %>% 
+  dplyr::rename(n = Sample_Size)
+Journal_region_questionaire <- Journal_region_questionaire %>% 
+  dplyr::rename(n = Sample_Size)
+
+Region_map_data <-  bind_rows(Journal_region_experi2,
+                              Journal_region_questionaire,
+                              Journal_region_general_tab2,
+                              Census7_region,
+                              Census6_region)
+
+## combine color data and region data
+Region_data <- dplyr::left_join(Region_map_data,Region_map_color,by = join_by(Region)) %>% 
+  dplyr::mutate(QUHUADAIMA = ifelse(Region == "重庆", "500000", QUHUADAIMA),
+                Color = ifelse(Count_Bins == "<1",1,
+                               ifelse(Count_Bins == "1~5",2,
+                                      ifelse(Count_Bins == "5~10",3,4))),
+                Color = factor(Color, levels = c("1", "2", "3", "4"))) %>% 
+  tidyr::pivot_wider(names_from = Data_Source,values_from = c(Proportion, Count_Bins,n,Color)) %>% 
+  dplyr::mutate(across(3:ncol(.),~ifelse(is.na(.),0,.)))
+```
+
+
+Finally, I visualized geographic distribution and calculated Bayesian multinomial test for region.
+```{r}
+API_pre <-  "http://xzqh.mca.gov.cn/data/"
+## 读取全国数据
+China <-  st_read(dsn = paste0(API_pre, "quanguo.json"), stringsAsFactors=FALSE) 
+## 使用 4326 地理坐标系
+st_crs(China) <-  4326
+
+# 读取国界线数据
+China_line <-  st_read(dsn = paste0(API_pre, "quanguo_Line.geojson"), stringsAsFactors=FALSE) 
+st_crs(China_line) <-  4326
+## 选择区划代码为国界线的区域
+gjx <- China_line[China_line$QUHUADAIMA == "guojiexian",]
+
+China <- dplyr::left_join(China,Region_data,by= "QUHUADAIMA")
+
+
+
+## Chinese journal papers in general population
+SupplH2_Fig_region_general <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_region_general_population))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "Journal") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5,
+                                  margin = margin(b = 5)),
+        legend.position = "none",
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())+
+  annotation_north_arrow(location = 'tl',which_north = 'false',
+                         style = north_arrow_orienteering(),
+                         height = unit(0.8, "cm"),
+                         width = unit(0.6, "cm") )
+
+
+
+## Journal experi
+SupplH2_Fig_Journal_experi_region <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_experi))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "Journal experiment study") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5,
+                                  margin = margin(b = 5)),
+        legend.title = element_blank(),
+        legend.direction = "horizontal",
+        legend.position = "bottom",
+        legend.box = "horizontal",
+        legend.margin = margin(t = 5, b = 5), 
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())
+
+
+## questionaire
+SupplH2_Fig_Journal_questionaire_region <- ggplot() +
+  geom_sf(data = China,aes(fill = factor(Color_Journal_questionaire))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "Journal questionaire study") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5,
+                                  margin = margin(b = 5)),
+        legend.title = element_blank(),
+        legend.position = "none",
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())
+
+
+SupplH2_Fig_region_studytype <- SupplH2_Fig_region_general + SupplH2_Fig_Journal_experi_region + SupplH2_Fig_Journal_questionaire_region +
+  plot_layout(ncol = 3, nrow = 1, heights = c(2,2))+
+  plot_annotation(tag_levels = 'A',
+                  theme = theme(plot.title = element_text(size = 16))) + 
+  theme(plot.tag = element_text(size = 16))
+
+
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\SupplH2_Fig_region_studytype.pdf", SupplH2_Fig_region_studytype, device = "pdf", width=10, height = 6)
+
+SupplH2_Fig_region_studytype
+```
+
+
+We also try to calculate the Spearman’s correlation between Journal region and SHANGHAI RANKING
+
+```{r}
+## psy2021
+ShanghaiRanking_psy2021_provinceRank <- ShanghaiRanking_psy2021 %>% 
+  dplyr::rename(Region = 4) %>% 
+  dplyr::group_by(Region) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::arrange(`排名`) %>% 
+  dplyr::mutate(psy2021 = 1:21) %>%    ## give a rank num
+  dplyr::select(Region,psy2021)
+
+## applied psy
+ShanghaiRanking_appliedpsy2021_provinceRank <- ShanghaiRanking_appliedpsy2021 %>% 
+  dplyr::rename(Region = 4) %>% 
+  dplyr::group_by(Region) %>% 
+  dplyr::slice(1) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::arrange(`排名`) %>% 
+  dplyr::mutate(Appliedpsy2021 = 1:29) %>% 
+  dplyr::select(Region,Appliedpsy2021)
+
+## Journal region
+Journal_region_ShanghaiRanking <- Journal_region_general_tab2 %>% 
+  dplyr::arrange(desc(n)) %>% 
+  dplyr::mutate(Journal = 1:27) %>% 
+  dplyr::select(Region,Journal)
+
+
+## create province name data
+China_province <- data.frame(Region = c("新疆","西藏","甘肃","青海","内蒙古",
+                    "宁夏","四川","重庆","陕西","贵州","云南",
+                    "北京","山西","河北","河南","湖北","湖南",
+                    "广西","广东","香港","澳门","台湾","海南",
+                    "黑龙江","吉林","辽宁","天津","山东","江苏",
+                    "安徽","上海","浙江","江西","福建"))
+
+## psy merge data
+
+Region_psy_cordata <- left_join(China_province,ShanghaiRanking_psy2021_provinceRank,by = "Region") %>% 
+  left_join(Journal_region_ShanghaiRanking,by = "Region")
+
+
+## applied psy merge data
+Region_appliedpsy_cordata <- left_join(China_province,ShanghaiRanking_appliedpsy2021_provinceRank,by = "Region") %>%
+  left_join(Journal_region_ShanghaiRanking,by = "Region")
+```
+
+
+spearman relation
+```{r}
+## psy
+BF_psy <- Region_psy_cordata %>% 
+correlation(select = "psy2021",
+            select2 = "Journal",
+            method = "spearman",
+            bayesian = TRUE)
+
+BF_psy
+log(BF_psy$BF)
+
+
+## applied psy
+BF_appliedpsy <- Region_appliedpsy_cordata %>% 
+  correlation(select = "Appliedpsy2021",
+              select2 = "Journal",
+              method = "spearman",
+              bayesian =TRUE)
+
+BF_appliedpsy
+
+log(BF_appliedpsy$BF)
+```
+
+
+## Bibliometric Analysis
+BTS data
+```{r}
+## split keyword
+BTS_keywords_split_rows <- BTS_keywords %>% 
+  dplyr::filter(!is.na(Article_Keywords)) %>% 
+  tidyr::separate_rows(Article_Keywords,sep = ";") %>% 
+  dplyr::mutate(Article_Keywords =  str_to_title(Article_Keywords),
+                Article_Keywords = ifelse(Article_Keywords == "Covid-19", "COVID-19",
+                                          Article_Keywords))
+
+                
+## tab
+BTS_keywords_tab <- BTS_keywords_split_rows %>% 
+  dplyr::group_by(Article_Keywords) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::mutate(cate = factor(n))
+```
+
+
+BTS wordcloud
+```{r}
+
+Suppl_Fig_BTS_wordcloud <- BTS_keywords_tab %>% 
+  ggplot(aes(label = Article_Keywords, 
+             size = n, 
+             color =cate)) +
+  geom_text_wordcloud(shape = "square", 
+                      alpha = 0.8) +
+  scale_size_area(max_size = 8) +
+  theme_void()
+
+
+Suppl_Fig_BTS_wordcloud
+```
+
+
+Journal data
+```{r}
+Journal_keywords2 <- Journal_keywords %>% 
+  dplyr::select(Article_IDs,Article_Title,`Keyword-关键词`,`Year-年`) %>% 
+  dplyr::rename(Keywords = 3 , Year = 4) %>% 
+  tidyr::separate_rows(3, sep = "[;,.\\s|]+") %>% 
+  group_by(Keywords) %>%
+  summarise(tab = n(), .groups = "drop") %>%
+  arrange(desc(tab))
+
+
+## filter 69
+## total
+Journal_keywords_tab69 <- Journal_keywords2 %>% 
+  arrange(desc(tab)) %>% 
+  select(Keywords,tab) %>% 
+  slice(1:84)
+```
+
+
+Journal wordcloud
+```{r}
+## save data and convert Chinese keywords into English keywords
+
+# writexl::write_xlsx(Journal_keywords3,"Journal_keywords3.xlsx")
+# "Journal_keywords3" and "Journal_keywords_translation" are the same file; the latter is the translated version.
+
+Journal_keywords4 <-  Journal_keywords_translation %>% 
+  dplyr::group_by(en) %>% 
+  dplyr::mutate(tab = sum(tab),
+                cate = factor(tab)) %>%
+  dplyr::slice(1) %>%
+  dplyr::arrange(desc(tab))
+
+
+## plot
+Suppl_Fig_Journal_wordcloud <- Journal_keywords4 %>% 
+  ggplot(aes(label = en, 
+             size = tab, 
+             color = cate)) +
+  geom_text_wordcloud(shape = "square", 
+                      alpha = 0.8) +
+  scale_size_area(max_size = 8) +
+  theme_void()
+
+
+Suppl_Fig_Journal_wordcloud 
+
+
+Suppl_Fig_Wordcloud <- Suppl_Fig_BTS_wordcloud + Suppl_Fig_Journal_wordcloud
+
+Suppl_Fig_Wordcloud
+
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\Suppl_Fig_Wordcloud.pdf",Suppl_Fig_Wordcloud, device = "pdf", width=18, height = 9)
+```
+
+
+## H3 exloration analysis
+
+I continued to use the same steps to divide age into four age group.
+```{r}
+Sim_Sens_mult_age_four <- function(Mean1, diff_age, SD1, sample_N=Sample_Size){
+  
+  
+  ageData_age_four <-  c(pnorm(17, mean = Mean1, sd = SD1) * sample_N,
+                          (pnorm(40, mean = Mean1, sd = SD1) - pnorm(17, mean = Mean1, sd = SD1)) *sample_N,
+                          (pnorm(60, mean = Mean1, sd = SD1) - pnorm(40, mean = Mean1, sd = SD1)) *sample_N,
+                          (1 - pnorm(60, mean = Mean1, sd = SD1)) * sample_N)
+  
+    
+  # create a dataframe with ageData_Fourage
+  Sim_age_four_df <- setNames(data.frame(matrix(ncol = 2, nrow = 4)), c("ageBins", "sim1"))
+  Sim_age_four_df$ageBins <- c("<=17", "18~40", "41~60",">=61")
+  Sim_age_four_df$sim1[1:4] <- ageData_age_four
+  
+
+  return(Sim_age_four_df)
+}
+```
+
+
+process and transform Journal data
+```{r}
+Journal_age_four_general <- Journal_age2 %>% 
+  dplyr::filter(Target_Population_N != 1)
+
+
+Sim_Journal_age_four_general <- lapply(1:nrow(Journal_age_four_general),function(i){
+  
+  Sim_Sens_mult_age_four(Mean1 = Journal_age_four_general$M_age[i],
+                diff_age = 0,
+                SD1 = Journal_age_four_general$SD_age[i],
+                sample_N = Journal_age_four_general$Sample_Size[i])
+  
+  })
+
+
+Sim_Journal_age_four2_general <- do.call(rbind,Sim_Journal_age_four_general)
+
+
+Sim_Journal_age_four3_general <- Sim_Journal_age_four2_general %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(sim1 = sum(sim1,na.rm = TRUE)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(ageBins =factor(ageBins,
+                                levels = c("<=17","18~40", "41~60", ">=61")))
+
+
+## Calculate the sample difference between the coded data and the simulated data
+sum(Journal_age_four_general$Sample_Size)-sum(Sim_Journal_age_four3_general$sim1,na.rm = TRUE)
+```
+
+
+process and transform BTS data
+```{r}
+BTS_age_four_list <- list()
+
+for(i in seq_along(BTS)){
+  
+  BTS_name <- names(BTS)[i]
+  
+  if("Age" %in% names(BTS[[i]])){
+    
+    BTS_age <- BTS[[i]] %>% 
+      dplyr::filter(!is.na(Age) & !is.na(ISO3)) %>% 
+      dplyr::mutate(Age = as.numeric(Age)) %>% 
+      dplyr::select(Article_Id,Age,Target_Population,ISO3) %>% 
+      #dplyr::group_by(ISO3) %>% 
+      dplyr::mutate(ageBins = cut(Age,
+                                breaks = c(0, 17.5, 40.5, 60.5, Inf),
+                                labels = c("<=17","18~40", "41~60", ">=61"),
+                                levels = c("<=17","18~40","41~60", ">=61")))
+  
+    
+BTS_age_four_list[[BTS_name]] <- BTS_age
+  
+} else {  
+ 
+    cat(sprintf("Skipping '%s' because it does not contain a 'Age' column.\n", BTS_name))  
+  } 
+}
+
+
+## merge data.frame in list
+BTS_age_four <-  do.call(rbind,BTS_age_four_list)
+```
+
+
+combine data and trans data form for plot
+```{r}
+## filter > 30
+BTS_age_four_allcountry_filter <-  BTS_age_four %>% 
+  dplyr::filter(Article_Id != "Lucca_et_al_2024") %>%  ## filter target population is a and 3
+  dplyr::group_by(ISO3) %>% 
+  dplyr::summarise(n=n()) %>% 
+  dplyr::filter(n > 30) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::pull(ISO3)
+
+
+BTS_age_four_allcountry <- BTS_age_four %>% 
+  dplyr::filter(ISO3 %in% BTS_age_four_allcountry_filter) %>% 
+  dplyr::filter(ISO3 != "CHN") %>% ## drop Chinese data
+  dplyr::group_by(ISO3,ageBins) %>% 
+  dplyr::summarise(n=n()) %>% 
+  dplyr::mutate(Proportion = n/sum(n)*100) %>% 
+  dplyr::ungroup()
+
+## calculate total sum
+BTS_age_four_allcountry_sum_prop <- BTS_age_four_allcountry %>% 
+  dplyr::group_by(ISO3) %>% 
+  dplyr::summarise(sum = sum(Proportion)) %>% 
+  dplyr::ungroup()
+
+
+## Add Chinese data
+BTS_age_four_CHN <- BTS_age_four %>% 
+  dplyr::filter(Article_Id != "Lucca_et_al_2024") %>% 
+  dplyr::filter(ISO3 == "CHN") %>% 
+  dplyr::group_by(ISO3,ageBins) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::ungroup()
+
+
+## combine CHN data
+Journal_age_four <- Sim_Journal_age_four3_general %>% 
+  dplyr::mutate(ISO3 = "CHN") %>% 
+  dplyr::rename(n =sim1)
+
+  
+Journal_BTS_age_four_CHN <- bind_rows(BTS_age_four_CHN, Journal_age_four)
+
+
+Journal_BTS_age_four_CHN2 <- Journal_BTS_age_four_CHN %>% 
+  dplyr::group_by(ageBins) %>% 
+  dplyr::summarise(n = sum(n)) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(ISO3 = "CHN") %>% 
+  dplyr::mutate(Proportion = n/sum(n)*100)
+ 
+sum(Journal_BTS_age_four_CHN2$Proportion) 
+
+## Combine data
+H3_age_four <- dplyr::bind_rows(BTS_age_four_allcountry, Journal_BTS_age_four_CHN2)
+
+
+# table(H3_PsyStages$ageBins)
+
+## Set factor
+H3_age_four_factor <- H3_age_four %>%
+  dplyr::filter(ageBins == "18~40") %>%
+  dplyr::arrange(Proportion) %>%
+  dplyr::pull(ISO3)
+
+
+
+## Process WEIRD
+H3_age_four2 <- H3_age_four %>%
+  dplyr::left_join(WEIRD, by = c("ISO3" = "iso3c")) %>%
+  dplyr::mutate(WEIRD = ifelse(ISO3 == "XKX","WEIRD",WEIRD)) %>%
+  dplyr::mutate(ISO3 = factor(ISO3, levels = H3_age_four_factor)) %>%
+  dplyr::filter(!is.na(ageBins))
+
+
+## 18~40 age 
+H3_age_four2 %>% 
+  dplyr::distinct(ISO3)
+
+H3_age_four2_1840 <- H3_age_four2 %>% 
+  dplyr::filter(ageBins == "18~40") %>% 
+  dplyr::filter(Proportion > 60)   ## 124
+```
+
+
+plot
+```{r}
+SupplH3_Fig_age_four <- ggplot(H3_age_four2, aes(x=Proportion, y=ISO3, fill=ageBins)) +
+  geom_col(alpha = .75)+
+  labs(y="Countries/Regions",fill = "Age bins") + 
+  scale_fill_discrete(label=c("0~17", "18~40", "41~60",">=61")) +
+  theme_classic()+
+  #guides(y="axis_nested") +
+  theme(legend.title = element_text(size = 15,family = "serif"),
+        axis.title= element_text(size = 15,family = "serif"),
+        axis.text = element_text(size = 10,family = "serif"),
+        strip.text = element_text(size = 15,family = "serif"),
+        strip.background = element_rect(fill = NA,color = NA),
+        panel.border = element_rect(fill = NA,color = "black")) +
+  scale_x_continuous(breaks = seq(0, 100, by = 10)) +
+  facet_wrap(~ WEIRD, scales = "free",
+             labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD"))) 
+
+
+SupplH3_Fig_age_four
+
+ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\SupplH3_Fig_age_four.pdf",SupplH3_Fig_age_four,device = "pdf", width=18, height = 18)
+```
