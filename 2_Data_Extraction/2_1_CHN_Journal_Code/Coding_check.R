@@ -5,10 +5,13 @@ rm(list = ls())
 # lib packages
 library(openxlsx)
 library(tidyverse)
+library(here)
 
 
 # load data
-Chin_Subj_articles_replaced_twocoder <- readxl::read_xlsx("Chin_Subj_articles_replaced_CE.xlsx")
+Chin_Subj_articles_replaced_twocoder <- readxl::read_xlsx(here("2_Data_Extraction","2_1_CHN_Journal_Code",
+                                                               "2_1_5_Extract_Data","2_5_5_3_Article_Replaced",
+                                                               "Chin_Subj_articles_replaced_CE.xlsx"))
 
 
 # add check and final

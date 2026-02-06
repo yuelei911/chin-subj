@@ -296,7 +296,7 @@ sum(BTS_Overview2$n) ## 1367084
 29006/1367084
 
 
-writexl::write_xlsx(BTS_Overview2,"D://chin-subj//2_Data_Extraction//2_2_BTS//BTS_participants.xlsx")
+writexl::write_xlsx(BTS_Overview2,here("2_Data_Extraction","2_2_BTS","BTS_participants.xlsx"))
 
 # ## n < 100 countries
 # BTS_n100 <- BTS_Overview2 %>% 
@@ -404,7 +404,7 @@ Fig_Journal_report <- ggplot(Journal_report,aes(col_names,proportion,fill=Var1))
 
 Fig_Journal_report
 
-ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\Fig_Journal_report.pdf", 
+ggsave(here("3_Data_Analysis","3_2_image","Fig_Journal_report.pdf"), 
        Fig_Journal_report, device = "pdf", width=16, height = 9)
 
 ## Here, I remove some data sets to reduce data set clutter.
@@ -1521,7 +1521,7 @@ H1_Fig_gender_age_edu_general <-  H1_Fig_gender_general + H1_Fig_age_general + H
   patchwork::plot_annotation(tag_levels = 'A')&
   theme(legend.position = 'bottom')
 
-ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H1_Fig_gender_age_edu_general.pdf",
+ggsave(here("3_Data_Analysis","3_2_image","H1_Fig_gender_age_edu_general.pdf"),
        H1_Fig_gender_age_edu_general, device = "pdf", width=18, height = 18)
 
 H1_Fig_gender_age_edu_general
@@ -2172,7 +2172,7 @@ H2_Fig_gender_age_edu_general <- H2_Fig_gender_general + H2_Fig_age_general +H2_
   plot_layout(ncol = 2, heights = c(4,4))+
   patchwork::plot_annotation(tag_levels = 'A')
 
-ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H2_Fig_gender_age_edu_general.pdf",
+ggsave(here("3_Data_Analysis","3_2_image","H2_Fig_gender_age_edu_general.pdf"),
        H2_Fig_gender_age_edu_general, device = "pdf", width=18, height = 18)
 
 H2_Fig_gender_age_edu_general
@@ -2544,7 +2544,7 @@ plot_annotation(tag_levels = 'A',
 
 H2_Fig_major_region
 
-ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H2_Fig_major_region.pdf",
+ggsave(here("3_Data_Analysis","3_2_image","H2_Fig_major_region.pdf"),
        H2_Fig_major_region, device = "pdf", width= 15, height = 9)
 
 ```
@@ -2659,7 +2659,7 @@ H2_Fig_region <- H2_Fig_Census7_region  + H2_Fig_region_general + H2_Fig_CFPS201
   theme(plot.tag = element_text(size = 20))
 
 
-ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H2_Fig_region.pdf",
+ggsave(here("3_Data_Analysis","3_2_image","H2_Fig_region.pdf"),
        H2_Fig_region, device = "pdf", width=10, height = 15)
 
 H2_Fig_region 
@@ -3308,7 +3308,7 @@ H3_Fig_gender2 <- H3_Fig_BF_gender + H3_Fig_gender +
   plot_annotation(tag_levels = 'A')  & 
   theme(plot.tag = element_text(size = 18, face = "bold"))
 
-ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H3_Fig_gender.pdf", 
+ggsave(here("3_Data_Analysis","3_2_image","H3_Fig_gender.pdf"), 
        H3_Fig_gender2, device = "pdf", width=18, height = 18)
 
 H3_Fig_gender2
@@ -3319,7 +3319,7 @@ H3_Fig_age <- H3_Fig_BF_PsyStages + H3_Fig_PsyStages +
   plot_annotation(tag_levels = 'A')  & 
   theme(plot.tag = element_text(size = 18, face = "bold"))
 
-ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H3_Fig_age.pdf", 
+ggsave(here("3_Data_Analysis","3_2_image","H3_Fig_age.pdf"), 
        H3_Fig_age, device = "pdf", width=18, height = 18)
 
 H3_Fig_age
@@ -3331,7 +3331,7 @@ H3_Fig_age_suppl <- H3_Fig_BF_interval10 + H3_Fig_interval10 +
   theme(plot.tag = element_text(size = 18, face = "bold"))
 
 
-ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H3_Fig_age_suppl.pdf", 
+ggsave(here("3_Data_Analysis","3_2_image","H3_Fig_age_suppl.pdf"), 
        H3_Fig_age_suppl , device = "pdf", width=18, height = 18)
 
 
@@ -3476,7 +3476,7 @@ H3_Fig_Lucca <- H3_Fig_Lucca_gender + H3_Fig_BF_Lucca_gender +
   plot_annotation(tag_levels = 'A')  & 
   theme(plot.tag = element_text(size = 18, face = "bold"))
 
-ggsave("D:\\chin-subj\\3_Data_Analysis\\3_2_image\\H3_Fig_Lucca.pdf", 
+ggsave(here("3_Data_Analysis","3_2_image","H3_Fig_Lucca.pdf"), 
        H3_Fig_Lucca, device = "pdf", width=18, height = 9)
 
 H3_Fig_Lucca

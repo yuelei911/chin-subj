@@ -23,14 +23,14 @@ if (!require("pacman")) install.packages("pacman")
 
 # use package "pacman" as loading R packages tools
 
-pacman::p_load("tidyverse","rio","here")
+pacman::p_load("tidyverse","rio","here","openxlsx")
 
 # getwd()
 
 ## load coidng stage data
 
 file_list <- list.files(
-  here("D:\\chin-subj\\2_Data_Extraction\\2_1_CHN_Journal_Code\\2_1_5_Extract_Data\\2_2_5_1_Article_Coding"),
+  here("2_Data_Extraction","2_1_CHN_Journal_Code","2_1_5_Extract_Data","2_2_5_1_Article_Coding"),
   pattern = ".xlsx",
   full.names = TRUE, recursive = TRUE)
 
@@ -51,7 +51,7 @@ rm(file_list)
 ## load profreading stage data
 
 file_list <- list.files(
-  here("D:\\chin-subj\\2_Data_Extraction\\2_1_CHN_Journal_Code\\2_1_5_Extract_Data\\2_2_5_2_Article_Proofreading"),
+  here("2_Data_Extraction","2_1_CHN_Journal_Code","2_1_5_Extract_Data","2_2_5_2_Article_Proofreading"),
   pattern = ".xlsx",
   full.names = TRUE, recursive = TRUE)
 
@@ -3670,9 +3670,9 @@ df_stage2_Journal_Code2 <- df_stage2_Journal_Code2 %>%
 We replaced those articles that only require brief information coding with empirical articles needed for our research and analysis (i.e., articles that require detailed information coding). Therefore, I need to process this part of the data next.
 
 ```{r}
-library(openxlsx)
 
-Journal_articles_replace <- read.xlsx("D:\\chin-subj\\2_Data_Extraction\\2_1_CHN_Journal_Code\\2_1_5_Extract_Data\\2_5_5_3_Article_Replaced\\Chin_Subj_articles_replaced_CE.xlsx") %>%
+
+Journal_articles_replace <- read.xlsx(here("2_Data_Extraction","2_1_CHN_Journal_Code","2_1_5_Extract_Data","2_5_5_3_Article_Replaced","Chin_Subj_articles_replaced_CE.xlsx")) %>%
   dplyr::filter(Coder == "final")
 
 
