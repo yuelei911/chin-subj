@@ -1,0 +1,1 @@
+This file folder contains the reports of the Chin‑Subj project since its launch, including internal project reports (Projects reports), presentations at the 24th National Academic Congress of Psychology (NACP 2023), and presentations at BTSCON2025.

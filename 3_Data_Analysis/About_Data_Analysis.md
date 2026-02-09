@@ -1,6 +1,6 @@
 # About this folder
 
-This folder file save the formal analysis files. It includes code, data, and visulization files. 
+This folder file save the formal analysis files. It includes code, data, and visualization files. 
 
 `Analyze_Data_Zip.R`: Packaged data required for the formal analyses. These data are derived from "2_Data_Extraction" and stored in "3_1_Intermediate_Data", including data from Journal papers, BTS, and data for supporting analysis.
 
