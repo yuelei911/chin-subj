@@ -1563,6 +1563,444 @@ H1_BF_edu_highschool <- BayesMultiNomial(dataset = H1_edu_highschool_bayes,
 Similarity, I also found very strong evidence for the $H_1$ that the high schools proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_highschool$BF$LogBF10`.
 
 
+### region
+As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals.
+
+
+Create a vector of China's four economic regions, with data sourced from the National Bureau of Statistics of China. The four regions are Central, Eastern, Western, and Northeastern.
+```{r}
+Central_China4 <- c("山西","安徽","江西","河南","湖北","湖南")
+
+East_China4 <- c("北京","天津","河北","上海","江苏","浙江","福建","山东","广东","海南")
+
+West_China4 <- c("内蒙古","广西","重庆","四川","贵州","云南","西藏","陕西","甘肃","青海","宁夏","新疆")
+
+Northeast_China4 <- c("辽宁","吉林","黑龙江")
+
+China_region_four <- tibble(Region = c(Central_China4, East_China4, 
+                                        West_China4, Northeast_China4),
+                             Region_four = c(rep("Central China", 6), rep("East China", 10),
+                                        rep("West China", 12),rep("Northeast China", 3)))
+```
+
+
+We also create a vector of China's seven regions.
+```{r}
+China_region_seven <-  tibble(
+  Region = c("北京", "天津", "河北", "山西", "内蒙古",
+              "上海", "江苏", "浙江", "安徽", "福建", "江西", "山东",
+              "河南", "湖北", "湖南",
+              "广东", "广西", "海南",
+              "重庆", "四川", "贵州", "云南", "西藏",
+              "陕西", "甘肃", "青海", "宁夏", "新疆",
+              "辽宁", "吉林", "黑龙江"),
+  Region_seven = c(rep("North China", 5), 
+             rep("East China", 7),
+             rep("Central China", 3),
+             rep("South China", 3),
+             rep("Southwest China", 5),
+             rep("Northwest China", 5),
+             rep("Northeast China", 3)))
+```
+
+
+Create a vector of all China' province
+```{r}
+China_province <- c("新疆","西藏","甘肃","青海","内蒙古",
+                    "宁夏","四川","重庆","陕西","贵州","云南",
+                    "北京","山西","河北","河南","湖北","湖南",
+                    "广西","广东","香港","澳门","台湾","海南",
+                    "黑龙江","吉林","辽宁","天津","山东","江苏",
+                    "安徽","上海","浙江","江西","福建")
+```
+
+
+Then, I firstly process Journal data.
+
+single region
+```{r warning=FALSE}
+Journal_region_single <- Journal %>% 
+   dplyr::select(3,5,7,37,40,16,30) %>% 
+   dplyr::mutate(Subjects_Recruitment_Area = gsub("[;；、，,]",";",Subjects_Recruitment_Area),
+                 Sample_Size = as.numeric(Sample_Size)) %>% 
+   dplyr::filter(Subjects_Recruitment_Area != "0" & !grepl(";",Subjects_Recruitment_Area)) %>% 
+  dplyr::filter(Target_Population_N != 1)
+ 
+## Article 20185082' Sample_Size became NA during data format conversion, but it does not affect the results as it is unrelated to the target population(special population).
+
+ ## papers
+Journal_region_single_papers_num <- Journal_region_single %>%
+   dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
+   dplyr::distinct(Article_IDs) ## single 129 papers + multiple 11(only one targeting general population) = 130
+ 
+
+Journal_region_single_general_tab <- Journal_region_single %>% 
+   dplyr::select(Article_IDs,Target_Population_N,Sample_Size,Subjects_Recruitment_Area) %>%
+   dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == "内蒙古自治区", "内蒙古",Subjects_Recruitment_Area),
+                 Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == "广州","广东",Subjects_Recruitment_Area)) %>% 
+   dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
+   dplyr::group_by(Subjects_Recruitment_Area) %>% 
+   dplyr::summarise(n = sum(Sample_Size))
+```
+
+
+multiple regions
+```{r}
+# Journal_region_multiple <- Journal %>% 
+#    dplyr::select(3,5,7,37,40,16,30) %>% 
+#    dplyr::mutate(Subjects_Recruitment_Area = gsub("[;；、，,]",";",Subjects_Recruitment_Area)) %>% 
+#    dplyr::filter(Subjects_Recruitment_Area != "0" & grepl(";",Subjects_Recruitment_Area)) 
+ 
+ # writexl::write_xlsx(Journal_region_multiple,"Journal_region_multiple.xlsx")
+ 
+ ## re-input data and load data
+ Journal_region_multiple <-  Journal_region_multiple %>% 
+   dplyr::filter(True_Value != "No specific value") 
+
+
+
+Journal_region_multiple_general_tab <-   Journal_region_multiple %>% 
+  dplyr::select(Article_IDs, Target_Population_N,True_Value) %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  tidyr::separate_rows(True_Value,sep = ";") %>% 
+  tidyr::separate(True_Value,c("Subjects_Recruitment_Area","Sample_Size"),sep = ":") %>% 
+   dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
+  dplyr::mutate(Sample_Size  = as.numeric(Sample_Size),
+                Sample_Size = ifelse(Article_IDs == "20213104",ceiling(Sample_Size*2500),Sample_Size)) %>% 
+  dplyr::select(Sample_Size,Subjects_Recruitment_Area) %>% 
+  dplyr::rename(n = Sample_Size)
+
+```
+
+
+combine two data
+```{r}
+Journal_region_general_tab <-bind_rows(Journal_region_single_general_tab,
+                                       Journal_region_multiple_general_tab) %>% 
+  dplyr::group_by(Subjects_Recruitment_Area) %>% 
+  dplyr::summarise(n = sum(n),.groups = "drop") %>% 
+  dplyr::mutate(Proportion = n/sum(n)*100)
+
+sum(Journal_region_general_tab$Proportion)
+
+
+Journal_region_general_tab2 <- Journal_region_general_tab %>% 
+  dplyr::mutate(Count_Bins = cut(Proportion,
+                                 breaks = c(-Inf,1,5,10,Inf),
+                labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "Journal_region_general_population",
+                Color = ifelse(Count_Bins == "<1",1,
+                               ifelse(Count_Bins == "1~5",2,
+                                      ifelse(Count_Bins == "5~10",3,4))),
+                Color = factor(Color, levels = c("1", "2", "3", "4")))%>% 
+  dplyr::rename(Region = 1)
+
+sum(Journal_region_general_tab2$n) #44442
+```
+
+
+convert Journal data into four regions and seven regions
+```{r}
+## four regions
+Journal_region_four <- merge(Journal_region_general_tab2,China_region_four,
+                              by = "Region") %>% 
+  dplyr::select(1,2,7) %>% 
+  dplyr::group_by(Region_four) %>% 
+  dplyr::summarise(Journal_n=sum(n)) %>% 
+  dplyr::mutate(Journal = (Journal_n/sum(Journal_n))*100)
+
+# sum(Journal_region_four$Journal)
+
+
+## seven regions
+Journal_region_seven <- merge(Journal_region_general_tab2,China_region_seven,
+                               by = "Region")%>% 
+  dplyr::select(1,2,7) %>% 
+  dplyr::group_by(Region_seven) %>% 
+  dplyr::summarise(Journal_n=sum(n)) %>% 
+  dplyr::mutate(Journal = (Journal_n/sum(Journal_n))*100)
+
+# sum(Journal_region_seven$Journal)
+```
+
+
+Next, I process the BTS data. We only have the general population data of BTS
+```{r}
+BTS_region_CHN <- lapply(BTS_region, function(df){
+  
+  df <- df %>% 
+    dplyr::filter(Country == "China" | Country == "CHN" | Country == "CN") %>% 
+    
+  return(df)
+  
+})
+
+BTS_region_CHN <- do.call(rbind,BTS_region_CHN)
+
+
+BTS_region_CHN_total <- BTS_region_CHN %>% 
+  dplyr::filter(!Province %in% c("China","Other")) %>% 
+  dplyr::filter(!is.na(Province)) %>% 
+  dplyr::group_by(Province) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::mutate(Proportion = (n/sum(n))*100) %>% 
+  dplyr::rename(Region = Province) %>% 
+  dplyr::mutate(Count_Bins = cut(Proportion,
+                                 breaks = c(-Inf,1,5,10,Inf),
+                labels = c("<1","1~5","5~10",">=10")),
+                Data_Source = "BTS region general",
+                Color = ifelse(Count_Bins == "<1",1,
+                               ifelse(Count_Bins == "1~5",2,
+                                      ifelse(Count_Bins == "5~10",3,4))),
+                Color = factor(Color, levels = c("1", "2", "3", "4")))
+
+# sum(BTS_region_CHN_total$Proportion)
+```
+
+
+Trans into four regions and seven regions
+```{r}
+## four regions
+BTS_region_CHN_four <- BTS_region_CHN %>% 
+  dplyr::filter(!Province %in% c("China","Other")) %>% 
+  dplyr::group_by(Province) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::filter(!is.na(Province)) %>% 
+  dplyr::rename(Region = Province) %>% 
+  merge(China_region_four,by="Region") %>% 
+  dplyr::group_by(Region_four) %>% 
+  dplyr::summarise(n=sum(n)) %>% 
+  dplyr::mutate(`BTS Chinese` = (n/sum(n))*100)
+
+
+# sum(BTS_region_CHN_four$BTS)
+
+## seven regions
+BTS_region_CHN_seven <- BTS_region_CHN %>% 
+  dplyr::filter(!Province %in% c("China","Other")) %>% 
+  dplyr::group_by(Province) %>% 
+  dplyr::summarise(n = n()) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::filter(!is.na(Province)) %>% 
+  dplyr::rename(Region = Province) %>% 
+  merge(China_region_seven,by= "Region") %>% 
+  dplyr::group_by(Region_seven) %>% 
+  dplyr::summarise(n=sum(n)) %>% 
+  dplyr::mutate(`BTS Chinese` = (n/sum(n))*100)
+
+
+# sum(BTS_region_CHN_seven$BTS)
+```
+
+
+Trans catagory data
+```{r}
+## load color data
+Region_map_color <- colour %>% 
+  dplyr::mutate(QUHUADAIMA = as.character(QUHUADAIMA)) %>% 
+  dplyr::rename(Region = 1) %>% 
+  dplyr::select(-2) 
+
+## combine color data and region data
+H1_Journal_Region_data <- Journal_region_general_tab2 %>%
+  dplyr::left_join(Region_map_color,by = join_by(Region)) %>% 
+  dplyr::mutate(QUHUADAIMA = ifelse(Region == "重庆", "500000", QUHUADAIMA)) %>% 
+  tidyr::pivot_wider(names_from = Data_Source,values_from = c(Proportion, Count_Bins,n,Color)) %>% 
+  dplyr::mutate(across(3:ncol(.),~ifelse(is.na(.),0,.)))
+
+
+H1_BTS_Region_data <- BTS_region_CHN_total %>%
+  dplyr::left_join(Region_map_color,by = join_by(Region)) %>% 
+  dplyr::mutate(QUHUADAIMA = ifelse(Region == "重庆", "500000", QUHUADAIMA)) %>% 
+  tidyr::pivot_wider(names_from = Data_Source,values_from = c(Proportion, Count_Bins,n,Color)) %>% 
+  dplyr::mutate(across(3:ncol(.),~ifelse(is.na(.),0,.)))
+```
+
+
+visulize the data
+```{r}
+API_pre <-  "http://xzqh.mca.gov.cn/data/"
+## 读取全国数据
+China <-  st_read(dsn = paste0(API_pre, "quanguo.json"), stringsAsFactors=FALSE) 
+## 使用 4326 地理坐标系
+st_crs(China) <-  4326
+
+# 读取国界线数据
+China_line <-  st_read(dsn = paste0(API_pre, "quanguo_Line.geojson"), stringsAsFactors=FALSE) 
+st_crs(China_line) <-  4326
+## 选择区划代码为国界线的区域
+gjx <- China_line[China_line$QUHUADAIMA == "guojiexian",]
+
+China_Journal <- dplyr::left_join(China,H1_Journal_Region_data,by= "QUHUADAIMA")
+China_BTS <- dplyr::left_join(China,H1_BTS_Region_data,by = "QUHUADAIMA")
+
+
+## Chinese journal papers in general population
+H1_Fig_Journal_region_general <- ggplot() +
+  geom_sf(data = China_Journal,aes(fill = factor(Color_Journal_region_general_population))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),
+                    name = "Proportion",
+                    drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "Journal") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.position = "none",
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())
+
+H1_Fig_Journal_region_general
+
+## BTS
+H1_Fig_BTS_region_general <- ggplot() +
+  geom_sf(data = China_BTS,aes(fill = factor(`Color_BTS region general`))) +
+  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+                    breaks = c("0","1","2", "3", "4"),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),
+                    name = "Proportion",
+                    drop = FALSE) +
+  geom_sf(data = gjx) +
+  labs(title = "BTS Chinese") +
+  theme(plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.position = "bottom",
+        panel.grid = element_blank(),
+        panel.background = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title = element_blank())
+
+H1_Fig_BTS_region_general
+```
+
+
+Bayes factor
+
+region four
+```{r}
+Journal_region_four_bayes <- Journal_region_four %>% 
+  dplyr::select(Region_four,Journal)
+  
+
+BTS_region_CHN_four_bayes <- BTS_region_CHN_four %>% 
+  dplyr::select(Region_four,`BTS Chinese`) %>% 
+  dplyr::add_row(Region_four = "Northeast China",
+                 `BTS Chinese` = 0)
+
+
+H1_region_four_bayes <- left_join(Journal_region_four_bayes,
+                                  BTS_region_CHN_four_bayes,
+                                  by = "Region_four")
+
+## BF
+H1_BF_Journal_BTS_region_four <- BayesMultiNomial(dataset = H1_region_four_bayes,
+                                          factor = "Region_four",
+                                          observed = "BTS Chinese",
+                                          expected = "Journal")
+```
+
+
+seven bayes
+```{r}
+Journal_region_seven_bayes <- Journal_region_seven %>% 
+  dplyr::select(Region_seven,Journal)
+  
+
+BTS_region_CHN_seven_bayes <- BTS_region_CHN_seven %>% 
+  dplyr::select(Region_seven,`BTS Chinese`) %>% 
+  dplyr::add_row(Region_seven = "Northeast China",
+                 `BTS Chinese` = 0)
+
+
+H1_region_seven_bayes <- left_join(Journal_region_seven_bayes,
+                                  BTS_region_CHN_seven_bayes,
+                                  by = "Region_seven")
+
+## BF
+H1_BF_Journal_BTS_region_seven <- BayesMultiNomial(dataset = H1_region_seven_bayes,
+                                          factor = "Region_seven",
+                                          observed = "BTS Chinese",
+                                          expected = "Journal")
+```
+
+
+For four regions, I also found very strong evidence for the $H_1$ that the BTS is different from that of Journal data, with $Log(BF_{10})$ = `r H1_BF_Journal_BTS_region_four$BF$LogBF10`, as well as equally the strong evidence for the seven regions $Log(BF_{10})$ = `r H1_BF_Journal_BTS_region_seven$BF$LogBF10`
+
+
+Visualize the major regions
+```{r}
+H1_region_four_plot <- H1_region_four_bayes %>% 
+  tidyr::pivot_longer(cols = -Region_four,
+                      names_to = "Data source",
+                      values_to = "Proportion") %>% 
+  dplyr::mutate(Region_four = factor(Region_four,
+                                     levels = c("East China","Central China",
+                                                "West China","Northeast China")))
+
+
+H1_Fig_region_four <- ggplot(data = H1_region_four_plot, aes(x = `Data source`, y = Proportion, fill = Region_four)) +
+  geom_col(position = "stack")+
+  labs(fill = "Region")+
+  theme_classic()+
+  theme(legend.box.spacing = unit(2,"pt"),
+        legend.position = "bottom",
+        legend.key.size = unit(0.5, "cm"),
+        legend.text = element_text(size = 15, family = "serif"),
+        legend.title = element_text(size = 15, family = "serif"),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))+
+  guides(fill = guide_legend(ncol = 2))
+
+H1_Fig_region_four
+
+
+H1_region_seven_plot <- H1_region_seven_bayes %>% 
+  tidyr::pivot_longer(cols = -Region_seven,
+                      names_to = "Data source",
+                      values_to = "Proportion") %>% 
+  dplyr::mutate(Region_seven = factor(Region_seven,
+                                      levels = c("South China","North China",
+                                                 "East China","Southwest China",
+                                                 "Central China","Northwest China",
+                                                 "Northeast China")))
+
+
+H1_Fig_region_seven <- ggplot(data = H1_region_seven_plot, aes(x = `Data source`, y = Proportion, fill = Region_seven)) +
+  geom_col(position = "stack")+
+  labs(fill = "Region")+
+  theme_classic()+
+  theme(legend.box.spacing = unit(2,"pt"),
+        legend.position = "bottom",
+        legend.key.size = unit(0.5, "cm"),
+        legend.text = element_text(size = 15, family = "serif"),
+        legend.title = element_text(size = 15, family = "serif"),
+        axis.title = element_text(size = 20,family = "serif"),
+        axis.text = element_text(size = 20,family = "serif"))+
+  guides(fill = guide_legend(ncol = 2))
+
+H1_Fig_region_seven
+
+
+H1_Fig_region <-  H1_Fig_BTS_region_general + H1_Fig_Journal_region_general + H1_Fig_region_four + H1_Fig_region_seven + 
+  plot_layout(ncol = 2, heights = c(4,4))+
+  patchwork::plot_annotation(tag_levels = 'A')&
+  theme(legend.position = 'bottom')
+
+ggsave(here("3_Data_Analysis","3_2_image","H1_Fig_region.pdf"),
+       H1_Fig_region , device = "pdf", width=18, height = 18)
+
+H1_Fig_region 
+
+```
+
+
 ## Test the 2nd hypothesis
 
 
@@ -2222,157 +2660,64 @@ High school: Census7($Log(BF_{10})$ = `r H2_BF_edu_highschool_Census7$BF$LogBF10
 
 
 ### Region
-As stated in RR stage1, I tried to analysis region data. As a first step, I processed Subjects_Recruitment_Area data from Chinese journals.
+Merge Journal and BTS Chinese data
 
-
-Create a vector of China's four economic regions, with data sourced from the National Bureau of Statistics of China. The four regions are Central, Eastern, Western, and Northeastern.
+Total region
 ```{r}
-Central_China4 <- c("山西","安徽","江西","河南","湖北","湖南")
+H2_Journal_region <- Journal_region_general_tab2 %>% 
+  dplyr::select(Region,n)
 
-East_China4 <- c("北京","天津","河北","上海","江苏","浙江","福建","山东","广东","海南")
+H2_BTS_region <- BTS_region_CHN_total %>% 
+  dplyr::select(Region,n)
 
-West_China4 <- c("内蒙古","广西","重庆","四川","贵州","云南","西藏","陕西","甘肃","青海","宁夏","新疆")
-
-Northeast_China4 <- c("辽宁","吉林","黑龙江")
-
-China_region_four <- tibble(Region = c(Central_China4, East_China4, 
-                                        West_China4, Northeast_China4),
-                             Region_four = c(rep("Central China", 6), rep("East China", 10),
-                                        rep("West China", 12),rep("Northeast China", 3)))
-```
-
-
-We also create a vector of China's seven regions.
-```{r}
-China_region_seven <-  tibble(
-  Region = c("北京", "天津", "河北", "山西", "内蒙古",
-              "上海", "江苏", "浙江", "安徽", "福建", "江西", "山东",
-              "河南", "湖北", "湖南",
-              "广东", "广西", "海南",
-              "重庆", "四川", "贵州", "云南", "西藏",
-              "陕西", "甘肃", "青海", "宁夏", "新疆",
-              "辽宁", "吉林", "黑龙江"),
-  Region_seven = c(rep("North China", 5), 
-             rep("East China", 7),
-             rep("Central China", 3),
-             rep("South China", 3),
-             rep("Southwest China", 5),
-             rep("Northwest China", 5),
-             rep("Northeast China", 3)))
-```
-
-
-Create a vector of all China' province
-```{r}
-China_province <- c("新疆","西藏","甘肃","青海","内蒙古",
-                    "宁夏","四川","重庆","陕西","贵州","云南",
-                    "北京","山西","河北","河南","湖北","湖南",
-                    "广西","广东","香港","澳门","台湾","海南",
-                    "黑龙江","吉林","辽宁","天津","山东","江苏",
-                    "安徽","上海","浙江","江西","福建")
-```
-
-
-The data is processed when the target population is the general population.
-
-single region
-```{r warning=FALSE}
-Journal_region_single <- Journal %>% 
-   dplyr::select(3,5,7,37,40,16,30) %>% 
-   dplyr::mutate(Subjects_Recruitment_Area = gsub("[;；、，,]",";",Subjects_Recruitment_Area),
-                 Sample_Size = as.numeric(Sample_Size)) %>% 
-   dplyr::filter(Subjects_Recruitment_Area != "0" & !grepl(";",Subjects_Recruitment_Area)) %>% 
-  dplyr::filter(Target_Population_N != 1)
- 
-## Article 20185082' Sample_Size became NA during data format conversion, but it does not affect the results as it is unrelated to the target population(special population).
-
- ## papers
-Journal_region_single_papers_num <- Journal_region_single %>%
-   dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
-   dplyr::distinct(Article_IDs) ## single 129 papers + multiple 11(only one targeting general population) = 130
- 
-
-Journal_region_single_general_tab <- Journal_region_single %>% 
-   dplyr::select(Article_IDs,Target_Population_N,Sample_Size,Subjects_Recruitment_Area) %>%
-   dplyr::mutate(Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == "内蒙古自治区", "内蒙古",Subjects_Recruitment_Area),
-                 Subjects_Recruitment_Area = ifelse(Subjects_Recruitment_Area == "广州","广东",Subjects_Recruitment_Area)) %>% 
-   dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
-   dplyr::group_by(Subjects_Recruitment_Area) %>% 
-   dplyr::summarise(n = sum(Sample_Size))
-```
-
-
-multiple regions
-```{r}
-# Journal_region_multiple <- Journal %>% 
-#    dplyr::select(3,5,7,37,40,16,30) %>% 
-#    dplyr::mutate(Subjects_Recruitment_Area = gsub("[;；、，,]",";",Subjects_Recruitment_Area)) %>% 
-#    dplyr::filter(Subjects_Recruitment_Area != "0" & grepl(";",Subjects_Recruitment_Area)) 
- 
- # writexl::write_xlsx(Journal_region_multiple,"Journal_region_multiple.xlsx")
- 
- ## re-input data and load data
- Journal_region_multiple <-  Journal_region_multiple %>% 
-   dplyr::filter(True_Value != "No specific value") 
-
-
-
-Journal_region_multiple_general_tab <-   Journal_region_multiple %>% 
-  dplyr::select(Article_IDs, Target_Population_N,True_Value) %>% 
-  dplyr::filter(Target_Population_N != 1) %>% 
-  tidyr::separate_rows(True_Value,sep = ";") %>% 
-  tidyr::separate(True_Value,c("Subjects_Recruitment_Area","Sample_Size"),sep = ":") %>% 
-   dplyr::filter(Subjects_Recruitment_Area %in% China_province) %>% 
-  dplyr::mutate(Sample_Size  = as.numeric(Sample_Size),
-                Sample_Size = ifelse(Article_IDs == "20213104",ceiling(Sample_Size*2500),Sample_Size)) %>% 
-  dplyr::select(Sample_Size,Subjects_Recruitment_Area) %>% 
-  dplyr::rename(n = Sample_Size)
+H2_BTS_Journal_region <- left_join(H2_Journal_region,H2_BTS_region,by = "Region") %>% 
+  dplyr::mutate(`n.x` = ifelse(is.na(`n.x`),0,`n.x`),
+                `n.y` = ifelse(is.na(`n.y`),0,`n.y`),
+                n = `n.x` + `n.y`) %>% 
+  dplyr::select(Region,n)
 
 ```
 
 
-combine two data
+Two major regions
 ```{r}
-Journal_region_general_tab <-bind_rows(Journal_region_single_general_tab,
-                                       Journal_region_multiple_general_tab) %>% 
-  dplyr::group_by(Subjects_Recruitment_Area) %>% 
-  dplyr::summarise(n = sum(n),.groups = "drop") %>% 
-  dplyr::mutate(Proportion = n/sum(n)*100)
+## region four
+H2_Journal_region_four <- Journal_region_four %>% 
+  dplyr::select(Region_four,Journal_n) %>% 
+  dplyr::rename(Journal = 2)
 
-sum(Journal_region_general_tab$Proportion)
+H2_BTS_region_four <- BTS_region_CHN_four %>% 
+  dplyr::select(Region_four,n) %>% 
+  dplyr::rename(`BTS Chinese` = 2)
 
-
-Journal_region_general_tab2 <- Journal_region_general_tab %>% 
-  dplyr::mutate(Count_Bins = cut(Proportion,
-                                 breaks = c(-Inf,1,5,10,Inf),
-                labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Journal_region_general_population")%>% 
-  dplyr::rename(Region = 1)
-
-sum(Journal_region_general_tab2$n) #44442
-```
-
-
-convert Journal data into four regions and seven regions
-```{r}
-## four regions
-Journal_region_four <- merge(Journal_region_general_tab2,China_region_four,
-                              by = "Region") %>% 
-  dplyr::select(1,2,6) %>% 
+## combine data
+H2_region_four <- bind_rows(H2_Journal_region_four,H2_BTS_region_four) %>% 
+  tidyr::pivot_longer(cols = -Region_four,
+                      names_to = "Data source",
+                      values_to = "n") %>% 
   dplyr::group_by(Region_four) %>% 
-  dplyr::summarise(Journal_n=sum(n)) 
+  dplyr::summarise(n = sum(n,na.rm = TRUE))
 
 
-## seven regions
-Journal_region_seven <- merge(Journal_region_general_tab2,China_region_seven,
-                               by = "Region")%>% 
-  dplyr::select(1,2,6) %>% 
+## region seven
+H2_Journal_region_seven <- Journal_region_seven %>% 
+  dplyr::select(Region_seven,Journal_n) %>% 
+  dplyr::rename(Journal = 2)
+
+H2_BTS_region_seven <- BTS_region_CHN_seven %>% 
+  dplyr::select(Region_seven,n) %>% 
+  dplyr::rename(`BTS Chinese` = 2)
+
+H2_region_seven <- bind_rows(H2_Journal_region_seven,H2_BTS_region_seven) %>% 
+  tidyr::pivot_longer(cols = -Region_seven,
+                      names_to = "Data source",
+                      values_to = "n") %>% 
   dplyr::group_by(Region_seven) %>% 
-  dplyr::summarise(Journal_n=sum(n)) 
+  dplyr::summarise(n = sum(n,na.rm = TRUE))
 ```
 
 
-The second step, I processed of provincial distribution of population for census7.
+I processed of provincial distribution of population for census7.
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 Census7_region <- Census7_region %>% 
   dplyr::select(1,5) %>% 
@@ -2417,7 +2762,7 @@ Census7_region_seven <- merge(Census7_region,China_region_seven,by= "Region") %>
 ```
 
 
-The third step, I processed of provincial distribution of population for CFPS2018.
+Then, I processed of provincial distribution of population for CFPS2018.
 ```{r}
 ## process CFPS2018 province data
 CFPS2018_region <- data.frame(table(df_CFPS2018$PROVCD18)) %>% 
@@ -2557,21 +2902,7 @@ Combine all region data and load color data
 Region_map_data <-  bind_rows(Census7_region,CFPS2018_region,
                               Journal_region_general_tab2)
 
-## load color data
-Region_map_color <- colour %>% 
-  dplyr::mutate(QUHUADAIMA = as.character(QUHUADAIMA)) %>% 
-  dplyr::rename(Region = 1) %>% 
-  dplyr::select(-2)
 
-## combine color data and region data
-Region_data <- dplyr::left_join(Region_map_data,Region_map_color,by = join_by(Region)) %>% 
-  dplyr::mutate(QUHUADAIMA = ifelse(Region == "重庆", "500000", QUHUADAIMA),
-                Color = ifelse(Count_Bins == "<1",1,
-                               ifelse(Count_Bins == "1~5",2,
-                                      ifelse(Count_Bins == "5~10",3,4))),
-                Color = factor(Color, levels = c("1", "2", "3", "4"))) %>% 
-  tidyr::pivot_wider(names_from = Data_Source,values_from = c(Proportion, Count_Bins,n,Color)) %>% 
-  dplyr::mutate(across(3:ncol(.),~ifelse(is.na(.),0,.)))
 ```
 
 
