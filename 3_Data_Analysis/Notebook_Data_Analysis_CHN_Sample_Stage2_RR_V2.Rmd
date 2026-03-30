@@ -2857,7 +2857,7 @@ H2_region_seven2 <- H2_region_seven %>%
 H2_Fig_region_seven <- ggplot(data = H2_region_seven2, aes(x = `Data Source`, y = Proportion, fill = Region_seven)) +
   geom_col(position = "stack")+
   labs(fill = "Region")+
-  scale_x_discrete(labels =c("Chinese_participants_Prop" = "Chinese_participants",
+  scale_x_discrete(labels =c("Chinese_participants_Prop" = "Chinese participants",
                               "CFPS2018_Prop" = "CFPS2018",
                               "Census7_Prop" = "Census7"))+
   theme_classic()+
