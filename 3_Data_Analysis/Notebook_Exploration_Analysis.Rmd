@@ -311,7 +311,9 @@ Journal_report_year <- Journal_report %>%
         legend.text = element_text(size = 16, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
+        axis.text = element_text(size = 16,family = "serif"))+
+  scale_color_brewer(palette = "Paired")
+
 
 ggsave(here("3_Data_Analysis","3_2_image","Journal_report_year.pdf"), 
        Journal_report_year, device = "pdf", width=12, height = 9)
@@ -499,7 +501,8 @@ Journal_report_target_population <- Journal_target_population_report2 %>%
         legend.title = element_blank(),
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))+
-  scale_x_discrete(guide = guide_axis(angle = 45))
+  scale_x_discrete(guide = guide_axis(angle = 45))+
+  scale_fill_okabe_ito()
 
 ggsave(here("3_Data_Analysis","3_2_image","Journal_report_target_population.pdf"), Journal_report_target_population, device = "pdf", width=12, height = 9)
 
@@ -526,11 +529,13 @@ Journal_special_visual2 <- Journal_special_population_translation %>%
 
 Suppl_Fig_Special_Wordcloud <- Journal_special_visual2 %>% 
   ggplot(aes(label = Target_Population_English, 
-             size = Count, 
-             color = cate)) +
-  geom_text_wordcloud(area_corr = TRUE) +
+             size = Count)) +
+  geom_text_wordcloud(area_corr = TRUE,
+                      color = "#56B4E9") +
   scale_size_area(max_size = 50) +
   theme_minimal()
+
+# display.brewer.all(colorblindFriendly = TRUE)
 
 Suppl_Fig_Special_Wordcloud
 ```
@@ -695,7 +700,8 @@ Suppl_Fig_H2_gender_general <- ggplot(SupplH2_gender_general,aes(Data_Source,Pro
         legend.text = element_text(size = 20, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 20,family = "serif"),
-        axis.text = element_text(size = 20,family = "serif"))
+        axis.text = element_text(size = 20,family = "serif"))+
+  scale_fill_okabe_ito()
 
 
 ggsave(here("3_Data_Analysis","3_2_image","Suppl_Fig_H2_gender_general.pdf"),
@@ -791,7 +797,7 @@ SupplH2_Census7_age_general <- ggplot(data= Census7_age_five5,
             aes(x = ageBins, y = Proportion, group = 1, color = "Journal"), 
             size = 1) +
   scale_fill_manual(values = c("Census7" = "#00BFC4")) +  
-  scale_color_manual(values = c("BTS Chinese" = "blue", "Journal" = "red")) +
+  scale_color_manual(values = c("BTS Chinese" = "blue", "Journal" = "#E69F00")) +
   scale_y_continuous(limits = c(0,50))+
   coord_flip() +
   labs(y="Proportion", x = "Age bins")+
@@ -802,7 +808,8 @@ SupplH2_Census7_age_general <- ggplot(data= Census7_age_five5,
         legend.text = element_text(size = 16, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
+        axis.text = element_text(size = 16,family = "serif"))+
+  scale_fill_okabe_ito()
 
 ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Census7_age_general.pdf"),
        SupplH2_Census7_age_general, device = "pdf", width=18, height = 9)
@@ -824,7 +831,7 @@ SupplH2_Census6_age_general <- ggplot(data= Census6_age_five5,
             aes(x = ageBins, y = Proportion, group = 1, color = "Journal"), 
             size = 1) +
   scale_fill_manual(values = c("Census6" = "#00BFC4")) +  
-  scale_color_manual(values = c("BTS Chinese" = "blue", "Journal" = "red")) +
+  scale_color_manual(values = c("BTS Chinese" = "blue", "Journal" = "#E69F00")) +
   scale_y_continuous(limits = c(0,50))+
   coord_flip() +
   labs(y="Proportion", x = "Age bins")+
@@ -835,7 +842,8 @@ SupplH2_Census6_age_general <- ggplot(data= Census6_age_five5,
         legend.text = element_text(size = 16, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
+        axis.text = element_text(size = 16,family = "serif"))+
+  scale_fill_okabe_ito()
 
 ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Census6_age_general.pdf"),
        SupplH2_Census6_age_general, device = "pdf", width=18, height = 9)
@@ -1422,7 +1430,8 @@ SupplH2_Fig_region_four_studytype <- ggplot(data = SupplH2_region_four_studytype
         legend.title = element_text(size = 15, family = "serif"),
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))+
-  guides(fill = guide_legend(ncol = 3))
+  guides(fill = guide_legend(ncol = 3))+
+  scale_fill_okabe_ito()
 
 
 SupplH2_Fig_region_four_studytype 
@@ -1469,7 +1478,8 @@ SupplH2_Fig_region_seven_studytype <- ggplot(data = SupplH2_region_seven_studyty
         legend.title = element_text(size = 15, family = "serif"),
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))+
-  guides(fill = guide_legend(ncol = 3))
+  guides(fill = guide_legend(ncol = 3))+
+  scale_fill_okabe_ito()
 
 
 SupplH2_Fig_region_seven_studytype 
@@ -1978,10 +1988,10 @@ BTS wordcloud
 
 Suppl_Fig_BTS_wordcloud <- BTS_keywords_tab %>% 
   ggplot(aes(label = Article_Keywords, 
-             size = n, 
-             color =cate)) +
+             size = n)) +
   geom_text_wordcloud(shape = "square", 
-                      alpha = 0.8) +
+                      alpha = 0.8,
+                      color = "#56B4E9") +
   scale_size_area(max_size = 8) +
   theme_void()
 
@@ -2031,10 +2041,10 @@ Suppl_Fig_Journal_wordcloud <- Journal_keywords4 %>%
              size = tab, 
              color = cate)) +
   geom_text_wordcloud(shape = "square", 
-                      alpha = 0.8) +
+                      alpha = 0.8,
+                      color = "#56B4E9") +
   scale_size_area(max_size = 8) +
   theme_void()
-
 
 Suppl_Fig_Journal_wordcloud 
 
@@ -2241,7 +2251,8 @@ SupplH3_Fig_age_four <- ggplot(H3_age_four2, aes(x=Proportion, y=ISO3, fill=ageB
         panel.border = element_rect(fill = NA,color = "black")) +
   scale_x_continuous(breaks = seq(0, 100, by = 10)) +
   facet_wrap(~ WEIRD, scales = "free",
-             labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD"))) 
+             labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD"))) +
+  scale_fill_okabe_ito()
 
 
 SupplH3_Fig_age_four
