@@ -42,7 +42,7 @@ if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load("tidyverse","here","rio","purrr")
 pacman::p_load("geojsonsf","sf","RColorBrewer","ggspatial","patchwork","ggrepel","maps")
-pacman::p_load("truncnorm","BayesFactor", "gtools", "bruceR")
+pacman::p_load("truncnorm","BayesFactor", "gtools", "bruceR","ggokabeito")
 ```
 
 
@@ -400,7 +400,8 @@ Fig_Journal_report <- ggplot(Journal_report,aes(col_names,proportion,fill=Var1))
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))+
   scale_x_discrete(guide = guide_axis(angle = 45))+
-  scale_fill_manual(values = c("#00BFC4","#B2B2B2"))
+  scale_fill_manual(values = c("#00BFC4","#B2B2B2"))+
+  scale_fill_okabe_ito()
 
 Fig_Journal_report
 
@@ -689,7 +690,8 @@ H1_Fig_gender_general <- ggplot(data = H1_gender_general,aes(Data_Source,Proport
         legend.title = element_blank(),
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))+
-  xlab("Data source")
+  xlab("Data source")+
+  scale_fill_okabe_ito()
 
 H1_Fig_gender_general 
 ```
@@ -1088,7 +1090,8 @@ H1_Fig_age_general <- ggplot(data= H1_age_general, aes(x=ageBins, y=ifelse(Data_
         legend.text = element_text(size = 16, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
+        axis.text = element_text(size = 16,family = "serif"))+
+  scale_fill_okabe_ito()
 
 
 H1_Fig_age_general
@@ -1385,6 +1388,68 @@ Journal_high_school_decimal <- Journal_high_school  %>%
 ```
 
 
+### suppl edu analysis
+In above analysis, educational data from Chinese journals were included only when the participants were adults (i.e., sample type code 4 or 5). Following reviewer suggestions, I also include other types of participants whose target population is the general population.
+
+precess data
+```{r}
+Journal_edu_other_sampletype <- Journal %>% 
+  dplyr::filter(Target_Population_N != 1) %>% 
+  dplyr::filter(!Sample_Type_N %in% c(4,5))
+
+## process special sample type.
+## sample type is 1
+Journal_edu_sampletype1 <- Journal_edu_other_sampletype %>% 
+  dplyr::filter(Sample_Type_N == 1) %>% 
+  dplyr::select(Article_IDs_N,Sample_Type_N,Target_Population_N,
+                Sample_Size) %>% 
+  dplyr::mutate(Sample_Size = as.numeric(Sample_Size)) %>% 
+  dplyr::summarise(Num = sum(Sample_Size,na.rm = TRUE)) %>% 
+  dplyr::mutate(Highschool = "High_school_and_above",
+                College = "College_and_above")
+
+## sample type is 2
+Journal_edu_sampletype2 <- Journal_edu_other_sampletype %>% 
+  dplyr::filter(Sample_Type_N == 2) %>% 
+  dplyr::select(Article_IDs_N,Study_Number_N,Subjects_Group_N,
+                Sample_Type_N,Sample_Type_info_N,Sample_Size, Target_Population_N) %>% 
+  dplyr::filter(Article_IDs_N %in% c("20082120","20082162","20183171","20211013",
+                                      "20213195","20183169")) %>% ## some sample type 2 hard to distinguish  
+  dplyr::mutate(Sample_Size = as.numeric(Sample_Size)) %>% 
+  dplyr::summarise(Num = sum(Sample_Size)) %>% 
+  dplyr::mutate(Highschool = "Below_high_school",
+                College = "Below_college") 
+
+## sample type is multi
+Journal_edu_sampletype_multi <- Journal_edu_other_sampletype %>% 
+  dplyr::filter(Sample_Type_N == 12 | Sample_Type_N == 14) %>% 
+  dplyr::select(Article_IDs_N,Study_Number_N,Subjects_Group_N,
+                Sample_Type_N,Sample_Type_info_N,Sample_Size, Target_Population_N) %>% 
+  dplyr::filter(Article_IDs_N %in% c("20183055","20211064")) %>%   ## these two articles can identify
+  dplyr::mutate(Sample_Size = as.numeric(Sample_Size)) %>% 
+  dplyr::summarise(Num = sum(Sample_Size)) %>% 
+  dplyr::mutate(Highschool = "High_school_and_above",
+                College = "College_and_above") 
+
+
+## combine these datafrme
+bind_rows(Journal_edu_sampletype1,
+          Journal_edu_sampletype2,
+          Journal_edu_sampletype_multi)
+
+## add hard to distinguish
+Journal_edu_highschool_othersampletype <- data.frame(Num = c(4755,
+                                       61703+1035+218+59+1230),
+                                 `Educational_attainment` = c("Below_high_school",
+                                                              "High_school_and_above"))
+
+Journal_edu_college_othersampletype <- data.frame(Num = c(4755+35+33+116+897,
+                                       61703+1035+1230+59),
+                                 `Educational_attainment` = c("Below_college",
+                                                              "College_and_above"))
+```
+
+
 Combine education year with the other categories respectively.
 ```{r}
 ## combine college data
@@ -1395,6 +1460,10 @@ Combine education year with the other categories respectively.
   tidyr::pivot_longer(cols = c(College_and_above,Below_college),
                       names_to = "Educational_attainment",
                       values_to = "Num") %>% 
+  rbind(Journal_edu_college_othersampletype) %>% 
+  dplyr::group_by(Educational_attainment) %>% 
+  dplyr::summarise(Num = sum(Num)) %>% 
+  dplyr::ungroup() %>% 
   dplyr::mutate(Proportion = Num/sum(Num)*100,
                 Data_source = "Journal")
 
@@ -1410,6 +1479,10 @@ Journal_high_school2  <-   bind_rows(Journal_high_school_integer,
   tidyr::pivot_longer(cols = c(High_school_and_above,Below_high_school),
                       names_to = "Educational_attainment",
                       values_to = "Num") %>% 
+  rbind(Journal_edu_highschool_othersampletype) %>% 
+  dplyr::group_by(Educational_attainment) %>% 
+  dplyr::summarise(Num = sum(Num)) %>% 
+  dplyr::ungroup() %>% 
   dplyr::mutate(Proportion = Num/sum(Num)*100,
                 Data_source = "Journal")  
 
@@ -1495,7 +1568,8 @@ H1_Fig_college <- ggplot(data = H1_edu_college,aes(Data_source,Proportion,fill =
         strip.text = element_text(size = 16,family = "serif"),
         strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black"))+
-  xlab("Data source")
+  xlab("Data source")+
+  scale_fill_okabe_ito()
 
 H1_Fig_college
 
@@ -1511,7 +1585,8 @@ H1_Fig_highschool <- ggplot(data = H1_edu_highschool,aes(Data_source,Proportion,
         strip.text = element_text(size = 16,family = "serif"),
         strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black"))+
-  xlab("Data source")
+  xlab("Data source")+
+  scale_fill_okabe_ito()
 
 H1_Fig_highschool
 
@@ -1944,7 +2019,8 @@ H1_Fig_region_four <- ggplot(data = H1_region_four_plot, aes(x = `Data source`, 
         legend.title = element_text(size = 15, family = "serif"),
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))+
-  guides(fill = guide_legend(ncol = 2))
+  guides(fill = guide_legend(ncol = 2))+
+  scale_fill_okabe_ito()
 
 H1_Fig_region_four
 
@@ -1971,7 +2047,8 @@ H1_Fig_region_seven <- ggplot(data = H1_region_seven_plot, aes(x = `Data source`
         legend.title = element_text(size = 15, family = "serif"),
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))+
-  guides(fill = guide_legend(ncol = 2))
+  guides(fill = guide_legend(ncol = 2))+
+  scale_fill_okabe_ito()
 
 H1_Fig_region_seven
 
@@ -2069,7 +2146,8 @@ H2_Fig_gender_general <- ggplot(H2_gender_general,aes(Data_source,Proportion,fil
         legend.text = element_text(size = 20, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 20,family = "serif"),
-        axis.text = element_text(size = 20,family = "serif"))
+        axis.text = element_text(size = 20,family = "serif"))+
+  scale_fill_okabe_ito()
 
 
 H2_Fig_gender_general
@@ -2280,7 +2358,7 @@ H2_Fig_age_general <- ggplot(data= Census7_age_five5,
   geom_line(data = H2_age_general, aes(x=ageBins, 
                 y = Proportion,group = 1,color = "Chinese participants"),size =1)+
   scale_fill_manual(values=c("Census7"="#00BFC4")) +  
-  scale_color_manual(values=c("Chinese participants" = "red")) +
+  scale_color_manual(values=c("Chinese participants" = "skyblue")) +
   scale_y_continuous(limits = c(0,45))+
   coord_flip() +
   labs(y="Proportion", x = "Age bins")+
@@ -2291,7 +2369,8 @@ H2_Fig_age_general <- ggplot(data= Census7_age_five5,
         legend.text = element_text(size = 16, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
+        axis.text = element_text(size = 16,family = "serif"))+
+  scale_fill_okabe_ito()
 
 
 H2_Fig_age_general
@@ -2567,7 +2646,8 @@ H2_Fig_college <- ggplot(data = H2_edu_college,aes(Data_source,Proportion,fill =
         axis.text = element_text(size = 16,family = "serif"),
         strip.text = element_text(size = 16,family = "serif"),
         strip.background = element_rect(fill = NA,color = NA),
-        panel.border = element_rect(fill = NA,color = "black"))
+        panel.border = element_rect(fill = NA,color = "black"))+
+  scale_fill_okabe_ito()
 
 H2_Fig_college
 
@@ -2587,7 +2667,8 @@ H2_Fig_highschool <- ggplot(data = H2_edu_highschool,aes(Data_source,Proportion,
         axis.text = element_text(size = 16,family = "serif"),
         strip.text = element_text(size = 16,family = "serif"),
         strip.background = element_rect(fill = NA,color = NA),
-        panel.border = element_rect(fill = NA,color = "black"))
+        panel.border = element_rect(fill = NA,color = "black"))+
+  scale_fill_okabe_ito()
 
 H2_Fig_highschool
 
@@ -2826,7 +2907,8 @@ H2_Fig_region_four <- ggplot(data = H2_region_four2, aes(x = `Data Source`, y = 
         legend.title = element_text(size = 15, family = "serif"),
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))+
-  guides(fill = guide_legend(ncol = 2))
+  guides(fill = guide_legend(ncol = 2))+
+  scale_fill_okabe_ito()
 
 H2_Fig_region_four
 ```
@@ -2868,7 +2950,8 @@ H2_Fig_region_seven <- ggplot(data = H2_region_seven2, aes(x = `Data Source`, y 
         legend.title = element_text(size = 15, family = "serif"),
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))+
-  guides(fill = guide_legend(ncol = 3))
+  guides(fill = guide_legend(ncol = 3))+
+  scale_fill_okabe_ito()
 
 
 H2_Fig_region_seven
@@ -3116,7 +3199,8 @@ H3_Fig_gender <- ggplot(H3_gender, aes(x=Proportion, y=ISO3,fill=Sex)) +
         panel.border = element_rect(fill = NA,color = "black")) +
   scale_x_continuous(breaks = seq(0, 100, by = 10)) +
   facet_wrap(~ WEIRD, scales = "free",
-              labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD")))
+              labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD")))+
+  scale_fill_okabe_ito()
 
 
 H3_Fig_gender
@@ -3219,7 +3303,8 @@ H3_Fig_PsyStages <- ggplot(H3_PsyStages2, aes(x=Proportion, y=ISO3, fill=`Age bi
         panel.border = element_rect(fill = NA,color = "black")) +
   scale_x_continuous(breaks = seq(0, 100, by = 10)) +
   facet_wrap(~ WEIRD, scales = "free",
-             labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD"))) 
+             labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD"))) +
+  scale_fill_okabe_ito()
 
 
 H3_Fig_PsyStages
@@ -3306,7 +3391,8 @@ H3_Fig_interval10 <- ggplot(H3_interval10, aes(x=Proportion, y=ISO3, fill=`Age b
         panel.border = element_rect(fill = NA,color = "black")) +
   scale_x_continuous(breaks = seq(0, 100, by = 10)) +
   facet_wrap(~ WEIRD, scales = "free",
-              labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD"))) 
+              labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD")))+
+  scale_fill_okabe_ito() 
 
 
 H3_Fig_interval10
@@ -3394,15 +3480,15 @@ H3_Fig_BF_gender <- ggplot(H3_BF_gender, aes( x = `Log(BF10)_NonInform`, y = `Co
   xlim(-3, 20) +
   scale_y_discrete(limits=rev) +
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
-             colour = c("red", "tomato", "black", "deepskyblue","blue"), 
+             colour = c("orange", "#D55E00", "black", "deepskyblue","blue"), 
              linetype=c("longdash", "longdash", "solid", "longdash","longdash")) + 
   geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="tomato", alpha = 0.7, 
+  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="#D55E00", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7, 
+  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="orange", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
   xlab("Log(BF10)")+
   theme_bw() +
@@ -3504,15 +3590,15 @@ H3_Fig_BF_PsyStages <- ggplot(H3_BF_PsyStages, aes( x = `Log(BF10)_NonInform`,
   xlim(-15,80) +
   scale_y_discrete(limits=rev) +
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
-             colour = c("red", "tomato", "black", "deepskyblue","blue"), 
+             colour = c("orange", "#D55E00", "black", "deepskyblue","blue"), 
              linetype=c("longdash", "longdash", "solid", "longdash","longdash")) + 
   geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="tomato", alpha = 0.7, 
+  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="#D55E00", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7, 
+  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="orange", alpha = 0.7, 
             angle=90, text=element_text(size=10))  +
   xlab("Log(BF10)")+
   theme_bw() +
@@ -3544,15 +3630,15 @@ H3_Fig_BF_interval10 <- ggplot(H3_BF_interval10,
   xlim(-15,80) +
   scale_y_discrete(limits=rev) +
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
-             colour = c("red", "tomato", "black", "deepskyblue","blue"), 
+             colour = c("orange", "#D55E00", "black", "deepskyblue","blue"), 
              linetype=c("longdash", "longdash", "solid", "longdash","longdash")) + 
   geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="tomato", alpha = 0.7, 
+  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="#D55E00", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="red", alpha = 0.7, 
+  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="orange", alpha = 0.7, 
             angle=90, text=element_text(size=10))  +
   xlab("Log(BF10)")+
   theme_bw() +
@@ -3685,7 +3771,8 @@ H3_Fig_Lucca_gender <- ggplot(H3_Lucca_gender_Journal2,aes(x=Proportion, y=ISO3,
         strip.text = element_text(size = 15,family = "serif"),
         strip.background = element_rect(fill = NA,color = NA),
         panel.border = element_rect(fill = NA,color = "black")) +
-  scale_x_continuous(breaks = seq(0, 100, by = 10))
+  scale_x_continuous(breaks = seq(0, 100, by = 10))+
+  scale_fill_okabe_ito()
 
 
 H3_Fig_Lucca_gender
@@ -3713,15 +3800,15 @@ H3_Fig_BF_Lucca_gender <- ggplot(H3_BF_Lucca_gender2,
   xlim(-3, 3) +
   scale_y_discrete(limits=rev) +
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
-             colour = c("red", "tomato", "black", "deepskyblue","blue"), 
+             colour = c("orange", "#D55E00", "black", "deepskyblue","blue"), 
              linetype=c("longdash", "longdash", "solid", "longdash","longdash")) + 
   geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 5), colour="blue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 5), colour="deepskyblue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y =5), colour="tomato", alpha = 0.7, 
+  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y =5), colour="#D55E00", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 5), colour="red", alpha = 0.7, 
+  geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 5), colour="orange", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
   xlab("Log(BF10)")+
   theme_bw() +
