@@ -1858,95 +1858,109 @@ BTS_region_CHN_seven <- BTS_region_CHN %>%
 ```
 
 
-Trans catagory data
+continue processing data 
 ```{r}
-## load color data
-Region_map_color <- colour %>% 
-  dplyr::mutate(QUHUADAIMA = as.character(QUHUADAIMA)) %>% 
-  dplyr::rename(Region = 1) %>% 
-  dplyr::select(-2) 
+# geojson data is available from https://cloudcenter.tianditu.gov.cn/dataSource, you could #download it yourself.
 
-## combine color data and region data
-H1_Journal_region <- Journal_region_general_tab2 %>%
-  dplyr::left_join(Region_map_color,by = join_by(Region)) %>% 
-  dplyr::mutate(QUHUADAIMA = ifelse(Region == "重庆", "500000", QUHUADAIMA)) %>% 
-  tidyr::pivot_wider(names_from = Data_Source,values_from = c(Proportion, Count_Bins,n,Color)) %>% 
-  dplyr::mutate(across(3:ncol(.),~ifelse(is.na(.),0,.)))
+ChinaProvince_geojson <- st_read("3_1_Intermediate_Data//ChinaProvince.geojson")
 
+ChinaProvince_geojson2 <- ChinaProvince_geojson %>% 
+  dplyr::mutate(name = str_remove_all(name,"省|特别行政区|市|自治区|壮族自治区|回族自治区|维吾尔自治区"))
 
-H1_BTS_region <- BTS_region_CHN %>%
-  dplyr::left_join(Region_map_color,by = join_by(Region)) %>% 
-  dplyr::mutate(QUHUADAIMA = ifelse(Region == "重庆", "500000", QUHUADAIMA)) %>% 
-  tidyr::pivot_wider(names_from = Data_Source,values_from = c(Proportion, Count_Bins,n,Color)) %>% 
-  dplyr::mutate(across(3:ncol(.),~ifelse(is.na(.),0,.)))
+## divide line and region
+China_line <- ChinaProvince_geojson2 %>% 
+  dplyr::filter(name == "境界线")
+
+China_province_region <- ChinaProvince_geojson2 %>% 
+  dplyr::filter(name != "境界线") %>% 
+  dplyr::rename(Region = name)
+
+# class(China_line)
 ```
 
 
-visulize the data
+combine map data and research data
 ```{r}
-API_pre <-  "http://xzqh.mca.gov.cn/data/"
-## 读取全国数据
-China <-  st_read(dsn = paste0(API_pre, "quanguo.json"), stringsAsFactors=FALSE) 
-## 使用 4326 地理坐标系
-st_crs(China) <-  4326
-
-# 读取国界线数据
-China_line <-  st_read(dsn = paste0(API_pre, "quanguo_Line.geojson"), stringsAsFactors=FALSE) 
-st_crs(China_line) <-  4326
-## 选择区划代码为国界线的区域
-gjx <- China_line[China_line$QUHUADAIMA == "guojiexian",]
-
-China_Journal <- dplyr::left_join(China,H1_Journal_region,by= "QUHUADAIMA")
-China_BTS <- dplyr::left_join(China,H1_BTS_region,by = "QUHUADAIMA")
+H1_Journal_region_map <- China_province_region %>% 
+  dplyr::left_join(Journal_region_general_tab2,by="Region") %>% 
+  dplyr::select(Region,gb,Color,geometry) %>% 
+  dplyr::mutate(Color = as.character(Color),
+         Color = replace_na(Color, "0"))
 
 
-## Chinese journal papers in general population
+H1_BTS_region_map <- China_province_region %>% 
+  dplyr::left_join(BTS_region_CHN,by="Region") %>% 
+  dplyr::select(Region,gb,Color,geometry) %>% 
+  dplyr::mutate(Color = as.character(Color),
+         Color = replace_na(Color, "0"))
+```
+
+
+visualize
+```{r}
+## Set projection
+aeqd_crs <- "+proj=aeqd +lat_0=35 +lon_0=105 +units=km"
+
+## set color
+my_blues <- brewer.pal(9, "Blues")[c(1, 3, 5, 7, 9)]
+my_blues[1] <- "white"
+
+## Journal
 H1_Fig_Journal_region_general <- ggplot() +
-  geom_sf(data = China_Journal,aes(fill = factor(Color_Journal_region_general_population))) +
-  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+  geom_sf(data = China_province_region, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = China_line, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = H1_Journal_region_map,aes(fill = factor(Color)))+
+  coord_sf(crs = aeqd_crs, xlim = c(-2700, 2400),
+            ylim = c(-3700, 2400), 
+            expand = FALSE) + 
+  scale_fill_manual(values = my_blues,
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),
                     name = "Proportion",
-                    drop = FALSE) +
-  geom_sf(data = gjx) +
-  labs(title = "Journal") +
-  theme(plot.title = element_text(color = "black",size = 16,
-                                  face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.position = "none",
+                    drop = FALSE)+  
+  theme_bw()+
+  ggtitle("Journal")+
+  theme(panel.border = element_blank(),
         panel.grid = element_blank(),
-        panel.background = element_blank(),
         axis.text = element_blank(),
         axis.ticks = element_blank(),
-        axis.title = element_blank())
+        plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.position = "bottom") 
 
 H1_Fig_Journal_region_general
 
-## BTS
-H1_Fig_BTS_region_general <- ggplot() +
-  geom_sf(data = China_BTS,aes(fill = factor(`Color_BTS region general`))) +
-  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+
+# BTS
+H1_Fig_BTS_region_general <-  ggplot() +
+  geom_sf(data = China_province_region, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = China_line, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = H1_BTS_region_map,aes(fill = factor(Color)))+
+  coord_sf(crs = aeqd_crs, xlim = c(-2700, 2400),
+            ylim = c(-3700, 2400), 
+            expand = FALSE) + 
+  scale_fill_manual(values = my_blues,
                     breaks = c("0","1","2", "3", "4"),
                     labels = c("0", "<1%","<5%", "<10%",">=10%"),
                     name = "Proportion",
-                    drop = FALSE) +
-  geom_sf(data = gjx) +
-  labs(title = "BTS Chinese") +
-  theme(plot.title = element_text(color = "black",size = 16,
-                                  face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.position = "bottom",
+                    drop = FALSE)+  
+  theme_bw()+
+  ggtitle("BTS Chinese")+
+  theme(panel.border = element_blank(),
         panel.grid = element_blank(),
-        panel.background = element_blank(),
         axis.text = element_blank(),
         axis.ticks = element_blank(),
-        axis.title = element_blank())
+        plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.position = "bottom") 
+
+  
 
 H1_Fig_BTS_region_general
 ```
 
 
-Bayes factor
-
-region four
+Bayes factor: region four
 ```{r}
 Journal_region_four_bayes <- Journal_region_four %>% 
   dplyr::select(Region_four,Journal)
@@ -2739,16 +2753,17 @@ H2_Journal_region <- Journal_region_general_tab2 %>%
 H2_BTS_region <- BTS_region_CHN %>% 
   dplyr::select(Region,n)
 
-H2_BTS_Journal_region <- left_join(H2_Journal_region,H2_BTS_region,by = "Region") %>% 
-  dplyr::mutate(`n.x` = ifelse(is.na(`n.x`),0,`n.x`),
-                `n.y` = ifelse(is.na(`n.y`),0,`n.y`),
+
+H2_BTS_Journal_region <- full_join(H2_Journal_region,H2_BTS_region,by = "Region") %>% 
+  dplyr::mutate(across(.cols = c(2,3),.fns = ~replace_na(.x,0)),
                 n = `n.x` + `n.y`) %>% 
   dplyr::select(Region,n) %>% 
   dplyr::mutate(Proportion = (n/sum(n))*100,
                 Count_Bins = cut(Proportion,
                                  breaks = c(-Inf,1,5,10,Inf),
-                labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Chinese participants")
+                labels = c("<1","1~5","5~10",">=10"))) %>% 
+  dplyr::select(Region,Count_Bins) %>% 
+  dplyr::rename(`Chinese participants` = Count_Bins)
 ```
 
 
@@ -2807,14 +2822,13 @@ Census7_region <- rbind(Census7_region,Census7_3) %>%
   dplyr::mutate(Proportion = n / sum(n)*100) %>% 
   dplyr::mutate(Count_Bins = cut(Proportion,
                                       breaks = c(-Inf,1,5,10,Inf),
-                                      labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "Census7")
+                                      labels = c("<1","1~5","5~10",">=10")))
 
 
 Census7_region$Region <- gsub(" ", "", Census7_region$Region)  
 
-sum(Census7_region$n) #1,441,497,378
-sum(Census7_region$Proportion) ## 100
+# sum(Census7_region$n) #1,441,497,378
+# sum(Census7_region$Proportion) ## 100
 ```
 
 
@@ -2822,14 +2836,14 @@ convert Census7 data into four regions and seven regions
 ```{r}
 ## four regions
 Census7_region_four <- merge(Census7_region,China_region_four,by = "Region") %>%
-  dplyr::select(1,2,6) %>% 
+  dplyr::select(1,2,5) %>% 
   dplyr::group_by(Region_four) %>% 
   dplyr::summarise(Census7_n=sum(n))
 
 
 ## seven regions
 Census7_region_seven <- merge(Census7_region,China_region_seven,by= "Region") %>% 
-  dplyr::select(1,2,6) %>% 
+  dplyr::select(1,2,5) %>% 
   dplyr::group_by(Region_seven) %>% 
   dplyr::summarise(Census7_n=sum(n)) 
 ```
@@ -2848,11 +2862,9 @@ CFPS2018_region <- data.frame(table(df_CFPS2018$PROVCD18)) %>%
   dplyr::mutate(Proportion = n/sum(n)*100,
                 Count_Bins = cut(Proportion,
                                       breaks = c(-Inf,1,5,10,Inf),
-                                      labels = c("<1","1~5","5~10",">=10")),
-                Data_Source = "CFPS2018")
+                                      labels = c("<1","1~5","5~10",">=10")))
 
 sum(CFPS2018_region$Proportion) 
-
 ```
 
 
@@ -2860,14 +2872,14 @@ Convert CFPS2018 into four regions and seven regions
 ```{r}
 ## four regions
 CFPS2018_region_four <- merge(CFPS2018_region,China_region_four,by = "Region") %>%
-  dplyr::select(1,2,6) %>% 
+  dplyr::select(1,2,5) %>% 
   dplyr::group_by(Region_four) %>% 
   dplyr::summarise(CFPS2018_n=sum(n)) 
 
 
 ## seven regions
 CFPS2018_region_seven <- merge(CFPS2018_region,China_region_seven,by = "Region") %>% 
-  dplyr::select(1,2,6) %>% 
+  dplyr::select(1,2,5) %>% 
   dplyr::group_by(Region_seven) %>% 
   dplyr::summarise(CFPS2018_n=sum(n))
 ```
@@ -2974,81 +2986,109 @@ And then, I will visualize the map for the region data of Chinese subjects
 Combine all region data and load color data
 ```{r}
 ## combine region data
-H2_region <-  bind_rows(Census7_region,CFPS2018_region,
-                              H2_BTS_Journal_region)
+Census7_region_twocol <- Census7_region %>% 
+  dplyr::select(Region,Count_Bins) %>%
+  dplyr::mutate(Color = case_when(Count_Bins == "<1" ~ "1",
+                                  Count_Bins == "1~5" ~ "2",
+                                  Count_Bins == "5~10" ~ "3",
+                                  Count_Bins == ">=10" ~ "4")) %>% 
+  dplyr::select(Region,Color) %>% 
+  dplyr::rename(Census7 = Color)
 
-H2_region2 <- dplyr::left_join(H2_region,Region_map_color,by = join_by(Region)) %>% 
-  dplyr::mutate(QUHUADAIMA = ifelse(Region == "重庆", "500000", QUHUADAIMA),
-                Color = ifelse(Count_Bins == "<1",1,
-                               ifelse(Count_Bins == "1~5",2,
-                                      ifelse(Count_Bins == "5~10",3,4))),
-                Color = factor(Color, levels = c("1", "2", "3", "4"))) %>% 
-  tidyr::pivot_wider(names_from = Data_Source,values_from = c(Proportion, Count_Bins,n,Color)) %>% 
-  dplyr::mutate(across(3:ncol(.),~ifelse(is.na(.),0,.)))
+
+CFPS2018_region_twocol <- CFPS2018_region %>% 
+  dplyr::select(Region,Count_Bins) %>% 
+  dplyr::mutate(Color = case_when(Count_Bins == "<1" ~ "1",
+                                  Count_Bins == "1~5" ~ "2",
+                                  Count_Bins == "5~10" ~ "3",
+                                  Count_Bins == ">=10" ~ "4")) %>% 
+  dplyr::select(Region,Color) %>% 
+  dplyr::rename(CFPS2018 = Color)
+
+
+H2_region <-  Census7_region_twocol %>%  
+  dplyr::full_join(CFPS2018_region_twocol,by = "Region") %>% 
+  dplyr::full_join(H2_BTS_Journal_region,by = "Region") %>% 
+  dplyr::mutate(across(2:ncol(.),~ifelse(is.na(.),0,.)))
 ```
 
 
 Finally, I visualized geographic distribution and calculated Bayesian multinomial test for region.
 ```{r}
-H2_China <- dplyr::left_join(China,H2_region2,by= "QUHUADAIMA")
+H2_region_map <- China_province_region %>% 
+  dplyr::left_join(H2_region,by="Region") 
 
 
 ## Chinese journal papers in general population
 H2_Fig_region_general <- ggplot() +
-  geom_sf(data = H2_China,aes(fill = factor(`Color_Chinese participants`))) +
-  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+  geom_sf(data = China_province_region, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = China_line, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = H2_region_map,aes(fill = factor(`Chinese participants`)))+
+  coord_sf(crs = aeqd_crs, xlim = c(-2700, 2400),
+            ylim = c(-3700, 2400), 
+            expand = FALSE) + 
+  scale_fill_manual(values = my_blues,
                     breaks = c("0","1","2", "3", "4"),
-                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
-  geom_sf(data = gjx) +
-  labs(title = "Chinese participants") +
-  theme(plot.title = element_text(color = "black",size = 16,
-                                  face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.position = "none",
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),
+                    name = "Proportion",
+                    drop = FALSE)+  
+  theme_bw()+
+  ggtitle("Chinese participants")+
+  theme(panel.border = element_blank(),
         panel.grid = element_blank(),
-        panel.background = element_blank(),
         axis.text = element_blank(),
         axis.ticks = element_blank(),
-        axis.title = element_blank())
+        plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.position = "none")
 
 
 ## CFPS2018
 H2_Fig_CFPS2018_region <- ggplot() +
-  geom_sf(data = H2_China,aes(fill = factor(Color_CFPS2018))) +
-  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+  geom_sf(data = China_province_region, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = China_line, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = H2_region_map,aes(fill = factor(`CFPS2018`)))+
+  coord_sf(crs = aeqd_crs, xlim = c(-2700, 2400),
+            ylim = c(-3700, 2400), 
+            expand = FALSE) + 
+  scale_fill_manual(values = my_blues,
                     breaks = c("0","1","2", "3", "4"),
-                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
-  geom_sf(data = gjx) +
-  labs(title = "CFPS2018") +
-  theme(plot.title = element_text(color = "black",size = 16,
-                                  face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.title = element_blank(),
-        legend.position = c(0.2, 0.2),
-        panel.background = element_blank(),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),
+                    name = "Proportion",
+                    drop = FALSE)+  
+  theme_bw()+
+  ggtitle("CFPS2108")+
+  theme(panel.border = element_blank(),
+        panel.grid = element_blank(),
         axis.text = element_blank(),
         axis.ticks = element_blank(),
-        axis.title = element_blank())
+        plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.position = "bottom")
 
 
 ## Census7
 H2_Fig_Census7_region <- ggplot() +
-  geom_sf(data = H2_China,aes(fill = factor(Color_Census7))) +
-  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+  geom_sf(data = China_province_region, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = China_line, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = H2_region_map,aes(fill = factor(Census7)))+
+  coord_sf(crs = aeqd_crs, xlim = c(-2700, 2400),
+            ylim = c(-3700, 2400), 
+            expand = FALSE) + 
+  scale_fill_manual(values = my_blues,
                     breaks = c("0","1","2", "3", "4"),
-                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
-  geom_sf(data = gjx) +
-  labs(title = "Census7") +
-  theme(plot.title = element_text(color = "black",size = 16,
-                                  face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.position = "none",
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),
+                    name = "Proportion",
+                    drop = FALSE)+  
+  theme_bw()+
+  ggtitle("Census7")+
+  theme(panel.border = element_blank(),
         panel.grid = element_blank(),
-        panel.background = element_blank(),
         axis.text = element_blank(),
         axis.ticks = element_blank(),
-        axis.title = element_blank())+
-  annotation_north_arrow(location = 'tl',which_north = 'false',
-                         style = north_arrow_orienteering(),
-                         height = unit(0.8, "cm"),
-                         width = unit(0.6, "cm") )
+        plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.position = "none")
 
 
 
