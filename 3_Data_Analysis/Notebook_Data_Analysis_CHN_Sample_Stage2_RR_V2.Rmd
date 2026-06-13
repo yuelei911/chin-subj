@@ -176,6 +176,9 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 ```
 
 
+**Note:** For all analyses in this document, Log(BF10) denotes the natural logarithm (ln) of BF10, as specified in the custom function.
+
+
 At this point, I have completed the loading packages and data. Next, I conducted data analysis and visualization according to the logic of the written protocol.
 # Overview of participants
 ## The basic situation of Chinese journals coding data
@@ -1388,8 +1391,7 @@ Journal_high_school_decimal <- Journal_high_school  %>%
 ```
 
 
-### suppl edu analysis
-In above analysis, educational data from Chinese journals were included only when the participants were adults (i.e., sample type code 4 or 5). Following reviewer suggestions, I also include other types of participants whose target population is the general population.
+**suppl edu analysis**:In above analysis, educational data from Chinese journals were included only when the participants were adults (i.e., sample type code 4 or 5). Following reviewer suggestions, I also include other types of participants whose target population is the general population.
 
 precess data
 ```{r}
@@ -1408,6 +1410,12 @@ Journal_edu_sampletype1 <- Journal_edu_other_sampletype %>%
   dplyr::mutate(Highschool = "High_school_and_above",
                 College = "College_and_above")
 
+# Journal_edu_other_sampletype %>% 
+#   dplyr::filter(Sample_Type_N == 1) %>% 
+#   dplyr::select(Article_IDs_N,Sample_Type_N,Target_Population_N,
+#                 Sample_Size) %>% 
+# distinct(Article_IDs_N) ## 300
+
 ## sample type is 2
 Journal_edu_sampletype2 <- Journal_edu_other_sampletype %>% 
   dplyr::filter(Sample_Type_N == 2) %>% 
@@ -1418,7 +1426,7 @@ Journal_edu_sampletype2 <- Journal_edu_other_sampletype %>%
   dplyr::mutate(Sample_Size = as.numeric(Sample_Size)) %>% 
   dplyr::summarise(Num = sum(Sample_Size)) %>% 
   dplyr::mutate(Highschool = "Below_high_school",
-                College = "Below_college") 
+                College = "Below_college")  ## a total 6 articles
 
 ## sample type is multi
 Journal_edu_sampletype_multi <- Journal_edu_other_sampletype %>% 
@@ -1619,7 +1627,7 @@ H1_BF_edu_college <- BayesMultiNomial(dataset = H1_edu_college_bayes,
                                       expected = "Journal")
 ```
 
-I found moderate evidence for the $H_1$ that the college proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_college$BF$LogBF10`.
+I found moderate evidence for the $H_0$ that the college proportion from Chinese five journal data is comparable to that in the BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_college$BF$LogBF10`.
 
 
 and then, I continue processing the second category: high school.
@@ -1635,7 +1643,7 @@ H1_BF_edu_highschool <- BayesMultiNomial(dataset = H1_edu_highschool_bayes,
                                       expected = "Journal")
 ```
 
-Similarity, I also found very strong evidence for the $H_1$ that the high schools proportion from Chinese five journal data is different from that of BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_highschool$BF$LogBF10`.
+I also found Anecdotal evidence for the $H_0$ that the high schools proportion from Chinese five journal data is comparable to that in the BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_highschool$BF$LogBF10`.
 
 
 ### region
