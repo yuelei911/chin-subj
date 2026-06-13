@@ -318,6 +318,8 @@ Journal_report_year <- Journal_report %>%
 ggsave(here("3_Data_Analysis","3_2_image","Journal_report_year.pdf"), 
        Journal_report_year, device = "pdf", width=12, height = 9)
 
+ggsave(here("3_Data_Analysis","3_2_image","Journal_report_year.png"), 
+       Journal_report_year, device = "png", width=12, height = 9, dpi = 600)
 
 Journal_report_year
 ```
@@ -506,6 +508,8 @@ Journal_report_target_population <- Journal_target_population_report2 %>%
 
 ggsave(here("3_Data_Analysis","3_2_image","Journal_report_target_population.pdf"), Journal_report_target_population, device = "pdf", width=12, height = 9)
 
+ggsave(here("3_Data_Analysis","3_2_image","Journal_report_target_population.png"), Journal_report_target_population, device = "png", width=12, height = 9, dpi = 600)
+
 Journal_report_target_population
 ```
 
@@ -585,6 +589,8 @@ Suppl_Fig_Special_Wordcloud_Barplot
 ggsave(here("3_Data_Analysis","3_2_image","Suppl_Fig_Special_Wordcloud_Barplot.pdf"),
        Suppl_Fig_Special_Wordcloud_Barplot, device = "pdf", width=18, height = 9)
 
+ggsave(here("3_Data_Analysis","3_2_image","Suppl_Fig_Special_Wordcloud_Barplot.png"),
+       Suppl_Fig_Special_Wordcloud_Barplot, device = "png", width=18, height = 9, dpi = 600)
 ```
 
 
@@ -707,6 +713,10 @@ Suppl_Fig_H2_gender_general <- ggplot(SupplH2_gender_general,aes(Data_Source,Pro
 
 ggsave(here("3_Data_Analysis","3_2_image","Suppl_Fig_H2_gender_general.pdf"),
        Suppl_Fig_H2_gender_general, device = "pdf", width=18, height = 9)
+
+ggsave(here("3_Data_Analysis","3_2_image","Suppl_Fig_H2_gender_general.png"),
+       Suppl_Fig_H2_gender_general, device = "png", width=18, height = 9, dpi = 600)
+
 Suppl_Fig_H2_gender_general
 
 ```
@@ -792,13 +802,11 @@ SupplH2_Census7_age_general <- ggplot(data= Census7_age_five5,
                                   y= Proportion, fill=Data_Source)) +
   geom_col(alpha=0.5, width = 1) +
   geom_line(data = H1_age_general_BTS, 
-            aes(x = ageBins, y = Proportion, group = 1, color = "BTS Chinese"), 
+            aes(x = ageBins, y = Proportion, group = 1, color = "BTS Chinese" ), 
             size = 1) +
   geom_line(data = H1_age_general_Journal, 
-            aes(x = ageBins, y = Proportion, group = 1, color = "Journal"), 
+            aes(x = ageBins, y = Proportion, group = 1,color = "Journal"), 
             size = 1) +
-  scale_fill_manual(values = c("Census7" = "#00BFC4")) +  
-  scale_color_manual(values = c("BTS Chinese" = "blue", "Journal" = "#E69F00")) +
   scale_y_continuous(limits = c(0,50))+
   coord_flip() +
   labs(y="Proportion", x = "Age bins")+
@@ -810,10 +818,15 @@ SupplH2_Census7_age_general <- ggplot(data= Census7_age_five5,
         legend.title = element_blank(),
         axis.title = element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"))+
-  scale_fill_okabe_ito()
+  scale_fill_manual(values = c("Census7" = "#56B4E9")) +
+  scale_color_manual(values = c("BTS Chinese"= "blue", "Journal" = "#E69F00"))
+  
 
 ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Census7_age_general.pdf"),
        SupplH2_Census7_age_general, device = "pdf", width=18, height = 9)
+
+ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Census7_age_general.png"),
+       SupplH2_Census7_age_general, device = "png", width=18, height = 9, dpi = 600)
 
 SupplH2_Census7_age_general
 ```
@@ -831,8 +844,6 @@ SupplH2_Census6_age_general <- ggplot(data= Census6_age_five5,
   geom_line(data = H1_age_general_Journal, 
             aes(x = ageBins, y = Proportion, group = 1, color = "Journal"), 
             size = 1) +
-  scale_fill_manual(values = c("Census6" = "#00BFC4")) +  
-  scale_color_manual(values = c("BTS Chinese" = "blue", "Journal" = "#E69F00")) +
   scale_y_continuous(limits = c(0,50))+
   coord_flip() +
   labs(y="Proportion", x = "Age bins")+
@@ -844,10 +855,14 @@ SupplH2_Census6_age_general <- ggplot(data= Census6_age_five5,
         legend.title = element_blank(),
         axis.title = element_text(size = 16,family = "serif"),
         axis.text = element_text(size = 16,family = "serif"))+
-  scale_fill_okabe_ito()
+  scale_fill_manual(values = c("Census6" = "#56B4E9")) +
+  scale_color_manual(values = c("BTS Chinese"= "blue", "Journal" = "#E69F00"))
 
 ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Census6_age_general.pdf"),
        SupplH2_Census6_age_general, device = "pdf", width=18, height = 9)
+
+ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Census6_age_general.png"),
+       SupplH2_Census6_age_general, device = "png", width=18, height = 9, dpi = 600)
 
 SupplH2_Census6_age_general
 ```
@@ -1773,6 +1788,8 @@ SupplH2_Fig_region_studytype <- SupplH2_Fig_region_general + SupplH2_Fig_Journal
 
 ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Fig_region_studytype.pdf"), SupplH2_Fig_region_studytype, device = "pdf", width=10, height = 6)
 
+ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Fig_region_studytype.png"), SupplH2_Fig_region_studytype, device = "png", width=10, height = 6, dpi = 600)
+
 SupplH2_Fig_region_studytype
 ```
 
@@ -1945,6 +1962,9 @@ Suppl_Fig_Wordcloud
 
 ggsave(here("3_Data_Analysis","3_2_image","Suppl_Fig_Wordcloud.pdf")
 ,Suppl_Fig_Wordcloud, device = "pdf", width=18, height = 9)
+
+ggsave(here("3_Data_Analysis","3_2_image","Suppl_Fig_Wordcloud.png")
+,Suppl_Fig_Wordcloud, device = "png", width=18, height = 9)
 ```
 
 
@@ -2130,7 +2150,7 @@ plot
 SupplH3_Fig_age_four <- ggplot(H3_age_four2, aes(x=Proportion, y=ISO3, fill=ageBins)) +
   geom_col(alpha = .75)+
   labs(y="Countries/Regions",fill = "Age bins") + 
-  scale_fill_discrete(label=c("0~17", "18~40", "41~60",">=61")) +
+  scale_fill_discrete(label=c("<=17", "18~40", "41~60",">=61")) +
   theme_classic()+
   #guides(y="axis_nested") +
   theme(legend.title = element_text(size = 15,family = "serif"),
@@ -2149,4 +2169,7 @@ SupplH3_Fig_age_four
 
 ggsave(here("3_Data_Analysis","3_2_image","SupplH3_Fig_age_four.pdf"),
        SupplH3_Fig_age_four,device = "pdf", width=18, height = 18)
+
+ggsave(here("3_Data_Analysis","3_2_image","SupplH3_Fig_age_four.png"),
+       SupplH3_Fig_age_four,device = "png", width=18, height = 18, dpi = 600)
 ```
