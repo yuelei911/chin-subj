@@ -30,7 +30,7 @@ hu.chuan-peng@nnu.edu.cn, or, hcp4715@hotmail.com
 
 - **Projects materials**: https://osf.io/avb7t/
 - **Preregistration Report**: https://osf.io/ehw54
-- **preprint**: to-be-available
+- **preprint**: https://osf.io/preprints/psyarxiv/j8xgf_v2
 
 ## Software
 We used [R 4.1.1](https://www.R-project.org/) and [JASP 0.95.4](https://jasp-stats.org/) for data reprocessing, analyses, and visualization.
