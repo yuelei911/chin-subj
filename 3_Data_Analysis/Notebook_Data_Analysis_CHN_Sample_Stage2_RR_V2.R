@@ -332,6 +332,9 @@ Fig_Journal_report
 ggsave(here("3_Data_Analysis","3_2_image","Fig_Journal_report.pdf"), 
        Fig_Journal_report, device = "pdf", width=16, height = 9)
 
+ggsave(here("3_Data_Analysis","3_2_image","Fig_Journal_report.png"), 
+       Fig_Journal_report, device = "png", width=16, height = 9, dpi = 600) 
+
 ## Here, I remove some data sets to reduce data set clutter.
 rm(report_list,report_table,i,Journal_education_occupation_report,Journal_education_occupation_table)
 
@@ -1234,6 +1237,12 @@ Journal_edu_sampletype1 <- Journal_edu_other_sampletype %>%
   dplyr::mutate(Highschool = "High_school_and_above",
                 College = "College_and_above")
 
+# Journal_edu_other_sampletype %>% 
+#   dplyr::filter(Sample_Type_N == 1) %>% 
+#   dplyr::select(Article_IDs_N,Sample_Type_N,Target_Population_N,
+#                 Sample_Size) %>% 
+# distinct(Article_IDs_N) ## 300
+
 ## sample type is 2
 Journal_edu_sampletype2 <- Journal_edu_other_sampletype %>% 
   dplyr::filter(Sample_Type_N == 2) %>% 
@@ -1244,7 +1253,7 @@ Journal_edu_sampletype2 <- Journal_edu_other_sampletype %>%
   dplyr::mutate(Sample_Size = as.numeric(Sample_Size)) %>% 
   dplyr::summarise(Num = sum(Sample_Size)) %>% 
   dplyr::mutate(Highschool = "Below_high_school",
-                College = "Below_college") 
+                College = "Below_college")  ## a total 6 articles
 
 ## sample type is multi
 Journal_edu_sampletype_multi <- Journal_edu_other_sampletype %>% 
@@ -1416,6 +1425,9 @@ H1_Fig_gender_age_edu_general <-  H1_Fig_gender_general + H1_Fig_age_general + H
 
 ggsave(here("3_Data_Analysis","3_2_image","H1_Fig_gender_age_edu_general.pdf"),
        H1_Fig_gender_age_edu_general, device = "pdf", width=18, height = 18)
+
+ggsave(here("3_Data_Analysis","3_2_image","H1_Fig_gender_age_edu_general.png"),
+       H1_Fig_gender_age_edu_general, device = "png", width=18, height = 18, dpi = 600)
 
 H1_Fig_gender_age_edu_general
 
@@ -1842,6 +1854,10 @@ H1_Fig_region <-  H1_Fig_BTS_region_general + H1_Fig_Journal_region_general + H1
 
 ggsave(here("3_Data_Analysis","3_2_image","H1_Fig_region.pdf"),
        H1_Fig_region , device = "pdf", width=18, height = 18)
+
+ggsave(here("3_Data_Analysis","3_2_image","H1_Fig_region.png"),
+       H1_Fig_region , device = "png", width=18, height = 18, dpi = 600)
+
 
 H1_Fig_region 
 
@@ -2413,6 +2429,9 @@ H2_Fig_gender_age_edu_general <- H2_Fig_gender_general + H2_Fig_age_general +H2_
 ggsave(here("3_Data_Analysis","3_2_image","H2_Fig_gender_age_edu_general.pdf"),
        H2_Fig_gender_age_edu_general, device = "pdf", width=18, height = 18)
 
+ggsave(here("3_Data_Analysis","3_2_image","H2_Fig_gender_age_edu_general.png"),
+       H2_Fig_gender_age_edu_general, device = "png", width=18, height = 18, dpi = 600)
+
 H2_Fig_gender_age_edu_general
 
 
@@ -2671,6 +2690,9 @@ H2_Fig_major_region
 ggsave(here("3_Data_Analysis","3_2_image","H2_Fig_major_region.pdf"),
        H2_Fig_major_region, device = "pdf", width= 15, height = 9)
 
+ggsave(here("3_Data_Analysis","3_2_image","H2_Fig_major_region.png"),
+       H2_Fig_major_region, device = "png", width= 15, height = 9, dpi = 600)
+
 
 
 ## --------------------------------------------------------------------------------------------------
@@ -2788,6 +2810,9 @@ H2_Fig_region <- H2_Fig_Census7_region  + H2_Fig_region_general + H2_Fig_CFPS201
 
 ggsave(here("3_Data_Analysis","3_2_image","H2_Fig_region.pdf"),
        H2_Fig_region, device = "pdf", width=10, height = 15)
+
+ggsave(here("3_Data_Analysis","3_2_image","H2_Fig_region.png"),
+       H2_Fig_region, device = "png", width=10, height = 15, dpi = 600)
 
 H2_Fig_region 
 
@@ -3357,6 +3382,9 @@ H3_Fig_gender2 <- H3_Fig_BF_gender + H3_Fig_gender +
 ggsave(here("3_Data_Analysis","3_2_image","H3_Fig_gender.pdf"), 
        H3_Fig_gender2, device = "pdf", width=18, height = 18)
 
+ggsave(here("3_Data_Analysis","3_2_image","H3_Fig_gender.png"), 
+       H3_Fig_gender2, device = "png", width=18, height = 18, dpi = 600)
+
 H3_Fig_gender2
 
 
@@ -3367,6 +3395,9 @@ H3_Fig_age <- H3_Fig_BF_PsyStages + H3_Fig_PsyStages +
 
 ggsave(here("3_Data_Analysis","3_2_image","H3_Fig_age.pdf"), 
        H3_Fig_age, device = "pdf", width=18, height = 18)
+
+ggsave(here("3_Data_Analysis","3_2_image","H3_Fig_age.png"), 
+       H3_Fig_age, device = "png", width=18, height = 18,dpi = 600)
 
 H3_Fig_age
 
@@ -3380,6 +3411,8 @@ H3_Fig_age_suppl <- H3_Fig_BF_interval10 + H3_Fig_interval10 +
 ggsave(here("3_Data_Analysis","3_2_image","H3_Fig_age_suppl.pdf"), 
        H3_Fig_age_suppl , device = "pdf", width=18, height = 18)
 
+ggsave(here("3_Data_Analysis","3_2_image","H3_Fig_age_suppl.png"), 
+       H3_Fig_age_suppl , device = "png", width=18, height = 18,dpi = 600)
 
 H3_Fig_age_suppl 
 
@@ -3519,6 +3552,9 @@ H3_Fig_Lucca <- H3_Fig_Lucca_gender + H3_Fig_BF_Lucca_gender +
 
 ggsave(here("3_Data_Analysis","3_2_image","H3_Fig_Lucca.pdf"), 
        H3_Fig_Lucca, device = "pdf", width=18, height = 9)
+
+ggsave(here("3_Data_Analysis","3_2_image","H3_Fig_Lucca.png"), 
+       H3_Fig_Lucca, device = "png", width=18, height = 9, dpi = 600)
 
 H3_Fig_Lucca
 
