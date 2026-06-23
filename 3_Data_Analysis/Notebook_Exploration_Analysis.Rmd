@@ -1780,10 +1780,7 @@ SupplH2_Fig_Journal_questionaire_region <- ggplot() +
 
 
 SupplH2_Fig_region_studytype <- SupplH2_Fig_region_general + SupplH2_Fig_Journal_experi_region + SupplH2_Fig_Journal_questionaire_region +
-  plot_layout(ncol = 3, nrow = 1, heights = c(2,2))+
-  plot_annotation(tag_levels = 'A',
-                  theme = theme(plot.title = element_text(size = 16))) + 
-  theme(plot.tag = element_text(size = 16))
+  plot_annotation(tag_levels = 'A') & theme(plot.tag = element_text(size = 18, face = "bold"))
 
 
 ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Fig_region_studytype.pdf"), SupplH2_Fig_region_studytype, device = "pdf", width=10, height = 6)
