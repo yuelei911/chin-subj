@@ -1421,7 +1421,8 @@ H1_Fig_highschool
 H1_Fig_gender_age_edu_general <-  H1_Fig_gender_general + H1_Fig_age_general + H1_Fig_college + H1_Fig_highschool + 
   plot_layout(ncol = 2, heights = c(4,4))+
   patchwork::plot_annotation(tag_levels = 'A')&
-  theme(legend.position = 'bottom')
+  theme(legend.position = 'bottom',
+        plot.tag = element_text(size = 18, face = "bold"))
 
 ggsave(here("3_Data_Analysis","3_2_image","H1_Fig_gender_age_edu_general.pdf"),
        H1_Fig_gender_age_edu_general, device = "pdf", width=18, height = 18)
@@ -1715,7 +1716,10 @@ H1_Fig_Journal_region_general <- ggplot() +
         axis.ticks = element_blank(),
         plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.position = "bottom") 
+        legend.key.size = unit(1,"cm"),
+        legend.position = c(0.25,0.30),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10)) 
 
 H1_Fig_Journal_region_general
 
@@ -1741,7 +1745,10 @@ H1_Fig_BTS_region_general <-  ggplot() +
         axis.ticks = element_blank(),
         plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.position = "bottom") 
+        legend.key.size = unit(1,"cm"),
+        legend.position = c(0.25,0.30),
+        legend.title = element_text(size = 12),
+        legend.text = element_text(size = 10)) 
 
   
 
@@ -1848,9 +1855,8 @@ H1_Fig_region_seven
 
 
 H1_Fig_region <-  H1_Fig_BTS_region_general + H1_Fig_Journal_region_general + H1_Fig_region_four + H1_Fig_region_seven + 
-  plot_layout(ncol = 2, heights = c(4,4))+
-  patchwork::plot_annotation(tag_levels = 'A')&
-  theme(legend.position = 'bottom')
+  patchwork::plot_annotation(tag_levels = 'A') &
+  theme(plot.tag = element_text(size = 18, face = "bold"))
 
 ggsave(here("3_Data_Analysis","3_2_image","H1_Fig_region.pdf"),
        H1_Fig_region , device = "pdf", width=18, height = 18)
@@ -2424,7 +2430,8 @@ H2_Fig_highschool
 
 H2_Fig_gender_age_edu_general <- H2_Fig_gender_general + H2_Fig_age_general +H2_Fig_college + H2_Fig_highschool +
   plot_layout(ncol = 2, heights = c(4,4))+
-  patchwork::plot_annotation(tag_levels = 'A')
+  patchwork::plot_annotation(tag_levels = 'A') &
+  theme(plot.tag = element_text(size = 18, face = "bold"))
 
 ggsave(here("3_Data_Analysis","3_2_image","H2_Fig_gender_age_edu_general.pdf"),
        H2_Fig_gender_age_edu_general, device = "pdf", width=18, height = 18)
@@ -2621,6 +2628,7 @@ H2_region_four2 <- H2_region_four %>%
 H2_Fig_region_four <- ggplot(data = H2_region_four2, aes(x = `Data Source`, y = Proportion, fill = Region_four)) +
   geom_col(position = "stack")+
   labs(fill = "Region")+
+  xlab("Data source")+
   scale_x_discrete(labels =c("Chinese_participants_Prop" = "Chinese participants",
                               "CFPS2018_Prop" = "CFPS2018",
                               "Census7_Prop" = "Census7"))+
@@ -2661,6 +2669,7 @@ H2_region_seven2 <- H2_region_seven %>%
 ## Visualization
 H2_Fig_region_seven <- ggplot(data = H2_region_seven2, aes(x = `Data Source`, y = Proportion, fill = Region_seven)) +
   geom_col(position = "stack")+
+  xlab("Data source")+
   labs(fill = "Region")+
   scale_x_discrete(labels =c("Chinese_participants_Prop" = "Chinese participants",
                               "CFPS2018_Prop" = "CFPS2018",
@@ -2683,7 +2692,7 @@ H2_Fig_region_seven
 H2_Fig_major_region <- H2_Fig_region_four + H2_Fig_region_seven +
 plot_annotation(tag_levels = 'A',
                   theme = theme(plot.title = element_text(size = 24))) + 
-  theme(plot.tag = element_text(size = 20))
+  theme(plot.tag = element_text(size = 18, face = "bold"))
 
 H2_Fig_major_region
 
@@ -2749,7 +2758,7 @@ H2_Fig_region_general <- ggplot() +
         axis.ticks = element_blank(),
         plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.position = "none")
+        legend.position = "bottom")
 
 
 ## CFPS2018
@@ -2773,7 +2782,7 @@ H2_Fig_CFPS2018_region <- ggplot() +
         axis.ticks = element_blank(),
         plot.title = element_text(color = "black",size = 16,
                                   face = "bold",vjust = 0.1, hjust = 0.5),
-        legend.position = "bottom")
+        legend.position = "none")
 
 
 ## Census7
@@ -2802,17 +2811,15 @@ H2_Fig_Census7_region <- ggplot() +
 
 
 H2_Fig_region <- H2_Fig_Census7_region  + H2_Fig_region_general + H2_Fig_CFPS2018_region +
-  plot_layout(ncol = 1, nrow = 3, heights = c(4,4))+
-  plot_annotation(tag_levels = 'A',
-                  theme = theme(plot.title = element_text(size = 24))) + 
-  theme(plot.tag = element_text(size = 20))
+  plot_annotation(tag_levels = 'A') &
+  theme(plot.tag = element_text(size = 18, face = "bold"))
 
 
 ggsave(here("3_Data_Analysis","3_2_image","H2_Fig_region.pdf"),
-       H2_Fig_region, device = "pdf", width=10, height = 15)
+       H2_Fig_region, device = "pdf", width=10, height = 6)
 
 ggsave(here("3_Data_Analysis","3_2_image","H2_Fig_region.png"),
-       H2_Fig_region, device = "png", width=10, height = 15, dpi = 600)
+       H2_Fig_region, device = "png", width=10, height = 6, dpi = 600)
 
 H2_Fig_region 
 
@@ -3024,7 +3031,7 @@ H3_PsyStages2_more60 <- H3_PsyStages2 %>%
 H3_Fig_PsyStages <- ggplot(H3_PsyStages2, aes(x=Proportion, y=ISO3, fill=`Age bins`)) +
   geom_col(alpha = .75)+
   labs(y="Countries/Regions") + 
-  scale_fill_discrete(label=c("0~17", "18~25", "26~40", "41~60",">=61" )) +
+  scale_fill_discrete(label=c("<=17", "18~25", "26~40", "41~60",">=61" )) +
   theme_classic()+
   #guides(y="axis_nested") +
   theme(legend.title = element_text(size = 15,family = "serif"),
@@ -3108,7 +3115,7 @@ H3_interval10_max_agebins <-  H3_interval10 %>%
 H3_Fig_interval10 <- ggplot(H3_interval10, aes(x=Proportion, y=ISO3, fill=`Age bins`)) +
   geom_col(alpha = .75)+
   labs(y="Countries/Regions") + 
-  scale_fill_discrete(label=c("0~10","11~20","21~30", "31~40", "41~50", "51~60", ">=61")) +
+  scale_fill_discrete(label=c("<=10","11~20","21~30", "31~40", "41~50", "51~60", ">=61")) +
   theme_classic()+
   #guides(y="axis_nested") +
   theme(legend.title = element_text(size = 15,family = "serif"),
@@ -3404,7 +3411,7 @@ H3_Fig_age
 
 ## suppl
 H3_Fig_age_suppl <- H3_Fig_BF_interval10 + H3_Fig_interval10 +
-   plot_annotation(tag_levels =list(c("a","b")))  & 
+   plot_annotation(tag_levels =list(c("A","B")))  & 
   theme(plot.tag = element_text(size = 18, face = "bold"))
 
 
