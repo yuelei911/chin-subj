@@ -652,14 +652,14 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
 
   if (any(rowSums(cbind(thetas, counts)) == 0)) {
-    LogBF10 <- (lbeta.xa-lbeta.a)
+    LogBFa0 <- (lbeta.xa-lbeta.a)
   } else {
-     LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+     LogBFa0 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
   }
 
-  BF <- data.frame(LogBF10 = LogBF10,
-                   BF10    = exp(LogBF10),
-                   BF01    = 1/exp(LogBF10))
+  BF <- data.frame(LogBFa0 = LogBFa0,
+                   BFa0    = exp(LogBFa0),
+                   BF0a    = 1/exp(LogBFa0))
 
   return(list(BF       = BF,
               expected = expected))
@@ -667,7 +667,7 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 }
 ```
 
-**Note:** For all analyses in this document, Log(BF10) denotes the natural logarithm (ln) of BF10, as specified in the custom function.
+**Note:** For all analyses in this document, Log(BFa0) denotes the natural logarithm (ln) of BFa0, as specified in the custom function.
 
 
 ## Two data sources are respectively compared with the census data and CFPS
@@ -765,17 +765,17 @@ SupplH2_BF_gender_BTS_CFPS <- BayesMultiNomial(dataset = SupplH2_gender_general_
                                              observed = "BTS Chinese",
                                              expected = "CFPS2018")
 ```
-Journal vs Census6: $Log(BF_{10})$ = `r SupplH2_BF_gender_Journal_Census6$BF$LogBF10`.
+Journal vs Census6: $Log(BF_{a0})$ = `r SupplH2_BF_gender_Journal_Census6$BF$LogBFa0`.
 
-BTS vs Census6: $Log(BF_{10})$ = `r SupplH2_BF_gender_BTS_Census6$BF$LogBF10`.
+BTS vs Census6: $Log(BF_{a0})$ = `r SupplH2_BF_gender_BTS_Census6$BF$LogBFa0`.
 
-Journal vs Census7: $Log(BF_{10})$ = `r SupplH2_BF_gender_Journal_Census7$BF$LogBF10`.
+Journal vs Census7: $Log(BF_{a0})$ = `r SupplH2_BF_gender_Journal_Census7$BF$LogBFa0`.
 
-BTS vs Census7: $Log(BF_{10})$ = `r SupplH2_BF_gender_BTS_Census7$BF$LogBF10`.
+BTS vs Census7: $Log(BF_{a0})$ = `r SupplH2_BF_gender_BTS_Census7$BF$LogBFa0`.
 
-Journal vs CFPS2018: $Log(BF_{10})$ = `r SupplH2_BF_gender_Journal_CFPS$BF$LogBF10`.
+Journal vs CFPS2018: $Log(BF_{a0})$ = `r SupplH2_BF_gender_Journal_CFPS$BF$LogBFa0`.
 
-BTS vs CFPS2018: $Log(BF_{10})$ = `r SupplH2_BF_gender_BTS_CFPS$BF$LogBF10`.
+BTS vs CFPS2018: $Log(BF_{a0})$ = `r SupplH2_BF_gender_BTS_CFPS$BF$LogBFa0`.
 
 
 ## age
@@ -939,13 +939,13 @@ SupplH2_BF_interval10_Journal_Census6 <- BayesMultiNomial(dataset =Suppl_interva
                                              observed = "Journal",
                                              expected = "Census6")
 ```
-BTS vs Census6 in PsyStages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_BTS_Census6$BF$LogBF10`.
+BTS vs Census6 in PsyStages: $Log(BF_{a0})$ = `r SupplH2_BF_Psystages_BTS_Census6$BF$LogBFa0`.
 
-BTS vs Census6 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_BTS_Census6$BF$LogBF10`.
+BTS vs Census6 in interval10: $Log(BF_{a0})$ = `r SupplH2_BF_interval10_BTS_Census6$BF$LogBFa0`.
 
-Journal vs Census6 in Psystages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_Journal_Census6$BF$LogBF10`.
+Journal vs Census6 in Psystages: $Log(BF_{a0})$ = `r SupplH2_BF_Psystages_Journal_Census6$BF$LogBFa0`.
 
-Journal vs Census6 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_Journal_Census6$BF$LogBF10`.
+Journal vs Census6 in interval10: $Log(BF_{a0})$ = `r SupplH2_BF_interval10_Journal_Census6$BF$LogBFa0`.
 
 
 Census7, BTS Chinese, and Journal
@@ -976,13 +976,13 @@ SupplH2_BF_interval10_Journal_Census7 <- BayesMultiNomial(dataset =Suppl_interva
                                              observed = "Journal",
                                              expected = "Census7")
 ```
-BTS vs Census7 in PsyStages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_BTS_Census7$BF$LogBF10`.
+BTS vs Census7 in PsyStages: $Log(BF_{a0})$ = `r SupplH2_BF_Psystages_BTS_Census7$BF$LogBFa0`.
 
-BTS vs Census7 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_BTS_Census7$BF$LogBF10`.
+BTS vs Census7 in interval10: $Log(BF_{a0})$ = `r SupplH2_BF_interval10_BTS_Census7$BF$LogBFa0`.
 
-Journal vs Census7 in Psystages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_Journal_Census7$BF$LogBF10`.
+Journal vs Census7 in Psystages: $Log(BF_{a0})$ = `r SupplH2_BF_Psystages_Journal_Census7$BF$LogBFa0`.
 
-Journal vs Census7 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_Journal_Census7$BF$LogBF10`.
+Journal vs Census7 in interval10: $Log(BF_{a0})$ = `r SupplH2_BF_interval10_Journal_Census7$BF$LogBFa0`.
 
 ## edu
 process Census6 data
@@ -1095,13 +1095,13 @@ Suppl_BF_highschool_Journal_Census6 <-  BayesMultiNomial(dataset = Suppl_highsch
                                              observed = "Journal",
                                              expected = "Census6")
 ```
-BTS vs Census6 in college: $Log(BF_{10})$ = `r Suppl_BF_college_BTS_Census6$BF$LogBF10`.
+BTS vs Census6 in college: $Log(BF_{a0})$ = `r Suppl_BF_college_BTS_Census6$BF$LogBFa0`.
 
-Journal vs Census6 in college: $Log(BF_{10})$ = `r Suppl_BF_college_Journal_Census6$BF$LogBF10`.
+Journal vs Census6 in college: $Log(BF_{a0})$ = `r Suppl_BF_college_Journal_Census6$BF$LogBFa0`.
 
-BTS vs Census6 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_BTS_Census6$BF$LogBF10`.
+BTS vs Census6 in high school: $Log(BF_{a0})$ = `r Suppl_BF_highschool_BTS_Census6$BF$LogBFa0`.
 
-Journal vs Census6 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_Journal_Census6$BF$LogBF10`.
+Journal vs Census6 in high school: $Log(BF_{a0})$ = `r Suppl_BF_highschool_Journal_Census6$BF$LogBFa0`.
 
 
 BF Journal, BTS and Census7
@@ -1129,13 +1129,13 @@ Suppl_BF_highschool_Journal_Census7 <-  BayesMultiNomial(dataset = Suppl_highsch
                                              observed = "Journal",
                                              expected = "Census7")
 ```
-BTS vs Census7 in college: $Log(BF_{10})$ = `r Suppl_BF_college_BTS_Census7$BF$LogBF10`.
+BTS vs Census7 in college: $Log(BF_{a0})$ = `r Suppl_BF_college_BTS_Census7$BF$LogBFa0`.
 
-Journal vs Census7 in college: $Log(BF_{10})$ = `r Suppl_BF_college_Journal_Census7$BF$LogBF10`.
+Journal vs Census7 in college: $Log(BF_{a0})$ = `r Suppl_BF_college_Journal_Census7$BF$LogBFa0`.
 
-BTS vs Census7 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_BTS_Census7$BF$LogBF10`.
+BTS vs Census7 in high school: $Log(BF_{a0})$ = `r Suppl_BF_highschool_BTS_Census7$BF$LogBFa0`.
 
-Journal vs Census7 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_Journal_Census7$BF$LogBF10`.
+Journal vs Census7 in high school: $Log(BF_{a0})$ = `r Suppl_BF_highschool_Journal_Census7$BF$LogBFa0`.
 
 
 ## Abstract report
@@ -1451,14 +1451,14 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
 
   if (any(rowSums(cbind(thetas, counts)) == 0)) {
-    LogBF10 <- (lbeta.xa-lbeta.a)
+    LogBFa0 <- (lbeta.xa-lbeta.a)
   } else {
-     LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+     LogBFa0 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
   }
 
-  BF <- data.frame(LogBF10 = LogBF10,
-                   BF10    = exp(LogBF10),
-                   BF01    = 1/exp(LogBF10))
+  BF <- data.frame(LogBFa0 = LogBFa0,
+                   BFa0    = exp(LogBFa0),
+                   BF0a    = 1/exp(LogBFa0))
 
   return(list(BF       = BF,
               expected = expected))
@@ -1494,11 +1494,11 @@ SupplH2_BF_Journal_CFPS2018_region_four <- BayesMultiNomial(dataset = SupplH2_re
                                           observed = "Journal",
                                           expected = "CFPS2018")
 ```
-Journal vs Census6 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census6_region_four$BF$LogBF10`.
+Journal vs Census6 in all studies:$Log(BF_{a0})$ = `r SupplH2_BF_Journal_Census6_region_four$BF$LogBFa0`.
 
-Journal vs Census7 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census7_region_four$BF$LogBF10`.
+Journal vs Census7 in all studies:$Log(BF_{a0})$ = `r SupplH2_BF_Journal_Census7_region_four$BF$LogBFa0`.
 
-Journal vs CFPS2018 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_CFPS2018_region_four$BF$LogBF10`.
+Journal vs CFPS2018 in all studies:$Log(BF_{a0})$ = `r SupplH2_BF_Journal_CFPS2018_region_four$BF$LogBFa0`.
 
 
 BF seven region on Journal
@@ -1526,11 +1526,11 @@ SupplH2_BF_Journal_CFPS2018_region_seven <- BayesMultiNomial(dataset = SupplH2_r
                                           observed = "Journal",
                                           expected = "CFPS2018")
 ```
-Journal vs Census6 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census6_region_seven$BF$LogBF10`.
+Journal vs Census6 in all studies:$Log(BF_{a0})$ = `r SupplH2_BF_Journal_Census6_region_seven$BF$LogBFa0`.
 
-Journal vs Census7 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census7_region_seven$BF$LogBF10`.
+Journal vs Census7 in all studies:$Log(BF_{a0})$ = `r SupplH2_BF_Journal_Census7_region_seven$BF$LogBFa0`.
 
-Journal vs CFPS2018 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_CFPS2018_region_seven$BF$LogBF10`.
+Journal vs CFPS2018 in all studies:$Log(BF_{a0})$ = `r SupplH2_BF_Journal_CFPS2018_region_seven$BF$LogBFa0`.
 
 
 BF four region on experi 
@@ -1561,11 +1561,11 @@ SupplH2_BF_experi_CFPS2018_region_four <- BayesMultiNomial(dataset = SupplH2_reg
                                           observed = "Journal experiment study",
                                           expected = "CFPS2018")
 ```
-Journal vs Census6 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census6_region_four$BF$LogBF10`.
+Journal vs Census6 in experi:$Log(BF_{a0})$ = `r SupplH2_BF_experi_Census6_region_four$BF$LogBFa0`.
 
-Journal vs Census7 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census7_region_four$BF$LogBF10`.
+Journal vs Census7 in experi:$Log(BF_{a0})$ = `r SupplH2_BF_experi_Census7_region_four$BF$LogBFa0`.
 
-Journal vs CFPS2018 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_CFPS2018_region_four$BF$LogBF10`.
+Journal vs CFPS2018 in experi:$Log(BF_{a0})$ = `r SupplH2_BF_experi_CFPS2018_region_four$BF$LogBFa0`.
 
 
 BF seven region on experi 
@@ -1597,11 +1597,11 @@ SupplH2_BF_experi_CFPS2018_region_seven <- BayesMultiNomial(dataset = SupplH2_re
                                           observed = "Journal experiment study",
                                           expected = "CFPS2018")
 ```
-Journal vs Census6 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census6_region_seven$BF$LogBF10`.
+Journal vs Census6 in experi:$Log(BF_{a0})$ = `r SupplH2_BF_experi_Census6_region_seven$BF$LogBFa0`.
 
-Journal vs Census7 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census7_region_seven$BF$LogBF10`.
+Journal vs Census7 in experi:$Log(BF_{a0})$ = `r SupplH2_BF_experi_Census7_region_seven$BF$LogBFa0`.
 
-Journal vs CFPS2018 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_CFPS2018_region_seven$BF$LogBF10`.
+Journal vs CFPS2018 in experi:$Log(BF_{a0})$ = `r SupplH2_BF_experi_CFPS2018_region_seven$BF$LogBFa0`.
 
 
 BF four region on questionaire
@@ -1634,11 +1634,11 @@ SupplH2_BF_questionaire_CFPS2018_region_four <- BayesMultiNomial(dataset = Suppl
                                           observed = "Journal questionaire study",
                                           expected = "CFPS2018")
 ```
-Journal vs Census6 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census6_region_four$BF$LogBF10`.
+Journal vs Census6 in questionaire:$Log(BF_{a0})$ = `r SupplH2_BF_questionaire_Census6_region_four$BF$LogBFa0`.
 
-Journal vs Census7 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census7_region_four$BF$LogBF10`.
+Journal vs Census7 in questionaire:$Log(BF_{a0})$ = `r SupplH2_BF_questionaire_Census7_region_four$BF$LogBFa0`.
 
-Journal vs CFPS2018 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_CFPS2018_region_four$BF$LogBF10`.
+Journal vs CFPS2018 in questionaire:$Log(BF_{a0})$ = `r SupplH2_BF_questionaire_CFPS2018_region_four$BF$LogBFa0`.
 
 
 BF seven region on questionaire
@@ -1670,11 +1670,11 @@ SupplH2_BF_questionaire_CFPS2018_region_seven <- BayesMultiNomial(dataset = Supp
                                           observed = "Journal questionaire study",
                                           expected = "CFPS2018")
 ```
-Journal vs Census6 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census6_region_seven$BF$LogBF10`.
+Journal vs Census6 in questionaire:$Log(BF_{a0})$ = `r SupplH2_BF_questionaire_Census6_region_seven$BF$LogBFa0`.
 
-Journal vs Census7 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census7_region_seven$BF$LogBF10`.
+Journal vs Census7 in questionaire:$Log(BF_{a0})$ = `r SupplH2_BF_questionaire_Census7_region_seven$BF$LogBFa0`.
 
-Journal vs CFPS2018 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_CFPS2018_region_seven$BF$LogBF10`.
+Journal vs CFPS2018 in questionaire:$Log(BF_{a0})$ = `r SupplH2_BF_questionaire_CFPS2018_region_seven$BF$LogBFa0`.
 
 
 And then, I will visualize the map for the region data of Chinese subjects

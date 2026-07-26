@@ -109,7 +109,7 @@ Here, I used self-defined function in Stage1 to calculate Bayesian multinomial t
 lbeta.xa <- sum(lgamma(alphas + counts)) - lgamma(sum(alphas + counts))
 lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
 
-LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+LogBFa0 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
 ```
 
 Here, `alphas` defined the prior Dirichlet distribution, e.g., noninformative prior is a vector of $1$ s, `counts` are the observed frequencies.
@@ -160,14 +160,14 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
 
   if (any(rowSums(cbind(thetas, counts)) == 0)) {
-    LogBF10 <- (lbeta.xa-lbeta.a)
+    LogBFa0 <- (lbeta.xa-lbeta.a)
   } else {
-     LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+     LogBFa0 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
   }
 
-  BF <- data.frame(LogBF10 = LogBF10,
-                   BF10    = exp(LogBF10),
-                   BF01    = 1/exp(LogBF10))
+  BF <- data.frame(LogBFa0 = LogBFa0,
+                   BFa0    = exp(LogBFa0),
+                   BF0a    = 1/exp(LogBFa0))
 
   return(list(BF       = BF,
               expected = expected))
@@ -176,7 +176,7 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 ```
 
 
-**Note:** For all analyses in this document, Log(BF10) denotes the natural logarithm (ln) of BF10, as specified in the custom function.
+**Note:** For all analyses in this document, Log(BFa0) denotes the natural logarithm (ln) of BFa0, as specified in the custom function.
 
 
 At this point, I have completed the loading packages and data. Next, I conducted data analysis and visualization according to the logic of the written protocol.
@@ -704,7 +704,7 @@ H1_Fig_gender_general
 
 Here I tested whether the gender proportion distribution from Chinese five journal data are similar to that of the BTS data. I used Bayesian multinomial test (Bayesian goodness-of-fit test) to examine whether the observed (BTS data) fit the expected (Chinese five journal data).
 
-$H_0$: $\theta = c$, where $c$ is defined by Chinese five journal data; $H_1$: $\theta$ is free to vary.
+$H_0$: $\theta = c$, where $c$ is defined by Chinese five journal data; $H_a$: $\theta$ is free to vary.
 
 I compared the general population between the two.
 
@@ -719,7 +719,7 @@ H1_BF_gender_general <- BayesMultiNomial(dataset = H1_gender_bayes_general,
                                              expected = "Journal")
 ```
 
-However, within the general population, I found there is no difference between BTS Chinese data and Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_general$BF$LogBF10`.
+However, within the general population, I found there is no difference between BTS Chinese data and Chinese five journal data, with $Log(BF_{a0})$ = `r H1_BF_gender_general$BF$LogBFa0`.
 
 
 In this part, I will analysis gender based on the special target population. For the first research question, only Lucca et al.(2024)' target population is special target population Specifically, it focuses on infants. Therefore, in specila target population, I will compare Lucca et al..(2024) with Chinese journal studies targeting infants/toddlers.
@@ -749,7 +749,7 @@ H1_BF_gender_special <-  BayesMultiNomial(dataset = H1_gender_bayes_special,
                                           observed = "Lucca",
                                           expected = "Journal")
 ```
-In the special population of infants and toddlers, I did not find difference between Lucca et al. (2024) and Chinese five journal data, with $Log(BF_{10})$ = `r H1_BF_gender_special$BF$LogBF10`.
+In the special population of infants and toddlers, I did not find difference between Lucca et al. (2024) and Chinese five journal data, with $Log(BF_{a0})$ = `r H1_BF_gender_special$BF$LogBFa0`.
 
 
 At the end of gender data processing for hypothesis 1, I removed some data sets to reduce data set clutter.
@@ -1214,7 +1214,7 @@ H1_BF_PsyStages_general <- BayesMultiNomial(dataset = H1_PsyStages_bayes_general
                                           observed = "BTS Chinese",
                                           expected = "Journal")
 ```
-For age (Psychological stages) with general population, there is difference between BTS and Chinese papers, $Log(BF_{10})$ = `r H1_BF_PsyStages_general$BF$LogBF10`.
+For age (Psychological stages) with general population, there is difference between BTS and Chinese papers, $Log(BF_{a0})$ = `r H1_BF_PsyStages_general$BF$LogBFa0`.
 
 
 The other is interval10.
@@ -1239,7 +1239,7 @@ H1_BF_interval10_general <- BayesMultiNomial(dataset = H1_interval10_bayes_gener
 ```
 
 
-I also found extremely strong evidence support $H_1$ for another age category,the Bayesian multinomial test shows $Log(BF_{10})$ = `r H1_BF_interval10_general$BF$LogBF10`.
+I also found extreme evidence support $H_a$ for another age category,the Bayesian multinomial test shows $Log(BF_{a0})$ = `r H1_BF_interval10_general$BF$LogBFa0`.
 
 
 ### attainment education
@@ -1634,7 +1634,7 @@ H1_BF_edu_college <- BayesMultiNomial(dataset = H1_edu_college_bayes,
                                       expected = "Journal")
 ```
 
-I found moderate evidence for the $H_0$ that the college proportion from Chinese five journal data is comparable to that in the BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_college$BF$LogBF10`.
+I found moderate evidence for the $H_0$ that the college proportion from Chinese five journal data is comparable to that in the BTS data, with $Log(BF_{a0})$ = `r H1_BF_edu_college$BF$LogBFa0`.
 
 
 and then, I continue processing the second category: high school.
@@ -1650,7 +1650,7 @@ H1_BF_edu_highschool <- BayesMultiNomial(dataset = H1_edu_highschool_bayes,
                                       expected = "Journal")
 ```
 
-I also found Anecdotal evidence for the $H_0$ that the high schools proportion from Chinese five journal data is comparable to that in the BTS data, with $Log(BF_{10})$ = `r H1_BF_edu_highschool$BF$LogBF10`.
+I also found moderate evidence for the $H_0$ that the high schools proportion from Chinese five journal data is comparable to that in the BTS data, with $Log(BF_{a0})$ = `r H1_BF_edu_highschool$BF$LogBFa0`.
 
 
 ### region
@@ -2029,7 +2029,7 @@ H1_BF_Journal_BTS_region_seven <- BayesMultiNomial(dataset = H1_region_seven_bay
 ```
 
 
-For four regions, I also found very strong evidence for the $H_1$ that the BTS is different from that of Journal data, with $Log(BF_{10})$ = `r H1_BF_Journal_BTS_region_four$BF$LogBF10`, as well as equally the strong evidence for the seven regions $Log(BF_{10})$ = `r H1_BF_Journal_BTS_region_seven$BF$LogBF10`
+For four regions, I found extreme evidence for the $H_a$ that the BTS is different from that of Journal data, with $Log(BF_{a0})$ = `r H1_BF_Journal_BTS_region_four$BF$LogBFa0`, as well as equally the extreme evidence for the seven regions $Log(BF_{a0})$ = `r H1_BF_Journal_BTS_region_seven$BF$LogBFa0`
 
 
 Visualize the major regions
@@ -2213,7 +2213,7 @@ H2_BF_gender_CFPS2018_general <- BayesMultiNomial(dataset = H2_gender_bayes_gene
 ```
 
 
-The calculation results show that there is no difference between the data in Chinese participants and Census7 and CFPS2018, and the calculation results are: Census7 VS Chinese participants: $Log(BF_{10})$ = `r H2_BF_gender_Census7_general$BF$LogBF10` , CFPS2018 VS Chinese participants: $Log(BF_{10})$ = `r H2_BF_gender_CFPS2018_general$BF$LogBF10`
+The calculation results show that there is no difference between the data in Chinese participants and Census7 and CFPS2018, and the calculation results are: Census7 VS Chinese participants: $Log(BF_{a0})$ = `r H2_BF_gender_Census7_general$BF$LogBFa0` , CFPS2018 VS Chinese participants: $Log(BF_{a0})$ = `r H2_BF_gender_CFPS2018_general$BF$LogBFa0`
 
 
 In this part, I calculate data based on special target population
@@ -2269,7 +2269,7 @@ H2_BF_gender_preschool_Census <- BayesMultiNomial(dataset = H2_gender_preschool_
                                                 observed = "Chinese participants",
                                                 expected = "Census7")
 ```
-Gender:Lucca vs Journal, $Log(BF_{10})$ = `r H2_BF_gender_preschool_Census$BF$LogBF10`. The result showed that moderate evidence in favor of $H_0$
+Gender:Lucca vs Journal, $Log(BF_{a0})$ = `r H2_BF_gender_preschool_Census$BF$LogBFa0`. The result showed that moderate evidence in favor of $H_0$
 
 
 I calculate college
@@ -2315,7 +2315,7 @@ H2_BF_gender_college_special <- BayesMultiNomial(dataset = H2_gender_college_bay
                                                  expected = "Outline_Women")
 ```
 
-In terms of gender, for the special target population of college students, we have found that there is no difference between Journal and the overall data of China (the Outline for Women's Development in China (2021-2030)),  $Log(BF_{10})$ = `r H2_BF_gender_college_special$BF$LogBF10`.
+In terms of gender, for the special target population of college students, we have found that there is no difference between Journal and the overall data of China (the Outline for Women's Development in China (2021-2030)),  $Log(BF_{a0})$ = `r H2_BF_gender_college_special$BF$LogBFa0`.
 
 
 
@@ -2551,7 +2551,7 @@ H2_BF_age_interval10_general <- BayesMultiNomial(dataset = H2_age_inteval10_baye
 ```
 
 
-For age within general population, I found the Bayesian multinomial test shows extremely strong evidence in foavor of $H_1$. PsyStages and interval10 are $Log(BF_{10})$ = `r H2_BF_age_Psystages_general$BF$LogBF10` and $Log(BF_{10})$ = `r H2_BF_age_interval10_general$BF$LogBF10` respectively.
+For age within general population, I found the Bayesian multinomial test shows extreme evidence in foavor of $H_a$. PsyStages and interval10 are $Log(BF_{a0})$ = `r H2_BF_age_Psystages_general$BF$LogBFa0` and $Log(BF_{a0})$ = `r H2_BF_age_interval10_general$BF$LogBFa0` respectively.
 
 
 ### Educational attainment
@@ -2764,10 +2764,10 @@ H2_BF_edu_highschool_CFPS2018 <- BayesMultiNomial(dataset = H2_edu_highschool_ba
                                           observed = "Chinese participants",
                                           expected = "CFPS2018")
 ```
-I found all results show extremely evidence support $H_1$. 
+I found all results show extreme evidence support $H_a$. 
 
-College: Census7($Log(BF_{10})$ = `r H2_BF_edu_college_Census7$BF$LogBF10`), CFPS2018($Log(BF_{10})$ = `r H2_BF_edu_college_CFPS2018$BF$LogBF10`),
-High school: Census7($Log(BF_{10})$ = `r H2_BF_edu_highschool_Census7$BF$LogBF10`), CFPS2018($Log(BF_{10})$ = `r H2_BF_edu_highschool_CFPS2018$BF$LogBF10`)
+College: Census7($Log(BF_{a0})$ = `r H2_BF_edu_college_Census7$BF$LogBFa0`), CFPS2018($Log(BF_{a0})$ = `r H2_BF_edu_college_CFPS2018$BF$LogBFa0`),
+High school: Census7($Log(BF_{a0})$ = `r H2_BF_edu_highschool_Census7$BF$LogBFa0`), CFPS2018($Log(BF_{a0})$ = `r H2_BF_edu_highschool_CFPS2018$BF$LogBFa0`)
 
 
 ### Region
@@ -3159,8 +3159,8 @@ H2_BF_Chinese_participants_CFPS2018_region_four <- BayesMultiNomial(dataset = H2
                                           observed = "Chinese participants",
                                           expected = "CFPS2018")
 ```
-four regions: Journal vs Census7,$Log(BF_{10})$ =`r H2_BF_Chinese_participants_Census7_region_four$BF$LogBF10`
-four regions: Journal vs CFPS2018,$Log(BF_{10})$ =`r H2_BF_Chinese_participants_CFPS2018_region_four$BF$LogBF10`
+four regions: Journal vs Census7,$Log(BF_{a0})$ =`r H2_BF_Chinese_participants_Census7_region_four$BF$LogBFa0`
+four regions: Journal vs CFPS2018,$Log(BF_{a0})$ =`r H2_BF_Chinese_participants_CFPS2018_region_four$BF$LogBFa0`
 
 
 BF seven region
@@ -3182,8 +3182,8 @@ H2_BF_Chinese_participants_CFPS2018_region_seven <- BayesMultiNomial(dataset = H
                                           observed = "Chinese participants",
                                           expected = "CFPS2018")
 ```
-seven regions: Journal vs Census7,$Log(BF_{10})$ =`r H2_BF_Chinese_participants_Census7_region_seven$BF$LogBF10`
-seven regions: Journal vs CFPS2018,$Log(BF_{10})$ =`r H2_BF_Chinese_participants_CFPS2018_region_seven$BF$LogBF10`
+seven regions: Journal vs Census7,$Log(BF_{a0})$ =`r H2_BF_Chinese_participants_Census7_region_seven$BF$LogBFa0`
+seven regions: Journal vs CFPS2018,$Log(BF_{a0})$ =`r H2_BF_Chinese_participants_CFPS2018_region_seven$BF$LogBFa0`
 
 
 ## Test the 3rd hypothesis
@@ -3480,7 +3480,7 @@ Func_BFpairs <- function(df, countries_order, prop_name){
   
   # create a temp variable for storing 
   BF_mult_tmp <- data.frame(matrix(nrow = 0, ncol = 5))
-  colnames(BF_mult_tmp) <- c("Observed", "Expected", "Log(BF10)_NonInform", "BF10_NonInform", "BF01_NonInform")
+  colnames(BF_mult_tmp) <- c("Observed", "Expected", "Log(BFa0)_NonInform", "BFa0_NonInform", "BF0a_NonInform")
   
   for (ii in seq(length(countries_order))){
     country <- countries_order[ii]
@@ -3491,21 +3491,21 @@ Func_BFpairs <- function(df, countries_order, prop_name){
                                  factor = prop_name, observed = country, expected = "CHN")
       
       BF_mult_tmp[ii,] <- c(as.character(country), "CHN", 
-                            BF_tmp$BF$LogBF10, BF_tmp$BF$BF10, BF_tmp$BF$BF01)
+                            BF_tmp$BF$LogBFa0, BF_tmp$BF$BFa0, BF_tmp$BF$BF0a)
     } 
   }
   
   countries_order_age <- BF_mult_tmp %>% 
     tidyr::drop_na() %>%
-    dplyr::mutate(`Log(BF10)_NonInform` = as.numeric(`Log(BF10)_NonInform`)) %>%
-    dplyr::arrange(`Log(BF10)_NonInform`) %>%
+    dplyr::mutate(`Log(BFa0)_NonInform` = as.numeric(`Log(BFa0)_NonInform`)) %>%
+    dplyr::arrange(`Log(BFa0)_NonInform`) %>%
     dplyr::pull(Observed)
   
   BF_mult_p_tmp <- BF_mult_tmp %>%
     tidyr::drop_na() %>%
     dplyr::select(1,2,3) %>%
     dplyr::mutate(Countries = factor(Observed, levels = countries_order_age),
-                  `Log(BF10)_NonInform` = as.numeric(`Log(BF10)_NonInform`)) 
+                  `Log(BFa0)_NonInform` = as.numeric(`Log(BFa0)_NonInform`)) 
   
   return(BF_mult_p_tmp)
 }
@@ -3534,21 +3534,21 @@ H3_BF_gender <- H3_BF_gender  %>%
 
 ## moderate evidence support H0
 H3_BF_gender_supportH0 <- H3_BF_gender %>% 
-  dplyr::filter(`Log(BF10)_NonInform` < log(1/6))
+  dplyr::filter(`Log(BFa0)_NonInform` < log(1/6))
 
-## moderate evidence support H1
-H3_BF_gender_supportH1 <- H3_BF_gender %>% 
-  dplyr::filter(`Log(BF10)_NonInform` > log(6))
+## moderate evidence support Ha
+H3_BF_gender_supportHa <- H3_BF_gender %>% 
+  dplyr::filter(`Log(BFa0)_NonInform` > log(6))
 
 ## female and male
 H3_gender_different <- H3_gender %>% 
-  dplyr::filter(ISO3 %in% H3_BF_gender_supportH1$Observed) %>% 
+  dplyr::filter(ISO3 %in% H3_BF_gender_supportHa$Observed) %>% 
   dplyr::filter(Sex == "Female")
 ```
 
 
 ```{r warning=FALSE}
-H3_Fig_BF_gender <- ggplot(H3_BF_gender, aes( x = `Log(BF10)_NonInform`, y = `Countries/Regions`)) +
+H3_Fig_BF_gender <- ggplot(H3_BF_gender, aes( x = `Log(BFa0)_NonInform`, y = `Countries/Regions`)) +
   geom_point() +
   scale_color_grey() +
   xlim(-3, 20) +
@@ -3556,15 +3556,15 @@ H3_Fig_BF_gender <- ggplot(H3_BF_gender, aes( x = `Log(BF10)_NonInform`, y = `Co
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
              colour = c("orange", "#D55E00", "black", "deepskyblue","blue"), 
              linetype=c("longdash", "longdash", "solid", "longdash","longdash")) + 
-  geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7, 
+  geom_text(aes(x=log(10), label="\nStrong evidence for Ha", y = 23), colour="blue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7, 
+  geom_text(aes(x=log(6), label="Moderate evidence for Ha\n", y = 23), colour="deepskyblue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="#D55E00", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="orange", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  xlab("Log(BF10)")+
+  xlab("Log(BFa0)")+
   theme_bw() +
         theme(panel.grid.major = element_blank(),
               panel.grid.minor = element_blank(),
@@ -3618,7 +3618,7 @@ H3_BF_PsyStages <- H3_BF_PsyStages %>%
 
 ## moderate evidence support H0
 H3_BF_PsyStages_supportH0 <- H3_BF_PsyStages %>% 
-  dplyr::filter(`Log(BF10)_NonInform` < log(1/6))
+  dplyr::filter(`Log(BFa0)_NonInform` < log(1/6))
 ```
 
 
@@ -3650,14 +3650,14 @@ H3_BF_interval10 <- H3_BF_interval10 %>%
 
 ## moderate evidence support H0
 H3_BF_interval10_supportH0 <- H3_BF_interval10 %>% 
-  dplyr::filter(`Log(BF10)_NonInform` < log(1/6))
+  dplyr::filter(`Log(BFa0)_NonInform` < log(1/6))
 
 ```
 
 
 and I visualized PsyStages BF at first.
 ```{r warning=FALSE}
-H3_Fig_BF_PsyStages <- ggplot(H3_BF_PsyStages, aes( x = `Log(BF10)_NonInform`, 
+H3_Fig_BF_PsyStages <- ggplot(H3_BF_PsyStages, aes( x = `Log(BFa0)_NonInform`, 
                                                     y = `Countries/Regions`)) +
   geom_point() +
   scale_color_grey() +
@@ -3666,15 +3666,15 @@ H3_Fig_BF_PsyStages <- ggplot(H3_BF_PsyStages, aes( x = `Log(BF10)_NonInform`,
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
              colour = c("orange", "#D55E00", "black", "deepskyblue","blue"), 
              linetype=c("longdash", "longdash", "solid", "longdash","longdash")) + 
-  geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7, 
+  geom_text(aes(x=log(10), label="\nStrong evidence for Ha", y = 23), colour="blue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7, 
-            angle=90, text=element_text(size=10)) +
-  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="#D55E00", alpha = 0.7, 
+  geom_text(aes(x=log(6)+1, label="Moderate evidence for Ha\n", y = 23), colour="deepskyblue", alpha = 0.7, 
+            angle=90, text=element_text(size=10)) + ## add 1.2 avoid label overlap
+  geom_text(aes(x=log(1/6)-1, label="\nModerate evidence for H0", y = 23), colour="#D55E00", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="orange", alpha = 0.7, 
             angle=90, text=element_text(size=10))  +
-  xlab("Log(BF10)")+
+  xlab("Log(BFa0)")+
   theme_bw() +
         theme(panel.grid.major = element_blank(),
               panel.grid.minor = element_blank(),
@@ -3698,7 +3698,7 @@ H3_Fig_BF_PsyStages
 Then I visualized another category.
 ```{r warning=FALSE}
 H3_Fig_BF_interval10 <- ggplot(H3_BF_interval10, 
-                            aes( x = `Log(BF10)_NonInform`, y = `Countries/Regions`)) +
+                            aes( x = `Log(BFa0)_NonInform`, y = `Countries/Regions`)) +
   geom_point() +
   scale_color_grey() +
   xlim(-15,80) +
@@ -3706,15 +3706,15 @@ H3_Fig_BF_interval10 <- ggplot(H3_BF_interval10,
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
              colour = c("orange", "#D55E00", "black", "deepskyblue","blue"), 
              linetype=c("longdash", "longdash", "solid", "longdash","longdash")) + 
-  geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 23), colour="blue", alpha = 0.7, 
+  geom_text(aes(x=log(10), label="\nStrong evidence for Ha", y = 23), colour="blue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 23), colour="deepskyblue", alpha = 0.7, 
+  geom_text(aes(x=log(6)+1, label="Moderate evidence for Ha\n", y = 23), colour="deepskyblue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y = 23), colour="#D55E00", alpha = 0.7, 
+  geom_text(aes(x=log(1/6)-1, label="\nModerate evidence for H0", y = 23), colour="#D55E00", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 23), colour="orange", alpha = 0.7, 
             angle=90, text=element_text(size=10))  +
-  xlab("Log(BF10)")+
+  xlab("Log(BFa0)")+
   theme_bw() +
         theme(panel.grid.major = element_blank(),
               panel.grid.minor = element_blank(),
@@ -3876,7 +3876,7 @@ H3_BF_Lucca_gender2 <- H3_BF_Lucca_gender %>%
 
 
 H3_Fig_BF_Lucca_gender <- ggplot(H3_BF_Lucca_gender2, 
-                                 aes( x = `Log(BF10)_NonInform`, y = Countries)) +
+                                 aes( x = `Log(BFa0)_NonInform`, y = Countries)) +
   geom_point() +
   scale_color_grey() +
   xlim(-3, 3) +
@@ -3884,15 +3884,15 @@ H3_Fig_BF_Lucca_gender <- ggplot(H3_BF_Lucca_gender2,
   geom_vline(xintercept = c(log(1/10), log(1/6), 0, log(6), log(10)), 
              colour = c("orange", "#D55E00", "black", "deepskyblue","blue"), 
              linetype=c("longdash", "longdash", "solid", "longdash","longdash")) + 
-  geom_text(aes(x=log(10), label="\nStrong evidence for H1", y = 5), colour="blue", alpha = 0.7, 
+  geom_text(aes(x=log(10), label="\nStrong evidence for Ha", y = 5), colour="blue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  geom_text(aes(x=log(6), label="Moderate evidence for H1\n", y = 5), colour="deepskyblue", alpha = 0.7, 
+  geom_text(aes(x=log(6), label="Moderate evidence for Ha\n", y = 5), colour="deepskyblue", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(1/6), label="\nModerate evidence for H0", y =5), colour="#D55E00", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
   geom_text(aes(x=log(1/10), label="Strong evidence for H0\n", y = 5), colour="orange", alpha = 0.7, 
             angle=90, text=element_text(size=10)) +
-  xlab("Log(BF10)")+
+  xlab("Log(BFa0)")+
   theme_bw() +
         theme(panel.grid.major = element_blank(),
               panel.grid.minor = element_blank(),
