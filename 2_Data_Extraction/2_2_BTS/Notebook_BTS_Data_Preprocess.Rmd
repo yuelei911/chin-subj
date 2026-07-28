@@ -20,7 +20,12 @@ pacman::p_load("tidyverse","here","rio")
 
 
 # Load the data of BTS
+
+
 ```{r}
+## load Region
+load("BTS_region.Rdata") ## include 6 projects
+
 load("BTS_dupli.Rdata") ## A total of 27 projects were included
 ```
 
@@ -887,7 +892,14 @@ BTS_edu_list[[18]] <- BTS_edu_list[[18]] %>%
 ```
 
 
+# Load BTS doing data
+```{r}
+BTS_coding <- readxl::read_xlsx("Chin_Subj_Proofreading_BTS_Target_Population.xlsx")
+```
+
+
 # Save Rdata
 ```{r}
-save(BTS, WEIRD, BTS_edu_list, Countrycodelist_iso2_iso3,file = "BTS.Rdata")
+save(BTS, WEIRD, BTS_edu_list, Countrycodelist_iso2_iso3, 
+     BTS_region, BTS_coding, file = "BTS.Rdata")
 ```

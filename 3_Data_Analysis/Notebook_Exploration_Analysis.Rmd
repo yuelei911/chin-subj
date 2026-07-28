@@ -311,11 +311,15 @@ Journal_report_year <- Journal_report %>%
         legend.text = element_text(size = 16, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
+        axis.text = element_text(size = 16,family = "serif"))+
+  scale_color_brewer(palette = "Paired")
+
 
 ggsave(here("3_Data_Analysis","3_2_image","Journal_report_year.pdf"), 
        Journal_report_year, device = "pdf", width=12, height = 9)
 
+ggsave(here("3_Data_Analysis","3_2_image","Journal_report_year.png"), 
+       Journal_report_year, device = "png", width=12, height = 9, dpi = 600)
 
 Journal_report_year
 ```
@@ -499,9 +503,12 @@ Journal_report_target_population <- Journal_target_population_report2 %>%
         legend.title = element_blank(),
         axis.title = element_text(size = 20,family = "serif"),
         axis.text = element_text(size = 20,family = "serif"))+
-  scale_x_discrete(guide = guide_axis(angle = 45))
+  scale_x_discrete(guide = guide_axis(angle = 45))+
+  scale_fill_okabe_ito()
 
 ggsave(here("3_Data_Analysis","3_2_image","Journal_report_target_population.pdf"), Journal_report_target_population, device = "pdf", width=12, height = 9)
+
+ggsave(here("3_Data_Analysis","3_2_image","Journal_report_target_population.png"), Journal_report_target_population, device = "png", width=12, height = 9, dpi = 600)
 
 Journal_report_target_population
 ```
@@ -526,11 +533,13 @@ Journal_special_visual2 <- Journal_special_population_translation %>%
 
 Suppl_Fig_Special_Wordcloud <- Journal_special_visual2 %>% 
   ggplot(aes(label = Target_Population_English, 
-             size = Count, 
-             color = cate)) +
-  geom_text_wordcloud(area_corr = TRUE) +
+             size = Count)) +
+  geom_text_wordcloud(area_corr = TRUE,
+                      color = "#56B4E9") +
   scale_size_area(max_size = 50) +
   theme_minimal()
+
+# display.brewer.all(colorblindFriendly = TRUE)
 
 Suppl_Fig_Special_Wordcloud
 ```
@@ -580,6 +589,8 @@ Suppl_Fig_Special_Wordcloud_Barplot
 ggsave(here("3_Data_Analysis","3_2_image","Suppl_Fig_Special_Wordcloud_Barplot.pdf"),
        Suppl_Fig_Special_Wordcloud_Barplot, device = "pdf", width=18, height = 9)
 
+ggsave(here("3_Data_Analysis","3_2_image","Suppl_Fig_Special_Wordcloud_Barplot.png"),
+       Suppl_Fig_Special_Wordcloud_Barplot, device = "png", width=18, height = 9, dpi = 600)
 ```
 
 
@@ -641,14 +652,14 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
 
   if (any(rowSums(cbind(thetas, counts)) == 0)) {
-    LogBF10 <- (lbeta.xa-lbeta.a)
+    LogBFa0 <- (lbeta.xa-lbeta.a)
   } else {
-     LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+     LogBFa0 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
   }
 
-  BF <- data.frame(LogBF10 = LogBF10,
-                   BF10    = exp(LogBF10),
-                   BF01    = 1/exp(LogBF10))
+  BF <- data.frame(LogBFa0 = LogBFa0,
+                   BFa0    = exp(LogBFa0),
+                   BF0a    = 1/exp(LogBFa0))
 
   return(list(BF       = BF,
               expected = expected))
@@ -656,6 +667,7 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 }
 ```
 
+**Note:** For all analyses in this document, Log(BFa0) denotes the natural logarithm (ln) of BFa0, as specified in the custom function.
 
 
 ## Two data sources are respectively compared with the census data and CFPS
@@ -695,11 +707,16 @@ Suppl_Fig_H2_gender_general <- ggplot(SupplH2_gender_general,aes(Data_Source,Pro
         legend.text = element_text(size = 20, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 20,family = "serif"),
-        axis.text = element_text(size = 20,family = "serif"))
+        axis.text = element_text(size = 20,family = "serif"))+
+  scale_fill_okabe_ito()
 
 
 ggsave(here("3_Data_Analysis","3_2_image","Suppl_Fig_H2_gender_general.pdf"),
        Suppl_Fig_H2_gender_general, device = "pdf", width=18, height = 9)
+
+ggsave(here("3_Data_Analysis","3_2_image","Suppl_Fig_H2_gender_general.png"),
+       Suppl_Fig_H2_gender_general, device = "png", width=18, height = 9, dpi = 600)
+
 Suppl_Fig_H2_gender_general
 
 ```
@@ -748,17 +765,17 @@ SupplH2_BF_gender_BTS_CFPS <- BayesMultiNomial(dataset = SupplH2_gender_general_
                                              observed = "BTS Chinese",
                                              expected = "CFPS2018")
 ```
-Journal vs Census6: $Log(BF_{10})$ = `r SupplH2_BF_gender_Journal_Census6$BF$LogBF10`.
+Journal vs Census6: $Log(BF_{a0})$ = `r SupplH2_BF_gender_Journal_Census6$BF$LogBFa0`.
 
-BTS vs Census6: $Log(BF_{10})$ = `r SupplH2_BF_gender_BTS_Census6$BF$LogBF10`.
+BTS vs Census6: $Log(BF_{a0})$ = `r SupplH2_BF_gender_BTS_Census6$BF$LogBFa0`.
 
-Journal vs Census7: $Log(BF_{10})$ = `r SupplH2_BF_gender_Journal_Census7$BF$LogBF10`.
+Journal vs Census7: $Log(BF_{a0})$ = `r SupplH2_BF_gender_Journal_Census7$BF$LogBFa0`.
 
-BTS vs Census7: $Log(BF_{10})$ = `r SupplH2_BF_gender_BTS_Census7$BF$LogBF10`.
+BTS vs Census7: $Log(BF_{a0})$ = `r SupplH2_BF_gender_BTS_Census7$BF$LogBFa0`.
 
-Journal vs CFPS2018: $Log(BF_{10})$ = `r SupplH2_BF_gender_Journal_CFPS$BF$LogBF10`.
+Journal vs CFPS2018: $Log(BF_{a0})$ = `r SupplH2_BF_gender_Journal_CFPS$BF$LogBFa0`.
 
-BTS vs CFPS2018: $Log(BF_{10})$ = `r SupplH2_BF_gender_BTS_CFPS$BF$LogBF10`.
+BTS vs CFPS2018: $Log(BF_{a0})$ = `r SupplH2_BF_gender_BTS_CFPS$BF$LogBFa0`.
 
 
 ## age
@@ -785,13 +802,11 @@ SupplH2_Census7_age_general <- ggplot(data= Census7_age_five5,
                                   y= Proportion, fill=Data_Source)) +
   geom_col(alpha=0.5, width = 1) +
   geom_line(data = H1_age_general_BTS, 
-            aes(x = ageBins, y = Proportion, group = 1, color = "BTS Chinese"), 
+            aes(x = ageBins, y = Proportion, group = 1, color = "BTS Chinese" ), 
             size = 1) +
   geom_line(data = H1_age_general_Journal, 
-            aes(x = ageBins, y = Proportion, group = 1, color = "Journal"), 
+            aes(x = ageBins, y = Proportion, group = 1,color = "Journal"), 
             size = 1) +
-  scale_fill_manual(values = c("Census7" = "#00BFC4")) +  
-  scale_color_manual(values = c("BTS Chinese" = "blue", "Journal" = "red")) +
   scale_y_continuous(limits = c(0,50))+
   coord_flip() +
   labs(y="Proportion", x = "Age bins")+
@@ -802,10 +817,16 @@ SupplH2_Census7_age_general <- ggplot(data= Census7_age_five5,
         legend.text = element_text(size = 16, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
+        axis.text = element_text(size = 16,family = "serif"))+
+  scale_fill_manual(values = c("Census7" = "#56B4E9")) +
+  scale_color_manual(values = c("BTS Chinese"= "blue", "Journal" = "#E69F00"))
+  
 
 ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Census7_age_general.pdf"),
        SupplH2_Census7_age_general, device = "pdf", width=18, height = 9)
+
+ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Census7_age_general.png"),
+       SupplH2_Census7_age_general, device = "png", width=18, height = 9, dpi = 600)
 
 SupplH2_Census7_age_general
 ```
@@ -823,8 +844,6 @@ SupplH2_Census6_age_general <- ggplot(data= Census6_age_five5,
   geom_line(data = H1_age_general_Journal, 
             aes(x = ageBins, y = Proportion, group = 1, color = "Journal"), 
             size = 1) +
-  scale_fill_manual(values = c("Census6" = "#00BFC4")) +  
-  scale_color_manual(values = c("BTS Chinese" = "blue", "Journal" = "red")) +
   scale_y_continuous(limits = c(0,50))+
   coord_flip() +
   labs(y="Proportion", x = "Age bins")+
@@ -835,10 +854,15 @@ SupplH2_Census6_age_general <- ggplot(data= Census6_age_five5,
         legend.text = element_text(size = 16, family = "serif"),
         legend.title = element_blank(),
         axis.title = element_text(size = 16,family = "serif"),
-        axis.text = element_text(size = 16,family = "serif"))
+        axis.text = element_text(size = 16,family = "serif"))+
+  scale_fill_manual(values = c("Census6" = "#56B4E9")) +
+  scale_color_manual(values = c("BTS Chinese"= "blue", "Journal" = "#E69F00"))
 
 ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Census6_age_general.pdf"),
        SupplH2_Census6_age_general, device = "pdf", width=18, height = 9)
+
+ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Census6_age_general.png"),
+       SupplH2_Census6_age_general, device = "png", width=18, height = 9, dpi = 600)
 
 SupplH2_Census6_age_general
 ```
@@ -915,13 +939,13 @@ SupplH2_BF_interval10_Journal_Census6 <- BayesMultiNomial(dataset =Suppl_interva
                                              observed = "Journal",
                                              expected = "Census6")
 ```
-BTS vs Census6 in PsyStages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_BTS_Census6$BF$LogBF10`.
+BTS vs Census6 in PsyStages: $Log(BF_{a0})$ = `r SupplH2_BF_Psystages_BTS_Census6$BF$LogBFa0`.
 
-BTS vs Census6 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_BTS_Census6$BF$LogBF10`.
+BTS vs Census6 in interval10: $Log(BF_{a0})$ = `r SupplH2_BF_interval10_BTS_Census6$BF$LogBFa0`.
 
-Journal vs Census6 in Psystages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_Journal_Census6$BF$LogBF10`.
+Journal vs Census6 in Psystages: $Log(BF_{a0})$ = `r SupplH2_BF_Psystages_Journal_Census6$BF$LogBFa0`.
 
-Journal vs Census6 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_Journal_Census6$BF$LogBF10`.
+Journal vs Census6 in interval10: $Log(BF_{a0})$ = `r SupplH2_BF_interval10_Journal_Census6$BF$LogBFa0`.
 
 
 Census7, BTS Chinese, and Journal
@@ -952,13 +976,13 @@ SupplH2_BF_interval10_Journal_Census7 <- BayesMultiNomial(dataset =Suppl_interva
                                              observed = "Journal",
                                              expected = "Census7")
 ```
-BTS vs Census7 in PsyStages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_BTS_Census7$BF$LogBF10`.
+BTS vs Census7 in PsyStages: $Log(BF_{a0})$ = `r SupplH2_BF_Psystages_BTS_Census7$BF$LogBFa0`.
 
-BTS vs Census7 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_BTS_Census7$BF$LogBF10`.
+BTS vs Census7 in interval10: $Log(BF_{a0})$ = `r SupplH2_BF_interval10_BTS_Census7$BF$LogBFa0`.
 
-Journal vs Census7 in Psystages: $Log(BF_{10})$ = `r SupplH2_BF_Psystages_Journal_Census7$BF$LogBF10`.
+Journal vs Census7 in Psystages: $Log(BF_{a0})$ = `r SupplH2_BF_Psystages_Journal_Census7$BF$LogBFa0`.
 
-Journal vs Census7 in interval10: $Log(BF_{10})$ = `r SupplH2_BF_interval10_Journal_Census7$BF$LogBF10`.
+Journal vs Census7 in interval10: $Log(BF_{a0})$ = `r SupplH2_BF_interval10_Journal_Census7$BF$LogBFa0`.
 
 ## edu
 process Census6 data
@@ -1071,13 +1095,13 @@ Suppl_BF_highschool_Journal_Census6 <-  BayesMultiNomial(dataset = Suppl_highsch
                                              observed = "Journal",
                                              expected = "Census6")
 ```
-BTS vs Census6 in college: $Log(BF_{10})$ = `r Suppl_BF_college_BTS_Census6$BF$LogBF10`.
+BTS vs Census6 in college: $Log(BF_{a0})$ = `r Suppl_BF_college_BTS_Census6$BF$LogBFa0`.
 
-Journal vs Census6 in college: $Log(BF_{10})$ = `r Suppl_BF_college_Journal_Census6$BF$LogBF10`.
+Journal vs Census6 in college: $Log(BF_{a0})$ = `r Suppl_BF_college_Journal_Census6$BF$LogBFa0`.
 
-BTS vs Census6 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_BTS_Census6$BF$LogBF10`.
+BTS vs Census6 in high school: $Log(BF_{a0})$ = `r Suppl_BF_highschool_BTS_Census6$BF$LogBFa0`.
 
-Journal vs Census6 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_Journal_Census6$BF$LogBF10`.
+Journal vs Census6 in high school: $Log(BF_{a0})$ = `r Suppl_BF_highschool_Journal_Census6$BF$LogBFa0`.
 
 
 BF Journal, BTS and Census7
@@ -1105,13 +1129,13 @@ Suppl_BF_highschool_Journal_Census7 <-  BayesMultiNomial(dataset = Suppl_highsch
                                              observed = "Journal",
                                              expected = "Census7")
 ```
-BTS vs Census7 in college: $Log(BF_{10})$ = `r Suppl_BF_college_BTS_Census7$BF$LogBF10`.
+BTS vs Census7 in college: $Log(BF_{a0})$ = `r Suppl_BF_college_BTS_Census7$BF$LogBFa0`.
 
-Journal vs Census7 in college: $Log(BF_{10})$ = `r Suppl_BF_college_Journal_Census7$BF$LogBF10`.
+Journal vs Census7 in college: $Log(BF_{a0})$ = `r Suppl_BF_college_Journal_Census7$BF$LogBFa0`.
 
-BTS vs Census7 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_BTS_Census7$BF$LogBF10`.
+BTS vs Census7 in high school: $Log(BF_{a0})$ = `r Suppl_BF_highschool_BTS_Census7$BF$LogBFa0`.
 
-Journal vs Census7 in high school: $Log(BF_{10})$ = `r Suppl_BF_highschool_Journal_Census7$BF$LogBF10`.
+Journal vs Census7 in high school: $Log(BF_{a0})$ = `r Suppl_BF_highschool_Journal_Census7$BF$LogBFa0`.
 
 
 ## Abstract report
@@ -1382,100 +1406,6 @@ sum(Census6_region_seven$Census6_Prop)
 ```
 
 
-visualize the two cutoff regions
-first four region
-```{r}
-SupplH2_region_four_studytype <- full_join(Journal_region_four_experi,
-                                      Journal_region_four_questionaire,
-                            by = "Region_four") %>% 
-  dplyr::select(-c(n.x,n.y)) %>% ## remove n cols
-  dplyr::full_join(H2_region_four,
-                   by = "Region_four") %>% 
-  dplyr::full_join(Census6_region_four,
-                   by= "Region_four")
-
-SupplH2_region_four_studytype2 <- SupplH2_region_four_studytype %>% 
-  pivot_longer(cols = -Region_four,
-             names_to = "Data Source",
-             values_to = "Proportion") %>% 
-  dplyr::mutate(Region_four = factor(Region_four,
-                                     levels = c("Northeast China","West China",
-                                                "Central China","East China")))
-
-
-## Visualization
-SupplH2_Fig_region_four_studytype <- ggplot(data = SupplH2_region_four_studytype2, aes(x = `Data Source`, y = Proportion, fill = Region_four)) +
-  geom_col(position = "stack")+
-  labs(fill = "Region",x = "Data source")+
-  scale_x_discrete(labels =c("experi_Prop" = "Journal experiment study",
-                             "questionaire_Prop" = "Journal quantionaire study",
-                             "Journal_Prop" = "Journal",
-                              "CFPS2018_Prop" = "CFPS2018",
-                              "Census7_Prop" = "Census7",
-                             "Census6_Prop" = "Census6"))+
-  coord_flip()+
-  theme_classic()+
-  theme(legend.box.spacing = unit(2,"pt"),
-        legend.position = "bottom",
-        legend.key.size = unit(0.5, "cm"),
-        legend.text = element_text(size = 15, family = "serif"),
-        legend.title = element_text(size = 15, family = "serif"),
-        axis.title = element_text(size = 20,family = "serif"),
-        axis.text = element_text(size = 20,family = "serif"))+
-  guides(fill = guide_legend(ncol = 3))
-
-
-SupplH2_Fig_region_four_studytype 
-```
-
-second, seven region
-```{r}
-SupplH2_region_seven_studytype <- full_join(Journal_region_seven_experi,
-                                      Journal_region_seven_questionaire,
-                            by = "Region_seven") %>% 
-  dplyr::select(-c(n.x,n.y)) %>% ## remove n cols
-  dplyr::full_join(H2_region_seven,
-                   by = "Region_seven") %>% 
-  dplyr::full_join(Census6_region_seven,
-                   by= "Region_seven")
-
-SupplH2_region_seven_studytype2 <- SupplH2_region_seven_studytype %>% 
-  pivot_longer(cols = -Region_seven,
-             names_to = "Data Source",
-             values_to = "Proportion") %>% 
-  dplyr::mutate(Region_seven = factor(Region_seven,
-                                     levels = c("Northeast China","Northwest China",
-                                                "Southwest China","South China",
-                                                "North China","Central China",
-                                                "East China")))
-
-
-## Visualization
-SupplH2_Fig_region_seven_studytype <- ggplot(data = SupplH2_region_seven_studytype2, aes(x = `Data Source`, y = Proportion, fill = Region_seven)) +
-  geom_col(position = "stack")+
-  labs(fill = "Region",x = "Data source")+
-  scale_x_discrete(labels =c("experi_Prop" = "Journal experiment study",
-                             "questionaire_Prop" = "Journal quantionaire study",
-                             "Journal_Prop" = "Journal",
-                              "CFPS2018_Prop" = "CFPS2018",
-                              "Census7_Prop" = "Census7",
-                             "Census6_Prop" = "Census6"))+
-  coord_flip()+
-  theme_classic()+
-  theme(legend.box.spacing = unit(2,"pt"),
-        legend.position = "bottom",
-        legend.key.size = unit(0.5, "cm"),
-        legend.text = element_text(size = 15, family = "serif"),
-        legend.title = element_text(size = 15, family = "serif"),
-        axis.title = element_text(size = 20,family = "serif"),
-        axis.text = element_text(size = 20,family = "serif"))+
-  guides(fill = guide_legend(ncol = 3))
-
-
-SupplH2_Fig_region_seven_studytype 
-```
-
-
 To use func in main protocal 
 ```{r}
 BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior = TRUE, prior = NA){
@@ -1521,14 +1451,14 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
   lbeta.a  <- sum(lgamma(alphas)) - lgamma(sum(alphas))
 
   if (any(rowSums(cbind(thetas, counts)) == 0)) {
-    LogBF10 <- (lbeta.xa-lbeta.a)
+    LogBFa0 <- (lbeta.xa-lbeta.a)
   } else {
-     LogBF10 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
+     LogBFa0 <- (lbeta.xa-lbeta.a) + (0 - sum(counts * log(thetas))) 
   }
 
-  BF <- data.frame(LogBF10 = LogBF10,
-                   BF10    = exp(LogBF10),
-                   BF01    = 1/exp(LogBF10))
+  BF <- data.frame(LogBFa0 = LogBFa0,
+                   BFa0    = exp(LogBFa0),
+                   BF0a    = 1/exp(LogBFa0))
 
   return(list(BF       = BF,
               expected = expected))
@@ -1539,9 +1469,11 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 
 BF four region on Journal
 ```{r}
-SupplH2_region_four_bayes <- H2_region_four_bayes %>% 
+SupplH2_region_four_bayes <- H1_region_four_bayes %>% 
   left_join(Census6_region_four,by = "Region_four") %>% 
-  dplyr::rename(Census6 = Census6_Prop)
+  dplyr::rename(Census6 = Census6_Prop) %>% 
+  left_join(H2_region_four_bayes, by="Region_four")
+
 
 
 ## Census6
@@ -1562,18 +1494,19 @@ SupplH2_BF_Journal_CFPS2018_region_four <- BayesMultiNomial(dataset = SupplH2_re
                                           observed = "Journal",
                                           expected = "CFPS2018")
 ```
-Journal vs Census6 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census6_region_four$BF$LogBF10`.
+Journal vs Census6 in all studies:$Log(BF_{a0})$ = `r SupplH2_BF_Journal_Census6_region_four$BF$LogBFa0`.
 
-Journal vs Census7 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census7_region_four$BF$LogBF10`.
+Journal vs Census7 in all studies:$Log(BF_{a0})$ = `r SupplH2_BF_Journal_Census7_region_four$BF$LogBFa0`.
 
-Journal vs CFPS2018 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_CFPS2018_region_four$BF$LogBF10`.
+Journal vs CFPS2018 in all studies:$Log(BF_{a0})$ = `r SupplH2_BF_Journal_CFPS2018_region_four$BF$LogBFa0`.
 
 
 BF seven region on Journal
 ```{r}
-SupplH2_region_seven_bayes <- H2_region_seven_bayes %>% 
+SupplH2_region_seven_bayes <- H1_region_seven_bayes %>% 
   left_join(Census6_region_seven,by = "Region_seven") %>% 
-  dplyr::rename(Census6 = Census6_Prop)
+  dplyr::rename(Census6 = Census6_Prop) %>% 
+  left_join(H2_region_seven_bayes, by="Region_seven")
 
 ## Census6
 SupplH2_BF_Journal_Census6_region_seven <- BayesMultiNomial(dataset = SupplH2_region_seven_bayes,
@@ -1593,11 +1526,11 @@ SupplH2_BF_Journal_CFPS2018_region_seven <- BayesMultiNomial(dataset = SupplH2_r
                                           observed = "Journal",
                                           expected = "CFPS2018")
 ```
-Journal vs Census6 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census6_region_seven$BF$LogBF10`.
+Journal vs Census6 in all studies:$Log(BF_{a0})$ = `r SupplH2_BF_Journal_Census6_region_seven$BF$LogBFa0`.
 
-Journal vs Census7 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_Census7_region_seven$BF$LogBF10`.
+Journal vs Census7 in all studies:$Log(BF_{a0})$ = `r SupplH2_BF_Journal_Census7_region_seven$BF$LogBFa0`.
 
-Journal vs CFPS2018 in all studies:$Log(BF_{10})$ = `r SupplH2_BF_Journal_CFPS2018_region_seven$BF$LogBF10`.
+Journal vs CFPS2018 in all studies:$Log(BF_{a0})$ = `r SupplH2_BF_Journal_CFPS2018_region_seven$BF$LogBFa0`.
 
 
 BF four region on experi 
@@ -1606,12 +1539,9 @@ Journal_region_four_experi2 <- Journal_region_four_experi %>%
   dplyr::select(-n) %>% 
   dplyr::rename(`Journal experiment study` = experi_Prop)
 
-SupplH2_region_four_experi_bayes <- left_join(H2_region_four_bayes,
+SupplH2_region_four_experi_bayes <- left_join(SupplH2_region_four_bayes,
                                               Journal_region_four_experi2,
-                                              by = "Region_four") %>% 
-  left_join(Census6_region_four,by = "Region_four") %>% 
-  dplyr::rename(Census6 = Census6_Prop)
-
+                                              by = "Region_four")
 
 ## Census6
 SupplH2_BF_experi_Census6_region_four <- BayesMultiNomial(dataset = SupplH2_region_four_experi_bayes,
@@ -1631,11 +1561,11 @@ SupplH2_BF_experi_CFPS2018_region_four <- BayesMultiNomial(dataset = SupplH2_reg
                                           observed = "Journal experiment study",
                                           expected = "CFPS2018")
 ```
-Journal vs Census6 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census6_region_four$BF$LogBF10`.
+Journal vs Census6 in experi:$Log(BF_{a0})$ = `r SupplH2_BF_experi_Census6_region_four$BF$LogBFa0`.
 
-Journal vs Census7 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census7_region_four$BF$LogBF10`.
+Journal vs Census7 in experi:$Log(BF_{a0})$ = `r SupplH2_BF_experi_Census7_region_four$BF$LogBFa0`.
 
-Journal vs CFPS2018 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_CFPS2018_region_four$BF$LogBF10`.
+Journal vs CFPS2018 in experi:$Log(BF_{a0})$ = `r SupplH2_BF_experi_CFPS2018_region_four$BF$LogBFa0`.
 
 
 BF seven region on experi 
@@ -1644,11 +1574,9 @@ Journal_region_seven_experi2 <- Journal_region_seven_experi %>%
   dplyr::select(-n) %>% 
   dplyr::rename(`Journal experiment study` = experi_Prop)
 
-SupplH2_region_seven_experi_bayes <- left_join(H2_region_seven_bayes,
+SupplH2_region_seven_experi_bayes <- left_join(SupplH2_region_seven_bayes,
                                              Journal_region_seven_experi2,
-                                             by = "Region_seven") %>%
-  left_join(Census6_region_seven,by="Region_seven") %>% 
-  dplyr::rename(Census6 = Census6_Prop)
+                                             by = "Region_seven")
   
 
 ## Census6
@@ -1669,11 +1597,11 @@ SupplH2_BF_experi_CFPS2018_region_seven <- BayesMultiNomial(dataset = SupplH2_re
                                           observed = "Journal experiment study",
                                           expected = "CFPS2018")
 ```
-Journal vs Census6 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census6_region_seven$BF$LogBF10`.
+Journal vs Census6 in experi:$Log(BF_{a0})$ = `r SupplH2_BF_experi_Census6_region_seven$BF$LogBFa0`.
 
-Journal vs Census7 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_Census7_region_seven$BF$LogBF10`.
+Journal vs Census7 in experi:$Log(BF_{a0})$ = `r SupplH2_BF_experi_Census7_region_seven$BF$LogBFa0`.
 
-Journal vs CFPS2018 in experi:$Log(BF_{10})$ = `r SupplH2_BF_experi_CFPS2018_region_seven$BF$LogBF10`.
+Journal vs CFPS2018 in experi:$Log(BF_{a0})$ = `r SupplH2_BF_experi_CFPS2018_region_seven$BF$LogBFa0`.
 
 
 BF four region on questionaire
@@ -1683,14 +1611,11 @@ Journal_region_four_questionaire2 <- Journal_region_four_questionaire %>%
   dplyr::rename(`Journal questionaire study` = questionaire_Prop)
 
 
-SupplH2_region_four_questionaire_bayes <- left_join(H2_region_four_bayes,
+SupplH2_region_four_questionaire_bayes <- left_join(SupplH2_region_four_bayes,
                                                Journal_region_four_questionaire2,
-                                            by = "Region_four") %>%
-  left_join(Census6_region_four,by = "Region_four") %>% 
-  dplyr::rename(Census6 = Census6_Prop)
+                                            by = "Region_four")
 
   
-
 ## census6
 SupplH2_BF_questionaire_Census6_region_four <- BayesMultiNomial(dataset = SupplH2_region_four_questionaire_bayes,
                                           factor = "Region_four",
@@ -1709,11 +1634,11 @@ SupplH2_BF_questionaire_CFPS2018_region_four <- BayesMultiNomial(dataset = Suppl
                                           observed = "Journal questionaire study",
                                           expected = "CFPS2018")
 ```
-Journal vs Census6 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census6_region_four$BF$LogBF10`.
+Journal vs Census6 in questionaire:$Log(BF_{a0})$ = `r SupplH2_BF_questionaire_Census6_region_four$BF$LogBFa0`.
 
-Journal vs Census7 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census7_region_four$BF$LogBF10`.
+Journal vs Census7 in questionaire:$Log(BF_{a0})$ = `r SupplH2_BF_questionaire_Census7_region_four$BF$LogBFa0`.
 
-Journal vs CFPS2018 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_CFPS2018_region_four$BF$LogBF10`.
+Journal vs CFPS2018 in questionaire:$Log(BF_{a0})$ = `r SupplH2_BF_questionaire_CFPS2018_region_four$BF$LogBFa0`.
 
 
 BF seven region on questionaire
@@ -1722,11 +1647,9 @@ Journal_region_seven_questionaire2 <- Journal_region_seven_questionaire %>%
   dplyr::select(-n) %>% 
   dplyr::rename(`Journal questionaire study` = questionaire_Prop)
 
-SupplH2_region_seven_questionaire_bayes <- left_join(H2_region_seven_bayes,
+SupplH2_region_seven_questionaire_bayes <- left_join(SupplH2_region_seven_bayes,
                                              Journal_region_seven_questionaire2,
-                                            by = "Region_seven")%>%
-  left_join(Census6_region_seven,by="Region_seven") %>% 
-  dplyr::rename(Census6 = Census6_Prop)
+                                            by = "Region_seven")
 
 
 ## census6
@@ -1747,11 +1670,11 @@ SupplH2_BF_questionaire_CFPS2018_region_seven <- BayesMultiNomial(dataset = Supp
                                           observed = "Journal questionaire study",
                                           expected = "CFPS2018")
 ```
-Journal vs Census6 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census6_region_seven$BF$LogBF10`.
+Journal vs Census6 in questionaire:$Log(BF_{a0})$ = `r SupplH2_BF_questionaire_Census6_region_seven$BF$LogBFa0`.
 
-Journal vs Census7 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_Census7_region_seven$BF$LogBF10`.
+Journal vs Census7 in questionaire:$Log(BF_{a0})$ = `r SupplH2_BF_questionaire_Census7_region_seven$BF$LogBFa0`.
 
-Journal vs CFPS2018 in questionaire:$Log(BF_{10})$ = `r SupplH2_BF_questionaire_CFPS2018_region_seven$BF$LogBF10`.
+Journal vs CFPS2018 in questionaire:$Log(BF_{a0})$ = `r SupplH2_BF_questionaire_CFPS2018_region_seven$BF$LogBFa0`.
 
 
 And then, I will visualize the map for the region data of Chinese subjects
@@ -1759,119 +1682,110 @@ Combine all region data and load color data
 ```{r}
 ## combine region data
 Journal_region_experi2 <- Journal_region_experi %>% 
-  dplyr::rename(n = Sample_Size)
-Journal_region_questionaire <- Journal_region_questionaire %>% 
-  dplyr::rename(n = Sample_Size)
+  dplyr::mutate(`experimental study in the Journal` = case_when(Count_Bins == "<1" ~ "1",
+                                  Count_Bins == "1~5" ~ "2",
+                                  Count_Bins == "5~10" ~ "3",
+                                  Count_Bins == ">=10" ~ "4")) %>% 
+  dplyr::select(Region,`experimental study in the Journal`)
 
-Region_map_data <-  bind_rows(Journal_region_experi2,
-                              Journal_region_questionaire,
-                              Journal_region_general_tab2,
-                              Census7_region,
-                              Census6_region)
 
-## combine color data and region data
-Region_data <- dplyr::left_join(Region_map_data,Region_map_color,by = join_by(Region)) %>% 
-  dplyr::mutate(QUHUADAIMA = ifelse(Region == "重庆", "500000", QUHUADAIMA),
-                Color = ifelse(Count_Bins == "<1",1,
-                               ifelse(Count_Bins == "1~5",2,
-                                      ifelse(Count_Bins == "5~10",3,4))),
-                Color = factor(Color, levels = c("1", "2", "3", "4"))) %>% 
-  tidyr::pivot_wider(names_from = Data_Source,values_from = c(Proportion, Count_Bins,n,Color)) %>% 
-  dplyr::mutate(across(3:ncol(.),~ifelse(is.na(.),0,.)))
+Journal_region_questionaire2 <- Journal_region_questionaire %>% 
+  dplyr::mutate(`questionnaire study in the Journal` = case_when(Count_Bins == "<1" ~ "1",
+                                  Count_Bins == "1~5" ~ "2",
+                                  Count_Bins == "5~10" ~ "3",
+                                  Count_Bins == ">=10" ~ "4")) %>% 
+  dplyr::select(Region,`questionnaire study in the Journal`)
+
+
+SupplH1_studytype_map <- H1_Journal_region_map %>% 
+  dplyr::left_join(Journal_region_experi2, by = "Region") %>% 
+  dplyr::left_join(Journal_region_questionaire2, by = "Region") %>% 
+  dplyr::mutate(across(4:5,~ifelse(is.na(.),0,.))) %>% 
+  dplyr::rename(Journal = Color)
 ```
 
 
 Finally, I visualized geographic distribution and calculated Bayesian multinomial test for region.
 ```{r}
-API_pre <-  "http://xzqh.mca.gov.cn/data/"
-## 读取全国数据
-China <-  st_read(dsn = paste0(API_pre, "quanguo.json"), stringsAsFactors=FALSE) 
-## 使用 4326 地理坐标系
-st_crs(China) <-  4326
-
-# 读取国界线数据
-China_line <-  st_read(dsn = paste0(API_pre, "quanguo_Line.geojson"), stringsAsFactors=FALSE) 
-st_crs(China_line) <-  4326
-## 选择区划代码为国界线的区域
-gjx <- China_line[China_line$QUHUADAIMA == "guojiexian",]
-
-China <- dplyr::left_join(China,Region_data,by= "QUHUADAIMA")
-
-
-
-## Chinese journal papers in general population
+## Journal
 SupplH2_Fig_region_general <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(Color_Journal_region_general_population))) +
-  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+  geom_sf(data = China_province_region, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = China_line, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = SupplH1_studytype_map,aes(fill = factor(`Journal`)))+
+  coord_sf(crs = aeqd_crs, xlim = c(-2700, 2400),
+            ylim = c(-3700, 2400), 
+            expand = FALSE) + 
+  scale_fill_manual(values = my_blues,
                     breaks = c("0","1","2", "3", "4"),
-                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
-  geom_sf(data = gjx) +
-  labs(title = "Journal") +
-  theme(plot.title = element_text(color = "black",size = 16,
-                                  face = "bold",vjust = 0.1, hjust = 0.5,
-                                  margin = margin(b = 5)),
-        legend.position = "none",
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),
+                    name = "Proportion",
+                    drop = FALSE)+  
+  theme_bw()+
+  ggtitle("Journal")+
+  theme(panel.border = element_blank(),
         panel.grid = element_blank(),
-        panel.background = element_blank(),
         axis.text = element_blank(),
         axis.ticks = element_blank(),
-        axis.title = element_blank())+
-  annotation_north_arrow(location = 'tl',which_north = 'false',
-                         style = north_arrow_orienteering(),
-                         height = unit(0.8, "cm"),
-                         width = unit(0.6, "cm") )
-
+        plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.position = "none")
 
 
 ## Journal experi
 SupplH2_Fig_Journal_experi_region <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(Color_Journal_experi))) +
-  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+  geom_sf(data = China_province_region, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = China_line, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = SupplH1_studytype_map,aes(fill = factor(`experimental study in the Journal`)))+
+  coord_sf(crs = aeqd_crs, xlim = c(-2700, 2400),
+            ylim = c(-3700, 2400), 
+            expand = FALSE) + 
+  scale_fill_manual(values = my_blues,
                     breaks = c("0","1","2", "3", "4"),
-                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
-  geom_sf(data = gjx) +
-  labs(title = "Journal experiment study") +
-  theme(plot.title = element_text(color = "black",size = 16,
-                                  face = "bold",vjust = 0.1, hjust = 0.5,
-                                  margin = margin(b = 5)),
-        legend.title = element_blank(),
-        legend.direction = "horizontal",
-        legend.position = "bottom",
-        legend.box = "horizontal",
-        legend.margin = margin(t = 5, b = 5), 
-        panel.background = element_blank(),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),
+                    name = "Proportion",
+                    drop = FALSE)+  
+  theme_bw()+
+  ggtitle("experimental study  \nin the Journal")+
+  theme(panel.border = element_blank(),
+        panel.grid = element_blank(),
         axis.text = element_blank(),
         axis.ticks = element_blank(),
-        axis.title = element_blank())
+        plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.position = "bottom")
 
 
 ## questionaire
 SupplH2_Fig_Journal_questionaire_region <- ggplot() +
-  geom_sf(data = China,aes(fill = factor(Color_Journal_questionaire))) +
-  scale_fill_manual(values = c("#FFFFFF", "#C6DBEF","#6BAED6", "#2171B5", "#08306B"),
+  geom_sf(data = China_province_region, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = China_line, fill = NA, color = "gray60", linewidth = 0.3) +
+  geom_sf(data = SupplH1_studytype_map,aes(fill = factor(`questionnaire study in the Journal`)))+
+  coord_sf(crs = aeqd_crs, xlim = c(-2700, 2400),
+            ylim = c(-3700, 2400), 
+            expand = FALSE) + 
+  scale_fill_manual(values = my_blues,
                     breaks = c("0","1","2", "3", "4"),
-                    labels = c("0", "<1%","<5%", "<10%",">=10%"),drop = FALSE) +
-  geom_sf(data = gjx) +
-  labs(title = "Journal questionaire study") +
-  theme(plot.title = element_text(color = "black",size = 16,
-                                  face = "bold",vjust = 0.1, hjust = 0.5,
-                                  margin = margin(b = 5)),
-        legend.title = element_blank(),
-        legend.position = "none",
-        panel.background = element_blank(),
+                    labels = c("0", "<1%","<5%", "<10%",">=10%"),
+                    name = "Proportion",
+                    drop = FALSE)+  
+  theme_bw()+
+  ggtitle("questionnaire study  \nin the Journal")+
+  theme(panel.border = element_blank(),
+        panel.grid = element_blank(),
         axis.text = element_blank(),
         axis.ticks = element_blank(),
-        axis.title = element_blank())
+        plot.title = element_text(color = "black",size = 16,
+                                  face = "bold",vjust = 0.1, hjust = 0.5),
+        legend.position = "none")
 
 
 SupplH2_Fig_region_studytype <- SupplH2_Fig_region_general + SupplH2_Fig_Journal_experi_region + SupplH2_Fig_Journal_questionaire_region +
-  plot_layout(ncol = 3, nrow = 1, heights = c(2,2))+
-  plot_annotation(tag_levels = 'A',
-                  theme = theme(plot.title = element_text(size = 16))) + 
-  theme(plot.tag = element_text(size = 16))
+  plot_annotation(tag_levels = 'A') & theme(plot.tag = element_text(size = 18, face = "bold"))
 
 
 ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Fig_region_studytype.pdf"), SupplH2_Fig_region_studytype, device = "pdf", width=10, height = 6)
+
+ggsave(here("3_Data_Analysis","3_2_image","SupplH2_Fig_region_studytype.png"), SupplH2_Fig_region_studytype, device = "png", width=10, height = 6, dpi = 600)
 
 SupplH2_Fig_region_studytype
 ```
@@ -1978,10 +1892,10 @@ BTS wordcloud
 
 Suppl_Fig_BTS_wordcloud <- BTS_keywords_tab %>% 
   ggplot(aes(label = Article_Keywords, 
-             size = n, 
-             color =cate)) +
+             size = n)) +
   geom_text_wordcloud(shape = "square", 
-                      alpha = 0.8) +
+                      alpha = 0.8,
+                      color = "#56B4E9") +
   scale_size_area(max_size = 8) +
   theme_void()
 
@@ -2031,10 +1945,10 @@ Suppl_Fig_Journal_wordcloud <- Journal_keywords4 %>%
              size = tab, 
              color = cate)) +
   geom_text_wordcloud(shape = "square", 
-                      alpha = 0.8) +
+                      alpha = 0.8,
+                      color = "#56B4E9") +
   scale_size_area(max_size = 8) +
   theme_void()
-
 
 Suppl_Fig_Journal_wordcloud 
 
@@ -2045,6 +1959,9 @@ Suppl_Fig_Wordcloud
 
 ggsave(here("3_Data_Analysis","3_2_image","Suppl_Fig_Wordcloud.pdf")
 ,Suppl_Fig_Wordcloud, device = "pdf", width=18, height = 9)
+
+ggsave(here("3_Data_Analysis","3_2_image","Suppl_Fig_Wordcloud.png")
+,Suppl_Fig_Wordcloud, device = "png", width=18, height = 9)
 ```
 
 
@@ -2230,7 +2147,7 @@ plot
 SupplH3_Fig_age_four <- ggplot(H3_age_four2, aes(x=Proportion, y=ISO3, fill=ageBins)) +
   geom_col(alpha = .75)+
   labs(y="Countries/Regions",fill = "Age bins") + 
-  scale_fill_discrete(label=c("0~17", "18~40", "41~60",">=61")) +
+  scale_fill_discrete(label=c("<=17", "18~40", "41~60",">=61")) +
   theme_classic()+
   #guides(y="axis_nested") +
   theme(legend.title = element_text(size = 15,family = "serif"),
@@ -2241,11 +2158,15 @@ SupplH3_Fig_age_four <- ggplot(H3_age_four2, aes(x=Proportion, y=ISO3, fill=ageB
         panel.border = element_rect(fill = NA,color = "black")) +
   scale_x_continuous(breaks = seq(0, 100, by = 10)) +
   facet_wrap(~ WEIRD, scales = "free",
-             labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD"))) 
+             labeller = as_labeller(c("Non_WEIRD" = "Non-WEIRD", "WEIRD" = "WEIRD"))) +
+  scale_fill_okabe_ito()
 
 
 SupplH3_Fig_age_four
 
 ggsave(here("3_Data_Analysis","3_2_image","SupplH3_Fig_age_four.pdf"),
        SupplH3_Fig_age_four,device = "pdf", width=18, height = 18)
+
+ggsave(here("3_Data_Analysis","3_2_image","SupplH3_Fig_age_four.png"),
+       SupplH3_Fig_age_four,device = "png", width=18, height = 18, dpi = 600)
 ```
