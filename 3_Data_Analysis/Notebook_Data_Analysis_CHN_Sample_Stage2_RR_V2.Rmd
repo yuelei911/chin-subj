@@ -180,7 +180,9 @@ BayesMultiNomial <- function(dataset, factor, observed, expected, default_prior 
 
 
 At this point, I have completed the loading packages and data. Next, I conducted data analysis and visualization according to the logic of the written protocol.
+
 # Overview of participants
+
 ## The basic situation of Chinese journals coding data
 ```{r warning=FALSE}
 Journal <- df_stage2_Journal_Code2 %>% 
