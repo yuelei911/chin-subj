@@ -62,9 +62,11 @@ load(here("3_Data_Analysis","3_1_Intermediate_Data","Journal.Rdata"))
 # "Stage2_Journal_Code.Rdata" includes Journal coding data, replaced articles coding data, and preprocessed data for "other age".
 
 
-load(here("3_Data_Analysis","3_1_Intermediate_Data","BTS.Rdata"))  
+load(here("3_Data_Analysis","3_1_Intermediate_Data","BTS_opendata.Rdata")) 
+load(here("3_Data_Analysis","3_1_Intermediate_Data","BTS_emaildata.Rdata")) 
 
-# "BTS.Rdata" includes data of each international collaborative project, BTS preprocessed education data, and BTS target population coded data.
+# "BTS_opendata.Rdata" include open‑access dataset (23 BTS datasets from public repositories e.g., OSF), coded BTS data and keyword metadata
+# "BTS_emaildata.Rdata" include email‑sourced dataset (4 datasets obtained directly from authors). These datasets are not publicly available.
 
 
 load(here("3_Data_Analysis","3_1_Intermediate_Data","Analyze_supporting_data.Rdata")) 
@@ -76,6 +78,15 @@ load(here("3_Data_Analysis","3_1_Intermediate_Data","Analyze_supporting_data.Rda
 rm(df_regionCode)
 ```
 
+
+## combine BTS opendata and emaildata
+```{r}
+BTS <- c(BTS_opendata,BTS_emaildata)
+
+BTS_edu_list <- c(BTS_edu_list_opendata,BTS_edu_list_emaildata)
+
+BTS_region <- c(BTS_region_opendata,BTS_region_emaildata)
+```
 
 ## combine raw data and coding data of BTS
 ```{r}
@@ -726,7 +737,7 @@ However, within the general population, I found there is no difference between B
 
 In this part, I will analysis gender based on the special target population. For the first research question, only Lucca et al.(2024)' target population is special target population Specifically, it focuses on infants. Therefore, in specila target population, I will compare Lucca et al..(2024) with Chinese journal studies targeting infants/toddlers.
 ```{r}
-Lucca_gender_special <- BTS[[19]] %>% 
+Lucca_gender_special <- BTS[["BTS_Lucca_et_al_2024"]] %>% 
   dplyr::filter(ISO2 == "CN") %>% 
   dplyr::group_by(Gender) %>% 
   dplyr::summarise(n = n()) %>% ## Female 40, Male 53
@@ -1415,10 +1426,10 @@ Journal_edu_sampletype1 <- Journal_edu_other_sampletype %>%
   dplyr::mutate(Highschool = "High_school_and_above",
                 College = "College_and_above")
 
-# Journal_edu_other_sampletype %>% 
-#   dplyr::filter(Sample_Type_N == 1) %>% 
+# Journal_edu_other_sampletype %>%
+#   dplyr::filter(Sample_Type_N == 1) %>%
 #   dplyr::select(Article_IDs_N,Sample_Type_N,Target_Population_N,
-#                 Sample_Size) %>% 
+#                 Sample_Size) %>%
 # distinct(Article_IDs_N) ## 300
 
 ## sample type is 2
@@ -2271,7 +2282,7 @@ H2_BF_gender_preschool_Census <- BayesMultiNomial(dataset = H2_gender_preschool_
                                                 observed = "Chinese participants",
                                                 expected = "Census7")
 ```
-Gender:Lucca vs Journal, $Log(BF_{a0})$ = `r H2_BF_gender_preschool_Census$BF$LogBFa0`. The result showed that moderate evidence in favor of $H_0$
+Gender:Lucca vs Census, $Log(BF_{a0})$ = `r H2_BF_gender_preschool_Census$BF$LogBFa0`. The result showed that moderate evidence in favor of $H_0$
 
 
 I calculate college

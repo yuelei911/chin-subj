@@ -898,8 +898,41 @@ BTS_coding <- readxl::read_xlsx("Chin_Subj_Proofreading_BTS_Target_Population.xl
 ```
 
 
-# Save Rdata
+## split differet source data
+Part of the BTS data in the present study was acquired through email correspondence with the authors. Public sharing of these data is prohibited by copyright; interested readers may contact the authors to request access.
+```{r BTS email data}
+remove_BTS_info <- c("BTS_Bertolo_et_al_2023",
+                     "BTS_Klein_et_al_2018_1",
+                     "BTS_Klein_et_al_2018_2",
+                     "BTS_Vlasceanu_et_al_2023",
+                     "BTS_Kirkland_et_al_2022")  ## these data request from authors
+
+## open data
+BTS_opendata <- BTS[!names(BTS) %in% remove_BTS_info]
+BTS_edu_list_opendata <- BTS_edu_list[!names(BTS_edu_list) %in% remove_BTS_info]
+BTS_region_opendata <- BTS_region[!names(BTS_region) %in% remove_BTS_info]
+
+
+
+## email data
+BTS_emaildata <- BTS[names(BTS) %in% remove_BTS_info]
+BTS_edu_list_emaildata <- BTS_edu_list[names(BTS_edu_list) %in% remove_BTS_info]
+BTS_region_emaildata <- BTS_region[names(BTS_region) %in% remove_BTS_info]
+```
+
+
 ```{r}
-save(BTS, WEIRD, BTS_edu_list, Countrycodelist_iso2_iso3, 
-     BTS_region, BTS_coding, file = "BTS.Rdata")
+BTS_coding <- readxl::read_xlsx("Chin_Subj_Proofreading_BTS_Target_Population.xlsx")
+BTS_keywords <- readxl::read_xlsx(here::here("2_Data_Extraction", "2_2_BTS","BTS_keywords.xlsx"))
+```
+
+
+# Save Rdata 
+```{r}
+## BTS open data
+save(BTS_opendata,BTS_edu_list_opendata, BTS_region_opendata, 
+     BTS_keywords,Countrycodelist_iso2_iso3,BTS_coding,file = "BTS_opendata.RData")
+
+## BTS email data
+save(BTS_emaildata,BTS_edu_list_emaildata ,BTS_region_emaildata,file = "BTS_emaildata.RData")
 ```
