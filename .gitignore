@@ -4,6 +4,12 @@
 .Rhistory
 *.RDataTmp*
 2_Data_Extraction/2_1_CHN_Journal_Code/2_1_3_Article_Download/
+2_Data_Extraction/2_1_CHN_Journal_Code/2_1_5_Article_Download/
 .Rproj.user
 *.Rproj
-.geojson
+*.geojson
+*emaildata*
+2_Data_Extraction/2_2_BTS/*.rdata
+2_Data_Extraction/2_2_BTS/*.Rdata
+3_Data_Analysis/3_1_Intermediate_Data/BTS.Rdata
+!2_Data_Extraction/2_2_BTS/BTS_opendata.RData
