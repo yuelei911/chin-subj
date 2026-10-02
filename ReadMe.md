@@ -15,16 +15,15 @@ This work is licensed under a
 [cc-by-nc-shield]: https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg
 
 ## Authors
-**Lei Yue**, School of Psychology, Nanjing Normal University;
+**Lei Yue**: School of Psychology, Nanjing Normal University;
 
-**Weiwei Zhang**, Psychological Service Center, Shenzhen City Polytechnic;
+**Weiwei Zhang**: Psychological Service Center, Shenzhen City Polytechnic;
 
-**Chunxiao Wang**, School of Education, Tsinghua University;
+**Chunxiao Wang**: School of Education, Tsinghua University;
 
-**Xi-Nian Zuo**, State Key Laboratory of Cognitive Neuroscience and Learning, International Data Group/McGovern Institute for Brain Research, Beijing Normal University;
+**Xi-Nian Zuo**: State Key Laboratory of Cognitive Neuroscience and Learning, International Data Group/McGovern Institute for Brain Research, Beijing Normal University;
 
-**Hu Chuan-Peng**(Corresponding author), School of Psychology, Nanjing Normal University, email:
-hu.chuan-peng@nnu.edu.cn, or, hcp4715@hotmail.com
+**Hu Chuan-Peng**(Corresponding author): School of Psychology, Nanjing Normal University; The Fourth People's Hospital of Yancheng, Affiliated Yancheng Hospital, Nanjing Normal University, Institute of Brain Science and Mental Health; email: hu.chuan-peng@nnu.edu.cn, or, hcp4715@hotmail.com
 
 ## Related links
 
