@@ -1796,21 +1796,21 @@ We also try to calculate the Spearman’s correlation between Journal region and
 ```{r}
 ## psy2021
 ShanghaiRanking_psy2021_provinceRank <- ShanghaiRanking_psy2021 %>% 
-  dplyr::rename(Region = 4) %>% 
+  dplyr::rename(Region = 4,Rank = 1) %>% 
   dplyr::group_by(Region) %>% 
   dplyr::slice(1) %>% 
   dplyr::ungroup() %>% 
-  dplyr::arrange(`排名`) %>% 
+  dplyr::arrange(Rank) %>% 
   dplyr::mutate(psy2021 = 1:21) %>%    ## give a rank num
   dplyr::select(Region,psy2021)
 
 ## applied psy
 ShanghaiRanking_appliedpsy2021_provinceRank <- ShanghaiRanking_appliedpsy2021 %>% 
-  dplyr::rename(Region = 4) %>% 
+  dplyr::rename(Region = 4,Rank = 1) %>% 
   dplyr::group_by(Region) %>% 
   dplyr::slice(1) %>% 
   dplyr::ungroup() %>% 
-  dplyr::arrange(`排名`) %>% 
+  dplyr::arrange(Rank) %>% 
   dplyr::mutate(Appliedpsy2021 = 1:29) %>% 
   dplyr::select(Region,Appliedpsy2021)
 

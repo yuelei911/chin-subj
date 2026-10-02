@@ -228,7 +228,7 @@ Group3_bind <- bind_rows(Group3_bind,Group3_suppl)
 
 ## load the replaced article data
 ```{r}
-Relaced_articles <- readxl::read_xlsx("2_Data_Extraction","2_1_CHN_Journal_Code","2_1_5_Extract_Data","2_5_5_3_Article_Replaced","Chin_Subj_articles_replaced_CE.xlsx") %>% 
+Relaced_articles <- readxl::read_xlsx(here::here("2_Data_Extraction","2_1_CHN_Journal_Code","2_1_5_Extract_Data","2_5_5_3_Article_Replaced","Chin_Subj_articles_replaced_CE.xlsx")) %>% 
   dplyr::select(-rows) %>% 
   dplyr::filter(Coder != "check")
 

@@ -8,16 +8,15 @@ rm(list = ls())
 pacman::p_load("readxl","here","knitr")
 
 ## load 27 projects data, BTS edu data and target population of BTS 
-load(here::here("2_Data_Extraction", "2_2_BTS", "BTS.Rdata"))
+load(here::here("2_Data_Extraction", "2_2_BTS", "BTS_opendata.Rdata"))
+load(here::here("2_Data_Extraction", "2_2_BTS", "BTS_emaildata.Rdata"))
 
-
-## load BTS keywords' data
-BTS_keywords <- readxl::read_xlsx(here::here("2_Data_Extraction", "2_2_BTS","BTS_keywords.xlsx"))
 
 ## save BTS
-save(BTS,BTS_coding,BTS_edu_list, BTS_region,BTS_keywords,file = here::here("3_Data_Analysis", "3_1_Intermediate_Data", "BTS.RData"))
+save(BTS_opendata,BTS_edu_list_opendata, BTS_region_opendata, 
+     BTS_keywords,Countrycodelist_iso2_iso3,BTS_coding,file = here::here("3_Data_Analysis", "3_1_Intermediate_Data", "BTS_opendata.RData"))
 
-
+save(BTS_emaildata,BTS_edu_list_emaildata ,BTS_region_emaildata,file = here::here("3_Data_Analysis", "3_1_Intermediate_Data", "BTS_emaildata.RData"))
 
 ## ----------------------------------------------------------------------------------------
 ##Journal

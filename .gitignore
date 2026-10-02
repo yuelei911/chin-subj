@@ -3,7 +3,15 @@
 .RData
 .Rhistory
 *.RDataTmp*
-2_Data_Extraction/2_1_CHN_Journal_Code/2_1_3_Article_Download/
+2_Data_Extraction/2_2_BTS/BTS.Rdata
+2_Data_Extraction/2_2_BTS/BTS_dupli.Rdata
+2_Data_Extraction/2_2_BTS/BTS_region.rdata
+2_Data_Extraction/2_2_BTS/BTS_emaildata.RData
+3_Data_Analysis/3_1_Intermediate_Data/BTS_emaildata.RData
+2_Data_Extraction/2_1_CHN_Journal_Code/*_Article_Download/
 .Rproj.user
 *.Rproj
 .geojson
+*.geojson
+4_Reports/4_3_Project_reports \[slides\]/
+4_Reports/4_4_Stage2_Report/

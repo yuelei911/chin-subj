@@ -1,7 +1,7 @@
 # Profiling Chinese Participants in Psych. Sci.
 This project aimed at exploring the representativeness of Chinese participants in psychological science. We analysed participants data from 1,000 empirical articles published in five mainstream Chinese psychological journals and 27 large-scale international collaborative projects.
 
-The Stage 1 Registered Report of our project has been accepted in principle by [PCI-RR](https://osf.io/ehw54)
+The Stage 2 Registered Report of our project has been recommended by [PCI-RR](https://doi.org/10.24072/pci.rr.101701)
 
 ## [![CC BY-NC 4.0][cc-by-nc-shield]][cc-by-nc]
 
@@ -28,21 +28,21 @@ hu.chuan-peng@nnu.edu.cn, or, hcp4715@hotmail.com
 
 ## Related links
 
-- **Projects materials**: https://osf.io/avb7t
-- **Preregistration Report**: https://osf.io/ehw54
-- **preprint**: https://osf.io/j8xgf
+- **Stage 1 recommendation**: https://rr.peercommunityin.org/articles/rec?id=103
+- **Stage 2 recommendation**: https://rr.peercommunityin.org/articles/rec?id=1701
+- **preprint**: https://osf.io/preprints/psyarxiv/j8xgf
 
 ## Software
 We used [R 4.1.1](https://www.R-project.org/) and [JASP 0.95.4](https://jasp-stats.org/) for data reprocessing, analyses, and visualization.
 
 ## About the folders
 
-This project include the follow folders, each has an "about" file describing its content:
+This project includes the following folders, each of which has an "About" file (`.md`) describing its content:
 
-- **1_Protocol**: includes the project’s early *OSF* pre-registration, the stage 1 of PCI Registered Report text, and review comments.
-- **2_Data_Extraction**: it includes data from 1,000 empirical studies published in five mainstream Chinese psychological journals, data from 27 large-scale international collaborative projects, and others data (e.g., 7thCensus).
-- **3_Data_Analysis**: includes the code for formal analyses and the generated visualization files
-- **4_Reports**: contains communication documents from the project implementation, such as conference presentations.
+- **1_Protocol**: includes the project’s early *OSF* pre-registration, the Stage 1 of the PCI Registered Report text with its review files, and the supplementary material of Stage 2.
+- **2_Data_Extraction**: includes data from the 1,000 empirical articles published in five mainstream Chinese psychological journals (`2_1_CHN_Journal_Code`), partial data from the 27 large-scale international collaborative projects (`2_2_BTS`), and supporting analysis data such as the 6th and 7th National Census (`2_3_Analyze_supporting_data`).
+- **3_Data_Analysis**: includes the code for the formal analyses (`Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2`, `Notebook_Exploration_Analysis`), the intermediate data derived from `2_Data_Extraction` (`3_1_Intermediate_Data`), and the generated visualization files (`3_2_Image`).
+- **4_Reports**: contains the communication documents from the project implementation, including the presentations given at the 24th National Academic Congress of Psychology (NACP 2023) and at BTSCON2025.
 
 The folder structure is outlined below:
 
@@ -50,7 +50,7 @@ The folder structure is outlined below:
 .
 |-root_dir
 |---1_Protocol
-|-------About_Protocol.txt
+|-------About_Protocol.md
 |-------1_1_Preregistration
 |-------1_2_Reg_Report_Stage_1
 |---------1_2_1_Reg_Report_Stage_1_Protocol
@@ -60,33 +60,28 @@ The folder structure is outlined below:
 |---------1_2_3_Reg_Report_Stage_1_Reviewer_Round4
 |---------1_2_3_Reg_Report_Stage_1_Reviewer_Round5
 |---------1_2_4_Reg_Report_Stage_1_Analysis
+|-------1_3_Stage_2_Suppl_Material
 |
 |---2_Data_Extraction
-|------About_Data_Extration.txt
-|------2_1_CHN_Journal_Data
-|---------2_1_1_Ariticle_Numbering
+|------About_Data_Extration.md
+|------2_1_CHN_Journal_Code
+|---------2_1_1_Article_Numbering
 |---------2_1_2_Article_Sampling
-|---------2_1_3_Article_Download
-|---------2_1_4_Code_Manual
-|---------2_1_5_Extract_Data
-|---------Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V1.Rmd
-|---------Coding_check.R
-|------2_2_BTS_Data
-|------Notebook_Coding_Reliability_Analysis.Rmd
+|---------2_1_3_Code_Manual
+|---------2_1_4_Extract_Data
+|-----------2_1_4_1_Article_Coding
+|-----------2_2_4_2_Article_Proofreading
+|-----------2_1_4_3_Article_Replaced
+|------2_2_BTS
+|------2_3_Analyze_supporting_data
 |
 |---3_Data_Analysis
-|------About_Data_Analysis.txt
+|------About_Data_Analysis.md
 |------3_1_Intermediate_Data
 |------3_2_Image
-|------Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2.Rmd
-|------Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2.R
-|------Notebook_Data_Analysis_CHN_Sample_Stage2_RR_V2.html
-|------Notebook_Exploration_Analysis.Rmd
-|------Notebook_Exploration_Analysis.html
 |
 |---4_Reports
-|-------About_Reports.txt
-|-------4_1_Project_reports [slides]
-|-------4_2_Conference1__NACP2023
-|-------4_3_Conference2_BTSCON2025
+|-------About_Reports.md
+|-------4_1_Conference1_NACP2023
+|-------4_2_Conference2_BTSCON2025
 ```
